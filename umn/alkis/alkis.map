@@ -46,7 +46,7 @@ MAP
 			wms_accessconstraints "none"
 			wms_srs "epsg:25832 epsg:4326 epsg:31467 epsg:31466 epsg:31468 epsg:31469 epsg:31492 epsg:31493 epsg:31494 epsg:31495 epsg:31462 epsg:31463 epsg:31464 epsg:31465 epsg:25833 epsg:31287 epsg:32633 epsg:2398"
 			wms_onlineresource "http://localhost/cgi-bin/alkis.xml" #linux
-			wms_title "ALKIS DEMO RLP"
+			wms_title "ALKIS"
 			wms_feature_info_mime_type "text/html"
 			
 			wfs_accessconstraints "none"
