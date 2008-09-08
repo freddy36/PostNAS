@@ -1,0 +1,3 @@
+#!/bin/sh
+export MS_MAPFILE=/data/umn/alkis/alkis.map
+exec /data/www/cgi-bin/mapserv

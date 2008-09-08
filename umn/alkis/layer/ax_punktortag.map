@@ -1,0 +1,39 @@
+##########################################################################################
+# Layer: ax_punktortag
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'PunktortAG' ist ein Punktort mit redundanzfreier Geometrie 
+# (Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt) innerhalb eines Geometriethemas.
+##########################################################################################
+
+LAYER
+	NAME "ax_punktortag"
+	TYPE POINT
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_punktortag) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "PunktortAG"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	MINSCALEDENOM 0
+	MAXSCALEDENOM 1000 #5000
+
+	CLASS
+		NAME "PunktortAG"
+		STYLE
+			SYMBOL "point"
+			SIZE 5
+			COLOR 0 0 0
+		END
+	END
+
+END

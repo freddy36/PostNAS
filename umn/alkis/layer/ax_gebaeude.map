@@ -1,0 +1,66 @@
+##########################################################################################
+# Layer: ax_gebaeude
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen 
+# seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation 
+# des Liegenschaftskatasters dient.
+##########################################################################################
+
+LAYER      
+	NAME "ax_gebaeude"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Gebäude"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	MINSCALEDENOM 0
+	MAXSCALEDENOM 10000
+
+	CLASSITEM 'gebaeudefunktion'
+
+   	CLASS
+		NAME "Wohngebäude"
+		EXPRESSION ([gebaeudefunktion] < 2000)
+		STYLE
+			COLOR 153 153 153
+			OUTLINECOLOR 0 0 0
+		END
+	END
+   	CLASS
+		NAME "Gebäude für Wirtschaft oder Gewerbe"
+		EXPRESSION (1999 < [gebaeudefunktion] AND [gebaeudefunktion] < 3000)
+		STYLE
+			COLOR 204 204 204
+			OUTLINECOLOR 0 0 0
+		END
+	END   
+	CLASS
+		NAME "Gebäude für öffentliche Zwecke"
+		EXPRESSION (3000 <= [gebaeudefunktion] AND [gebaeudefunktion] < 4000)
+		STYLE
+			COLOR 255 128 128
+			OUTLINECOLOR 0 0 0
+		END
+	END
+	CLASS
+		NAME "Nach Quellenlage nicht zu spezifizieren"
+		EXPRESSION ([gebaeudefunktion] = 9998)
+		STYLE
+			COLOR 204 204 204
+			OUTLINECOLOR 0 0 0
+		END
+	END   
+	
+END

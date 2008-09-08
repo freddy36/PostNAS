@@ -1,0 +1,42 @@
+##########################################################################################
+# Layer: ax_punktortau
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'PunktortAU' ist ein Punktort mit unabhängiger Geometrie ohne Zugehörigkeit 
+# zu einem Geometriethema. Er kann zu ZUSOs der folgenden Objektarten gehören: Grenzpunkt, 
+# Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt, Aufnahmepunkt, Sicherungspunkt, 
+# Sonstiger Vermessungspunkt, Besonderer topographischer Punkt, Lagefestpunkt, 
+# Höhenfestpunkt, Schwerefestpunkt, Referenzstationspunkt.
+##########################################################################################
+LAYER
+
+	NAME "ax_punktortau"
+	TYPE POINT
+	DUMP TRUE
+
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_punktortau) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "PunktortAU"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	MINSCALEDENOM 0
+	MAXSCALEDENOM 1000 #5000
+
+	CLASS
+		NAME "PunktortAU"
+		STYLE
+			SYMBOL "point"
+			SIZE 5
+			COLOR 0 0 0
+		END
+	END
+
+END

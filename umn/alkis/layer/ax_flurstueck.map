@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_flurstueck
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Flurstück' ist ein Teil der Erdoberfläche, der von einer im 
+# Liegenschaftskataster festgelegten Grenzlinie umschlossen und mit einer Nummer 
+# bezeichnet ist. Es ist die Buchungseinheit des Liegenschaftskatasters.
+##########################################################################################
+LAYER   
+	NAME "ax_flurstueck"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Flurstück"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+   
+	CLASS
+		NAME "Flurstück"
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 0 0 0
+		END
+	END
+
+END        

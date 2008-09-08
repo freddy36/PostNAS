@@ -1,0 +1,76 @@
+##########################################################################################
+# Layer: ax_strassenverkehr
+# ------------------------------------------------------------------------------------------
+# Beschreibung: 'Straßenverkehr' umfasst alle für die bauliche Anlage Straße 
+# erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen.
+##########################################################################################
+
+LAYER      
+	NAME "ax_strassenverkehr"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_strassenverkehr) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Straßenverkehr"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'funktion'
+  
+   	CLASS
+		NAME "Fußgängerzone"
+		EXPRESSION ([funktion] = 5130)
+		STYLE
+			COLOR 217 255 217
+			OUTLINECOLOR 153 153 153
+		END
+	END
+	
+   	CLASS
+		NAME "Verkehrsbegleitfläche Straße"
+		EXPRESSION ([funktion] < 2312)
+		STYLE
+			COLOR 235 255 212
+			OUTLINECOLOR 153 153 153
+		END
+	END   
+	
+	CLASS
+		NAME "Straßenentwässerungsanlage"
+		EXPRESSION ([funktion] < 2313)
+		STYLE
+			COLOR 235 255 212
+			OUTLINECOLOR 0 0 0
+		END
+	END
+	
+	CLASS
+		NAME "Gebäude- und Freifläche zu Verkehrsanlagen, Straße" #nicht im SK
+		EXPRESSION ([funktion] = 2311)
+		STYLE
+			COLOR 200 200 200
+			OUTLINECOLOR 153 153 153
+		END
+	END   
+
+	CLASS
+		NAME "Straßenverkehr" #nicht im SK
+		STYLE
+			COLOR 255 255 255
+			OUTLINECOLOR 153 153 153
+		END
+	END
+
+END 
