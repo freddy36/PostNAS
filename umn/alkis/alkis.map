@@ -48,6 +48,7 @@ MAP
 			wms_onlineresource "http://localhost/cgi-bin/alkis.xml" #linux
 			wms_title "ALKIS"
 			wms_feature_info_mime_type "text/html"
+			wms_encoding "UTF-8"
 			
 			wfs_accessconstraints "none"
 			wfs_srs "epsg:25832 epsg:4326 epsg:31467 epsg:31466 epsg:31468 epsg:31469"
@@ -58,6 +59,7 @@ MAP
 			wfs_encoding "UTF-8"
 			ows_schema_location ".."
 			wfs_geometry_element_name "wkb_geometry"
+			wfs_encoding "UTF-8"
 			
 			ows_abstract "ALKIS - LVER_GEO RLP"
 			ows_keywordlist "ALKIS,ALKIS_RLP,WebGIS,WMS,WFS,WhereGroup"
