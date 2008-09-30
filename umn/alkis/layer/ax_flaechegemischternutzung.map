@@ -20,6 +20,7 @@ LAYER
 	METADATA
 		"WMS_SRS" "epsg:25832"
 		"WMS_TITLE" "Fläche gemischter Nutzung"
+		"WMS_ENCODING" "UTF-8"
 		"gml_include_items" "all"
 	END
 		
