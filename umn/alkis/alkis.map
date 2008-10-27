@@ -96,30 +96,79 @@ MAP
 			include "layer/ax_flaechebesondererfunktionalerpraegung.map"
 			include "layer/ax_industrieundgewerbeflaeche.map"
 			include "layer/ax_sportfreizeitunderholungsflaeche.map"
+			include "layer/ax_friedhof.map"
+			include "layer/ax_bergbaubetrieb.map"
+			include "layer/ax_halde.map"
+			include "layer/ax_tagebaugrubesteinbruch.map"
 						
 	# Vegetation
 		# Landwirtschaft
 			include "layer/ax_landwirtschaft.map"
 			include "layer/ax_wald.map"
 			include "layer/ax_gehoelz.map"
+			include "layer/ax_naturumweltoderbodenschutzrecht.map"
+			include "layer/ax_sumpf.map"
+			include "layer/ax_heide.map"
+			include "layer/ax_moor.map"
+			include "layer/ax_unlandvegetationsloseflaeche.map"
+			
+	# Besondere Vegetationsmerkmale
+			include "layer/ax_vegetationsmerkmal.map"
 	
 	# Gewässer
 		include "layer/ax_fliessgewaesser.map"
+		include "layer/ax_stehendesgewaesser.map"
+		include "layer/ax_hafenbecken.map"
+		include "layer/ax_anderefestlegungnachwasserrecht.map"
 		
 	# Verkehr
 		# Strassenverkehr
 			include "layer/ax_strassenverkehr.map"
 			include "layer/ax_platz.map"
+			include "layer/ax_weg.map"
+			include "layer/ax_klassifizierungnachstrassenrecht.map"
+		# Bahnverkehr
+			include "layer/ax_bahnverkehr.map"
+		# Flugverkehr
+			include "layer/ax_flugverkehr.map"
+		# Schiffsverkehr
+			include "layer/ax_schiffsverkehr.map"
 			
+	# Bauwerke, Anlagen und Einrichtungen für den Verkehr
+			include "layer/ax_bauwerkimverkehrsbereich_fuellung.map"
+			include "layer/ax_bauwerkimverkehrsbereich_umrandung.map"
+			include "layer/ax_bauwerkimgewaesserbereich.map"
+						
 	# Angaben zum Gebäude	
 			include "layer/ax_gebaeude.map"
 			include "layer/ax_bauteil.map"	
 			include "layer/ax_besonderegebaeudelinie.map"
+			
+	# Bauwerke und Einrichtungen in Siedlungsflächen
+			include "layer/ax_bauwerkoderanlagefuerindustrieundgewerbe.map"		
+			include "layer/ax_bauraumoderbodenordnungsrecht_umrandung.map"
+			include "layer/ax_bauraumoderbodenordnungsrecht_fuellung.map"
+			include "layer/ax_bauwerkoderanlagefuersportfreizeitunderholung.map"
+			include "layer/ax_denkmalschutzrecht.map"
+			include "layer/ax_leitung.map"
+			include "layer/ax_sonstigesbauwerkodersonstigeeinrichtung.map"
+			include "layer/ax_transportanlage.map"
+			include "layer/ax_turm.map"
+			include "layer/ax_vorratsbehaelterspeicherbauwerk.map"
 
 	# Flurstücke, Lage, Punkte
 		# Angaben zum Flurstück	
 			include "layer/ax_flurstueck.map"
-			include "layer/ax_besondereflurstuecksgrenze.map"	
+			include "layer/ax_besondereflurstuecksgrenze.map"
+			
+	# Besondere Angaben zum Gewässer
+			include "layer/ax_untergeordnetesgewaesser_polygon.map"	
+			include "layer/ax_untergeordnetesgewaesser_line.map"	
+			
+	# sonstiges
+			include "layer/ax_grablochderbodenschaetzung.map"	
+			include "layer/ax_musterlandesmusterundvergleichsstueck.map"	
+			include "layer/ax_sonstigesrecht.map"	
 
 		# Angaben zum Punktort
 			include "layer/ax_punktortta.map"

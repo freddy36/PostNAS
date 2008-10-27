@@ -1,0 +1,44 @@
+##########################################################################################
+# Layer: ax_sonstigesrecht
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Sonstiges Recht' sind die auf den Grund und Boden bezogenen
+# Beschränkungen, Belastungen oder anderen Eigenschaften einer Fläche nach weiteren, nicht
+# unter die Objektarten 71001 bis 71010 zu subsumierenden öffentlich - rechtlichen
+# Vorschriften.
+##########################################################################################
+
+LAYER      
+	NAME "ax_sonstigesrecht"
+	TYPE LINE
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_sonstigesrecht) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Sonstiges Recht"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'artderfestlegung'
+  
+   	CLASS
+		NAME "Freileitung" # sn1704_sn7881 Schriftzusatz fehlt
+		EXPRESSION ([artderfestlegung] = 4720)
+		STYLE
+			SYMBOL "sn_1704"
+			COLOR -1 -1 -1
+			OUTLINECOLOR 255 128 128
+		END
+	END
+END

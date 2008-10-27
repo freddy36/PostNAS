@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_bauwerkoderanlagefuersportfreizeitunderholung
+# ----------------------------------------------------------------------------------------
+#'Bauwerk oder Anlage für Sport, Freizeit und Erholung' ist ein Bauwerk oder eine Anlage
+# in Sport-, Freizeit- und Erholungsanlagen.
+##########################################################################################
+
+LAYER   
+	NAME "ax_bauwerkoderanlagefuersportfreizeitunderholung"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_bauwerkoderanlagefuersportfreizeitunderholung) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Bauwerk oder Anlage für Sport, Freizeit und Erholung"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Bauwerk oder Anlage für Sport, Freizeit und Erholung" # sn1520
+		STYLE
+			COLOR 217 255 217
+			OUTLINECOLOR 82 0 0
+		END
+	END   
+END

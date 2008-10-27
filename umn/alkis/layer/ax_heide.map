@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_heide
+# ----------------------------------------------------------------------------------------
+#'Heide' ist eine meist sandige Fläche mit typischen Sträuchern, Gräsern und
+# geringwertigem Baumbestand.
+##########################################################################################
+
+LAYER   
+	NAME "ax_heide"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_heide) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Heide"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Heide" # sn1404_sn3474 Symbol fehlt
+		STYLE
+			COLOR 242 235 232
+			OUTLINECOLOR 153 153 153
+		END
+	END   
+END

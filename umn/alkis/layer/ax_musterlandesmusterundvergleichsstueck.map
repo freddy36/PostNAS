@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_musterlandesmusterundvergleichsstueck
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Leitung' ist eine aus Drähten oder Fasern hergestellte Leitung zum
+# Transport von elektrischer Energie und zur Übertragung von elektrischen Signalen.
+##########################################################################################
+
+LAYER      
+	NAME "ax_musterlandesmusterundvergleichsstueck"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Muster Landesmuster und Vergleichsstück"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Muster Landesmuster und Vergleichsstück" # sn1740_sn3707 Symbol fehlt
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 255 128 128
+		END
+	END
+END

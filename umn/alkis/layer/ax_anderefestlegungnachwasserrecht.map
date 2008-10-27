@@ -1,0 +1,52 @@
+##########################################################################################
+# Layer: ax_anderefestlegungnachwassrrecht
+# ----------------------------------------------------------------------------------------
+#'Andere Festlegung nach Wasserrecht' ist die auf den Grund und Boden bezogene
+# Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen,
+# wasserrechtlichen Vorschriften.
+##########################################################################################
+
+LAYER   
+	NAME "ax_anderefestlegungnachwasserrecht"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_anderefestlegungnachwasserrecht) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Andere Festlegung nach Wasserrecht"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+#	CLASSITEM 'artderfestlegung'
+
+   	CLASS
+		NAME "Andere Festlegung nach Wasserrecht" # sn1705
+		STYLE
+			SYMBOL "sn_1705"
+			COLOR -1 -1 -1
+			OUTLINECOLOR 178 255 255
+			SIZE 2.8346456693
+		END
+	END 
+	
+#	CLASS  
+#		NAME "Festgesetztes Überschwemmungsgebiet" # sn7859 Schriftzusatz
+#		EXPRESSION ([artderfestlegung] = 1441)
+#			LABEL
+#				TYPE TRUETYPE
+#				FONTS 'arial'
+#				COLOR 178 255 255
+#	END
+END

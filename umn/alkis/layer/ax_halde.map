@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_halde
+# ----------------------------------------------------------------------------------------
+#'Halde' ist eine Fläche, auf der Material langfristig gelagert wird und beschreibt die
+# auch im Relief zu modellierende tatsächliche Aufschüttung. Aufgeforstete Abraumhalden
+# werden als Objekte der Objektart 'Wald' erfasst.
+##########################################################################################
+
+LAYER   
+	NAME "ax_halde"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_halde) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Halde"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Halde" # sn1403_sn2515 Torf Sonderzeichen sn3407
+		STYLE
+			COLOR 237 237 237
+		END
+	END   
+END

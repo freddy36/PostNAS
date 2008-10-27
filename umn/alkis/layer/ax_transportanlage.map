@@ -1,0 +1,57 @@
+##########################################################################################
+# Layer: ax_transportanlage
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Transportanlage' ist eine Anlage zur Förderung oder zum Transport von
+# Flüssigkeiten, Gasen und Gütern.
+##########################################################################################
+
+LAYER      
+	NAME "ax_transportanlage"
+	TYPE LINE
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_transportanlage) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Transportanlage"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'lagezurerdoberflaeche'
+  
+#   	CLASS
+#		NAME "Transportanlage" # sn3579 Symbol fehlt
+#		STYLE
+#			SYMBOL 'point'
+#			COLOR 0 0 0
+#		END
+#	END
+	
+	CLASS
+		NAME "Pipeline unter der Erdoberfläche oder Wasseroberfläche" # sn_2523
+		EXPRESSION ([lagezurerdoberflaeche] = 1200 OR [lagezurerdoberflaeche] = 1700)
+		SYMBOL 'sn_2523'
+		STYLE
+			COLOR 0 0 0 
+		END
+	END	
+	
+		CLASS
+		NAME "Pipeline" # sn_2523
+		EXPRESSION ([lagezurerdoberflaeche] = 1400)
+		STYLE
+			COLOR 0 0 0 
+		END
+	END	
+END

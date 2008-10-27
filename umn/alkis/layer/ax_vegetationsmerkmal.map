@@ -1,0 +1,37 @@
+##########################################################################################
+# Layer: ax_vegetationsmerkmal
+# ----------------------------------------------------------------------------------------
+#'Vegetationsmerkmal' beschreibt den zusätzlichen Bewuchs oder besonderen Zustand einer
+# Grundfläche.
+##########################################################################################
+
+LAYER   
+	NAME "ax_vegetationsmerkmal"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_vegetationsmerkmal) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Vegetationsmerkmal"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Vegetationsmerkmal" # sn1560
+		STYLE
+			OUTLINECOLOR 0 255 0
+		END
+	END   
+END
