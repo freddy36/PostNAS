@@ -1,0 +1,70 @@
+#####################################
+#   PostNAS-0.3 (linux)             #
+#####################################
+
+
+1.1 Installation
+ 
+1.1.1 Linux
+
+Unter linux wird GDAL/OGR inklusive PostNAS-0.3 auf den Rechner installiert/kompiliert. Der Quellcode für die GDAL / OGR Bibliothek (Version 1.6.0dev) befindet sich, inkl. PostNAS-0.3, auf der CD ('1_PostNAS-0.3/linux/gdal_incl_PostNAS-0.3.tar.gz'). 
+
+--------------
+Installation:
+--------------
+-----------------------------------------------------------
+
+1.Kopierung der Datei '1_PostNAS-0.3/linux/gdal_incl_PostNAS-0.3.tar.gz' von der CD auf den lokalen Rechner. 
+Die Datei entpacken und in den Basisordner ('gdal')  wechseln
+
+$ tar -xzf  gdal_incl_PostNAS-0.3.tar.gz
+$ cd gdal
+
+-----------------------------------------------------------
+
+2. Das 'configure'-Skript im GDAL Basisiverzeichnis ('gdal') mit xerces ausführen:
+
+$ ./configure --with-xerces
+
+Ggf. müssen Pakete noch nachinstalliert werden. 
+
+Wichtig:
+Falls GDAL bereits auf dem System installiert ist sollte man einen anderen installationpfad angeben:
+
+./configure --with-xerce  --prefix=/opt/gdal-1.6.0
+
+=> GDAL inkl PostNAS wird in das Verzeichnis "/opt/gdal-1.6.0" installiet. 
+=> Um auf die GDAL/OGR Programm (mit NAS Support) zugreifen zu können muss 
+dann der Pfad ("/opt/gdal-1.6.0") berücksichtigt werden
+
+Anmerkung: Dies wird in dem nächsten Release (PostNAS-0.4) auch die 
+Standardinstallation werden. 
+
+
+-----------------------------------------------------------
+
+3. GDAL (im 'gdal' Basisiverzeichnis) inkl. NAS kompilieren 
+
+$ make
+
+-----------------------------------------------------------
+
+4. Instlallation des GDAL-Programms
+
+$ sudo make install
+
+-----------------------------------------------------------
+
+5. Testen ob OGR NAS unterstützt:
+In der Eingabeaufforderung den folgenden Befehl absetzen:
+
+$ ogrinfo --formats
+
+
+Ausgabe:
+...
+  -> "CSV" (read/write)
+  -> "NAS" (readonly)
+  -> "GML" (read/write)
+...
+=> (NAS muss mit aufgeführt sein)
