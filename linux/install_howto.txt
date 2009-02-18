@@ -31,11 +31,12 @@ Ggf. müssen Pakete noch nachinstalliert werden.
 Wichtig:
 Falls GDAL bereits auf dem System installiert ist sollte man einen anderen installationpfad angeben:
 
-./configure --with-xerce  --prefix=/opt/gdal-1.6.0
+./configure --prefix=/opt/gdal-1.6.0 --with-xerces
 
 => GDAL inkl PostNAS wird in das Verzeichnis "/opt/gdal-1.6.0" installiet. 
 => Um auf die GDAL/OGR Programm (mit NAS Support) zugreifen zu können muss 
 dann der Pfad ("/opt/gdal-1.6.0") berücksichtigt werden
+=> Programme sind dann unter dem Verzeichnis "/opt/gdal-1.6.0/bin" zu finden 
 
 Anmerkung: Dies wird in dem nächsten Release (PostNAS-0.4) auch die 
 Standardinstallation werden. 
