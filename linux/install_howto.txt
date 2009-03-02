@@ -1,0 +1,73 @@
+#####################################
+#   PostNAS-0.4 (linux)             #
+#####################################
+
+
+1.1 Installation
+ 
+1.1.1 Linux
+
+Unter linux wird GDAL/OGR inklusive PostNAS-0.4 auf den Rechner installiert/kompiliert. Der Quellcode für die GDAL / OGR Bibliothek (Version 1.6.0dev) befindet sich, inkl. PostNAS-0.4, auf der CD ('1_PostNAS-0.4/linux/gdal_incl_PostNAS-0.4.tar.gz'). 
+
+--------------
+Installation:
+--------------
+-----------------------------------------------------------
+
+1.Kopierung der Datei '1_PostNAS-0.4/linux/gdal_incl_PostNAS-0.4.tar.gz' von der CD auf den lokalen Rechner. 
+Die Datei entpacken und in den Basisordner ('gdal')  wechseln
+
+$ tar -xzf  gdal_incl_PostNAS-0.4.tar.gz
+$ cd gdal
+
+-----------------------------------------------------------
+
+2. Configure-Skript mit den folgendem Befehl ausführen:
+
+./configure --with-xerce  --prefix=/opt/gdal-1.6.0
+
+=> GDAL inkl PostNAS wird in das Verzeichnis "/opt/gdal-1.6.0" installiet. 
+=> Um auf die GDAL/OGR Programm (mit NAS Support) zugreifen zu können muss 
+dann der Pfad ("/opt/gdal-1.6.0") berücksichtigt werden
+
+Ggf. müssen Pakete noch nachinstalliert werden. 
+
+***********
+Alternativ:
+Falls GDAL auf dem System noch nicht installiert ist, kann die Installation auch in das DEFAULT-Verzeichnis erfolgen.
+Das 'configure'-Skript sollte dann wie folgt mit xerces ausführen:
+
+$ ./configure --with-xerces
+
+Ggf. müssen Pakete noch nachinstalliert werden. 
+**********
+
+-----------------------------------------------------------
+
+3. GDAL (im 'gdal' Basisiverzeichnis) inkl. NAS kompilieren 
+
+$ make
+
+-----------------------------------------------------------
+
+4. Instlallation des GDAL-Programms
+
+$ sudo make install
+
+-----------------------------------------------------------
+
+5. Testen ob OGR NAS unterstützt:
+In der Eingabeaufforderung den folgenden Befehl absetzen:
+
+
+$ /opt/gdal-1.6.0/bin/ogrinfo --formats
+
+oder ($ ogrinfo --formats)
+
+Ausgabe:
+...
+  -> "CSV" (read/write)
+  -> "NAS" (readonly)
+  -> "GML" (read/write)
+...
+=> (NAS muss mit aufgeführt sein)
