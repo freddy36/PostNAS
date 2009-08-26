@@ -11,8 +11,8 @@ LAYER
 	DUMP TRUE
    
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=localhost dbname=alkis user=admin"
-	DATA "wkb_geometry from (SELECT * FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
+	CONNECTION "host=localhost dbname=obk user=admin"
+	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, flurstueckskennzeichen FROM alkis.ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
 
 	METADATA
 		"WMS_SRS" "epsg:25832"
@@ -21,6 +21,12 @@ LAYER
 		"gml_include_items" "all"
 	END
 	
+	TOLERANCEUNITS pixels
+	TOLERANCE 1
+	TEMPLATE "/data/umn/alkis/templates/david_buch.html" 
+	FOOTER "/data/umn/alkis/templates/footer.html"
+	HEADER "/data/umn/alkis/templates/header.html"
+
 	PROJECTION
 		"init=epsg:25832"
 	END
