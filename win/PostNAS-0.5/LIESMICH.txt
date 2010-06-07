@@ -1,0 +1,54 @@
+PostNAS Version 0.5 f. Windows 32   21.01.2010
+
+Installation
+------------
+
+1. Die Software bedarf keiner speziellen Installation, das PostNAS-Verzeichnis kann an einem geeigneten Ort (z.B. C:\Programme) abgelegt werden.
+
+Die Anwendung ogr2ogr.exe, die die PostNAS-Erweiterung enthält, kann direkt über die Windows-Eingabeaufforderung aufgerufen werden.
+
+2. Soll beim Aufruf nicht der vollständige Programmpfad eingetippt werden müssen, können Sie die Umgebungsvariable PATH um den Pfad zum bin-Verzeichnis mit der Anwendung erweitern, entweder permanent über die Systemeigenschaften im Windows-Arbeitsplatz oder nur für die aktuelle Sitzung in der Eingabeaufforderung. Bsp.:
+
+ set PATH=%PATH%;C:\Programme\postnas-0.5\bin
+
+Ist bereits eine andere Version von GDAL/OGR auf Ihrem System installiert und ohne Anwendungspfad aufrufbar, sollten Sie Kollisionen ausschließen, z.B. indem Sie die PostNAS-Version von ogr2ogr.exe mit dem vollständigen Pfad aufrufen.
+
+3. Setzen Sie analog zu Punkt 2. die Umgebungsvariable GDAL_DATA auf das Verzeichnis "data" innerhalb dieser PostNAS-Distribution, z.B.
+
+ set GDAL_DATA=C:\Programme\postnas-0.5\data
+
+
+NAS-Unterstützung testen
+------------------------
+
+ogrinfo.exe --formats
+Ausgabe:
+...
+  -> "CSV" (read/write)
+  -> "NAS" (readonly)
+  -> "GML" (read/write)
+...
+=> "NAS" muß mit aufgeführt sein.
+
+
+Anwendung
+---------
+
+Bei den folgenden Aufrufen müssen die Platzhalter in Spitzen Klammern sowie Dateiangaben Ihrer konkreten Arbeitsumgebung angepasst werden.
+
+
+* Erstbefüllung in vorhandene, leere PostGIS-aktivierte Datenbank:
+
+ogr2ogr.exe -f "PostgreSQL" PG:"dbname=<DBNAME> user=<DBUSER> host=<HOSTNAME/IP>" <DATADIR>\ALKIS_NBA_Beispieldaten_BB\NBA_Erstabgabe\ALKIS_NBA_Beispieldaten_Erstabgabe_BB.xml
+
+* Überschreiben:
+
+ogr2ogr.exe -overwrite -f "PostgreSQL" PG:"dbname=<DBNAME> user=<DBUSER> host=<HOSTNAME/IP>" <DATADIR>\ALKIS_NBA_Beispieldaten_BB\NBA_Erstabgabe\ALKIS_NBA_Beispieldaten_Erstabgabe_BB.xml
+
+* Schemaerweiterung aus XML-Definition (nas_schema.vrt):
+
+ogr2ogr.exe -append -f "PostgreSQL" PG:"dbname=<DBNAME> user=<DBUSER> host=<HOSTNAME/IP>" <POSTNAS_HOME>\data\nas_schema.vrt
+
+* Zusätzlicher Import der Fortschreibung:
+
+ogr2ogr -update -append -f "PostgreSQL" PG:"dbname=<DBNAME> user=<DBUSER> host=<HOSTNAME/IP>" <DATADIR>\ALKIS_NBA_Beispieldaten_BB\NBA_Folgeabgabe\ALKIS_NBA_Beispieldaten_Folgeabgabe_BB.xml

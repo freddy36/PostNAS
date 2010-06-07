@@ -1,0 +1,59 @@
+Linux
+
+GDAL / OGR muss mit dem NAS Treiber kompiliert werden um das Programm (mit NAS) nutzen zu können.
+
+HowTo:
+
+$ svn checkout http://svn.osgeo.org/gdal/trunk/gdal
+$ cd gdal/ogr/ogrsf_frmts
+$ svn checkout https://svn.wheregroup.com/opennas/trunk/nas
+$ cd ../..
+$ ./configure --with-xerces
+$ make
+$ sudo make install
+
+Der NAS Treiber verwendet die 'Xerces-C XML' parsing Bibliothek.
+Nach dem Befehl ./configure sollten die folgenden Zeilen erscheinen:
+
+Xerces-C support:          yes
+NAS support:               yes
+Postgres support:          yes
+
+
+
+Troubleshooting
+Es kann sein, dass Bibliotheken nachinstalliert werden müssen:
+
+apt-get install postgresql-server-dev-8.3 (stellt /usr/bin/pg_config bereit)
+apt-get install g++ (GNU Compiler Collection)
+apt-get install libxerces-c-dev
+apt-get install libxerces-c-dev
+apt-get install libxerces-c-dev
+
+
+Möchte man ebenfalls andere Formate unterstützen sind diese explizit anzugeben bzw. die Umgebungsvariablen sollten dann gesetzt sein:
+
+    * mySQL 
+
+$./configure --with-xerces --with-mysql=/usr/bin/mysql_config
+
+    * Oracle (OCI) 
+
+OCI muss installiert sein und die Umgebungsvariablen müssen gesetzt sein (LD_LIBRARY_PATH, ORACLE_HOME bzw. oracle_env.sh-Skript muss ausgeführt worden sein => Aufruf in der '~/.bashrc'-Datei oder/oder '/etc/profile'-Datei)
+
+
+Nach dem make sind die einzelnen kompelierten Programme im apps-Ordner
+
+gdal/apps
+
+Nach dem make install werden die einzelnen Programme (ogrinfo, ogr2ogr, ... und die gdal-config) vom System (compilierungs-conf) in das folgende Verzeichnis verschoben
+
+/usr/local/bin/
+(wichtig für weitere Kompilierungen mit dieser GDAL/OGR Version (inkl. NAS) => mapserver)
+
+Auch nach dem Aufru der ogrinfo --formats sollte das folgende Format erscheinen:
+
+$ ogrinfo --formats
+...
+-> "NAS" (readonly)
+...
