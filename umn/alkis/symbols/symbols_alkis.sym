@@ -1,3 +1,5 @@
+SYMBOLSET
+
 SYMBOL
   NAME "point"
   TYPE ellipse
@@ -124,4 +126,6 @@ SYMBOL
   POINTS 1 1 END
   FILLED true
   PATTERN 1 1 END  
+END
+
 END
