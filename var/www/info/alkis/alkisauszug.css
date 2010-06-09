@@ -1,0 +1,128 @@
+/*	S t y l e s
+	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
+
+	Version:
+	21.01.2010 - Bearbeitung einer Kopie von ALB 
+
+	ToDo: Nicht benoetigte Classen loeschen.
+*/
+body	{background-color: #FBFFFC;}
+p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	color: #000033;
+	margin-top: 2pt;
+	margin-bottom: 2pt;
+}
+/* ** Banner im Kopf, Farbcode f. Nachweis-Art ** */
+p.fsausk	{text-align: right; background: teal;	color: silver;} /* Uebersichts-Seite Flurstuecks-Auskunft */
+p.fskennz	{text-align: right; background: navy;	color: silver;} /* Flurstuecks-Nachweis */
+p.fsei		{text-align: right; background: olive;	color: silver;} /* Flurstuecks- und Eigentuemer-Nachweis */
+p.gbkennz	{text-align: right; background: green;	color: silver;} /* Bestandsnachweis */
+p.nakennz	{text-align: right; background: maroon;	color: silver;} /* Personen- und Adressdaten */
+p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */
+p.fsd		{position: relative;	left: 170px;}	/* Flst-Flaeche */
+p.gbl		{position: relative;	left:  60px;}	/* Nam: Buchungsstelle*/
+p.zus		{margin: 2pt; padding: 2pt; border:1px dotted maroon; background: white;} /* Zusatz zum Eigent., gerahmt */
+p.avh		{font-style: italic; color: navy;}	/* Anteilsverhaeltnis */
+p.ant		{font-style: italic; position: relative;left: 12px;} /* Anteil am FS */
+p.geig		{color: navy;}				/* GB-Nachw. Eigent., Adresse */
+p.gadr		{color: maroon;}
+p.nwlink 	{font-size: 7pt;text-align: right;}	/* Link zum Nachweis GB, FS, ..*/
+p.err		{color: red;}				/* Fehler-Meldungen */
+/* Links */
+a:link		{color: rgb(0,102,153);}
+a:visited	{color: rgb(0,153,102);}
+a:active	{color: rgb(0,102,102);}
+a:hover		{color: rgb(255,40,40);}
+a.gmlid		{text-decoration: none;	color: silver;}	/* Globaler Identifikator gml_id */
+div.gmlid	{font-style: italic;font-size: 7pt;text-align: right;}	
+/* Adresse im Rahmen*/
+div.adr {border-left-width: 0px; 
+	border-right-width: 0px; 
+	border-bottom-width: 2px; 
+	border-top-width: 2px; 
+	width: 80%;
+	border-color: #a2d545;
+	border-style: solid; font-size: 11pt;
+	margin-bottom: 8px;
+	margin-top: 8px;
+	margin-left: 0.5in;
+	margin-right: 0.5in;
+	overflow: auto;
+	padding: 6px;
+	background: #e4f7dd;
+}
+/* ** Tabellen ** */
+table {	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 10pt;
+	color: #000033;
+}
+table.fsd	{font-size: 9pt; margin-left: 12px;}
+table.bez	{font-size: 9pt; margin-bottom: 10px; margin-left: 3px;}
+
+table.kennz	{border: 2px solid navy; padding: 3px; margin: 0px;}	/* Kennzeichen (FS, GB, ..) mit Rahmen */
+table.fs, table.nua, table.klas, table.eig, table.outer {width:100%;}
+
+td	{vertical-align: top;}					/* ** Tabellenfelder ** */
+
+td.ll	{width:120px; }	/* ALKIS Datenliste linke Spalte */
+td.lr	{color: black;}	/* .. rechte Spalte */
+
+td.fla	{width: 90px; padding-right: 4px; text-align: right;}	/* Flaechen rechtsbuendig (stellengerecht) */
+td.key	{width: 35px; padding-right: 4px; padding-left: 4px;}
+/* Ertragsmesszahl der Bodenschaetzung
+td.emz	{width: 45px; padding-right: 4px; padding-left: 4px; 
+	text-align: right;} */
+td.kurz	{width: 26px; padding-left: 4px;}
+td.nanu	{width: 80px;}					/* Namensnummer */
+/* td.mit, td.erb {font-style: italic;}	*/		/* Miteigentumsanteil, Erbbaurecht */
+td.sond	{font-size: 8pt;}				/* Sondereigentumsbeschreibung */
+td.fett	{padding-top: 8px; font-weight: bold;}
+td.head	{border-bottom: 1px solid gray; font-style: italic;}	/* Kopfzeile, Spaltenueberschrift */
+td.sum {border-top:2px dotted maroon;	border-bottom:3px solid maroon;
+	border-left:0px dotted maroon;	border-right:0px dotted maroon;
+	font-weight: bold;}				/* unter dem Strich = Summenzeile */
+td.bez	{ font-weight: bold;}				/* Beziehungen */
+td.nhd	{ width: 150px; }				/* Namen - linke / rechte Spalte */
+td.nam	{ font-weight: bold;}
+td.gbl {border-top:1px dotted green;	border-bottom:0px;
+	border-left:0px ;		border-right:0px ;}	/* Name: GB-Liste */
+/* Ueberschriften */
+h1, h2, h3, h4, h5, h6 {font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;}
+h1 {	color: black;	font-size: 14pt;}
+h2 {	color: maroon;	font-size: 12pt;}
+h3 {	color: green;	font-size: 12pt;}
+h4 {	color: black;	font-size: 11pt;}
+h5 {	color: black;	font-size: 10pt;}
+h6 {	color: black;	font-size:  9pt; margin-top: 2pt; margin: 0pt}	/* FS in Best-NW */
+/*
+pre {	font-family: monospace;
+	font-size: 9pt;
+	color: #000033;
+	margin-top: 2pt;
+	margin-bottom: 2pt;
+} */
+
+/*
+ul, ol, li {
+	margin-top:3pt;
+	margin-bottom:3pt; 
+	margin-left:2.75em; 
+	font-family: Verdana;
+	font-size: 10pt;
+	color: #000066;
+} */
+/* Seitenfuss */
+.buttonbereich	{font-size: 7pt;	text-align: right;}
+.confbereich	{font-size: 7pt;
+	background-color: #EFFDFF;
+	width: 88%;
+	position: relative;
+	left: 40px;
+}
+@media print {
+	body {
+		width: 100%;
+		background-color:white;
+	}
+}
