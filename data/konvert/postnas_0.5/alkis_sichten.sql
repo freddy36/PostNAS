@@ -9,6 +9,7 @@
 --  PostNAS 0.5, 
 --   06.01.2010  F, Jaeger, KRZ
 --   21.01.2010  ap-pto.art
+--   14.6.2010   GRANT entfernt
 
 --   Verbindungen werden seit PostNAS 0.5 nicht mehr nachträglich mit einem Script generiert
 --   sondern vom Konverter PostNAS gesetzt.
@@ -61,7 +62,7 @@ AS
      ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
   WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
-  GRANT SELECT ON TABLE s_flurstuecksnummer_flurstueck TO ms5;
+ -- GRANT SELECT ON TABLE s_flurstuecksnummer_flurstueck TO ms5;
 
 
 -- Layer "ag_t_gebaeude" in ag_gebaeude.map
@@ -101,7 +102,7 @@ AS
      ON alkis_beziehungen.beziehung_zu  = ax_lagebezeichnungmithausnummer.gml_id
   WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
-GRANT SELECT ON TABLE s_hausnummer_gebaeude TO ms5;
+--GRANT SELECT ON TABLE s_hausnummer_gebaeude TO ms5;
   
 
 -- Layer "ag_p_flurstueck" in ag_flurstueck.map
@@ -121,7 +122,7 @@ AS
   WHERE ap_ppo.art = 'Haken'
     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
-GRANT SELECT ON TABLE s_zugehoerigkeitshaken_flurstueck TO ms5;
+--GRANT SELECT ON TABLE s_zugehoerigkeitshaken_flurstueck TO ms5;
 
 
 
@@ -140,7 +141,7 @@ AS
   WHERE ap_lpo.art = 'Pfeil'
     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
-GRANT SELECT ON TABLE s_zuordungspfeil_flurstueck TO ms5;
+--GRANT SELECT ON TABLE s_zuordungspfeil_flurstueck TO ms5;
 
 
 --  ------------------------------------------
@@ -214,3 +215,4 @@ COMMENT ON VIEW flurstuecks_minmax IS 'Maximale Ausdehnung von ax_flurstueck fue
 
 
 -- END --
+
