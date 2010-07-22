@@ -14,8 +14,12 @@
 ini_set('error_reporting', 'E_ALL');
 session_start();
 // Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
-require_once("/data/conf/alkis_www_conf.php");
+#require_once("/data/mapwww/http/php/mb_validateSession.php");
+#require_once("/data/conf/alkis_www_conf.php");
+#AE
+require_once(dirname(__FILE__)."/../../../php/mb_validateSession.php");
+require_once(dirname(__FILE__)."/../../../../conf/alkis_www_conf.php");
+
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -37,7 +41,10 @@ $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 $idanzeige=false;
 if ($id == "j") {$idanzeige=true;}
 $style=isset($_GET["style"]) ? $_GET["style"] : "kompakt";
-$dbname = 'alkis05' . $gkz;
+#$dbname = 'alkis05' . $gkz;
+#AE
+#$dbname = 'nas_wesseling';
+# echo("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
@@ -79,7 +86,10 @@ if ($idanzeige) { echo "&amp;id=j";}
 echo "' title='Flurst&uuml;cksnachweis, alle Flurst&uuml;cksdaten'>FS-Nachweis</a>&nbsp;|&nbsp;";
 echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j"."&amp;style=".$style;
 if ($idanzeige) echo "&amp;id=j";
-echo "' title='Flurst&uuml;cks- und Eigent&uuml;mernachweis'>FS- u. Eigent.-Nw</a>";
+echo "' title='Flurst&uuml;cks- und Eigent&uuml;mernachweis'>FS- u. Eigent.-Nw</a><br>";
+echo "\n\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j"."&amp;style=".$style;
+if ($idanzeige) echo "&amp;id=j";
+echo "' title='Geb&auml;udenachweis'>Geb&auml;udenachweis</a>";
 //echo "&nbsp;|&nbsp;<a href='alkisfshist.php?gkz=".$gkz."&amp;flurstkennz=".$gmlid."' title='Vorg&auml;nger- und Nachfolger-Flurst&uuml;cke'>Historie</a>\n";
 echo "\n\t</p>\n</td>";
 echo "\n</tr>\n</table>\n";
