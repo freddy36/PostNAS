@@ -1,14 +1,16 @@
 <?php
-/*	alkisnamstruk.php
+/*	Modul: alkisnamstruk.php
+	Version:
+	30.08.2010	$style=ALKIS entfernt, alles Kompakt
+	02.09.2010  Mit Icons
+
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
 	Parameter:	&gkz= &gmlid=
-	Version:
-	26.01.2010	internet-Version  mit eigener conf
-	
-	ToDo:  Sortierung der Rundbücher zum Namen: 
-	z.B. Firma Vivacon Immobilien
-	ID= DENW17AL0000Y1hr 
+
+	ToDo:  
+	1. Sortierung der Grundbücher zum Namen
+	2. ID ein auch für Buchungsstelle
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -20,13 +22,17 @@ include("alkisfkt.php");
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger">
+	<meta name="author" content="Frank Jaeger" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>ALKIS Person und Adresse</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
+	<link rel="shortcut icon" type="image/x-icon" href="ico/Eigentuemer_2.ico">
+	<style type='text/css' media='print'>
+		.noprint { visibility: hidden;}
+	</style>
 </head>
 <body>
 <?php
@@ -35,11 +41,13 @@ $gkz=urldecode($_REQUEST["gkz"]);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 $idanzeige=false;
 if ($id == "j") {$idanzeige=true;}
-$style=isset($_GET["style"]) ? $_GET["style"] : "kompakt";
 $dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
-echo "<p class='nakennz'>Name id=".$gmlid."&nbsp;</p>\n";
-echo "\n<h2>Person</h2>\n";
+
+// Balken
+echo "<p class='nakennz'>ALKIS Name id=".$gmlid."&nbsp;</p>\n";
+
+echo "\n<h2><img src='ico/Eigentuemer.ico' width='16' height='16' alt=''> Person</h2>\n";
 if (!$con) "\n<p class='err'>Fehler beim Verbinden der DB</p>\n";
 $sql="SELECT nachnameoderfirma, anrede, vorname, geburtsname, geburtsdatum, namensbestandteil, akademischergrad ";
 $sql.="FROM ax_person WHERE gml_id='".$gmlid."'";
@@ -63,7 +71,7 @@ if ($row = pg_fetch_array($res)) {
 	echo "\n</table>\n<hr>\n";
 	
 	// A d r e s s e
-	echo "\n<h3>Adresse</h3>\n";
+	echo "\n<h3><img src='ico/Strasse_mit_Haus.ico' width='16' height='16' alt=''> Adresse</h3>\n";
 	$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
 	$sql.="FROM   ax_anschrift a ";
 	$sql.="JOIN   alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
@@ -96,7 +104,7 @@ if ($row = pg_fetch_array($res)) {
 	if ($j == 0) {echo "\n<p class='err'>Keine Adressen.</p>\n";}
 
 	// *** G R U N D B U C H ***
-	echo "\n<hr>\n<h3>Grundb&uuml;cher</h3>\n";
+	echo "\n<hr>\n<h3><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundb&uuml;cher</h3>\n";
 	// person <benennt< namensnummer >istBestandteilVon>                Buchungsblatt
 	//                               >bestehtAusRechtsverhaeltnissenZu> namensnummer   (Nebenzweig/Sonderfälle?)
 
@@ -137,9 +145,10 @@ if ($row = pg_fetch_array($res)) {
 			echo "</td>";
 
 			echo "\n\t<td class='gbl'>";
-				echo "<p class='nwlink noprint'><a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg."&amp;style=".$style;
-				if ($idanzeige) { echo "&amp;id=j";}
-				echo "' title='Bestandsnachweis'>GB-Nachw.</a></p>";
+				echo "<p class='nwlink noprint'>";
+					echo "<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg;
+						if ($idanzeige) { echo "&amp;id=j";}
+						echo "' title='Bestandsnachweis'>Grundbuch-Blatt <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a></p>";
 				if ($idanzeige) {
 					linkgml($gkz, $gmlg, "Grundbuchblatt");
 					linkgml($gkz, $gmln, "Namensnummer"); 
@@ -154,7 +163,7 @@ if ($row = pg_fetch_array($res)) {
 	echo "</table>";
 	if ($i == 0) {echo "\n<p class='err'>Kein Grundbuch.</p>\n";}
 } else {
-	echo "\n\t<p class='err'>Fehler! Kein Treffer f&uuml;r\n\t<a target='_blank' href='alkisrelationen.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;style=".$style."'>".$gmlid."</a>\n</p>\n\n";
+	echo "\n\t<p class='err'>Fehler! Kein Treffer f&uuml;r\n\t<a target='_blank' href='alkisrelationen.php?gkz=".$gkz."&amp;gmlid=".$gmlid."'>".$gmlid."</a>\n</p>\n\n";
 }
 ?>
 
@@ -166,7 +175,7 @@ if ($row = pg_fetch_array($res)) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, $style); ?>
+<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, ""); ?>
 
 </body>
 </html>
