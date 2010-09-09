@@ -3,6 +3,11 @@
 	Version:
 	31.08.2010	$style=ALKIS entfernt, alles Kompakt
 	02.09.2010  Mit Icons
+	06.09.2010  Schluessel anschaltbar
+	08.09.2010  berechtigte GB-Blätter an fiktivem Blatt auflisten
+
+ToDo:	Berechtigte Grundbücher auflisten, z.B. wenn es auch ein Erbbaurecht gibt
+		analog zu fiktives Blatt
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
@@ -35,10 +40,20 @@ include("alkisfkt.php");
 <?php
 $gkz=urldecode($_REQUEST["gkz"]);
 $gmlid=urldecode($_REQUEST["gmlid"]);
-$id=isset($_GET["id"]) ? $_GET["id"] : "n";
-$idanzeige=false;
-if ($id == "j") {$idanzeige=true;}
-//$style=isset($_GET["style"]) ? $_GET["style"] : "kompakt";
+
+$id = isset($_GET["id"]) ? $_GET["id"] : "n";
+if ($id == "j") {
+	$idanzeige=true;
+} else {
+	$idanzeige=false;
+}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {
+	$showkey=true;
+} else {
+	$showkey=false;
+}
+
 $dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
@@ -54,12 +69,14 @@ $sql.="JOIN  ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk "; 
 $sql.="JOIN  ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
 $sql.="WHERE g.gml_id='".$gmlid."' ";
 $sql.="AND   a.stellenart=1000;"; // Amtsgericht
-// echo "\n<p class='err'>".$sql."</p>\n";
-$res=pg_query($con, $sql);
-if (!$res) {echo "<p class='err'>Fehler bei Grundbuchdaten<br>\n".$sql."</p>";}
-if ($row = pg_fetch_array($res)) {
-	$blattart=blattart($row["blattart"]);
 
+$res=pg_query($con, $sql);
+if (!$res) {
+	echo "<p class='err'>Fehler bei Grundbuchdaten<br>\n".$sql."</p>";
+}
+if ($row = pg_fetch_array($res)) {
+	$blattkey=$row["blattart"]; // Schluessel
+	$blattart=blattart($blattkey);
 	// Balken	
 	echo "<p class='gbkennz'>ALKIS Bestand ".$row["bezirk"]." - ".$row["nr"]."&nbsp;</p>\n";
 
@@ -67,34 +84,142 @@ if ($row = pg_fetch_array($res)) {
 
 	// Kennzeichen im Rahmen
 	echo "\n<table class='outer'>\n<tr>\n\t<td>";
-		echo "\n\t<table class='kennz' title='Bestandskennzeichen'>";
+		if ($blattkey == 1000) {		
+			echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
+		} else {		
+			echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
+		}			
 			echo "\n\t<tr>";
 				echo "\n\t\t<td class='head'>".dienststellenart($row["stellenart"])."</td>";
 				echo "\n\t\t<td class='head'>Bezirk</td>";
 				echo "\n\t\t<td class='head'>".$blattart."</td>";
 			echo "\n\t</tr>\n\t<tr>";
-				echo "\n\t\t<td title='Amtsgerichtsbezirk'><span class='key'>".$row["stelle"]."</span><br>".htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8")."</td>";
-				echo "\n\t\t<td title='Grundbuchbezirk'><span class='key'>".$row["bezirk"]."</span><br>".htmlentities($row["beznam"], ENT_QUOTES, "UTF-8")."</td>";
+				echo "\n\t\t<td title='Amtsgerichtsbezirk'>";
+				if ($showkey) {
+					echo "<span class='key'>".$row["stelle"]."</span><br>";
+				}
+				echo htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8")."</td>";
+				echo "\n\t\t<td title='Grundbuchbezirk'>";
+				if ($showkey) {
+					echo "<span class='key'>".$row["bezirk"]."</span><br>";
+				}
+				echo htmlentities($row["beznam"], ENT_QUOTES, "UTF-8")."</td>";				
 				echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$row["nr"]."</span></td>";
 			echo "\n\t</tr>";
 		echo "\n\t</table>";
 		echo "\n\n\t</td>\n\t<td>";
-		if ($idanzeige) linkgml($gkz, $gmlid, "Buchungsblatt");
+		if ($idanzeige) {linkgml($gkz, $gmlid, "Buchungsblatt");}
 	echo "\n\t</td>\n</tr>\n</table>";
 }
 
-// E I G E N T U E M E R
-if ($row["blattart"] == 5000) { 
-	echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt</p>\n";
-	echo "\n<p>Siehe weitere Grundbuchbl&auml;tter mit Rechten an dem fiktiven Blatt.</p>\n";
-	// ++++  nuetzlich waere hier: Liste der Grundbuecher mit Recht ueber "an"-Beziehung	
+if ($blattkey == 5000) { // fikt. Blatt
+	echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt.</p>\n";
+//	echo "\n<p>Siehe weitere Grundbuchbl&auml;tter mit Rechten an dem fiktiven Blatt.</p>\n";
 	
-} else {// kein Eigent. bei fiktiv. Blatt
+	echo "\n<h3><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Berechtigte Grundb&uuml;cher</h3>\n";
+
+	// b e r e c h t i g t e  Grundbuecher (Buchungsblatt) 
+	// mit Recht "an"/"zu" dem aktuellen fiktiven GB
+
+	$sql ="SELECT bb.gml_id, bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung AS blatt, bb.blattart, ";	$sql.="vs.beziehungsart, ";
+
+	$sql.=" bz.bezeichnung AS beznam, "; // Bezirk
+	$sql.=" ag.bezeichnung, ag.stelle, ag.stellenart "; // Amtsgericht
+
+	$sql.="FROM  alkis_beziehungen  vf ";											// Verbindung fiktiv
+	$sql.="JOIN  ax_buchungsstelle  sf  ON sf.gml_id=vf.beziehung_von ";	// Stelle fiktiv
+	$sql.="JOIN  alkis_beziehungen  vs  ON sf.gml_id=vs.beziehung_zu ";	// Verbindung Stellen
+	$sql.="JOIN  ax_buchungsstelle  sb  ON sb.gml_id=vs.beziehung_von "; // Stelle berechtigt
+	$sql.="JOIN  alkis_beziehungen  vb  ON sb.gml_id=vb.beziehung_von ";	// Verbindung berechtigt
+	$sql.="JOIN  ax_buchungsblatt   bb  ON bb.gml_id=vb.beziehung_zu ";	// Blatt berechtigt
+
+	$sql.="JOIN  ax_buchungsblattbezirk bz ON bb.land=bz.land AND bb.bezirk=bz.bezirk ";
+	$sql.="JOIN  ax_dienststelle ag ON bz.\"gehoertzu|ax_dienststelle_schluessel|land\"=ag.land AND bz.stelle=ag.stelle ";
+
+	$sql.="WHERE vf.beziehung_zu='".$gmlid."' ";
+	$sql.="AND  vf.beziehungsart='istBestandteilVon' ";
+	$sql.="AND (vs.beziehungsart='an' OR vs.beziehungsart='zu') ";
+	$sql.="AND  vb.beziehungsart= 'istBestandteilVon' ";
+	$sql.="ORDER BY bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung;";
+
+// +++ lfd-BVNR
+
+	$resb=pg_query($con,$sql);
+	if (!$resb) {
+		echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter:'<br>".$sql."</p>\n";
+	}
+
+	// Tabelle Kopf ausgeben
+	echo "\n<table class='outer'>";
+	echo "\n<tr>";
+		echo "\n\t<td class='head'>Land</td>";
+		echo "\n\t<td class='head'>Dienststelle</td>";
+		echo "\n\t<td class='head'>Bezirk</td>";
+		echo "\n\t<td class='head'>Blatt</td>";
+		echo "\n\t<td class='head'>Art</td>";
+		echo "\n\t<td class='head nwlink'>Weitere Auskunft</td>";
+	echo "\n</tr>";
+
+	$b=0; // count: Blaetter
+	while($rowb = pg_fetch_array($resb)) {		$gml_b=$rowb["gml_id"];  // id des berechtigten Blattes
+		echo "\n<tr>";
+			echo "\n\t<td>".$rowb["land"]."</td>";
+
+			echo "\n\t<td>"; // Amtsgericht
+				echo dienststellenart($rowb["stellenart"])." ";
+				if ($showkey) {				
+					echo "<span class='key'>".$rowb["stelle"]."</span> ";
+				}
+				echo $rowb["bezeichnung"];
+			echo "</td>";
+
+
+			echo "\n\t<td>";
+				if ($showkey) {				
+					echo "<span class='key'>".$rowb["bezirk"]."</span> ";
+				}
+				echo $rowb["beznam"];
+			echo "</td>";
+			
+			echo "\n\t<td><span class='wichtig'>".$rowb["blatt"]."</span>";
+				if ($idanzeige) {linkgml($gkz, $gml_b, "Buchungsblatt");}
+			echo "</td>";
+
+			echo "\n\t<td>";
+				$bart=$rowb["blattart"];
+				if ($showkey) {
+					echo "<span class='key'>".$bart."</span> ";
+				}
+				echo blattart($bart);
+			echo "</td>";
+			
+			echo "\n\t<td>";
+				echo "\n\t\t<p class='nwlink'>";
+			//	echo $rowb["beziehungsart"]." "; // "an"/"zu" ?
+				echo "\n\t\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gml_b;
+					if ($idanzeige) {echo "&amp;id=j";}
+					if ($showkey)   {echo "&amp;showkey=j";}
+					echo "' title='GB-Nachweis des berechtigten Blattes ".$rowb["beziehungsart"]." dem fiktiven Blatt'>";
+					//echo "Grundbuch-Blatt";
+					echo blattart($bart);
+					echo " \n\t\t\t<img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
+				echo "\n\t\t</p>";
+			echo "</td>";
+		echo "\n</tr>";
+		$b++;
+	}
+	echo "\n</table>";
+	if ($b == 0) {
+		echo "<p class='err'>Keine berechtigten Bl&auml;tter zum fiktiven Blatt gefunden.</p>";
+	}
+
+} else { // E I G E N T U E M E R
+
 	echo "\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true); // hier mit Adressen
 	if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 		echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
-		echo "\n<p>Bezirk: ".$row["bezirk"].", Blatt: ".$row["nr"].", Blattart ".$row["blattart"]." (".$blattart.")</p>";
+		echo "\n<p>Bezirk: ".$row["bezirk"].", Blatt: ".$row["nr"].", Blattart ".$blattkey." (".$blattart.")</p>";
 		linkgml($gkz, $gmlid, "Buchungsblatt");
 	}
 }
@@ -103,21 +228,23 @@ $row="";
 echo "\n<hr>\n\n<h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;cke</h3>";
 echo "\n<table class='fs'>";
 // Kopf der Tabelle
-echo "\n<tr>\n\t<td class='head' title='laufende Nummer Bestandsverzeichnis (BVNR) = Grundst&uuml;ck'>&nbsp;&nbsp;&nbsp;&nbsp;lfd.Nr</td>";
-echo "\n\t<td class='head'>Buchungsart</td>";	//2
-echo "\n\t<td class='head'>Anteil</td>";		//3
-echo "\n\t<td class='head'>Gemarkung</td>";		//4
-echo "\n\t<td class='head'>Flur</td>";			//5
-echo "\n\t<td class='head' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'>Flurst.</td>";
-echo "\n\t<td class='head fla'>Fl&auml;che</td>";
-echo "\n\t<td class='head nwlink' title='Link: weitere Auskunft'>weit. Auskunft</td>\n</tr>";
+echo "\n<tr>";
+	echo "\n\t<td class='head' title='laufende Nummer Bestandsverzeichnis (BVNR) = Grundst&uuml;ck'>lfd.Nr</td>";
+	echo "\n\t<td class='head'>Buchungsart</td>";	//2
+	echo "\n\t<td class='head'>Anteil</td>";
+	echo "\n\t<td class='head'>Gemarkung</td>";		//4
+	echo "\n\t<td class='head'>Flur</td>";				//5
+	echo "\n\t<td class='head' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'>Flurst.</td>";
+	echo "\n\t<td class='head fla'>Fl&auml;che</td>"; // 7
+	echo "\n\t<td class='head nwlink' title='Link: weitere Auskunft'>weit. Auskunft</td>";
+echo "\n</tr>";
 
 // Blatt ->  B u c h u n g s s t e l l e
 // ax_buchungsblatt   >bestehtAus>         ax_buchungsstelle 
 // ax_buchungsblatt   <istBestandteilVon<  ax_buchungsstelle 
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, s.zaehler, s.nenner, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond ";
-$sql.="FROM  ax_buchungsstelle  s ";
-$sql.="JOIN  alkis_beziehungen  v ON s.gml_id=v.beziehung_von "; 
+$sql.="FROM  ax_buchungsstelle s ";
+$sql.="JOIN  alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
 $sql.="WHERE v.beziehung_zu='".$gmlid."' ";
 $sql.="AND   v.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY s.laufendenummer;";
@@ -134,104 +261,140 @@ while($row = pg_fetch_array($res)) {	$lfdnr  = $row["lfd"];
 		$anteil = $row["zaehler"]."/".$row["nenner"];
 	}
 
-	// F l u r s t u e c k s d a t e n  zur direkten Buchungsstelle   $j = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, true); // return = Anzahl der FS
-
-	if ($row["nrap"] != "") {
-		echo "\n<tr>\n\t<td class='sond' colspan=8>Nr. im Aufteilungsplan: ".$row["nrap"]."</td>\n<tr>";
-	}
-	if ($row["sond"] != "") {
-		echo "\n<tr>\n\t<td class='sond' colspan=8>Verbunden mit dem Sondereigentum an: ".$row["sond"]."</td>\n<tr>";
-	}
-
-	if ($j == 0) { //  k e i n e  Flurstuecke gefunden (Miteigentumsnteil usw.)		// Bei "normalen" Grundstuecken wurden Flurstuecksdaten gefunden und ausgegeben.
+	// F l u r s t u e c k s d a t e n  zur direkten Buchungsstelle   $j = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, true, $showkey); // return = Anzahl der FS
+	if ($j == 0) { //  k e i n e  Flurstuecke gefunden (Miteigentumsnteil usw.)		// Bei "normalen" Grundstuecken wurden Flurstuecksdaten gefunden und ausgegeben.
 		// Bei Miteigentumsanteil, Erbbaurecht usw. muss nach weiteren Buchungsstellen gesucht werden:
-		//  Buchungsstelle >an> Buchungsstelle >istBestandTeilVon>  "FiktivesBlatt (ohne) Eigentuemer"
+		//  Buchungsstelle >an/zu> (andere)Buchungsstelle >istBestandTeilVon>  "FiktivesBlatt (ohne) Eigentuemer"
 
 		// andere Buchungsstellen
-		// ax_buchungsstelle  >zu>  ax_buchungsstelle (des gleichen Blattes)
-		// ax_buchungsstelle  >an>  ax_buchungsstelle (anderes Blatt, z.B Erbbaurecht >an> )
+		//  ax_buchungsstelle  >zu>  ax_buchungsstelle (des gleichen Blattes)
+		//  ax_buchungsstelle  >an>  ax_buchungsstelle (anderes Blatt, z.B Erbbaurecht an)
 
-		// a n d e r e  Buchungsstelle ("an"-Beziehung)
-		$sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond ";
-		// , s.zaehler, s.nenner
-		$sql.="FROM  ax_buchungsstelle  s ";
-		$sql.="JOIN  alkis_beziehungen  v ON s.gml_id=v.beziehung_zu "; 
-		$sql.="WHERE v.beziehung_von='".$gml_bs."' "; // id buchungsstelle (fiktives Blatt)
-		//$sql.="AND   v.beziehungsart='an' ";
-		$sql.="AND   (v.beziehungsart='an' OR v.beziehungsart='zu') ";
+		// aktuelles Blatt hat Recht "an" fiktives Blatt	
+		// a n d e r e  Buchungsstelle
+		$sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, ";
+		$sql.="v.beziehungsart, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond ";		$sql.="FROM  ax_buchungsstelle s ";
+		$sql.="JOIN  alkis_beziehungen v ON s.gml_id=v.beziehung_zu "; 		$sql.="WHERE v.beziehung_von='".$gml_bs."' "; // id buchungsstelle (fiktives Blatt)		$sql.="AND   (v.beziehungsart='an' OR v.beziehungsart='zu') ";
 		$sql.="ORDER BY s.laufendenummer;";
-		//echo "<br><p class='err'>".$sql."</p><br>";
 
 		$resan=pg_query($con,$sql);
-		if (!$resan) {echo "<p class='err'>Fehler bei andere Buchungsstelle<br><br>".$sql."</p>\n";}
-		$a=0;
+		if (!$resan) {
+			echo "<p class='err'>Fehler bei 'andere Buchungsstelle'<br>".$sql."</p>\n";
+		}
+		$a=0; // count: andere BS
+		$altbvnr=""; // Gruppenwechsel
 		while($rowan = pg_fetch_array($resan)) {
-			// auch suchen?			// ax_buchungsstelle  >verweistAuf>           ax_flurstueck   
-			// ax_buchungsstelle  >grundstueckBestehtAus> ax_flurstueck
-			// ax_buchungsstelle  <istGebucht<            ax_flurstueck
 			$lfdnran = $rowan["lfd"];
 			$gml_bsan= $rowan["gml_id"]; // id der buchungsstelle
-			$baan =	buchungsart($rowan["buchungsart"]);
+			$baan=buchungsart($rowan["buchungsart"]);
 
-			// Fiktives Blatt
-			$sql ="SELECT b.gml_id, b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung AS blatt ";
-			$sql.="FROM  ax_buchungsblatt   b ";
-			$sql.="JOIN  alkis_beziehungen  v ON b.gml_id=v.beziehung_zu "; 
+			// a n d e r e s   B l a t t  (an dem das aktuelle Blatt Rechte hat)
+			$sql ="SELECT b.gml_id, b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung AS blatt, b.blattart, z.bezeichnung AS beznam ";
+			$sql.="FROM  ax_buchungsblatt  b ";
+			$sql.="JOIN  alkis_beziehungen v ON b.gml_id=v.beziehung_zu ";
+			$sql.="JOIN  ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk ";
 			$sql.="WHERE v.beziehung_von='".$gml_bsan."' ";
 			$sql.="AND   v.beziehungsart='istBestandteilVon' ";
 			$sql.="ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 			
 			$fbres=pg_query($con,$sql);
-			if (!$fbres) {echo "<p class='err'>Fehler bei fiktivem Blatt<br><br>".$sql."</p>\n";}
+			if (!$fbres) {echo "<p class='err'>Fehler bei fiktivem Blatt<br>".$sql."</p>\n";}
 			$b=0;
 			while($fbrow = pg_fetch_array($fbres)) { // genau 1
 				$fbgml   = $fbrow["gml_id"];
 				$fbland  = $fbrow["land"];
 				$fbbez   = $fbrow["bezirk"];
 				$fbblatt = $fbrow["blatt"];
+				$fbbart  = blattart($fbrow["blattart"]);	
+				$beznam	= $fbrow["beznam"];			
 				$b++;
 			}
-			if ($b <> 1) echo "<p class='err'>Anzahl fiktive Bl&auml;tter zu anderer Buchungstelle = ".$b."</p>";
+			if ($b != 1) {
+				echo "<p class='err'>Anzahl fiktive Bl&auml;tter zu anderer Buchungstelle = ".$b."</p>";
+			}
 
-			// G r u n d b u c h d a t e n  zur  a n d e r e n  Buchungsstelle  (fiktives Blatt, Recht "an" ...)	
-			//$bvnran=str_pad($lfdnran, 4, "0", STR_PAD_LEFT);
-			// Kompakter Style			
-			echo "\n<tr>\n\t<td>".$bvnr; // Sp.1 Erbbau BVNR
-			if ($idanzeige) linkgml($gkz, $gml_bs, "Buchungsstelle");
-			echo "</td>";
-			echo "\n\t<td>".$ba." an</td>"; // Sp.2 Buchung
-			echo "\n\t<td>".$anteil."</td>"; // Sp.3 Anteil   ++++ LEER !!?? Wieso
-			echo "\n\t<td>Bezirk ".$fbbez."</td>"; // Sp.4 Gemkg, hier Bezirk ++++ entschluesseln?
-			echo "\n\t<td></td>"; // Sp.5 Flur
-			echo "\n\t<td>Blatt ".$fbblatt."</td>"; // Sp.6 Flurst
-			echo "\n\t<td></td>"; // Sp.7 Flaeche
-			echo "\n\t<td>";  // Sp.8 Link
-			echo "<p class='nwlink'>an <a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$fbgml;
-			if ($idanzeige) echo "&amp;id=j";
-			echo "' title='Grundbuchnachweis fiktives Blatt'>GB</a></p></td>\n</tr>"; 
+			// G r u n d b u c h d a t e n  zur  a n d e r e n  Buchungsstelle
+			echo "\n<tr>";
+				echo"\n\t<td>";			
+					if($bvnr == $altbvnr) {	// gleiches Grundstueck
+						echo "&nbsp;"; // Anzeige unterdruecken
+					} else {
+						echo "<span class='wichtig'>".$bvnr."</span>"; // Sp.1 Erbbau BVNR
+						if ($idanzeige) linkgml($gkz, $gml_bs, "Buchungsstelle");
+						$altbvnr = $bvnr; // Gruppenwechsel merken
+					}			
+				echo "</td>";
+				echo "\n\t<td class='dien'>".$ba." an</td>"; // Sp.2 Buchung
+				echo "\n\t<td>".$anteil."</td>"; // Sp.3 Anteil
+				echo "\n\t<td class='dien'>Bezirk "; // Sp.4 Gemarkg. hier Bezirk
+					if ($showkey) {					
+						echo "<span class='key'>".$fbbez."</span> ";
+					}					
+					echo $beznam;
+				echo "</td>"; // Sp.4 hier Bezirk
+				echo "\n\t<td>&nbsp;</td>";
+				echo "\n\t<td class='dien'>Blatt ".$fbblatt."</td>"; // Sp.6 Flurst, hier Blatt
+				echo "\n\t<td>&nbsp;</td>"; // Sp.7 Flaeche
+				echo "\n\t<td>";  // Sp.8 Link ("an" oder "zu" ?)
+					echo "<p class='nwlink'>".$rowan["beziehungsart"];
+					echo " <a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$fbgml;
+						if ($idanzeige) {echo "&amp;id=j";}
+						if ($showkey)   {echo "&amp;showkey=j";}
+						echo "' title='Grundbuchnachweis des dienenden Blattes'>";
+						echo $fbbart;
+					echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a></p>";
+				echo "</td>";
+			echo "\n</tr>"; 
 
-			// F l u r s t u e c k s d a t e n  zur  a n d e r e n  Buchungsstelle  (fiktives Blatt, Recht "an" ...)		   $aj = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnran, $gml_bsan, $baan, $anteil, false); // return = Anzahl der FS
+			// F l u r s t u e c k s d a t e n  zur  a n d e r e n  Buchungsstelle		   $aj = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnran, $gml_bsan, $baan, $anteil, false); // return = Anzahl der FS
 			// +++ Gibt es ueberhaupt Sondereigentum beim fiktiven Blatt??
 
-			// Kompakter Style
 			if ($rowan["nrap"] != "") {
-				echo "\n<tr>\n\t<td class='sond' colspan=8>Nr. im Aufteilungsplan: ".$rowan["nrap"]."</td>\n<tr>";
+				echo "\n<tr>";
+					echo "\n\t<td class='sond' colspan=8>Nr. im Aufteilungsplan: ".$rowan["nrap"]."</td>";
+				echo "\n</tr>";
 			}
 			if ($rowan["sond"] != "") {
-				echo "\n<tr>\n\t<td class='sond' colspan=8>Verbunden mit dem Sondereigentum an: ".$rowan["sond"]."</td>\n<tr>";
+				echo "\n<tr>";
+					echo "\n\t<td class='sond' colspan=8>Verbunden mit dem Sondereigentum an: ".$rowan["sond"]."</td>";
+				echo "\n</tr>";
 			}
 
 			$a++;
 			if ($aj == 0) { // keine Flurstuecke gefunden
-				echo "<p>keine Flurst&uuml;cke zu anderer Buchung gefunden</p>";
+				echo "\n<tr>\n\t<td colspan=8><p class='err'>keine Flurst&uuml;cke zu anderer Buchung gefunden</p></td>\n<tr>";
+				linkgml($gkz, $gml_bsan, "Buchungsstelle");
 			}
 		}
 		if ($a == 0) {
-			echo "\n<p class='err'>Keine andere Buchungstelle gefunden.</p>\n";
-			linkgml($gkz, $$gml_bs, "Buchungsstelle");
+			echo "\n<tr>";
+				echo "\n\t<td><span class='wichtig'>".$bvnr."</span>";
+				if ($idanzeige) {
+					linkgml($gkz, $gml_bs, "Buchungsstelle");
+				}
+				echo "</td>";
+				echo "\n\t<td colspan=7>";
+					//echo "<p class='err'>Zu dieser Buchungsstelle kein Flurst&uuml;ck und keine andere Buchungstelle ('an', 'zu') gefunden.</p>";
+					echo "<p class='warn'>Flurst&uuml;cke zu ".$bvnr." nicht im Datenbestand.</p>";
+				echo "</td>";
+			echo "\n</tr>";
 		}
 	}
 	$i++; 
+
+	// Nummer im Aufteilungsplan
+	if ($row["nrap"] != "") {
+		echo "\n<tr>";
+			echo "\n\t<td class='nrap' colspan=8>Nummer <span class='wichtig'>".$row["nrap"]."</span> im Aufteilungsplan.</td>";
+		echo "\n</tr>";
+	}
+	// Sondereigentumsbeschreibung	
+	if ($row["sond"] != "") {
+		echo "\n<tr>";
+			echo "\n\t<td class='sond' colspan=8>Verbunden mit dem Sondereigentum an: ".$row["sond"]."</td>";
+		echo "\n</tr>";
+	}
+
 } // Ende Buchungsstelle
 
 echo "\n</table>";
@@ -249,6 +412,6 @@ if ($i == 0) {
 		<input type='button' name='close' value='X'        title='Fenster schlie&szlig;en' onClick='window.close()'>
 	</div>
 </form>
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, ""); ?>
+<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
 </body>
 </html>

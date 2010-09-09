@@ -3,6 +3,7 @@
 	Version:
 	30.08.2010	$style=ALKIS entfernt, alles Kompakt
 	02.09.2010  Mit Icons
+	06.09.2010  Schluessel anschaltbar
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
@@ -39,8 +40,17 @@ include("alkisfkt.php");
 $gmlid=urldecode($_REQUEST["gmlid"]);
 $gkz=urldecode($_REQUEST["gkz"]);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
-$idanzeige=false;
-if ($id == "j") {$idanzeige=true;}
+if ($id == "j") {
+	$idanzeige=true;
+} else {
+	$idanzeige=false;
+}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {
+	$showkey=true;
+} else {
+	$showkey=false;
+}
 $dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 
@@ -49,8 +59,10 @@ echo "<p class='nakennz'>ALKIS Name id=".$gmlid."&nbsp;</p>\n";
 
 echo "\n<h2><img src='ico/Eigentuemer.ico' width='16' height='16' alt=''> Person</h2>\n";
 if (!$con) "\n<p class='err'>Fehler beim Verbinden der DB</p>\n";
+
 $sql="SELECT nachnameoderfirma, anrede, vorname, geburtsname, geburtsdatum, namensbestandteil, akademischergrad ";
 $sql.="FROM ax_person WHERE gml_id='".$gmlid."'";
+
 $res=pg_query($con,$sql);
 if (!$res) {echo "\n<p class='err'>Fehler bei Zugriff auf Namensnummer</p>\n";}
 if ($idanzeige) { linkgml($gkz, $gmlid, "Person"); }
@@ -60,6 +72,7 @@ if ($row = pg_fetch_array($res)) {
 	$geb=htmlentities($row["geburtsname"], ENT_QUOTES, "UTF-8");
 	$anr=anrede($row["anrede"]);
 	$aka=$row["akademischergrad"];
+
 	echo "<table>\n";
 		echo "\t<tr><td class='nhd'>Anrede:</td><td class='nam'>".$anr."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Nachname oder Firma:</td><td class='nam'>".$nam."</td></tr>\n";
@@ -145,15 +158,18 @@ if ($row = pg_fetch_array($res)) {
 			echo "</td>";
 
 			echo "\n\t<td class='gbl'>";
-				echo "<p class='nwlink noprint'>";
-					echo "<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg;
-						if ($idanzeige) { echo "&amp;id=j";}
-						echo "' title='Bestandsnachweis'>Grundbuch-Blatt <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a></p>";
+				echo "\n\t\t<p class='nwlink noprint'>";
+					echo "\n\t\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg;
+						if ($idanzeige) {echo "&amp;id=j";}
+						if ($showkey)   {echo "&amp;showkey=j";}
+						echo "' title='Bestandsnachweis'>Grundbuch-Blatt ";
+					echo "\n\t\t\t<img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
+				echo "\n\t\t</p>";
 				if ($idanzeige) {
 					linkgml($gkz, $gmlg, "Grundbuchblatt");
 					linkgml($gkz, $gmln, "Namensnummer"); 
 				}
-			echo "</td>";
+			echo "\n\t</td>";
 
 		echo "\n</tr>";
 		// +++ >bestehtAusRechtsverhaeltnissenZu> namensnummer ??
@@ -175,7 +191,7 @@ if ($row = pg_fetch_array($res)) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, ""); ?>
+<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

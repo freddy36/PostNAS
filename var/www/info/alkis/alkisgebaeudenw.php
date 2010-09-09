@@ -8,6 +8,7 @@
 	01.09.2010 RLP-Daten: keine Relation Nebengebaeude->LagePseudonummer
 					Spalte lfd.-Nr raus wegen Verwechslungsgefhr mit lfd-Nr.-Nebengebaeuude
 	02.09.2010  Mit Icons
+	06.09.2010  Kennzeichen-Rahmenfarbe, Schluessel anschaltbar
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -37,8 +38,17 @@ require_once("/data/conf/alkis_www_conf.php");
 $gkz=urldecode($_REQUEST["gkz"]);
 $gmlid=urldecode($_REQUEST["gmlid"]);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
-$idanzeige=false;
-if ($id == "j") {$idanzeige=true;}
+if ($id == "j") {
+	$idanzeige=true;
+} else {
+	$idanzeige=false;
+}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {
+	$showkey=true;
+} else {
+	$showkey=false;
+}
 $style=isset($_GET["style"]) ? $_GET["style"] : "kompakt";
 $dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
@@ -69,12 +79,18 @@ echo "\n<h2><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&
 
 // Kennzeichen in Rahmen
 echo "\n<table class='outer'>\n<tr>\n<td>";
-	echo "\n\t<table class='kennz' title='Flurst&uuml;ckskennzeichen'>";
+	echo "\n\t<table class='kennzfs' title='Flurst&uuml;ckskennzeichen'>";
 		echo "\n\t<tr>";
-			echo "\n\t\t<td class='head'>Gmkg</td>\n\t\t<td class='head'>Flur</td>\n\t\t<td class='head'>Flurst-Nr.</td>";
+			echo "\n\t\t<td class='head'>Gmkg</td>";
+			echo "\n\t\t<td class='head'>Flur</td>";
+			echo "\n\t\t<td class='head'>Flurst-Nr.</td>";
 		echo "\n\t</tr>";
 		echo "\n\t<tr>";
-			echo "\n\t\t<td title='Gemarkung'><span class='key'>".$gmkgnr."</span><br>".$gemkname."</td>";
+			echo "\n\t\t<td title='Gemarkung'>";
+			if  ($shaowkey) {
+				echo "<span class='key'>".$gmkgnr."</span><br>";
+			}
+			echo $gemkname."</td>";
 			echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
 			echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>";
 		echo "\n\t</tr>";
@@ -84,10 +100,11 @@ echo "\n</td>\n<td>";
 // Links zu anderen Nachweisen
 echo "\n\t<p class='nwlink noprint'>";
 	echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
-	if ($idanzeige) {echo "&amp;id=j";}	echo "&amp;eig=n' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
+	if ($idanzeige) {echo "&amp;id=j";}
+	if ($showkey)   {echo "&amp;showkey=j";}	echo "&amp;eig=n' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
 echo "\n\t</p>";
 
-if ($idanzeige) { linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 // Ende Seitenkopf
 
@@ -184,8 +201,16 @@ echo "\n<hr>\n<table class='geb'>";
 					echo "\n\t<td>(von ".$rowg["gebflae"]." m&#178;)</td>";
 				}
 			}
-			echo "\n\t<td><span class='key'>".$rowg["gebaeudefunktion"]."</span>&nbsp;".$rowg["bezeichner"]."</td>"; // 4
-			echo "\n\t<td><span class='key'>".$rowg["bauweise"]."</span>&nbsp;".$rowg["bauweise_beschreibung"]."</td>"; // 5
+			echo "\n\t<td>";
+			if ($showkey) {
+				echo "<span class='key'>".$rowg["gebaeudefunktion"]."</span>&nbsp;";
+			}
+			echo $rowg["bezeichner"]."</td>"; // 4
+			echo "\n\t<td>";
+			if ($showkey) {
+				echo "<span class='key'>".$rowg["bauweise"]."</span>&nbsp;";
+			}
+			echo $rowg["bauweise_beschreibung"]."</td>"; // 5
 			echo "\n\t<td class='nwlink noprint'>";
 			$bezieh=$rowg["beziehungsart"];		
 			if (!$bezieh == "" ) {
@@ -235,7 +260,7 @@ echo "\n<hr>\n<table class='geb'>";
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, ""); ?>
+<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

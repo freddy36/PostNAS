@@ -4,20 +4,39 @@
 	Version:
 	31.08.2010	Prototyp
 	02.09.2010  Mit img
-
-	ToDo: Nicht benoetigte Classen loeschen (Kopie aus ALB)
+	06.09.2010  Kennzeichen-Rahmenfarben differenziert
+	08.09.2010  ..
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size: 10pt; color: #000033; margin-top: 6pt; margin-bottom: 2pt;}
+	font-size: 10pt; color: #000033; margin-top: 2pt; margin-bottom: 2pt;}
 
-/* ** Banner im Kopf, Farbcode f. Nachweis-Art ** */
+/* ** Banner im Kopf (Balken), Farbcode fuer Nachweis-Art ** */
 p.fsausk		{text-align: right; background: teal;	color: silver;} /* Uebersichts-Seite Flurstuecks-Auskunft */
 p.fskennz	{text-align: right; background: navy;	color: silver;} /* Flurstuecks-Nachweis */
 p.fsei		{text-align: right; background: olive;	color: silver;} /* Flurstuecks- und Eigentuemer-Nachweis */
 p.gbkennz	{text-align: right; background: green;	color: silver;} /* Bestandsnachweis */
 p.nakennz	{text-align: right; background: maroon;	color: silver;} /* Personen- und Adressdaten */
-p.geb			{text-align: right; background: yellow;	color: silver;} /* Gebaeude zum FS */
+p.geb			{text-align: right; background: yellow;	color: gray;} /* Gebaeude zum FS */
+p.lage		{text-align: right; background: lime;	color: gray;} /* Gebaeude zum FS */
+
+/*
+black
+gray
+maroon	= Name
+red
+green		= GB	
+lime		= Lagebezeichnung
+olive		= FS mit Eigent.
+yellow	= Gebaeude
+navy		= FS   
+blue
+purple
+fuchsia
+teal		= Auskunft Start
+aqua
+silver
+white */
 
 p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */
 p.fsd		{position: relative;	left: 170px;}	/* Flst-Flaeche */
@@ -27,9 +46,10 @@ p.avh		{font-style: italic; color: navy;}	/* Anteilsverhaeltnis */
 p.ant		{font-style: italic; position: relative;left: 12px;} /* Anteil am FS */
 p.geig	{color: navy;}		/* GB-Nachw. Eigentuemer Name */
 p.gadr	{color: maroon; margin-top: 1pt;}	/* GB-Nachw. Eigentuemer Adresse */
-p.nwlink, td.nwlink {font-size: 7pt; text-align: right;}	/* Link zum Nachweis GB, FS, ..*/
-p.err		{color: red;}	/* Fehler-Meldungen */
-p.ph		{color: gray;}	/* Platzhalter */
+p.nwlink, td.nwlink {font-size: 7pt; text-align: right; margin-top: 0pt;}	/* Link zum Nachweis GB, FS, ..*/
+p.err		{color: red;}								/* Fehler-Meldungen */
+p.warn	{color: gray; font-style: italic;}	/* Warnung, Hinweis */
+p.ph		{color: gray;}								/* Platzhalter */
 
 /* Links */
 a:link		{color: rgb(0,102,153);}
@@ -66,8 +86,14 @@ table 		{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: 
 table.fsd	{font-size: 9pt; margin-left: 12px;}
 table.bez	{font-size: 9pt; margin-bottom: 10px; margin-left: 3px;}
 
-table.kennz	{border: 2px solid navy; padding: 3px; margin: 0px;}	/* Kennzeichen (FS, GB, ..) mit Rahmen */
-table.fs, table.nua, table.klas, table.eig, table.outer, table.geb {width:100%;}
+/* Kennzeichen mit Rahmen, Rahmen-Farben wie 'Balken' */
+table.kennzfs	{border: 2px solid  navy;  padding: 3px; margin: 0px;}	/* Flurstueck */
+table.kennzgb	{border: 2px solid  green; padding: 3px; margin: 0px;}	/* Grundbuch */
+table.kennzgbf	{border: 2px dotted green; padding: 3px; margin: 0px;}	/* - fiktiv */
+table.kennzla	{border: 2px solid  lime;  padding: 3px; margin: 0px;}	/* Lage */
+
+/* volle Breite fuer verschiedene Zwecke */
+table.fs, table.nua, table.klas, table.eig, table.outer, table.geb {width: 100%;}
 
 td	{vertical-align: top;}			/*  ** Tabellenfelder ** */
 /*td	{vertical-align: top; border: 1px dotted gray; }	 ** Tabellenfelder  Variante f. TEST ** */
@@ -82,7 +108,12 @@ td.key	{width: 35px; padding-right: 4px; padding-left: 4px;}
 td.emz	{width: 45px; padding-right: 4px; padding-left: 4px; 
 			text-align: right;} */
 td.kurz	{width: 26px; padding-left: 4px;}
-td.nanu	{width: 80px;}				/* Namensnummer */td.sond	{font-size: 8pt;}			/* Sondereigentumsbeschreibung */
+td.nanu	{width: 80px;}				/* Namensnummer */
+td.sond, p.sond	{font-size: 9pt; font-style: italic; background-color: white;
+			border: 1px dotted silver; padding: 6px;}			/* Sondereigentumsbeschreibung */
+
+td.nrap, p.nrap	{font-size: 9pt; font-style: italic; background-color: white;}			/* Nummer im Aufteilungsplan */
+
 td.fett	{padding-top: 8px; font-weight: bold;}
 td.head	{border-bottom: 1px solid gray; font-style: italic;}	/* Kopfzeile, Spaltenueberschrift */
 td.sum {border-top:2px dotted maroon;	border-bottom:3px solid maroon;
@@ -91,8 +122,10 @@ td.sum {border-top:2px dotted maroon;	border-bottom:3px solid maroon;
 td.bez	{ font-weight: bold;}	/* Beziehungen */
 td.nhd	{ width: 150px; }			/* Namen - linke / rechte Spalte */
 td.nam	{ font-weight: bold;}
-td.gbl {border-top:1px dotted green;	border-bottom:0px;
+td.gbl {border-top: 1px dotted green;	border-bottom:0px;
 	border-left:0px ;		border-right:0px ;}	/* Name: GB-Liste */
+
+td.dien	{font-style: italic; color: purple; border-bottom: 1px solid silver;}	/* dienendes GB in FS-Tab im Best-NW */
 
 /* Ueberschriften */
 h1, h2, h3, h4, h5, h6 {font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;}

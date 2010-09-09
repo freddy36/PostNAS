@@ -13,6 +13,7 @@
 		27.08.2010	Erweiterung um Link zu Gebaeudenachweis der WhereGroup
 		31.08.2010	$style=ALKIS entfernt, alles Kompakt
 		02.09.2010  Mit Icons
+		07.09.2010  Schluessel anschaltbar
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -43,8 +44,17 @@ include("alkisfkt.php");
 $gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
 $gkz=urldecode($_REQUEST["gkz"]);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
-$idanzeige=false;
-if ($id == "j") {$idanzeige=true;}
+if ($id == "j") {
+	$idanzeige=true;
+} else {
+	$idanzeige=false;
+}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {
+	$showkey=true;
+} else {
+	$showkey=false;
+}
 $dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
@@ -56,8 +66,10 @@ $sql.="FROM ax_flurstueck f ";
 $sql.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sql.="WHERE f.gml_id='".$gmlid."';";
 // Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
+
 $res=pg_query($con,$sql);
-if (!$res) echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";
+if (!$res) {echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";}
+
 if ($row = pg_fetch_array($res)) {
 	$gemkname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 	$gmkgnr=$row["gemarkungsnummer"];
@@ -67,7 +79,9 @@ if ($row = pg_fetch_array($res)) {
 	if ($nenner > 0) $flstnummer.="/".$nenner; // BruchNr
 	$flae=$row["amtlicheflaeche"];
 	$flae=number_format($flae,0,",",".") . " m&#178;";
-} else {echo "Fehler! Kein Treffer fuer gml_id=".$gmlid;}
+} else {
+	echo "<p class='err'>Kein Treffer fuer gml_id=".$gmlid."</p>";
+}
 
 // Balken
 echo "\n<p class='fsausk'>ALKIS-Auskunft Flurst&uuml;ck-&Uuml;bersicht ".$gmkgnr."-".$flurnummer."-".$flstnummer."</p>";
@@ -82,29 +96,36 @@ echo "</td><td align='right'>";
 echo "</td></tr></table>";
 
 echo "\n<table class='outer'>\n<tr>\n<td>";
-	echo "\n\t<table class='kennz' title='Flurst&uuml;ckskennzeichen'>\n\t<tr>";
+	echo "\n\t<table class='kennzfs' title='Flurst&uuml;ckskennzeichen'>\n\t<tr>";
 	echo "\n\t\t<td class='head'>Gmkg</td>\n\t\t<td class='head'>Flur</td>\n\t\t<td class='head'>Flurst-Nr.</td>\n\t</tr>";
-	echo "\n\t<tr>\n\t\t<td title='Gemarkung'><span class='key'>".$gmkgnr."</span><br>".$gemkname."</td>";
+	echo "\n\t<tr>\n\t\t<td title='Gemarkung'>";
+   if ($showkey) {
+		echo "<span class='key'>".$gmkgnr."</span><br>";
+	}
+	echo $gemkname."</td>";
 	echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
 	echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>\n\t</tr>";
 	echo "\n\t</table>";
 echo "\n</td>\n<td>";
-if ($idanzeige) { linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
-echo "<br>\n\t<p class='nwlink'>weitere Auskunft:<br>";
+if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 
 // Flurstuecksnachweis (o. Eigent.)
 echo "\n\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=n";
 if ($idanzeige) { echo "&amp;id=j";}
+if ($showkey)   {echo "&amp;showkey=j";}
 echo "' title='Flurst&uuml;cksnachweis, alle Flurst&uuml;cksdaten'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a><br>";
 
 // FS- u. Eigent.-NW
 echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j";
 if ($idanzeige) echo "&amp;id=j";
+if ($showkey)   {echo "&amp;showkey=j";}
 echo "' title='Flurst&uuml;ck mit Eigent&uuml;mer'>Flurst&uuml;ck mit Eigent&uuml;mer</a> <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''><br>";
 
 // Gebaeude-NW
 echo "\n\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
-if ($idanzeige) echo "&amp;id=j";
+if ($idanzeige) {echo "&amp;id=j";}
+if ($showkey)   {echo "&amp;showkey=j";}
 echo "' title='Geb&auml;udenachweis'>Geb&auml;ude <img src='ico/Haus.ico' width='16' height='16' alt=''></a>";
 
 // FS-Historie (noch nicht in DB)
@@ -134,42 +155,70 @@ $j=0; // Z.Blatt
 while($rowg = pg_fetch_array($resg)) {
 	$beznam=$rowg["bezeichnung"];
 	echo "\n<hr>\n<table class='outer'>\n<tr>\n<td>";
-	echo "\n\t<table class='kennz' title='Bestandskennzeichen'>\n\t<tr>\n\t\t<td class='head'>Bezirk</td>";
-		echo "\n\t\t<td class='head'>".blattart($rowg["blattart"])."</td>\n\t\t<td class='head'>Lfd-Nr,</td>\n\t\t<td class='head'>Buchungsart</td>\n\t</tr>";
-		echo "\n\t<tr>\n\t\t<td title='Grundbuchbezirk'><span class='key'>".$rowg["bezirk"]."</span><br>".$beznam."</td>";
+
+
+		$blattkey=$rowg["blattart"];
+		$blattart=blattart($blattkey);
+		if ($blattkey == 1000) {		
+			echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
+		} else {		
+			echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
+		}
+	//	echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
+			echo "\n\t<tr>\n\t\t<td class='head'>Bezirk</td>";
+			echo "\n\t\t<td class='head'>".$blattart."</td>";
+			echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
+			echo "\n\t\t<td class='head'>Buchungsart</td>";
+		echo "\n\t</tr>";
+
+	echo "\n\t<tr>";
+		echo "\n\t\t<td title='Grundbuchbezirk'>";
+		if ($showkey) {
+			echo "<span class='key'>".$rowg["bezirk"]."</span><br>";
+		}
+		echo $beznam."</td>";
 		echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowg["blatt"]."</span></td>";
 		echo "\n\t\t<td title='Bestandsverzeichnis-Nummer (BVNR, Grundst&uuml;ck)'>".$rowg["laufendenummer"]."</td>";
-		echo "\n\t\t<td title='Buchungsart'>".$rowg["buchungsart"]."<br>".buchungsart($rowg["buchungsart"])."</td>\n\t</tr>";
+		echo "\n\t\t<td title='Buchungsart'>";
+		if ($showkey) {
+			echo "<span class='key'>".$rowg["buchungsart"]."</span><br>";
+		}
+		echo buchungsart($rowg["buchungsart"])."</td>\n\t</tr>";
 	echo "\n\t</table>";
 	if ($rowg["zahler"] <> "") {
 		echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 	}
 	echo "\n</td>\n<td>";
-		if ($idanzeige) { linkgml($gkz, $rowg[0], "Buchungsblatt");}
-		echo "<br>\n";
+		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt");}
+		//echo "<br>\n";
 		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
-		echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
-			if ($idanzeige) echo "&amp;id=j";
-			echo "' title='Grundbuchnachweis mit kompletter Eigent&uuml;merangabe'>Grundbuch-Blatt ";
-			echo "<img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
-	echo "\n\t</p>\n</td>\n";
+			echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
+				if ($idanzeige) {echo "&amp;id=j";}
+				if ($showkey)   {echo "&amp;showkey=j";}
+				echo "' title='Grundbuchnachweis'>";
+			//	echo "Grundbuch-Blatt";
+				echo $blattart;
+				echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
+		echo "\n\t</p>";
+	echo "\n</td>\n";
 	echo "</table>";
 	
 	// E I G E N T U E M E R
-	if ($rowg["blattart"] == 5000) { 
+	if ($blattkey == 5000) { // Schluessel Blattart
 		echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt</p>\n";
 		echo "\n<p>Siehe weitere Grundbuchbl&auml;tter mit Rechten an dem fiktiven Blatt.</p>\n";
 	} else {// kein Eigent. bei fiktiv. Blatt
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
+
 		// Ausgabe Name in Function
 		$n = eigentuemer($con, $gkz, $idanzeige, $rowg["gml_id"], false); // hier ohne Adressen
+
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
-			echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
-			echo "\n<p>Bezirk: ".$row["bezirk"].", Blatt: ".$row["nr"].", Blattart ".$row["blattart"]." (".$blattart.")</p>";
+			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
+			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
 			linkgml($gkz, $gmlid, "Buchungsblatt");
 		}
-	}
-	$j++;
+	}	$j++;
 }
 if ($j == 0) { // Entwicklungshilfe
 	echo "\n<p class='err'>Keine Buchungen gefunden.</p>";
@@ -177,7 +226,7 @@ if ($j == 0) { // Entwicklungshilfe
 	//echo "<p>".$sql."</p>"; // TEST
 }
 echo "\n<hr>";
-footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "");
+footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey);
 
 ?>
 </body>

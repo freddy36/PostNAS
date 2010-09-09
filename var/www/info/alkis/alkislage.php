@@ -5,6 +5,7 @@
 	Parameter:	&gkz= &gmlid=
 	Version:		01.09.2010 Neu!
 		02.09.2010  Mit Icons
+		06.09.2010  </a> korrigiert, Kennzeichen-Rahmenfarbe, Schluessel anschaltbar
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -49,8 +50,17 @@ switch ($ltyp) {
 	break;
 }
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
-$idanzeige=false;
-if ($id == "j") {$idanzeige=true;}$dbname = 'alkis05' . $gkz;
+if ($id == "j") {
+	$idanzeige=true;
+} else {
+	$idanzeige=false;
+}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {
+	$showkey=true;
+} else {
+	$showkey=false;
+}$dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 
 // Lagebezeichnung
@@ -113,7 +123,7 @@ if ($row = pg_fetch_array($res)) {
 			$kennz.=$hsnr;
 			$untertitel="Hauptgeb&auml;ude mit Hausnummer";			
 			// Balken
-			echo "<p class='geb'>ALKIS Lagebezeichnung mit Hausnummer ".$kennz."&nbsp;</p>\n"; // Balken
+			echo "<p class='lage'>ALKIS Lagebezeichnung mit Hausnummer ".$kennz."&nbsp;</p>\n"; // Balken
 		break;
 		case "p": // "mit PseudoNr"
 			$pseu=$row["pseudonummer"];
@@ -121,7 +131,7 @@ if ($row = pg_fetch_array($res)) {
 			$kennz.=$pseu."-".$lfd;
 			$untertitel="Nebengebäude mit laufender Nummer";			
 			// Balken			
-			echo "<p class='geb'>ALKIS Lagebezeichnung mit Pseudonummer ".$kennz."&nbsp;</p>\n"; // Balken
+			echo "<p class='lage'>ALKIS Lagebezeichnung mit Pseudonummer ".$kennz."&nbsp;</p>\n"; // Balken
 		break;
 		case "o": //"Ohne HsNr"
 			if ($lage == "") {
@@ -130,7 +140,7 @@ if ($row = pg_fetch_array($res)) {
 				$kennz.=$unver;				
 			}			$untertitel="Stra&szlig;e ohne Hausnummer und/oder Gewanne (unverschl&uuml;sselte Lage)";			
 			// Balken			
-			echo "<p class='geb'>ALKIS Lagebezeichnung Ohne Hausnummer ".$kennz."&nbsp;</p>\n"; // Balken
+			echo "<p class='lage'>ALKIS Lagebezeichnung Ohne Hausnummer ".$kennz."&nbsp;</p>\n"; // Balken
 		break;
 	}
 } else {
@@ -144,7 +154,7 @@ echo "<p>Typ: ".$untertitel."</p>";
 echo "\n<table class='outer'>\n<tr>\n\t<td>";
 	// Tabelle Kennzeichen
 	// ToDo: !! kleiner, wenn ltyp=0 und die Schluesselfelder leer sind
-	echo "\n\t<table class='kennz' title='Lage'>";
+	echo "\n\t<table class='kennzla' title='Lage'>";
 		echo "\n\t<tr>";
 			echo "\n\t\t<td class='head'>Land</td>";
 			echo "\n\t\t<td class='head'>Reg.-Bez.</td>";
@@ -168,8 +178,16 @@ echo "\n<table class='outer'>\n<tr>\n\t<td>";
 			echo "\n\t\t<td title='Bundesland'>".$land."</td>";
 			echo "\n\t\t<td title='Regierungsbezirk'>".$regbez."</td>";
 			echo "\n\t\t<td title='Kreis'>".$kreis."</td>";
-			echo "\n\t\t<td title='Gemeinde'><span class='key'>".$gem."</span><br>".$gnam."</td>";
-			echo "\n\t\t<td title='Stra&szlig;e'><span class='key'>".$lage."</span><br>".$snam."</td>";
+			echo "\n\t\t<td title='Gemeinde'>";
+			if ($showkey) {
+				echo "<span class='key'>".$gem."</span><br>";
+			}			
+			echo $gnam."</td>";
+			echo "\n\t\t<td title='Stra&szlig;e'>";
+			if ($showkey) {
+				echo "<span class='key'>".$lage."</span><br>";
+			}
+			echo $snam."</td>";
 			switch ($ltyp) {
 				case "m":
 					echo "\n\t\t<td title='Hausnummer und Zusatz'><span class='wichtig'>".$hsnr."</span></td>";
@@ -189,14 +207,14 @@ echo "\n<table class='outer'>\n<tr>\n\t<td>";
 
 	// Kopf Rechts: weitere Daten?
 	// z.B. hier Ausgabe von "georeferenzierte Gebäudeadresse" ?	
-	if ($idanzeige) { linkgml($gkz, $gmlid, "Lage"); }
+	if ($idanzeige) {linkgml($gkz, $gmlid, "Lage"); }
 
 echo "\n\t</td>\n</tr>\n</table>";
 // Ende Seitenkopf
 
 // F L U R S T U E C K E
 if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
-	echo "\n\n<a name='fs'><h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;cke</h3>\n";
+	echo "\n\n<a name='fs'></a><h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;cke</h3>\n";
 	echo "\n<p>mit dieser Lagebezeichnung.</p>";
 	// ax_Flurstueck  >weistAuf>  ax_LagebezeichnungMitHausnummer
 	// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
@@ -234,15 +252,22 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 		$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
 		$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
-		echo "\n<tr>";			echo "\n\t<td><span class='key'>".$rowf["gemarkungsnummer"]."</span> ".$rowf["bezeichnung"]."</td>";
+		echo "\n<tr>";			echo "\n\t<td>";
+			if ($showkey) {
+				echo "<span class='key'>".$rowf["gemarkungsnummer"]."</span> ";
+			}
+			echo $rowf["bezeichnung"]."</td>";
 			echo "\n\t<td>".$flur."</td>";
-			echo "\n\t<td>".$fskenn;
-			if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck");}
-			echo "</td>\n\t<td class='fla'>".$flae."</td>";
-			echo "\n\t<td><p class='nwlink noprint'>";
-			echo "<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$rowf["gml_id"]."&amp;eig=n";
-			if ($idanzeige) {echo "&amp;id=j";}
-			echo "' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a></p></td>";
+			echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
+				if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck");}
+			echo "</td>";
+			echo "\n\t<td class='fla'>".$flae."</td>";
+			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
+				echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$rowf["gml_id"]."&amp;eig=n";
+				if ($idanzeige) {echo "&amp;id=j";}
+				if ($showkey)   {echo "&amp;showkey=j";}
+				echo "' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
+			echo "\n\t\t</p>\n\t</td>";
 		echo "\n</tr>";
 		$j++;
 	}
@@ -260,38 +285,38 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 	switch ($ltyp) {
 		case "m": // aktuell Hausnummer gefunden
 			// dazu alle Nebengebäude suchen
-			echo "<p>Nebengeb&auml;ude: ";
+			echo "\n<p>Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
 			$sql.=$whereclaus."AND lage=".$lage." AND pseudonummer='".$hsnr."' ORDER BY laufendenummer;";
 		// pseudonummer character varying(5), laufendenummer character varying(2),
 			$res=pg_query($con,$sql);
-			if (!$res) echo "<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
+			if (!$res) echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
 			while($row = pg_fetch_array($res)) {
-				echo "<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
+				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
 			}
-			echo "</p>";
+			echo "\n</p>";
 		break;
 
 		case "p": // aktuell Nebengebäude: Haupt- und Nebengebäude suchen
-			echo "<p>Hauptgeb&auml;ude: ";
+			echo "\n<p>Hauptgeb&auml;ude: ";
 			$sql ="SELECT l.gml_id FROM ax_lagebezeichnungmithausnummer l ";
 			$sql.=$whereclaus."AND hausnummer='".$pseu."';";
 			$res=pg_query($con,$sql);
 			if (!$res) echo "<p class='err'>Fehler bei Hauptgeb&auml;ude.<br>".$sql."</p>\n";
 			while($row = pg_fetch_array($res)) {
-				echo "<a href='".$url.$row["gml_id"]."&amp;ltyp=m'>Haus-Nr ".$pseu."</a>&nbsp;&nbsp;";
+				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=m'>Haus-Nr ".$pseu."</a>&nbsp;&nbsp;";
 			}
-			echo "</p>";
+			echo "\n</p>";
 
-			echo "<p>weitere Nebengeb&auml;ude: ";
+			echo "\n<p>weitere Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
 			$sql.=$whereclaus."AND pseudonummer='".$pseu."' AND laufendenummer <> '".$lfd."' ORDER BY laufendenummer;";
 			$res=pg_query($con,$sql);
-			if (!$res) echo "<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
+			if (!$res) echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
 			while($row = pg_fetch_array($res)) {
-				echo "<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
+				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
 			}
-			echo "</p>";
+			echo "\n</p>";
 		break;	}
 }
 
@@ -305,7 +330,7 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 //  ax_gebaeude >gehoert> ax_person  (Ausnahme)
 
 if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
-	echo "\n\n<a name='geb'><h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ude</h3>";
+	echo "\n\n<a name='geb'></a><h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ude</h3>";
 	echo "\n<p>mit dieser Lagebezeichnung.</p>";
 	switch ($ltyp) {
 		case "p":
@@ -331,7 +356,11 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 		echo "</p>";
 		echo "\n<table>";
 			echo "\n\t<tr><td>Geometrische Fl&auml;che:</td><td>".$row["flaeche"]." m&#178;</td></tr>";			
-			echo "\n\t<tr><td>Funktion:</td><td><span class='key'>".$row["gebaeudefunktion"]."</span> ".$row["bezeichner"]."</td></tr>"; // integer
+			echo "\n\t<tr><td>Funktion:</td><td>";
+			if ($showkey) {
+				echo "<span class='key'>".$row["gebaeudefunktion"]."</span> ";
+			}
+			echo $row["bezeichner"]."</td></tr>"; // integer
 			if (!$row["description"] == "") {
 				echo "\n\t<tr><td>Beschreibung:</td><td>".$row["description"]."</td></tr>"; // integer - Entschlüsseln!
 			}			
@@ -342,7 +371,11 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 				echo "\n\t<tr><td>Lage zur Erdoberfl&auml;che:</td><td>".$row["lagezurerdoberflaeche"]."</td></tr>";
 			} // integer - Entschlüsseln!
 			if (!$row["bauweise"] == "") {
-				echo "\n\t<tr><td>Bauweise:</td><td><span class='key'>".$row["bauweise"]."</span> ".$row["bauweise_beschreibung"]."</td></tr>"; // integer
+				echo "\n\t<tr><td>Bauweise:</td><td>";
+				if ($showkey) {
+					echo "<span class='key'>".$row["bauweise"]."</span> ";
+				}
+				echo $row["bauweise_beschreibung"]."</td></tr>"; // integer
 			}			
 			if (!$row["anzahlderoberirdischengeschosse"] == "") {
 				echo "\n\t<tr><td>Anz. der oberird. Geschosse:</td><td>".$row["anzahlderoberirdischengeschosse"]."</td></tr>"; //
@@ -371,7 +404,7 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "&amp;ltyp=".$ltyp ); ?>
+<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "&amp;ltyp=".$ltyp , $showkey); ?>
 
 </body>
 </html>
