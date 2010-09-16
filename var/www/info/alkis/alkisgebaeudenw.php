@@ -1,7 +1,7 @@
 <?php
 /*	alkisgebaeudenw.php - Gebaeudenachweis
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
-	Parameter:	&gkz= &gmlid= &eig=j/n
+
 	Version:
 	27.08.2010 von WhereGroup uebernommen
 	31.08.2010 Link zum FS-NW, Lage
@@ -9,19 +9,19 @@
 					Spalte lfd.-Nr raus wegen Verwechslungsgefhr mit lfd-Nr.-Nebengebaeuude
 	02.09.2010  Mit Icons
 	06.09.2010  Kennzeichen-Rahmenfarbe, Schluessel anschaltbar
+	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
 // Bindung an Mapbender-Authentifizierung
 require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
-#require_once(dirname(__FILE__)."/../../../../php/mb_validateSession.php");
-#require_once(dirname(__FILE__)."/../../../../conf/alkis_conf.php");include("alkisfkt.php");
+include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="Frank Jaeger" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -60,14 +60,19 @@ $sqlf.="FROM ax_flurstueck f ";
 $sqlf.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sqlf.="WHERE f.gml_id='".$gmlid."';";
 $resf=pg_query($con,$sqlf);
-if (!$resf) echo "\n<p class='err'>Fehler bei Flurst&uuml;cksdaten\n<br>".$sqlf."</p>\n";
+if (!$resf) {
+	echo "\n<p class='err'>Fehler bei Flurst&uuml;cksdaten\n<br>".$sqlf."</p>\n";
+}
+
 if ($rowf = pg_fetch_array($resf)) {
 	$gemkname=htmlentities($rowf["bezeichnung"], ENT_QUOTES, "UTF-8");
 	$gmkgnr=$rowf["gemarkungsnummer"];
 	$flurnummer=$rowf["flurnummer"];
 	$flstnummer=$rowf["zaehler"];
 	$nenner=$rowf["nenner"];
-	if ($nenner > 0) $flstnummer.="/".$nenner; // BruchNr
+	if ($nenner > 0) { // BruchNr
+		$flstnummer.="/".$nenner;
+	} 
 	$flstflaeche = $rowf["amtlicheflaeche"] ;
 } else {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
@@ -130,8 +135,8 @@ $sqlg.="st_within(g.wkb_geometry,f.wkb_geometry) as drin ";
 $sqlg.="FROM ax_flurstueck f, ax_gebaeude g ";
 
 // Entschluesseln
-$sqlg.="LEFT JOIN ax_bauweise_gebaeude h ON g.bauweise = h.bauweise_id ";
-$sqlg.="LEFT JOIN ax_gebaeude_gebaeudefunktion u ON g.gebaeudefunktion = u.wert ";
+$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
+$sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
 
 // Beziehungen verfolgen (holt die Hausnummer)
 $sqlg.="LEFT JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
@@ -260,7 +265,7 @@ echo "\n<hr>\n<table class='geb'>";
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

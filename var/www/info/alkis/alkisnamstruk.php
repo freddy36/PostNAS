@@ -4,14 +4,12 @@
 	30.08.2010	$style=ALKIS entfernt, alles Kompakt
 	02.09.2010  Mit Icons
 	06.09.2010  Schluessel anschaltbar
+	15.09.2010  Function "buchungsart" durch JOIN ersetzt, Tabelle GB einzeilig
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
-	Parameter:	&gkz= &gmlid=
 
-	ToDo:  
-	1. Sortierung der Grundbücher zum Namen
-	2. ID ein auch für Buchungsstelle
+	ToDo: Sortierung der Grundbücher zum Namen
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -23,7 +21,7 @@ include("alkisfkt.php");
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="Frank Jaeger" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -111,8 +109,13 @@ if ($row = pg_fetch_array($res)) {
 			echo "\t<tr><td class='nhd'>Land:</td><td class='nam'>".$land."</td></tr>\n";
 		echo "\n</table>\n<br>\n";
 		$j++;
-		// beides Kompakt (im Rahmen):
-		echo "\n<div class='adr'>".$anr." ".$aka." ".$vor." ".$nam."<br>\n".$str." ".$hsnr."<br>\n".$plz." ".$ort."</div>";
+
+		// Name und Adresse Kompakt (im Rahmen)
+		// Alles was man fuer ein Anschreiben braucht
+		echo "<img src='ico/Namen.ico' width='16' height='16' alt='Brief' title='Anschrift'>"; // Symbol "Brief"	
+		echo "\n<div class='adr' title='Anschrift'>".$anr." ".$aka." ".$vor." ".$nam."<br>";
+		echo "\n".$str." ".$hsnr."<br>";
+		echo "\n".$plz." ".$ort."</div>";
 	}
 	if ($j == 0) {echo "\n<p class='err'>Keine Adressen.</p>\n";}
 
@@ -122,11 +125,15 @@ if ($row = pg_fetch_array($res)) {
 	//                               >bestehtAusRechtsverhaeltnissenZu> namensnummer   (Nebenzweig/Sonderfälle?)
 
 	$sql ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
-	$sql.="g.gml_id AS gml_g, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart ";
+	$sql.="g.gml_id AS gml_g, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, ";
+	$sql.="b.bezeichnung AS beznam ";
 	$sql.="FROM  alkis_beziehungen bpn ";
 	$sql.="JOIN  ax_namensnummer   n   ON bpn.beziehung_von=n.gml_id ";
 	$sql.="JOIN  alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
 	$sql.="JOIN  ax_buchungsblatt  g   ON bng.beziehung_zu=g.gml_id ";
+
+	$sql.="JOIN  ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
+
 	$sql.="WHERE bpn.beziehung_zu='".$gmlid."' ";
 	$sql.="AND   bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung ;";
@@ -136,25 +143,63 @@ if ($row = pg_fetch_array($res)) {
 	if (!$resg) echo "\n<p class='err'>Fehler bei Grundbuch.<br>\nSQL= ".$sql."</p>\n";
 	$j=0;
 	echo "<table class='eig'>";
+
+	echo "\n<tr>";
+		echo "\n\t<td class='head'>Bezirk</td>";
+		echo "\n\t<td class='head'>Blattart</td>";
+		echo "\n\t<td class='head'>Blatt</td>";
+		echo "\n\t<td class='head'>Namensnummer</td>";
+		echo "\n\t<td class='head'>Anteil</td>";
+		echo "\n\t<td class='head nwlink' title='Link: weitere Auskunft'>weit. Auskunft</td>";
+	echo "\n</tr>";
+
 	while($rowg = pg_fetch_array($resg)) {
 		$gmln=$rowg["gml_n"];
 		$gmlg=$rowg["gml_g"];
 		$namnum=kurz_namnr($rowg["lfd"]);
 		$zae=$rowg["zaehler"];
+		$blattkey=$rowg["blattart"];
+		$blattart=blattart($blattkey);
 
 		echo "\n<tr>";
 
-			echo "\n\t<td class='gbl'>".blattart($rowg["blattart"])."<br>Buchungsstelle</td>";
-
-			echo "\n\t<td class='gbl'>";
-				echo "Bezirk ".$rowg["bezirk"].", Blatt ".$rowg["nr"];
-				If ($namnum == "") {echo "<br>&nbsp;";} 
-				else {echo "<br>Name Nr: ".$namnum;};
+			echo "\n\t<td class='gbl'>"; // GB-Bezirk"
+				if ($showkey) {
+					echo "<span class='key'>".$rowg["bezirk"]."</span> ";
+				}				
+				echo $rowg["beznam"];
 			echo "</td>";
 
-			echo "\n\t<td class='gbl'>"; 
-				If ($zae == "") {echo "&nbsp;";} 
-				else {echo $zae."/".$rowg["nenner"]." Anteil";} 
+			echo "\n\t<td class='gbl'>"; // Blattart
+				if ($showkey) {
+					echo "<span class='key'>".$blattkey."</span> ";
+				}			
+				echo $blattart;
+			echo "</td>";
+
+			echo "\n\t<td class='gbl'>"; // Blatt
+				echo "<span class='wichtig'>".$rowg["nr"]."</span>";
+				if ($idanzeige) {
+					linkgml($gkz, $gmlg, "Grundbuchblatt");				}
+			echo "</td>";
+
+			echo "\n\t<td class='gbl'>"; // Namensnummer
+				If ($namnum == "") {
+					echo "&nbsp;";					
+				} else {
+					echo $namnum;
+				}
+				if ($idanzeige) {
+					linkgml($gkz, $gmln, "Namensnummer"); 
+				}
+			echo "</td>";
+
+			echo "\n\t<td class='gbl'>"; // Anteil
+				If ($zae == "") {
+					echo "&nbsp;";
+				} else {
+					echo $zae."/".$rowg["nenner"]." Anteil";
+				} 
 			echo "</td>";
 
 			echo "\n\t<td class='gbl'>";
@@ -162,14 +207,10 @@ if ($row = pg_fetch_array($res)) {
 					echo "\n\t\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg;
 						if ($idanzeige) {echo "&amp;id=j";}
 						if ($showkey)   {echo "&amp;showkey=j";}
-						echo "' title='Bestandsnachweis'>Grundbuch-Blatt ";
+						echo "' title='Bestandsnachweis'>";
+						echo $blattart;
 					echo "\n\t\t\t<img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
-				echo "\n\t\t</p>";
-				if ($idanzeige) {
-					linkgml($gkz, $gmlg, "Grundbuchblatt");
-					linkgml($gkz, $gmln, "Namensnummer"); 
-				}
-			echo "\n\t</td>";
+				echo "\n\t\t</p>";			echo "\n\t</td>";
 
 		echo "\n</tr>";
 		// +++ >bestehtAusRechtsverhaeltnissenZu> namensnummer ??
@@ -191,7 +232,7 @@ if ($row = pg_fetch_array($res)) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

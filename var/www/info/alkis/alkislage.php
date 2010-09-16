@@ -2,22 +2,23 @@
 /*	alkislage.php
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Kann die 3 Arten von Lagebezeichnung anzeigen und verbundene Objekte verlinken
-	Parameter:	&gkz= &gmlid=
+
 	Version:		01.09.2010 Neu!
 		02.09.2010  Mit Icons
 		06.09.2010  </a> korrigiert, Kennzeichen-Rahmenfarbe, Schluessel anschaltbar
+		15.09.2010  Function "buchungsart" durch JOIN ersetzt
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
 // Bindung an Mapbender-Authentifizierung
 require_once("/data/mapwww/http/php/mb_validateSession.php");
-require_once("/data/conf/alkis_conf.php");
+require_once("/data/conf/alkis_www_conf.php");
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="Frank Jaeger" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -248,10 +249,17 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	echo "\n</tr>";
 	$j=0;
 	while($rowf = pg_fetch_array($resf)) {
-		if ($rowf["nenner"] != "") {$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);}
-		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 		$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
-		$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
+
+		//$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
+		//if ($rowf["nenner"] != "") {$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);}
+
+		$fskenn=$rowf["zaehler"]; // Bruchnummer (ohne fuehrende Nullen)
+		if ($rowf["nenner"] != "") {
+			$fskenn.="/".$rowf["nenner"];
+		}
+
+		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 		echo "\n<tr>";			echo "\n\t<td>";
 			if ($showkey) {
 				echo "<span class='key'>".$rowf["gemarkungsnummer"]."</span> ";
@@ -344,8 +352,8 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	$sql.="round(area(g.wkb_geometry)::numeric,2) AS flaeche, h.bauweise_beschreibung, u.bezeichner ";
 	$sql.="FROM ax_gebaeude g ";
 	$sql.="JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
-	$sql.="LEFT JOIN ax_bauweise_gebaeude h ON g.bauweise = h.bauweise_id ";
-	$sql.="LEFT JOIN ax_gebaeude_gebaeudefunktion u ON g.gebaeudefunktion = u.wert ";
+	$sql.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
+	$sql.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
 	$sql.="WHERE v.beziehung_zu='".$gmlid."' ";
 	$sql.="AND   v.beziehungsart='".$bezart."' ;";	$res=pg_query($con,$sql);
 	if (!$res) echo "<p class='err'>Fehler bei Gebaeude.<br>".$sql."</p>\n";
@@ -404,7 +412,7 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "&amp;ltyp=".$ltyp , $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "&amp;ltyp=".$ltyp , $showkey); ?>
 
 </body>
 </html>

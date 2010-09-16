@@ -14,20 +14,21 @@
 		31.08.2010	$style=ALKIS entfernt, alles Kompakt
 		02.09.2010  Mit Icons
 		07.09.2010  Schluessel anschaltbar
+		15.09.2010  Function "buchungsart" durch JOIN ersetzt
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
 // Bindung an Mapbender-Authentifizierung
 require_once("/data/mapwww/http/php/mb_validateSession.php");
 //require_once(dirname(__FILE__)."/../../../php/mb_validateSession.php");
-require_once("/data/conf/alkis_conf.php");
+require_once("/data/conf/alkis_www_conf.php");
 //require_once(dirname(__FILE__)."/../../../../conf/alkis_conf.php");
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="Frank Jaeger" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -139,12 +140,15 @@ echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grund
 // ALKIS: FS --> bfs --> GS --> bsb --> GB.
 $sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
 $sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, ";
-$sql.="z.bezeichnung ";  // stelle -> amtsgericht
+$sql.="z.bezeichnung, a.bezeichner AS bart ";  // stelle -> amtsgericht
 $sql.="FROM  alkis_beziehungen    bfs "; // Bez Flurst.- Stelle.
 $sql.="JOIN  ax_buchungsstelle      s ON bfs.beziehung_zu=s.gml_id ";
 $sql.="JOIN  alkis_beziehungen    bsb ON s.gml_id=bsb.beziehung_von "; // Bez. Stelle - Blatt
 $sql.="JOIN  ax_buchungsblatt       b ON bsb.beziehung_zu=b.gml_id ";
 $sql.="JOIN  ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
+
+$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
+
 $sql.="WHERE bfs.beziehung_von='".$gmlid."' ";
 $sql.="AND   bfs.beziehungsart='istGebucht' ";
 $sql.="AND   bsb.beziehungsart='istBestandteilVon' ";
@@ -154,8 +158,9 @@ if (!$resg) echo "\n<p class='err'>Keine Buchungen.<br>\nSQL= ".$sql."</p>\n";
 $j=0; // Z.Blatt
 while($rowg = pg_fetch_array($resg)) {
 	$beznam=$rowg["bezeichnung"];
-	echo "\n<hr>\n<table class='outer'>\n<tr>\n<td>";
-
+	echo "\n<hr>\n<table class='outer'>";
+	echo "\n<tr>";
+	echo "\n<td>";
 
 		$blattkey=$rowg["blattart"];
 		$blattart=blattart($blattkey);
@@ -164,44 +169,45 @@ while($rowg = pg_fetch_array($resg)) {
 		} else {		
 			echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
 		}
-	//	echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
-			echo "\n\t<tr>\n\t\t<td class='head'>Bezirk</td>";
-			echo "\n\t\t<td class='head'>".$blattart."</td>";
-			echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
-			echo "\n\t\t<td class='head'>Buchungsart</td>";
-		echo "\n\t</tr>";
+			echo "\n\t<tr>";
+				echo "\n\t\t<td class='head'>Bezirk</td>";
+				echo "\n\t\t<td class='head'>".$blattart."</td>";
+				echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
+				echo "\n\t\t<td class='head'>Buchungsart</td>";
+			echo "\n\t</tr>";
+			echo "\n\t<tr>";
+				echo "\n\t\t<td title='Grundbuchbezirk'>";
+					if ($showkey) {
+						echo "<span class='key'>".$rowg["bezirk"]."</span><br>";
+					}
+				echo $beznam."</td>";
+				echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowg["blatt"]."</span></td>";
+				echo "\n\t\t<td title='Bestandsverzeichnis-Nummer (BVNR, Grundst&uuml;ck)'>".$rowg["laufendenummer"]."</td>";
+				echo "\n\t\t<td title='Buchungsart'>";
+					if ($showkey) {
+						echo "<span class='key'>".$rowg["buchungsart"]."</span><br>";
+					}
+					echo $rowg["bart"];
+				echo "</td>";
+			echo "\n\t</tr>";
+		echo "\n\t</table>";
 
-	echo "\n\t<tr>";
-		echo "\n\t\t<td title='Grundbuchbezirk'>";
-		if ($showkey) {
-			echo "<span class='key'>".$rowg["bezirk"]."</span><br>";
+		if ($rowg["zahler"] <> "") {
+			echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 		}
-		echo $beznam."</td>";
-		echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowg["blatt"]."</span></td>";
-		echo "\n\t\t<td title='Bestandsverzeichnis-Nummer (BVNR, Grundst&uuml;ck)'>".$rowg["laufendenummer"]."</td>";
-		echo "\n\t\t<td title='Buchungsart'>";
-		if ($showkey) {
-			echo "<span class='key'>".$rowg["buchungsart"]."</span><br>";
-		}
-		echo buchungsart($rowg["buchungsart"])."</td>\n\t</tr>";
-	echo "\n\t</table>";
-	if ($rowg["zahler"] <> "") {
-		echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
-	}
-	echo "\n</td>\n<td>";
-		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt");}
-		//echo "<br>\n";
-		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
+		echo "\n</td>\n<td>";
+		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt");}		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 			echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
 				echo "' title='Grundbuchnachweis'>";
-			//	echo "Grundbuch-Blatt";
 				echo $blattart;
-				echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
+				echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
+			echo "</a>";
 		echo "\n\t</p>";
-	echo "\n</td>\n";
-	echo "</table>";
+	echo "\n</td>";
+	echo "\n</tr>";
+	echo "\n</table>";
 	
 	// E I G E N T U E M E R
 	if ($blattkey == 5000) { // Schluessel Blattart
@@ -226,7 +232,7 @@ if ($j == 0) { // Entwicklungshilfe
 	//echo "<p>".$sql."</p>"; // TEST
 }
 echo "\n<hr>";
-footer($gkz, $gmlid, $idanzeige, $self, $hilfeurl, "", $showkey);
+footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey);
 
 ?>
 </body>

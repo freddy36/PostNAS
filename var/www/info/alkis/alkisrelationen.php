@@ -8,7 +8,6 @@
 	Verfolgt die Beziehungen von ALKIS-Objekten in der Tabelle 'alkis_beziehungen'.
 	Link durch "&id=j;" in den anderen Modulen zuschaltbar.
 	Dies ist fuer die Entwicklung der Auskunft gedacht (Sonderfaelle) nicht fuer den Anwender.
-	Parameter:	gkz, gml_id
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -19,7 +18,7 @@ require_once("/data/conf/alkis_www_conf.php");
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="Frank Jaeger" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">

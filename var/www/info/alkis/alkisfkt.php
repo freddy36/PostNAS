@@ -7,9 +7,9 @@
 		31.08.2010	$style=ALKIS entfernt, link zu alkislage.php
 		02.09.2010  mit Icons
 		07.09.2010  Schluessel anschaltbar
-		08.09.2010  ..
+		15.09.2010  Function "buchungsart" durch JOIN ersetzt
 */
-function footer($gkz, $gmlid, $idanzeige, $link, $hilfeurl, $append, $showkey) {
+function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
 	// Einen Seitenfuss ausgeben.
 	// Den URL-Parameter "&id=j/n" und "&showkey=j/n" in allen Kombinationen umschalten lassen.
 	// Die Parameter &gkz= und &gmlid= kommen in allen Modulen einheitlich vor
@@ -27,14 +27,12 @@
 	
 	// Spalte 2: Umschalter
 	echo "\n\t<td title='Konfiguration'>";
-		// Umschalter Testmodus I D - A n z e i g e
+		// Umschalter:
+		// - Schluessel		
+		// - Testmodus ID-Anzeige
+		
+		// bei beiden		
 		$mylink ="\n\t\t<a class='gmlid' href='".$link."gkz=".$gkz."&amp;gmlid=".$gmlid.$append;
-
-		if ($idanzeige) { // bleibt so
-			$myid = "&amp;id=j";
-		} else {
-			$myid = "&amp;id=n";
-		}
 
 		if ($showkey) { // bleibt so
 			$mykey = "&amp;showkey=j";
@@ -42,28 +40,52 @@
 			$mykey = "&amp;showkey=n";
 		}
 
-		if ($idanzeige) { // Umschalten ID ein/aus
-			echo $mylink.$mykey."&amp;id=n' title='Ohne Verfolgung der ALKIS-Beziehungen'>";
-			echo "<img src='ico/Beziehung_link.ico' width='16' height='16' alt=''> ID aus</a>";
-		} else {
-			echo $mylink.$mykey."&amp;id=j' title='Verfolgung der GML-ID in den ALKIS-Beziehungen'>";
-			echo "<img src='ico/Beziehung_link.ico' width='16' height='16' alt=''> ID ein</a>";
-		}
+		if ($idumschalter) { // fuer Entwicklung ODER Test
 
-		echo " | ";
+			if ($idanzeige) { // bleibt so
+				$myid = "&amp;id=j";
+			} else {
+				$myid = "&amp;id=n";
+			}
+
+			// Umschalter nur ausgeben, wenn in conf gesetzt
+			if ($idanzeige) { // Umschalten ID ein/aus
+				echo $mylink.$mykey."&amp;id=n' title='Ohne Verfolgung der ALKIS-Beziehungen'>";
+				echo "<img src='ico/Beziehung_link.ico' width='16' height='16' alt=''> ID aus</a>";
+			} else {
+				echo $mylink.$mykey."&amp;id=j' title='Verfolgung der GML-ID in den ALKIS-Beziehungen'>";
+				echo "<img src='ico/Beziehung_link.ico' width='16' height='16' alt=''> ID ein</a>";
+			}
+			echo " | ";
+		} else { // keinen ID-Umschalter
+			$myid = "";
+		}
 
 		if ($showkey) { // // Umschalten Schlüssel ein/aus
 			echo $mylink.$myid."&amp;showkey=n' title='Verschl&uuml;sselungen ausblenden'>Schl&uuml;ssel aus</a>";
 		} else {
 			echo $mylink.$myid."&amp;showkey=j' title='Verschl&uuml;sselungen anzeigen'>Schl&uuml;ssel ein</a>";
 		}
+
 	echo "\n\t</td>";
 
 	// Spalte 3
 	echo "\n\t<td title='Hilfe'>";
 	echo "\n\t\t<p class='nwlink'>\n\t\t\t<a target='_blank' href='".$hilfeurl."' title='Dokumentation'>Hilfe zur ALKIS-Auskunft</a>\n\t\t</p>\n\t</td>";
 
-	echo "\n</tr>\n</table>\n</div>\n";	return 0;
+	echo "\n</tr>\n</table>\n</div>\n";
+
+/*	echo "<br><p class='err'>";
+	echo "gkz=".$gkz."<br>";
+	echo "gmlid=".$gmlid."<br>";
+	echo "idumschalter=".$idumschalter."<br>";
+	echo "idanzeige=".$idanzeige."<br>";
+	echo "link=".$link."<br>";
+	echo "hilfeurl=".$hilfeurl."<br>";
+	echo "append=".$append."<br>";
+	echo "showkey=".$showkey;	
+	echo "</p>"; */
+	return 0;
 }
 
 function linkgml($gkz, $gml, $typ)  {
@@ -262,18 +284,31 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	$sql.="WHERE v.beziehung_zu='".$gml_bs."' "; // id buchungsstelle
 	$sql.="AND   v.beziehungsart='istGebucht' ";
 	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+
 	$resf=pg_query($con,$sql);
 	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck<br><br>".$sql."</p>\n";}
+
 	if($bvnraus) { // nur bei direkten Buchungen die lfdNr ausgeben
 		$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);	
 	}
+
 	$altlfdnr="";
 	$j=0;
 	while($rowf = pg_fetch_array($resf)) {
-		if ($rowf["nenner"] != "") {$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);}
-		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 		$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
-		$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
+
+/*		$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
+		if ($rowf["nenner"] != "") { // Bruchnummer
+			$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);
+		} */
+
+		// ohne fuehrende Nullen?
+		$fskenn=$rowf["zaehler"];
+		if ($rowf["nenner"] != "") { // Bruchnummer
+			$fskenn.="/".$rowf["nenner"];
+		}
+
+		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 
 		echo "\n<tr>"; // eine Zeile je Flurstueck
 			// Sp. 1-3 der Tab. aus Buchungsstelle, nicht aus FS
@@ -282,13 +317,18 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 				echo "\n\t<td>&nbsp;</td>";
 				echo "\n\t<td>&nbsp;</td>";
 			} else {
+
 				echo "\n\t<td>";
-					// Icon in Tabelle?				
-					//echo "<img src='ico/Grundstueck.ico' width='16' height='16' alt='' title='Grundst&uuml;ck' /> ";
+					echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke	
 					echo "<span class='wichtig'>".$bvnr."</span>";  // BVNR
 					if ($idanzeige) {linkgml($gkz, $gml_bs, "Buchungsstelle");}
 				echo "</td>";
-				echo "\n\t<td>".$ba."</td>"; // Buchungsart entschluesselt				echo "\n\t<td>&nbsp;</td>"; // Anteil
+
+				echo "\n\t<td>"; // Buchungsart 
+					//	if ($showkey) {echo "<span class='key'>".$???."</span>&nbsp;";} // Schluessel
+					echo $ba; // entschluesselt
+				echo "</td>"; 
+				echo "\n\t<td>&nbsp;</td>"; // Anteil
 				$altlfdnr=$lfdnr;	
 			}		
 			//Sp. 4-7 aus Flurstueck
@@ -522,50 +562,7 @@ function anrede($key) {
 	}
 	return $wert;
 }
-// Entschluesslung buchungsart
-// Die Buchungsarten mit Wertearten 1101, 1102, 1401 bis 1403, 2201 bis 2205 und 2401 bis 2404 können nur auf einem Fiktiven Blatt vorkommen. 
-// Die Attributart 'Anteil' ist dann immer zu belegen.
-function buchungsart($key) {
-	switch ($key) {
-		case 1100:
-			$wert = "Grundst&uuml;ck"; 
-			break;
-		case 1101:
-			$wert = "Aufgeteiltes Grundstück WEG";
-			break;
-		case 1102:
-			$wert = "Aufgeteiltes Grundstück Par. 3 Abs. 4 GBO";
-			break;
-		case 1301:
-			$wert = "Wohnungs-/Teileigentum";
-			break;
-		case 1302:
-			$wert = "Miteigentum Par. 3 Abs. 4 GBO";
-			break;
-		case 2101:
-			$wert = "Erbbaurecht";
-			break;
-		case 2102:
-			$wert = "Untererbbaurecht";
-			break;
-		case 2201:
-			$wert = "Aufgeteiltes Erbbaurecht WEG";
-			break;
-		case 2301:
-			$wert = "Wohnungs-/Teilerbbaurecht";
-			break;
-		case 2302:
-			$wert = "Wohnungs-/Teiluntererbbaurecht";
-			break;
-		case 5101:
-			$wert = "Von Buchungspflicht befreit Par. 3 Abs. 2 GBO";
-			break;
-		default:
-			$wert = "";
-			break;
-	}
-	return $wert;
-}
+
 // Entschluesslung AX_Namensnummer.artDerRechtsgemeinschaft
 function rechtsgemeinschaft($key) {
 	switch ($key) {

@@ -5,7 +5,7 @@
 	31.08.2010	Prototyp
 	02.09.2010  Mit img
 	06.09.2010  Kennzeichen-Rahmenfarben differenziert
-	08.09.2010  ..
+	15.09.2010  ...
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -66,13 +66,14 @@ div.adr {border-left-width: 0px;
 	border-right-width: 0px; 
 	border-bottom-width: 2px; 
 	border-top-width: 2px; 
-	width: 80%;
+	width: 60%;
 	border-color: #a2d545;
-	border-style: solid; font-size: 11pt;
+	border-style: solid; 
+	font-size: 12pt;
 	margin-bottom: 8px;
 	margin-top: 8px;
-	margin-left: 0.5in;
-	margin-right: 0.5in;
+	margin-left: 0.7in;
+	/* margin-right: 0.7in; */
 	overflow: auto;
 	padding: 6px;
 	background: #e4f7dd;
@@ -96,13 +97,15 @@ table.kennzla	{border: 2px solid  lime;  padding: 3px; margin: 0px;}	/* Lage */
 table.fs, table.nua, table.klas, table.eig, table.outer, table.geb {width: 100%;}
 
 td	{vertical-align: top;}			/*  ** Tabellenfelder ** */
-/*td	{vertical-align: top; border: 1px dotted gray; }	 ** Tabellenfelder  Variante f. TEST ** */
+/* td	{vertical-align: top; border: 1px dotted gray; }  Variante fuer TEST */
 
-td.ll	{width: 130px; padding-top: 8px;}	/* ALKIS Datenliste linke Spalte */
-td.lr	{color: black; padding-top: 8px;}	/* .. rechte Spalte */
+td.ll	{width: 130px; padding-top: 8px;}	/* Liste Links */
+td.lr	{color: black; padding-top: 8px;}	/* Liste Rechts */
 td.ph	{color: gray;  padding-top: 8px;}	/* Platzhalter, vorlaeufig, spaeter loschen */
 
-td.fla	{width: 90px; padding-right: 4px; text-align: right;}	/* Flaechen rechtsbuendig (stellengerecht) */
+/* Flaechen rechtsbuendig (stellengerecht) */
+/* td.fla	{width: 90px; padding-right: 4px; text-align: right;} */
+td.fla	{padding-right: 4px; text-align: right;}
 td.key	{width: 35px; padding-right: 4px; padding-left: 4px;}
 /* Ertragsmesszahl der Bodenschaetzung
 td.emz	{width: 45px; padding-right: 4px; padding-left: 4px; 
@@ -119,13 +122,13 @@ td.head	{border-bottom: 1px solid gray; font-style: italic;}	/* Kopfzeile, Spalt
 td.sum {border-top:2px dotted maroon;	border-bottom:3px solid maroon;
 	border-left:0px dotted maroon;	border-right:0px dotted maroon;
 	font-weight: bold;}				/* unter dem Strich = Summenzeile */
-td.bez	{ font-weight: bold;}	/* Beziehungen */
-td.nhd	{ width: 150px; }			/* Namen - linke / rechte Spalte */
-td.nam	{ font-weight: bold;}
-td.gbl {border-top: 1px dotted green;	border-bottom:0px;
-	border-left:0px ;		border-right:0px ;}	/* Name: GB-Liste */
+td.bez	{font-weight: bold;}		/* Beziehungen */
+td.nhd	{width: 150px;}			/* Namen - linke / rechte Spalte */
+td.nam	{font-weight: bold;}
+td.gbl	{border-bottom: 1px dotted green;}	/* Name: GB-Liste */
 
-td.dien	{font-style: italic; color: purple; border-bottom: 1px solid silver;}	/* dienendes GB in FS-Tab im Best-NW */
+/* dienendes GB in FS-Tab im Best-NW  */
+td.dien	{font-size: 9pt; font-style: italic; color: purple; border-bottom: 1px solid silver;}
 
 /* Ueberschriften */
 h1, h2, h3, h4, h5, h6 {font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;}
