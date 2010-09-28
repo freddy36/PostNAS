@@ -1,26 +1,30 @@
 <?php
 /*	Modul: alkisfsnw.php
+
+	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
+	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
+
 	Version:
 	31.08.2010	$style=ALKIS entfernt, alles Kompakt
 	02.09.2010  Mit Icons
 	07.09.2010  Kennzeichen-Rahmen f. fiktives Blatt, Schluessel anschaltbar
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 
-	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
-	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
-
-	ToDo: NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum*/
+	ToDo: 
+	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum*/
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-// Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -177,6 +181,8 @@ if (!$ress) {
 }
 $bs=0; // Z.Buchungsstelle
 while($rows = pg_fetch_array($ress)) {
+	$gmls=$rows["gml_id"];
+	$lfd=$rows["lfd"]; // BVNR
 
 	// B U C H U N G S B L A T T  zur Buchungsstelle (istBestandteilVon)
 	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
@@ -184,7 +190,7 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="FROM  alkis_beziehungen      v "; // Bez. Stelle - Blatt
 	$sql.="JOIN  ax_buchungsblatt       b ON v.beziehung_zu=b.gml_id ";
 	$sql.="JOIN  ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-	$sql.="WHERE v.beziehung_von='".$rows["gml_id"]."' "; // id Buchungsstelle
+	$sql.="WHERE v.beziehung_von='".$gmls."' "; // id Buchungsstelle
 	$sql.="AND   v.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
 
@@ -194,9 +200,11 @@ while($rows = pg_fetch_array($ress)) {
 	}
 	$bl=0; // Z.Blatt
 	while($rowg = pg_fetch_array($resg)) {
+		$gmlg=$rowg["gml_id"];
 		$beznam=$rowg["bezeichnung"];
 		$blattkeyg=$rowg["blattart"];
 		$blattartg=blattart($blattkeyg);
+
 		echo "\n<hr>";
 		echo "\n<table class='outer'>";
 		echo "\n<tr>"; // 1 row only
@@ -243,12 +251,12 @@ while($rows = pg_fetch_array($ress)) {
 
 			echo "\n<td>"; // Outer rechte Spalte: NW-Links
 				if ($idanzeige) {
-					linkgml($gkz, $rows["gml_id"], "Buchungsstelle");
+					linkgml($gkz, $gmls, "Buchungsstelle");
 					echo "<br>";
-					linkgml($gkz, $rowg["gml_id"], "Buchungsblatt");
+					linkgml($gkz, $gmlg, "Buchungsblatt");
 				}
 				echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
-					echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
+					echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg."#bvnr".$lfd;
 						if ($idanzeige) {echo "&amp;id=j";}
 						if ($showkey)   {echo "&amp;showkey=j";}
 						if ($blattkeyg == 1000) {						
@@ -270,12 +278,11 @@ while($rows = pg_fetch_array($ress)) {
 		}
 		// E I G E N T U E M E R, zum GB
 		// Person <-benennt< AX_Namensnummer  >istBestandteilVon-> AX_Buchungsblatt
-		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer			$gmlblatt = $rowg["gml_id"]; // id blatt
-			$n = eigentuemer($con, $gkz, $idanzeige, $gmlblatt, false); // hier aber ohne Adresse
+		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer			$n = eigentuemer($con, $gkz, $idanzeige, $gmlg, false); // hier aber ohne Adresse
  			if ($n == 0) {
 				if ($blattkeyg == 1000) {
 					echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
-					linkgml($gkz, $rowg["gml_id"], "Buchungsblatt");
+					linkgml($gkz, $gmlg, "Buchungsblatt");
 				} else {
 					echo "\n<p>ohne Eigent&uuml;mer.</p>";				}
 			}
@@ -283,7 +290,7 @@ while($rows = pg_fetch_array($ress)) {
 		$bl++;	}
 	if ($bl == 0) {
 		echo "\n<p class='err'>Kein Buchungsblatt gefunden.</p>";
-		linkgml($gkz, $rows["gml_id"], "Buchungstelle");
+		linkgml($gkz, $gmls, "Buchungstelle");
 	}
 
 	// Buchungstelle  >an>  Buchungstelle  >istBestandteilVon>  BLATT  ->  Bezirk
@@ -298,7 +305,7 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="JOIN  ax_buchungsblatt  b ON v.beziehung_zu = b.gml_id ";
 	$sql.="JOIN  ax_buchungsblattbezirk z ON z.land = b.land AND z.bezirk = b.bezirk ";
 	$sql.="JOIN  ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-	$sql.="WHERE an.beziehung_zu = '".$rows["gml_id"]."' "; // id herrschende Buchungsstelle
+	$sql.="WHERE an.beziehung_zu = '".$gmls."' "; // id herrschende Buchungsstelle
 	$sql.="AND   an.beziehungsart = 'an' ";
 	$sql.="AND   v.beziehungsart = 'istBestandteilVon' ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
@@ -389,8 +396,7 @@ while($rows = pg_fetch_array($ress)) {
 		}
 
 		if ($eig=="j") {
-			$gmlblatt = $rowan["g_gml"]; // id blatt
-			$n = eigentuemer($con, $gkz, $idanzeige, $gmlblatt, false, $showkey); // ohne Adresse
+			$n = eigentuemer($con, $gkz, $idanzeige, $rowan["g_gml"], false, $showkey); // ohne Adresse
 			// Anzahl $n kontrollieren? Warnen?
 		}
 		$an++;
@@ -413,7 +419,7 @@ if ($bs == 0) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "&amp;eig=".$eig, $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "&amp;eig=".$eig, $showkey); ?>
 
 </body>
 </html>

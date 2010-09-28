@@ -1,27 +1,31 @@
 <?php
 /*	Modul: alkisnamstruk.php
+
+	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
+	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
+
 	Version:
 	30.08.2010	$style=ALKIS entfernt, alles Kompakt
 	02.09.2010  Mit Icons
 	06.09.2010  Schluessel anschaltbar
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt, Tabelle GB einzeilig
 
-	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
-	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
-
-	ToDo: Sortierung der Grundbücher zum Namen
+	ToDo: 
+	Sortierung der Grundbücher zum Namen
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-// Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -131,14 +135,14 @@ if ($row = pg_fetch_array($res)) {
 	$sql.="JOIN  ax_namensnummer   n   ON bpn.beziehung_von=n.gml_id ";
 	$sql.="JOIN  alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
 	$sql.="JOIN  ax_buchungsblatt  g   ON bng.beziehung_zu=g.gml_id ";
-
 	$sql.="JOIN  ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
-
 	$sql.="WHERE bpn.beziehung_zu='".$gmlid."' ";
 	$sql.="AND   bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
-	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung ;";
+	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung;";
+	// buchungsblatt... mal mit und mal ohne fuehrende Nullen, bringt die Sortierung durcheinander
 
 	//echo "\n<p class='err'>".$sql."</p>\n";
+
 	$resg=pg_query($con,$sql);
 	if (!$resg) echo "\n<p class='err'>Fehler bei Grundbuch.<br>\nSQL= ".$sql."</p>\n";
 	$j=0;
@@ -232,7 +236,7 @@ if ($row = pg_fetch_array($res)) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

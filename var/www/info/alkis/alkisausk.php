@@ -15,20 +15,21 @@
 		02.09.2010  Mit Icons
 		07.09.2010  Schluessel anschaltbar
 		15.09.2010  Function "buchungsart" durch JOIN ersetzt
+		17.09.2010  Authentifizierung Konfigurierbar
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
-// Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
-//require_once(dirname(__FILE__)."/../../../php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
-//require_once(dirname(__FILE__)."/../../../../conf/alkis_conf.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -232,7 +233,8 @@ if ($j == 0) { // Entwicklungshilfe
 	//echo "<p>".$sql."</p>"; // TEST
 }
 echo "\n<hr>";
-footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey);
+
+footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey);
 
 ?>
 </body>

@@ -4,8 +4,8 @@
 -- Z u s a e t z l i c h e   S c h l u e s s e l t a b e l l e n
 
 -- Dieses Script fuegt der Datenbank einige Schluesseltabellen hinzu, die der 
--- Konverter PostNAS NICHT aufbaut, weil sie nicht in den NAS-daten enthalten sind.
--- Die Schluessel sind der Dokumantation zu entnehmen.
+-- Konverter PostNAS NICHT aufbaut, weil sie nicht in den NAS-Daten enthalten sind.
+-- Die Schluessel sind der Dokumentation zu entnehmen.
 
 -- Die Tabellen werden vom Buchwerk-Auskunftsprogramm benoetigt.
 
@@ -16,8 +16,8 @@
 
 -- Version
 
--- krz f.j. 2010-09-15   Buchungsart hinzugefuegt
-
+-- krz f.j. 2010-09-16   Buchungsart hinzugefuegt
+--                       recht 
 
 
 -- G e b a e u d e - B a u w e i s e
@@ -396,8 +396,81 @@ INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner,kennung,objektart) V
 -- 3 Werte koennen ueber Function (case) entschluesselt werden.
 
 
--- B e r e c h t i g u n g e n
+-- ax_bauraumoderbodenordnungsrecht_artderfestlegung
 
+
+-- Entschluesseln der Rechte im Template
+
+CREATE TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung 
+  (wert        integer, 
+   bezeichner  character varying,
+   kennung     integer,
+   objektart   character varying
+  );
+
+ALTER TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung 
+ADD CONSTRAINT pk_ax_bauraumoderbodenordnungsrecht_artderfestlegung_wert 
+PRIMARY KEY (wert);
+
+
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1700,'Festlegung nach Baugesetzbuch - Allgemeines Städtebaurecht',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1710,'Bebauungsplan',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1720,'Veränderungssperre nach Baugesetzbuch',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1730,'Vorkaufrechtssatzung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1740,'Enteignungsverfahren',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1750,'Umlegung nach dem BauGB',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1760,'Bauland',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1770,'Vereinfachte Umlegung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1780,'Vorhaben- und Erschließungsplan',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1790,'Flächennutzungsplan',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1800,'Festlegung nach Baugesetzbuch - Besonderes Städtebaurecht',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1810,'Städtebauliche Entwicklungsmaßnahme',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1811,'Städtebauliche Entwicklungsmaßnahme (Beschluss zu vorbereitenden Untersuchungen gefasst)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1820,'Erhaltungssatzung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1821,'Städtebauliches Erhaltungsgebiet',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1822,'Soziales Erhaltungsgebiet',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1823,'Erhaltungsgebiet zur städtebaulichen Umstrukturierung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1824,'Soziales Erhaltungsgebiet (Aufstellungsbeschluss gefasst)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1830,'Städtebauliche Gebote',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1840,'Sanierung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1841,'Sanierung (Beschluss zu vorbereitenden Untersuchungen gefasst)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (1900,'Wohnungsbauerleichterungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2100,'Flurbereinigungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2110,'Flurbereinigung (Par. 1, 37 FlurbG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2120,'Vereinfachtes Flurbereinigungsverfahren (Par. 86 FlurbG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2130,'Unternehmensflurbereinigung (nach Par. 87 oder 90 FlurbG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2140,'Beschleunigtes Zusammenlegungsverfahren (Par. 91 FlurbG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2150,'Freiwilliger Landtausch (Par. 103a FlurbG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2160,'Verfahren nach dem Gemeinheitsteilungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2170,'Verfahren nach dem Gemeinschaftswaldgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2180,'Freiwilliger Nutzungstausch',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2200,'Verfahren nach dem Landwirtschaftsanpassungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2210,'Flurneuordnung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2220,'Freiwilliger Landtausch (Par. 54 LwAnpG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2230,'Bodenordnungsverfahren (Par. 56 LwAnpG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2240,'Zusammenführung von Boden- und Gebäudeeigentum (Par. 64 LwAnpG)',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2300,'Bodensonderungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2310,'Unvermessenes Eigentum',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2320,'Unvermessenes Nutzungsrecht',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2330,'Ergänzende Bodenneuordnung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2340,'Komplexe Bodenneuordnung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2400,'Vermögenszuordnungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2410,'Vermögenszuordnung nach Plan',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2411,'Vermögenszuordnung nach dem Aufteilungsplan',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2412,'Vermögenszuordnung nach dem Zuordnungsplan',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2500,'Landesraumordnungsgesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2510,'Wasservorranggebiete',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2600,'Bauordnung',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2610,'Baulast',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2611,'Begünstigende Baulast',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2612,'Belastende Baulast',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2700,'Grenzfeststellungsverfahren nach Hamb. Wassergesetz',71008,'ax_bauraumoderbodenordnungsrecht');
+INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2800,'Verkehrsflächenbereinigung',71008,'ax_bauraumoderbodenordnungsrecht');
+
+
+
+-- B e r e c h t i g u n g e n
+-- ---------------------------
 
 -- Interne Version:
 GRANT SELECT ON TABLE ax_gebaeude_bauweise          TO ms5;

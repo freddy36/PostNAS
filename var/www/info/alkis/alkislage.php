@@ -1,5 +1,6 @@
 <?php
 /*	alkislage.php
+
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Kann die 3 Arten von Lagebezeichnung anzeigen und verbundene Objekte verlinken
 
@@ -10,15 +11,17 @@
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-// Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -412,7 +415,7 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "&amp;ltyp=".$ltyp , $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "&amp;ltyp=".$ltyp , $showkey); ?>
 
 </body>
 </html>

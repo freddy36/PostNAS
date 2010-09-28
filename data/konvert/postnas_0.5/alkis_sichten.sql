@@ -8,8 +8,10 @@
 
 --  PostNAS 0.5, 
 --   06.01.2010  F, Jaeger, KRZ
---   21.01.2010  ap-pto.art
---   14.6.2010   GRANT entfernt
+--   21.01.2010  F.J. ap-pto.art
+--   14.06.2010  F.J. GRANT entfernt
+--   24.09.2010  F.J. "s_flurstueck_nr" ersetzt "s_flurstuecksnummer_flurstueck" (Bruchnummer)
+
 
 --   Verbindungen werden seit PostNAS 0.5 nicht mehr nachträglich mit einem Script generiert
 --   sondern vom Konverter PostNAS gesetzt.
@@ -21,13 +23,26 @@
 --  -----------------------------------------
 
 
--- Layer "ag_t_flurstueck" in ag_flurstueck.map
--- --------------------------------------------
+-- Layer "ag_t_flurstueck"
+-- -----------------------
 
 -- Die Geometrie befindet sich in "ap_pto", der Label in "ax_flurstueck"
 -- Die Verbindung erfolgt über "alkis_beziehungen"
 
--- bis 13.01.2010:
+-- PostNAS 0.5, September 2010:
+--   Musterdaten RLP: zaehler-nenner steht auch in Feld "ap_pto.schriftinhalt"
+--   Lippe NRW:       Feld "ap_pto.schriftinhalt" ist leer. Label aus Tabelle "ax_flurstueck" entnehmen
+
+
+-- In einigen Gebieten enthält das Feld "ap_pto.art"
+-- nicht den Wert 'ZAE_NEN' sondern 'urn:adv:fachdatenverbindung'.
+-- Die Flurstücksnummer fehlt dann im WMS.
+-- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
+
+
+-- Version "s_flurstuecksnummer_flurstueck" bis 24.09.2010, 
+-- wird ersetzt durch "s_flurstueck_nr"
+
 --CREATE OR REPLACE VIEW s_flurstuecksnummer_flurstueck 
 --AS 
 -- SELECT ap_pto.ogc_fid, 
@@ -40,33 +55,36 @@
 --     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
 --   JOIN ax_flurstueck 
 --     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
---  WHERE ap_pto.art = 'ZAE_NEN'                 -- Zähler / Nenner
---    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+--  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
--- In einigen Gebieten enthält das Feld "ap_pto.art"
--- nicht den Wert 'ZAE_NEN' sondern 'urn:adv:fachdatenverbindung'.
--- Die Flurstücksnummer fehlt dann im WMS.
--- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
 
-CREATE OR REPLACE VIEW s_flurstuecksnummer_flurstueck 
+-- Bruchnummerierung erzeugen
+-- (ersetzt s_flurstuecksnummer_flurstueck ab Sept. 2010)
+DROP VIEW s_flurstueck_nr;
+CREATE OR REPLACE VIEW s_flurstueck_nr
 AS 
  SELECT ap_pto.ogc_fid, 
-        ap_pto.wkb_geometry, 
-        ax_flurstueck.flurstueckskennzeichen, 
-        ax_flurstueck.zaehler,                 -- umn: LABELITEM
-        ax_flurstueck.nenner
+        ap_pto.wkb_geometry,   -- Position des Textes
+    --  ax_flurstueck.flurstueckskennzeichen,   -- am Stueck, aufgefuellt, unpraktisch
+    --  ax_flurstueck.gemarkungsnummer,  -- integer
+    --  ax_flurstueck.flurnummer,        -- integer
+    --  ax_flurstueck.zaehler,           -- integer
+    --  ax_flurstueck.nenner,            -- integer oder NULL
+        ax_flurstueck.zaehler::text || COALESCE ('/' || ax_flurstueck.nenner::text, '') AS fsnum
    FROM ap_pto
    JOIN alkis_beziehungen 
      ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
    JOIN ax_flurstueck 
      ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
-  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
+  --AND ap_pto.art = 'ZAE_NEN'
+  ;
 
- -- GRANT SELECT ON TABLE s_flurstuecksnummer_flurstueck TO ms5;
+COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück';
 
 
--- Layer "ag_t_gebaeude" in ag_gebaeude.map
--- -----------------------------------------
+-- Layer "ag_t_gebaeude"
+-- ---------------------
 
 --CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 --AS 
@@ -83,9 +101,8 @@ AS
 --     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
 
--- In einigen Gebieten enthält das Feld "ap_pto.art"
--- nicht den Wert 'HNR'.
--- Die Hausnummer fehlt dann im WMS.
+-- In einigen Gebieten in Lippe enthält das Feld "ap_pto.art"
+-- nicht den Wert 'HNR'. Die Hausnummer fehlt dann im WMS.
 -- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
 
 
@@ -102,11 +119,13 @@ AS
      ON alkis_beziehungen.beziehung_zu  = ax_lagebezeichnungmithausnummer.gml_id
   WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
---GRANT SELECT ON TABLE s_hausnummer_gebaeude TO ms5;
-  
+COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
 
--- Layer "ag_p_flurstueck" in ag_flurstueck.map
--- --------------------------------------------
+
+
+
+-- Layer "ag_p_flurstueck"
+-- -----------------------
 
 CREATE OR REPLACE VIEW s_zugehoerigkeitshaken_flurstueck 
 AS 
@@ -122,12 +141,11 @@ AS
   WHERE ap_ppo.art = 'Haken'
     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
---GRANT SELECT ON TABLE s_zugehoerigkeitshaken_flurstueck TO ms5;
+COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck IS 'fuer Kartendarstellung';
 
 
-
--- Layer "ag_l_flurstueck" in ag_flurstueck.map
--- --------------------------------------------
+-- Layer "ag_l_flurstueck"
+-- -----------------------
 
 CREATE OR REPLACE VIEW s_zuordungspfeil_flurstueck 
 AS 
@@ -141,8 +159,35 @@ AS
   WHERE ap_lpo.art = 'Pfeil'
     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
---GRANT SELECT ON TABLE s_zuordungspfeil_flurstueck TO ms5;
+COMMENT ON VIEW ag_l_flurstueck IS 'fuer Kartendarstellung';
 
+
+-- Layer NAME "ap_pto" GROUP "praesentation"
+-- ----------------------------------------
+-- Texte, die nicht schon in einem anderen Layer ausgegeben werden
+
+
+CREATE OR REPLACE VIEW s_beschriftung 
+AS 
+  SELECT ap_pto.ogc_fid, 
+      -- ap_pto.gml_id, 
+         ap_pto.schriftinhalt, 
+         ap_pto.art, 
+         ap_pto.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
+         ap_pto.wkb_geometry 
+    FROM ap_pto 
+   WHERE not ap_pto.schriftinhalt IS NULL 
+     AND art NOT IN ('ZAE_NEN', 'HNR')
+   ;
+--  IN ('FKT', 'Friedhof', 'urn:adv:fachdatenv')
+
+-- Diese IN-Liste fortschreiben bei Erweiterungen des Mapfiles
+
+-- Lippe: Der Wert 'ZAE_NEN' fehlt. Diese Fälle anders identifizieren?
+
+GRANT SELECT ON TABLE s_beschriftung                    TO ms5;
+
+COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
 
 --  ------------------------------------------
 --  Sichten fuer Fehlersuche und Daten-Analyse
@@ -199,7 +244,6 @@ AS
 --  Bahnverkehr, BWF, FKT_LGT, Fliessgewaesser, FreierText, Gewanne, NAM, Platz,
 --  StehendesGewaesser, Strasse, urn:adv:fachdatenv, Weg, ZNM
 
---GRANT SELECT ON TABLE s_allgemeine_texte  TO ms5; -- nicht im WMS
 
 
 -- EXTENT für Mapfile eines Mandenten ermitteln
@@ -212,6 +256,36 @@ CREATE OR REPLACE VIEW flurstuecks_minmax AS
    FROM public.ax_flurstueck;
 
 COMMENT ON VIEW flurstuecks_minmax IS 'Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile';
+
+
+
+-- Nach Laden der Keytables:
+
+
+-- MAP ALT:
+-- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
+
+CREATE VIEW baurecht
+AS
+  SELECT r.ogc_fid, 
+         r.wkb_geometry, 
+         r.gml_id, 
+         r.artderfestlegung as adfkey, -- Art der Festlegung - Key 
+         r."name",                     -- Eigenname des Gebietes
+         r.stelle,                     -- Stelle Key
+         r.bezeichnung AS rechtbez,    -- Verfahrensnummer
+         a.bezeichner  AS adfbez,      -- Art der Festlegung - Bezeichnung
+         d.bezeichnung AS stellbez     -- Stelle Bezeichnung
+      -- , d.stellenart  --- weiter entschluesseln?
+    FROM ax_bauraumoderbodenordnungsrecht r
+    LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a
+      ON r.artderfestlegung = a.wert
+    LEFT JOIN ax_dienststelle d
+      ON r.land = d.land AND r.stelle = d.stelle
+ ;
+
+-- MAP NEU:
+-- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, adfkey, name, stelle, rechtbez, adfbez, stellbez, wkb_geometry FROM baurecht) as foo using unique ogc_fid using SRID=25832" # gespeicherter View
 
 
 -- END --

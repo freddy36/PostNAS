@@ -1,5 +1,9 @@
 <?php
 /*	Modul: alkisbestnw.php
+
+	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
+	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
+
 	Version:
 	31.08.2010	$style=ALKIS entfernt, alles Kompakt
 	02.09.2010  Mit Icons
@@ -7,22 +11,24 @@
 	08.09.2010  berechtigte GB-Blätter an fiktivem Blatt auflisten
 	14.09.2010  Grundbuch unter Flurstueck, BVNR in Tabelle anzeigen und als Sprungmarke
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
-		
-	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
-	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
+
+	ToDo:
+	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
 //ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 ini_set('error_reporting', 'E_ALL');
 session_start();
-// Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -266,7 +272,10 @@ while($row = pg_fetch_array($res)) {	$lfdnr  = $row["lfd"];
 
 				echo "\n\t<td class='dien'>"; // BVNR
 					echo str_pad($lfdnran, 4, "0", STR_PAD_LEFT);
-					// id ?
+					if ($idanzeige) {
+						linkgml($gkz, $gml_bsan, "Buchungsstelle");
+					}	
+
 				echo "</td>"; 
 
 				echo "\n\t<td class='dien'>"; // Sp.7 Buchungsart
@@ -305,29 +314,22 @@ while($row = pg_fetch_array($res)) {	$lfdnr  = $row["lfd"];
 			}
 
 			$a++;
+			/*	Zeile ganz raus
 			if ($aj == 0) { // KEINE Flurstuecke gefunden
 				echo "\n<tr>"; // die Buchung ausgeben, auch ohne Flurstuecke
-					echo"\n\t<td>";
-						if ($idanzeige) {linkgml($gkz, $gml_bsan, "Buchungsstelle");}			
-					echo "</td>";
-
+					echo"\n\t<td></td>";
 					echo "\n\t<td>"; // Sp.2 Buchung
-						if ($showkey) {					
-							echo "<span class='key'>".$rowan["buchungsart"]."</span> ";
-						}
+						if ($showkey) {echo "<span class='key'>".$rowan["buchungsart"]."</span> ";}
 						echo $baan;
 					echo "</td>"; 
-
-					echo "\n\t<td></td>"; // Sp.3 Anteil
-
+					echo "\n\t<td></td>";
 					echo "\n\t<td colspan=4>"; // Gemarkg, Flur, Flurst, Flaeche
 						echo "<p class='warn'>(keine Flurst&uuml;cke)";					
 					echo "</td>";
-
-					echo "\n\t<td></td>";  // Sp.8 Link ("an" oder "zu" ?)
-
-				echo "\n</tr>"; 
-			}
+					echo "\n\t<td></td>";
+				echo "\n</tr>";			
+			} 
+			*/
 		}
 		if ($a == 0) {
 			echo "\n<tr>";
@@ -496,7 +498,7 @@ if ($i == 0) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

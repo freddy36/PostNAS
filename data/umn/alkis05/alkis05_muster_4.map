@@ -1,8 +1,8 @@
 # WMS: ALKIS PostNAS 0.5 Muster mit Platzhalter *gkz* für Mandant
 # Druckversion zum Mapfile vom ...
 
-# Stand:
-#  27.04.2010
+# 2010-09-22 F.J. krz  Baurecht
+
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -32,7 +32,6 @@ MAP
 
 	WEB
 		METADATA
-			wms_accessconstraints "none"
 			WMS_SRS "epsg:31467 epsg:4326 epsg:25832"
 			WMS_ENCODING "UTF-8"
 		#	wms_onlineresource "http://wms.krz.de/cgi-bin/alkis05*gkz*.xml"
@@ -471,7 +470,7 @@ LAYER
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
 	CLASS
-		NAME "Weg" #sn_2515
+		NAME "Weg" #sn2515
 		STYLE
 			COLOR 250 250 250
 			OUTLINECOLOR 153 153 153
@@ -509,7 +508,7 @@ LAYER
 		END
 	END
 	CLASS
-		NAME "Platz" #sn_2515
+		NAME "Platz" #sn2515
 		STYLE
 			COLOR -1 -1 -1
 			OUTLINECOLOR 153 153 153
@@ -886,7 +885,7 @@ LAYER
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
 	CLASS
-		NAME "Fliessgewaesser" #sn_2515
+		NAME "Fliessgewaesser" #sn2515
 		STYLE
 			COLOR 190 233 250
 			OUTLINECOLOR 153 153 153
@@ -944,7 +943,7 @@ LAYER
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
 	CLASS
-		NAME "stehendes Gewaesser" #sn_2515
+		NAME "stehendes Gewaesser" #sn2515
 		STYLE
 			COLOR 190 233 250
 			OUTLINECOLOR 153 153 153
@@ -984,7 +983,7 @@ LAYER
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 1250 #5000
 	CLASS
-		NAME "Untergeordnetes Gewässer" # sn_1523
+		NAME "Untergeordnetes Gewässer" # sn1523
 		EXPRESSION ([funktion] = 1010)
 		STYLE
 			COLOR 227 255 255
@@ -1016,7 +1015,7 @@ LAYER
 	MAXSCALEDENOM 1250 #5000
 	# Feld funktion, Werte 1010, 1030, 1040
 	CLASS
-		NAME "Untergeordnetes Gewässer" # sn_1523
+		NAME "Untergeordnetes Gewässer" # sn1523
 		EXPRESSION ([funktion] = 1010)
 		STYLE
 			COLOR 0 204 204
@@ -1095,7 +1094,7 @@ LAYER
 		STYLE
 			COLOR -1 -1 -1
 			OUTLINECOLOR 128 255 128
-			SYMBOL "sn_1703"
+			SYMBOL "sn1703"
 			SIZE 11.34 #2.835
 		END
 	END
@@ -1124,7 +1123,7 @@ LAYER
 	CLASS
 		NAME "Andere Festlegung nach Wasserrecht" # sn1705
 		STYLE
-			SYMBOL "sn_1705"
+			SYMBOL "sn1705"
 			COLOR -1 -1 -1
 			OUTLINECOLOR 178 255 255
 			SIZE 11.34 #2.835
@@ -1133,10 +1132,10 @@ LAYER
 #	CLASS
 #		NAME "Festgesetztes Überschwemmungsgebiet" # sn7859 Schriftzusatz
 #		EXPRESSION ([artderfestlegung] = 1441)
-#			LABEL
-#				TYPE TRUETYPE
-#				FONTS 'arial'
-#				COLOR 178 255 255
+#		LABEL
+#			TYPE TRUETYPE
+#			FONTS 'arial'
+#			COLOR 178 255 255
 #	END
 END
 
@@ -1147,10 +1146,10 @@ LAYER
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis05*gkz* user=ms5 port=5432"
-	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
+	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		WMS_SRS "epsg:25832"
-		WMS_TITLE "Bau-, Raum- oder Bodenordnungsrecht (Umrandung)"
+		WMS_TITLE "Bau-, Raum- oder Bodenordnungsrecht"
 		WMS_ABSTRACT "'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften."
 		gml_include_items "all"
 	END
@@ -1159,52 +1158,95 @@ LAYER
 	END
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
-	TOLERANCEUNITS pixels
-	TOLERANCE 1
-	HEADER   "/data/umn/templates/alkisrechtbauh.html"
-	TEMPLATE "/data/umn/templates/alkisrechtbau.html"
-	FOOTER   "/data/umn/templates/footer.html"
-	CLASSITEM 'artderfestlegung' # Inhalte  2110 2140 2610
-	# 1750 Umlegung nach dem BauGB
-	# 1840 Sanierung
-	# 2100 Flurbereinigungsgesetz
+	SYMBOLSCALEDENOM 250 # 1000
+
+	CLASSITEM "artderfestlegung"
+
 	CLASS
-		NAME "Bau-, Raum oder Bodenordnungsrecht" # sn1704 sn7865 Schriftzusatz fehlt für Baulast
+		EXPRESSION "2610"
+		NAME "Baulast"
+		TEXT "Baulast"
 		STYLE
-			COLOR -1 -1 -1
 			OUTLINECOLOR 255 128 128
-			SYMBOL "sn_1704"
-			SIZE 11.34 #2.835
+			SYMBOL "sn1704"
+			SIZE 11.34 # 2.835
+			MINSIZE 8 #2
+			MAXSIZE 20 #5
+		END
+		LABEL # in die Flaeche
+			TYPE TRUETYPE
+			COLOR 255 128 128
+			OUTLINECOLOR 255 255 255
+			FONT "arial"
+			SIZE 56 # 14
+			MINSIZE 32 # 8
+			MAXSIZE 64 # 16
+			POSITION cc
+			PARTIALS FALSE
+			FORCE FALSE
 		END
 	END
-END
 
-LAYER
-	NAME "ax_bauraumoderbodenordnungsrecht_fuellung"
-	GROUP "recht"
-	TYPE POLYGON
-	DUMP TRUE
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=localhost dbname=alkis05*gkz* user=ms5 port=5432"
-	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht WHERE artderfestlegung IN (1750,1770,2100,2130)) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		WMS_SRS "epsg:25832"
-		WMS_TITLE "Bau-, Raum- oder Bodenordnungsrecht (Füllung)"
-		WMS_ABSTRACT "'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften."
-		gml_include_items "all"
-	END
-	PROJECTION
-		"init=epsg:25832"
-	END
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
-	CLASSITEM 'artderfestlegung'
 	CLASS
-		NAME "Umlegung und Flurbereinigung" # sn1704_sn2631
-		EXPRESSION ([artderfestlegung] = 1750 OR [artderfestlegung] = 1770 OR [artderfestlegung] = 2100 OR [artderfestlegung] = 2130)
+		EXPRESSION ([artderfestlegung] ge 2100 and [artderfestlegung] le 2199) # Rest der Gruppe
+		NAME "Flurbereinigung"
+		#TEXT "Flurbereinigung" # nur Test
 		STYLE
-			SYMBOL "point"
-			COLOR 153 153 153
+			OUTLINECOLOR 255 128 128
+			SYMBOL "sn1704"
+			SIZE 11.34 #2.835
+			MINSIZE 8 #2
+			MAXSIZE 20 #5
+		END
+		STYLE
+			COLOR 100 100 100 # grau 40%
+			SYMBOL "sn3631"
+			SIZE 60 #15
+			MINSIZE 40 #10
+			MAXSIZE 80 #20
+		END
+	END
+
+	CLASS
+		EXPRESSION ([artderfestlegung] = 1750 OR [artderfestlegung] = 1770)
+		NAME "Umlegung"
+		TEXT "Umlegung" # nur Test
+		STYLE
+			OUTLINECOLOR 255 128 128
+			SYMBOL "sn1704"
+			SIZE 11.34 #2.835
+			MINSIZE 8 #2
+			MAXSIZE 20 #5
+		END
+		STYLE
+			COLOR 100 100 100 # grau 40%
+			SYMBOL "sn3631"
+			SIZE 60 #15
+			MINSIZE 40 #10
+			MAXSIZE 80 #20
+		END
+		LABEL # nur Test
+			TYPE TRUETYPE
+			COLOR 255 0 255
+			FONT "arial"
+			SIZE 10 # 14
+			MINSIZE 32 #8
+			MAXSIZE 56 #14
+			POSITION cc
+			PARTIALS FALSE
+			FORCE FALSE
+		END
+	END
+
+	CLASS
+		EXPRESSION /./
+		NAME "Bau-, Raum oder Bodenordnungsrecht"
+		STYLE
+			OUTLINECOLOR 255 128 128
+			SYMBOL "sn1704"
+			SIZE 11.34 #2.835
+			MINSIZE 8 #2
+			MAXSIZE 20 #5
 		END
 	END
 END
@@ -1261,7 +1303,7 @@ LAYER
 		NAME "Freileitung" # sn1704_sn7881 Schriftzusatz fehlt
 		EXPRESSION ([artderfestlegung] = 4720)
 		STYLE
-			SYMBOL "sn_1704"
+			SYMBOL "sn1704"
 			COLOR -1 -1 -1
 			OUTLINECOLOR 255 128 128
 		END
@@ -1422,7 +1464,7 @@ LAYER
 			COLOR 0 0 0
 		END
 		STYLE
-			SYMBOL 'sn_2305'
+			SYMBOL 'sn2305'
 			COLOR 254 254 254
 		END
 	END
@@ -1538,7 +1580,7 @@ LAYER
 		STYLE
 			COLOR -1 -1 -1
 			OUTLINECOLOR 128 128 128
-			SYMBOL "sn_1530"
+			SYMBOL "sn1530"
 			SIZE 5.67 #1.417
 		END
 	END
@@ -1737,10 +1779,10 @@ LAYER
 		END
 	END
 	CLASS
-		NAME "Erdkabel" # sn_2523
+		NAME "Erdkabel" # sn2523
 		EXPRESSION ([bauwerksfunktion] = 1111)
 		STYLE
-			SYMBOL "sn_2523"
+			SYMBOL "sn2523"
 			COLOR 0 0 0
 		END
 	END
@@ -1774,15 +1816,15 @@ LAYER
 #		END
 #	END
 	CLASS
-		NAME "Pipeline unter der Erdoberfläche oder Wasseroberfläche" # sn_2523
+		NAME "Pipeline unter der Erdoberfläche oder Wasseroberfläche" # sn2523
 		EXPRESSION ([lagezurerdoberflaeche] = 1200 OR [lagezurerdoberflaeche] = 1700)
-		SYMBOL 'sn_2523'
+		SYMBOL 'sn2523'
 		STYLE
 			COLOR 0 0 0
 		END
 	END
 	CLASS
-		NAME "Pipeline" # sn_2523
+		NAME "Pipeline" # sn2523
 		EXPRESSION ([lagezurerdoberflaeche] = 1400)
 		STYLE
 			COLOR 0 0 0
@@ -1810,7 +1852,7 @@ LAYER
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
 	CLASS
-		NAME "Turm" # sn_1501
+		NAME "Turm" # sn1501
 		STYLE
 			COLOR 204 204 204
 			OUTLINECOLOR 0 0 0
@@ -1877,7 +1919,7 @@ LAYER
 	END
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
-	SYMBOLSCALE 1000
+	SYMBOLSCALEDENOM 250 #1000
 	#CLASSITEM "artderflurstuecksgrenze" # Faelle: <null>, 3000
 	CLASS
 		NAME "Besondere Flurstücksgrenze"
@@ -1886,7 +1928,7 @@ LAYER
 			COLOR 254 254 254
 		END
 		STYLE
-			SYMBOL 'sn_2006'
+			SYMBOL 'sn2006'
 			COLOR 0 0 0
 			SIZE 3.97 #0.992
 		END
@@ -1973,11 +2015,11 @@ LAYER
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis05*gkz* user=ms5 port=5432"
-	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,zaehler FROM s_flurstuecksnummer_flurstueck) as foo using unique ogc_fid using SRID=25832"
+	DATA "wkb_geometry from (SELECT * FROM s_flurstueck_nr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		WMS_SRS "epsg:25832"
 		WMS_TITLE "Flurstuecknummer"
-		WMS_ABSTRACT "ALKIS Flurstück Flurstücknummer (nur Zaehler, Nenner fehlt noch)"
+		WMS_ABSTRACT "ALKIS Flurstück Flurstücknummer"
 		gml_include_items "all"
 	END
 	PROJECTION
@@ -1985,7 +2027,7 @@ LAYER
 	END
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 1000 #4000
-	LABELITEM "zaehler"
+	LABELITEM "fsnum"
 	#LABELMINSCALEDENOM 0
 	#LABELMAXSCALEDENOM 500 #2000
 	SYMBOLSCALEDENOM 250 #1000
@@ -1994,7 +2036,6 @@ LAYER
 		STYLE
 			SYMBOL "point"
 			SIZE 4 #1
-			#OUTLINECOLOR 255 0 0
 		END
 		LABEL
 			TYPE TRUETYPE
@@ -2010,7 +2051,6 @@ LAYER
 			OUTLINECOLOR 255 255 255
 			FORCE True
 			BUFFER 1
-			#BACKGROUNDCOLOR 255 255 255
 		END
 	END
 END
@@ -2188,8 +2228,12 @@ LAYER
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis05*gkz* user=ms5 port=5432"
-	DATA "wkb_geometry from (SELECT ogc_fid, schriftinhalt, art, drehwinkel * 57.296 AS winkel, wkb_geometry FROM ap_pto WHERE not schriftinhalt is null) as foo using unique ogc_fid using SRID=25832"
+	
+	#DATA "wkb_geometry from (SELECT ogc_fid, schriftinhalt, art, drehwinkel * 57.296 AS winkel, wkb_geometry FROM ap_pto WHERE not schriftinhalt is null) as foo using unique ogc_fid using SRID=25832"
 	#WHERE ...  AND art not in ('HNR', 'urn:adv:fachdatenv')
+
+	DATA "wkb_geometry from (SELECT * FROM s_beschriftung) as foo using unique ogc_fid using SRID=25832"
+
 	METADATA
 		WMS_SRS "epsg:25832"
 		WMS_TITLE "Beschriftung"
@@ -2207,47 +2251,6 @@ LAYER
 #	LABELMINSCALEDENOM 0
 #	LABELMAXSCALEDENOM 2500 # wenn dann gleich MAXSCALEDENOM, da nur dies sichtbar ist
 
-	## ToDo: 
-	# Zeilenumbruch bei "/n" (WRAP nimmt nur 1 Zeichen)
-	# durch CLASS unterscheiden?
-	# -art
-	# -horizontaleausrichtung: linksbündig, zentrisch
-	# -vertikaleausrichtung:   Basis, Mitte
-	#
-	# SELECT DISTINCT art, horizontaleausrichtung, vertikaleausrichtung 
-	# FROM  ap_pto
-	# WHERE not schriftinhalt is null
-	# ORDER BY art;
-	##
-	#ART                linksbündig  Basis
-	#Bahnverkehr        linksbündig  Basis
-	#BWF                zentrisch    Basis
-	#BWF                zentrisch    Mitte
-	#FKT                zentrisch    Basis
-	#FKT_LGT            zentrisch    Basis
-	#Fliessgewaesser    linksbündig  Basis
-	#FreierText         linksbündig  Basis
-	#FreierText         zentrisch    Basis
-	#FreierText         zentrisch    Mitte
-	#Friedhof           zentrisch    Basis  --> sollte zu Layer Nutzung/Friedhof
-	#Gewanne            zentrisch    Basis
-	#HNR                linksbündig  Basis  --> wird in ag_gebaeude.map dargestellt
-	#HNR                zentrisch    Basis
-	#NAM                linksbündig  Basis
-	#NAM                zentrisch    Basis
-	#NAM                zentrisch    Mitte
-	#Platz              zentrisch    Basis
-	#StehendesGewaesser zentrisch    Basis  (18) = max
-	#Strasse            linksbündig  Basis
-	#urn:adv:fachdatenv linksbündig  Basis  ? abgeschnitten? (18)
-	#urn:adv:fachdatenv zentrisch    Basis
-	#urn:adv:fachdatenv zentrisch    Mitte
-	#Weg                linksbündig  Basis
-	#ZNM                linksbündig  Basis
-	#<NULL>             linksbündig  Basis
-	#<NULL>             zentrisch    Basis
-	#<NULL>             zentrisch    Mitte
-	
 	#CLASSITEM "art"
 	CLASS
 		NAME "Beschriftung"
@@ -2310,5 +2313,32 @@ END
 
 # ap_ppo
 # fehlt noch
+
+	LAYER
+		NAME "copyright"
+		STATUS ON # DEFAULT
+		TYPE annotation
+		TRANSFORM lr
+		METADATA
+			WMS_TITLE "Copyright"
+			WMS_ABSTRACT "In der Karte sichtbare Angabe auf die Herkunft der Daten"
+			WMS_KEYWORDLIST "Katasteramt, Copyright, Quellenangabe"
+			WMS_SRS "epsg:31467 epsg:4326 epsg:25832 epsg:900913"
+		END
+		FEATURE
+			POINTS 0 0 END
+			# hier fuer den Kreis Lippe die individuelle Vertragsnummer einsetzen!
+			TEXT "Copyright Geobasisdaten Liegenschaftskataster Kreis Lippe, JJ-NZR-???"
+		END
+		CLASS
+			LABEL
+				SIZE small
+				POSITION ul
+				COLOR 50 50 50
+				BACKGROUNDCOLOR 250 250 250
+				FORCE TRUE
+			END
+		END
+	END
 
 END

@@ -6,18 +6,18 @@
 -- Datenbankstruktur PostNAS 0.5  (GDAL 1.7)
 --
 -- Stand 
---  02.04.2009
---  23.06.2009 Korrektur "punktkennung character(15)" (NAS-Liste)
+--  2009-04-02 
+--  2009-06-23 Korrektur "punktkennung character(15)" (NAS-Liste)
 --             Ein Int-Feld kann keine 15 Stellen aufnehmen.
---  28.12.2009 Abgleich mit der Datenbank aus GDAL 1.7 (Musterkarte RPL GeoInfoDok 6)
---  04.01.2010 Abgleich mit der Datenbank aus GDAL 1.7 (ALKIS Lippe GeoInfoDok 5.1.1)
---  11.01.2010 Felder fuer Verbindungen auskommentiert, 
+--  2009-12-28 Abgleich mit der Datenbank aus GDAL 1.7 (Musterkarte RPL GeoInfoDok 6)
+--  2010-01-04 Abgleich mit der Datenbank aus GDAL 1.7 (ALKIS Lippe GeoInfoDok 5.1.1)
+--  2010-01-11 Felder fuer Verbindungen auskommentiert, 
 --             die jetzt zentral in "alkis_beziehungen" verwaltet werden.
---  13.01.2010 Austausch "character" (feste Länge!) durch "character varying" bei zahlreichen Feldern.
+--  2010-01-13 Austausch "character" (feste Länge!) durch "character varying" bei zahlreichen Feldern.
 --             Die Standard-Felder "gml_id" und "beginnt" behalten feste Länge.
---  21.01.2010 Feldlängen, Indices
---  26.01.2010 Strassenschluessel integer oder Char?
-
+--  2010-01-21 Feldlängen, Indices
+--  2010-01-26 Strassenschluessel integer oder Char?
+--  2010-09-24 Index auf ap_pto.art
 
 -- Zur Datenstruktur siehe Dokument: 
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
@@ -262,8 +262,12 @@ SELECT AddGeometryColumn('ap_pto','wkb_geometry','25832','POINT',2);
 
 CREATE INDEX ap_pto_geom_idx ON ap_pto USING gist (wkb_geometry);
 
+
 -- Verbindungstabellen indizieren
 CREATE INDEX ap_pto_gml ON ap_pto USING btree (gml_id);
+
+CREATE INDEX art_idx    ON ap_pto USING btree (art);
+
 
 
 COMMENT ON TABLE  ap_pto               IS 'PTO: Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie ';
@@ -271,6 +275,7 @@ COMMENT ON COLUMN ap_pto.gml_id        IS 'Identifikator, global eindeutig';
 
 COMMENT ON COLUMN ap_pto.schriftinhalt IS 'Label: anzuzeigender Text';
 
+COMMENT ON INDEX  art_idx              IS 'Suchindex auf häufig benutztem Filterkriterium';
 
 
 -- A n d e r e   F e s t l e g u n g   n a c h   W a s s e r r e c h t

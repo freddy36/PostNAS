@@ -1,24 +1,28 @@
 <?php
 /*	Modul: alkisrelationen.php
-	Version:
-	30.08.2010	$style=ALKIS entfernt, alles Kompakt
-	02.09.2010  Mit Icons
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Verfolgt die Beziehungen von ALKIS-Objekten in der Tabelle 'alkis_beziehungen'.
 	Link durch "&id=j;" in den anderen Modulen zuschaltbar.
 	Dies ist fuer die Entwicklung der Auskunft gedacht (Sonderfaelle) nicht fuer den Anwender.
+
+	Version:
+	30.08.2010	$style=ALKIS entfernt, alles Kompakt
+	02.09.2010  Mit Icons
+
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
-// Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -83,5 +87,6 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 }
 echo "\n<hr>\n<p class='nwlink'>\n\t<a target='_blank' href='".$hilfeurl."' title='Dokumentation'>Hilfe zur ALKIS-Auskunft</a>\n</p>\n";
 ?>
+
 </body>
 </html>

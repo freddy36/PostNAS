@@ -5,7 +5,7 @@
 	31.08.2010	Prototyp
 	02.09.2010  Mit img
 	06.09.2010  Kennzeichen-Rahmenfarben differenziert
-	15.09.2010  ...
+	21.09.2010  Inlay
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -126,7 +126,8 @@ td.bez	{font-weight: bold;}		/* Beziehungen */
 td.nhd	{width: 150px;}			/* Namen - linke / rechte Spalte */
 td.nam	{font-weight: bold;}
 td.gbl	{border-bottom: 1px dotted green;}	/* Name: GB-Liste */
-
+/* Inlay analog Template: linke Tabellenspalte - Feldname */
+td.li, td.gr {color:gray; padding-left:8px; padding-right:8px; border-bottom:0px; vertical-align:top;}
 /* dienendes GB in FS-Tab im Best-NW  */
 td.dien	{font-size: 9pt; font-style: italic; color: purple; border-bottom: 1px solid silver;}
 
@@ -140,6 +141,8 @@ h5 {	color: black;	font-size: 10pt;}
 h6 {	color: black;	font-size:  9pt; margin-top: 2pt; margin: 0pt}	/* FS in Best-NW */
 
 img	{border: 0px; margin: 0px;} /* Icons */
+
+iframe.inlay {border:0px; width: 100%;} /* height: 400px; */
 
 /* Seitenfuss */
 .buttonbereich	{font-size: 7pt;	text-align: right;}

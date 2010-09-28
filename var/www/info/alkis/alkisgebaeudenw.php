@@ -3,25 +3,27 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
 	Version:
-	27.08.2010 von WhereGroup uebernommen
-	31.08.2010 Link zum FS-NW, Lage
-	01.09.2010 RLP-Daten: keine Relation Nebengebaeude->LagePseudonummer
+	27.08.2010  von WhereGroup uebernommen
+	31.08.2010  Link zum FS-NW, Lage
+	01.09.2010  RLP-Daten: keine Relation Nebengebaeude->LagePseudonummer
 					Spalte lfd.-Nr raus wegen Verwechslungsgefhr mit lfd-Nr.-Nebengebaeuude
 	02.09.2010  Mit Icons
 	06.09.2010  Kennzeichen-Rahmenfarbe, Schluessel anschaltbar
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
+	21.09.2010  vergessenen Parameter &style und Kommentar entfernt
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-// Bindung an Mapbender-Authentifizierung
-require_once("/data/mapwww/http/php/mb_validateSession.php");
 require_once("/data/conf/alkis_www_conf.php");
-include("alkisfkt.php");
+if ($auth == "mapbender") {
+	// Bindung an Mapbender-Authentifizierung
+	require_once($mapbender);
+}include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="b600352" >
+	<meta name="author" content="F. Jaeger krz" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -49,7 +51,6 @@ if ($keys == "j") {
 } else {
 	$showkey=false;
 }
-$style=isset($_GET["style"]) ? $_GET["style"] : "kompakt";
 $dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 
@@ -250,11 +251,6 @@ echo "\n<hr>\n<table class='geb'>";
 	$unbebaut = number_format(($flstflaeche - $gebflsum),0,",",".") . " m&#178;";	echo "\n<p>Flurst&uuml;cksfl&auml;che abz&uuml;glich Geb&auml;udefl&auml;che: <b>".$unbebaut."</b></p>";
 }
 
-// Diese Berechnung beruht auf der Annahme, dass alle gefundenen Gebaeude vollstaendig innerhalb
-// des Flurstuecks liegen. Fehler bei Gebäuden auf der Grenze.
-
-//echo "\n<p class='err'>".$sqlg."</p>\n";
-
 ?>
 <form action=''>
 	<div class='buttonbereich noprint'>
@@ -265,7 +261,7 @@ echo "\n<hr>\n<table class='geb'>";
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $self, $hilfeurl, "", $showkey); ?>
+<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey); ?>
 
 </body>
 </html>

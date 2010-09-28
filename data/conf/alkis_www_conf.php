@@ -9,12 +9,16 @@
 $dbhost = 'localhost';
 $dbport = '5432';
 $dbuser = '***';
-$dbpass = '****';
+$dbpass = '***';
 
 // Entwicklung / Produktion
 $idumschalter = false;
+
+// Authentifizierung
+$auth="mapbender";
+$mapbender="/data/mapwww/http/php/mb_validateSession.php";
 
 // Link für Hilfe
-$hilfeurl = 'http://';
+$hilfeurl = 'http://map.krz.de/mapwww/?Themen:ALKIS';
 
 ?>
