@@ -6,6 +6,8 @@
 	02.09.2010  Mit img
 	06.09.2010  Kennzeichen-Rahmenfarben differenziert
 	21.09.2010  Inlay
+	30.09.2010  body-width bei Print
+	12.10.2010  class p.fsd: margin statt position-relative, dann keine Scrollbar
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -16,30 +18,11 @@ p.fsausk		{text-align: right; background: teal;	color: silver;} /* Uebersichts-S
 p.fskennz	{text-align: right; background: navy;	color: silver;} /* Flurstuecks-Nachweis */
 p.fsei		{text-align: right; background: olive;	color: silver;} /* Flurstuecks- und Eigentuemer-Nachweis */
 p.gbkennz	{text-align: right; background: green;	color: silver;} /* Bestandsnachweis */
-p.nakennz	{text-align: right; background: maroon;	color: silver;} /* Personen- und Adressdaten */
-p.geb			{text-align: right; background: yellow;	color: gray;} /* Gebaeude zum FS */
-p.lage		{text-align: right; background: lime;	color: gray;} /* Gebaeude zum FS */
+p.nakennz	{text-align: right; background: maroon; color: silver;} /* Personen- und Adressdaten */
+p.geb			{text-align: right; background: yellow; color: gray;}	/* Gebaeude zum FS */
+p.lage		{text-align: right; background: lime; color: gray;}	/* Gebaeude zum FS */
 
-/*
-black
-gray
-maroon	= Name
-red
-green		= GB	
-lime		= Lagebezeichnung
-olive		= FS mit Eigent.
-yellow	= Gebaeude
-navy		= FS   
-blue
-purple
-fuchsia
-teal		= Auskunft Start
-aqua
-silver
-white */
-
-p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */
-p.fsd		{position: relative;	left: 170px;}	/* Flst-Flaeche */
+p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */p.fsd		{margin-left: 170px;}	/* Flst-Flaeche */
 p.gbl		{position: relative;	left:  60px;}	/* Nam: Buchungsstelle*/
 p.zus		{margin: 2pt; padding: 2pt; border:1px dotted maroon; background: white;} /* Zusatz zum Eigent., gerahmt */
 p.avh		{font-style: italic; color: navy;}	/* Anteilsverhaeltnis */
@@ -81,6 +64,7 @@ div.adr {border-left-width: 0px;
 
 span.key 		{color: gray; font-style: italic;} /* Schluesselwert vor Text, Wert zurueck nehmen */
 span.wichtig	{color: #BB0000; font-weight: bold;} /* Wert hervorheben */
+span.flae		{font-weight: bold;} /* Flächensume Flurst. */
 
 /* ** T a b e l l e n ** */
 table 		{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: 10pt; color: #000033;}
@@ -153,5 +137,5 @@ iframe.inlay {border:0px; width: 100%;} /* height: 400px; */
 	left: 40px;
 }
 @media print {
-	body {width: 100%; background-color:white;}
+	body {width: 98%; background-color:white;}
 }

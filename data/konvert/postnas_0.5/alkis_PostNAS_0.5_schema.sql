@@ -3,7 +3,7 @@
 --       A  L   K   I   S       
 -- *****************************
 --
--- Datenbankstruktur PostNAS 0.5  (GDAL 1.7)
+-- Datenbankstruktur PostNAS 0.5  (GDAL 1.8)
 --
 -- Stand 
 --  2009-04-02 
@@ -18,25 +18,32 @@
 --  2010-01-21 Feldlängen, Indices
 --  2010-01-26 Strassenschluessel integer oder Char?
 --  2010-09-24 Index auf ap_pto.art
+--  2010-10-12 Feldlaenge ap_ppo.art von 11 auf 20, Kommentare zu Präsentationsobjekten
+--  2010-11-08 Informationen aus Dokumentation eingepflegt (neue Felder, Kommentare)
+--  2010-11-10 Statt alphabetischer Sortierung nach "Name der Tabelle": 
+--             Sortierung nach der fachlichen Gliederung der Dokumentation
+--             Begonnen zunächst fuer "Objektbereich:Tatsächliche Nutzung".
+--             Neue Tabelle "ax_meer".
+
 
 -- Zur Datenstruktur siehe Dokument: 
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
 
 
 -- ToDo:
+--   - Abgleich mit GeoInfoDok 6.0
 --   - nicht benötigte (immer leere) Felder rausnehmen
 --   - Indizierung optimieren?
---   - Wenn nötig trennen nach GID 5.1.1 und GID 6.0
 --
 -- Datenbank generiert aus NAS-Daten GeoInfoDok 5.1.1. "Lippe", und Musterdaten RLP (GID 6.0)
 -- Anschliessend manuell ueberarbeitet.
 --
 -- Bevor dies Script verarbeitet wird:
---   Datenbank auf Basis template_postgis anlegen.
+--   Datenbank auf Basis 'template_postgis' anlegen.
 --   (Tabellen 'spatial_ref_sys' und 'geometry_columns' sollen bereits vorhanden sein)
 
 -- Nach diesem Script:
---   Views eintragen mit "alkis_sichten.sql".
+--   Views eintragen mit 'alkis_sichten.sql'.
 
 
 -- Versionierung / Lebenszeitintervall:
@@ -48,7 +55,7 @@
 --  über das NBA-Verfahren das historisch gewordene Objekt aus dem sekundären Bestand gelöscht wird.
 
 --  *Sekundärnachweis ohne Historiennachweis*
---   Dann wird zusätzlich ein Feld "endet" analog zum Fled "beginnt" benötigt.
+--   Dann wird zusätzlich ein Feld "endet" analog zum Feld "beginnt" benötigt.
 
 
   SET client_encoding = 'UTF8';
@@ -99,7 +106,7 @@ COMMENT ON COLUMN alkis_beziehungen.beziehung_von IS 'Join auf gml_id';
 COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf gml_id';
 COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beuziehung';
 
--- Bezuiehungsarten:
+-- Beziehungsarten:
 
 -- "an" "benennt" "bestehtAusRechtsverhaeltnissenZu" "beziehtSichAuchAuf" "dientZurDarstellungVon"
 -- "durch" "gehoertAnteiligZu" "gehoertZu" "hat" "hatAuch" "istBestandteilVon"
@@ -114,13 +121,10 @@ CREATE TABLE ap_darstellung (
 	identifier		character varying(28),		-- leer
 	beginnt			character(20),			-- Datumsformat
 --	beginnt			timestamp without time zone,	-- wird nicht gefuellt
-	advstandardmodell	character varying(10),		-- (8)?
+	advstandardmodell	character varying(9),
 	anlass			integer, 
 	art			character varying(40),		-- (37)
---	uri			character(28),			-- 0.5 entfallend?
 	signaturnummer		integer,
---	art_			character(3),			-- 0.5 entfallend?
---	dientzurdarstellungvon	character varying,		-- 0.5 bleibt leer, siehe alkis_beziehungen
 	CONSTRAINT ap_darstellung_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -151,17 +155,13 @@ CREATE TABLE ap_lpo (
 	anlass			integer,
 	signaturnummer		integer,
 	art			character varying(5),
---	dientzurdarstellungvon character varying,		-- 0.5 bleibt leer, siehe alkis_beziehungen
 	CONSTRAINT ap_lpo_pk PRIMARY KEY (ogc_fid)
 );
 SELECT AddGeometryColumn('ap_lpo','wkb_geometry','25832','LINESTRING',2);
 
 CREATE INDEX ap_lpo_geom_idx ON ap_lpo USING gist (wkb_geometry);
 
--- Verbindungstabellen indizieren
---CREATE INDEX id_ap_lpo_dientzurdarstellungvon  ON ap_lpo  USING btree  (dientzurdarstellungvon);
-
-COMMENT ON TABLE  ap_lpo        IS 'Präsentationsobjekte  L P O';
+COMMENT ON TABLE  ap_lpo        IS 'LPO: Linienförmiges Präsentationsobjekt';
 COMMENT ON COLUMN ap_lpo.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -172,11 +172,10 @@ CREATE TABLE ap_lto (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
 	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	sonstigesmodell		character varying(8),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	art			character varying(3),
---	dientzurdarstellungvon	character varying,	-- 0.5 bleibt leer, siehe alkis_beziehungen
 	schriftinhalt		character varying(40),	-- generiert als (11), aber Strassennamen abgeschnitten
 	fontsperrung		integer,
 	skalierung		integer,
@@ -193,7 +192,7 @@ CREATE INDEX ap_lto_geom_idx ON ap_lto USING gist (wkb_geometry);
 CREATE INDEX ap_lto_gml ON ap_lto USING btree (gml_id);
 
 
-COMMENT ON TABLE  ap_lto        IS 'Präsentationsobjekte  L T O';
+COMMENT ON TABLE  ap_lto        IS 'LTO: Textförmiges Präsentationsobjekt mit linienförmiger Textgeometrie';
 COMMENT ON COLUMN ap_lto.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -209,11 +208,8 @@ CREATE TABLE ap_ppo (
 	sonstigesmodell		character varying(8),
 	anlass			integer,
 	signaturnummer		integer,
-	art			character varying(11),
+	art			character varying(20), -- geaendert 12.10.2010
 	drehwinkel		double precision,
---	dientzurdarstellungvon	character varying, -- 0.5 bleibt leer, siehe alkis_beziehungen
-	--"zeigtaufexternes|aa_fachdatenverbindung|art"	character(37),
-	--uri			character(28) --,
 	CONSTRAINT ap_ppo_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -227,7 +223,7 @@ CREATE INDEX ap_ppo_geom_idx ON ap_ppo USING gist (wkb_geometry);
 -- Verbindungstabellen indizieren
 CREATE INDEX ap_ppo_gml ON ap_ppo USING btree (gml_id);
 
-COMMENT ON TABLE  ap_ppo        IS 'Präsentationsobjekte  P P O';
+COMMENT ON TABLE  ap_ppo        IS 'PPO: Punktförmiges Präsentationsobjekt';
 COMMENT ON COLUMN ap_ppo.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -248,13 +244,10 @@ CREATE TABLE ap_pto (
 	vertikaleausrichtung	character varying(5),
 	signaturnummer		integer,
 	art			character varying(40),  -- (18)
---	dientzurdarstellungvon	character varying,      -- PostNAS 0.5: bleibt leer  --> alkis_beziehungen
---	hat			character varying,      -- PostNAS 0.5: bleibt leer  --> alkis_beziehungen
 	drehwinkel		double precision,       -- falsche Masseinheit für Mapserver, im View umrechnen
 	"zeigtaufexternes|aa_fachdatenverbindung|art" character varying(40),
 	--"name"		character(17),          -- leer?
 	--uri			character(28),
-	--sonstigesmodell	character(7),
 	CONSTRAINT ap_pto_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -269,7 +262,6 @@ CREATE INDEX ap_pto_gml ON ap_pto USING btree (gml_id);
 CREATE INDEX art_idx    ON ap_pto USING btree (art);
 
 
-
 COMMENT ON TABLE  ap_pto               IS 'PTO: Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie ';
 COMMENT ON COLUMN ap_pto.gml_id        IS 'Identifikator, global eindeutig';
 
@@ -280,7 +272,6 @@ COMMENT ON INDEX  art_idx              IS 'Suchindex auf häufig benutztem Filte
 
 -- A n d e r e   F e s t l e g u n g   n a c h   W a s s e r r e c h t
 -- --------------------------------------------------------------------
--- 12.2009 neu
 CREATE TABLE ax_anderefestlegungnachwasserrecht
 (
   ogc_fid		serial NOT NULL,
@@ -313,7 +304,6 @@ CREATE TABLE ax_anschrift (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	ort_post		character varying(30),
 	postleitzahlpostzustellung	integer,
@@ -321,7 +311,6 @@ CREATE TABLE ax_anschrift (
 	hausnummer		character varying(9),
 	bestimmungsland		character varying(30),    -- (3)
 	--art			character(37),
-	--uri			character(28),
 	CONSTRAINT ax_anschrift_pk PRIMARY KEY (ogc_fid)
 );
 -- Dummy-Eintrag in Metatabelle
@@ -358,36 +347,6 @@ VALUES ('', 'public', 'ax_aufnahmepunkt', 'dummy', 2, 25832, 'POINT');
 
 COMMENT ON TABLE  ax_aufnahmepunkt        IS 'A u f n a h m e p u n k t';
 COMMENT ON COLUMN ax_aufnahmepunkt.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- B a h n v e r k e h r 
--- ----------------------------------------------
-CREATE TABLE ax_bahnverkehr (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	bahnkategorie		integer,
-	funktion integer,
-	--unverschluesselt	character(27),
-	--land			integer,
-	--regierungsbezirk	integer,
-	--kreis			integer,
-	--gemeinde		integer,
-	--lage			integer,
-	CONSTRAINT ax_bahnverkehr_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_bahnverkehr','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_bahnverkehr_geom_idx ON ax_bahnverkehr USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_bahnverkehr        IS 'B a h n v e r k e h r';
-COMMENT ON COLUMN ax_bahnverkehr.gml_id IS 'Identifikator, global eindeutig';
 
 
 
@@ -448,7 +407,6 @@ COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht."name"      IS 'NAM, Eigennam
 COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.bezeichnung IS 'BEZ, Amtlich festgelegte Verschlüsselung von "Bau-, Raum- oder Bodenordnungsrecht"';
 
 
-
 -- B a u t e i l
 -- -------------
 CREATE TABLE ax_bauteil (
@@ -480,7 +438,6 @@ CREATE TABLE ax_bauwerkimgewaesserbereich (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	bauwerksfunktion	integer,
 	CONSTRAINT ax_bauwerkimgewaesserbereich_pk PRIMARY KEY (ogc_fid)
@@ -505,7 +462,6 @@ CREATE TABLE ax_bauwerkimverkehrsbereich (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	bauwerksfunktion	integer,
 	CONSTRAINT ax_bauwerkimverkehrsbereich_pk PRIMARY KEY (ogc_fid)
@@ -531,7 +487,6 @@ CREATE TABLE ax_bauwerkoderanlagefuerindustrieundgewerbe (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	bauwerksfunktion	integer,
 	CONSTRAINT ax_bauwerkoderanlagefuerindustrieundgewerbe_pk PRIMARY KEY (ogc_fid)
@@ -557,9 +512,7 @@ CREATE TABLE ax_bauwerkoderanlagefuersportfreizeitunderholung (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	-- sonstigesmodell	character varying[],
 	anlass			integer,
-	--description		integer,
 	bauwerksfunktion	integer,
 	-- "name"		character(15),
 	CONSTRAINT ax_bauwerkoderanlagefuersportfreizeitunderholung_pk PRIMARY KEY (ogc_fid)
@@ -576,30 +529,6 @@ COMMENT ON TABLE  ax_bauwerkoderanlagefuersportfreizeitunderholung        IS 'Ba
 COMMENT ON COLUMN ax_bauwerkoderanlagefuersportfreizeitunderholung.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- B e r b a u b e t r i e b
--- -------------------------
--- neu 12.2009
-CREATE TABLE ax_bergbaubetrieb ( 
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	anlass			integer,
-	abbaugut		integer,
-	CONSTRAINT ax_bergbaubetrieb_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_bergbaubetrieb','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_bergbaubetrieb_geom_idx  ON ax_bergbaubetrieb  USING gist  (wkb_geometry);
-
-COMMENT ON TABLE  ax_bergbaubetrieb        IS 'B e r b a u b e t r i e b';
-COMMENT ON COLUMN ax_bergbaubetrieb.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- B e s o n d e r e   F l u r s t u e c k s g r e n z e
 -- -----------------------------------------------------
 CREATE TABLE ax_besondereflurstuecksgrenze (
@@ -608,8 +537,7 @@ CREATE TABLE ax_besondereflurstuecksgrenze (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
-	anlass			integer, -- integer[],
+	anlass			integer,
 	artderflurstuecksgrenze	integer,
 	CONSTRAINT ax_besondereflurstuecksgrenze_pk PRIMARY KEY (ogc_fid)
 );
@@ -630,7 +558,6 @@ CREATE TABLE ax_besonderegebaeudelinie (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	beschaffenheit		integer,
 	anlass			integer,
 	CONSTRAINT ax_besonderegebaeudelinie_pk PRIMARY KEY (ogc_fid)
@@ -652,7 +579,6 @@ CREATE TABLE ax_besondererbauwerkspunkt (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	punktkennung		character varying(15), -- integer,
 	land			integer,
@@ -669,7 +595,6 @@ COMMENT ON TABLE  ax_besondererbauwerkspunkt        IS 'B e s o n d e r e r   B 
 COMMENT ON COLUMN ax_besondererbauwerkspunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- B e s o n d e r e r   G e b a e u d e p u n k t
 -- -----------------------------------------------
 CREATE TABLE ax_besonderergebaeudepunkt (
@@ -678,14 +603,12 @@ CREATE TABLE ax_besonderergebaeudepunkt (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	land			integer,
 	stelle			integer,
 	punktkennung		character varying(15), -- integer,
 	--sonstigeeigenschaft	character(26),
 	art			character varying(40), --(37)
-	--uri			character(28),
 	"name"			character varying[],
 	CONSTRAINT ax_besonderergebaeudepunkt_pk PRIMARY KEY (ogc_fid)
 );
@@ -698,7 +621,6 @@ COMMENT ON TABLE  ax_besonderergebaeudepunkt        IS 'B e s o n d e r e r   G 
 COMMENT ON COLUMN ax_besonderergebaeudepunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- B e s o n d e r e r   T o p o g r a f i s c h e r   P u n k t
 -- -------------------------------------------------------------
 CREATE TABLE ax_besonderertopographischerpunkt (
@@ -707,7 +629,6 @@ CREATE TABLE ax_besonderertopographischerpunkt (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	land			integer,
 	stelle			integer,
@@ -724,10 +645,8 @@ COMMENT ON TABLE  ax_besonderertopographischerpunkt        IS 'B e s o n d e r e
 COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- B e w e r t u n g
 -- ------------------
--- neu 12.2009
 CREATE TABLE ax_bewertung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -745,7 +664,6 @@ CREATE INDEX ax_bewertung_geom_idx  ON ax_bewertung  USING gist  (wkb_geometry);
 
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- B o d e n s c h a e t z u n g
@@ -803,7 +721,6 @@ COMMENT ON TABLE  ax_boeschungkliff        IS 'B o e s c h u n g s k l i f f';
 COMMENT ON COLUMN ax_boeschungkliff.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- B o e s c h u n g s f l a e c h e
 -- ---------------------------------
 CREATE TABLE ax_boeschungsflaeche (
@@ -813,7 +730,6 @@ CREATE TABLE ax_boeschungsflaeche (
 	advstandardmodell	character varying(8),
 	sonstigesmodell		character varying[],
 	anlass			integer,
---	istteilvon		character varying, -- 0.5 bleibt leer, siehe alkis_beziehungen
 	CONSTRAINT ax_boeschungsflaeche_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -823,7 +739,6 @@ CREATE INDEX ax_boeschungsflaeche_geom_idx ON ax_boeschungsflaeche USING gist (w
 
 COMMENT ON TABLE  ax_boeschungsflaeche        IS 'B o e s c h u n g s f l a e c h e';
 COMMENT ON COLUMN ax_boeschungsflaeche.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- B u c h u n g s b l a t t
@@ -886,7 +801,6 @@ COMMENT ON TABLE  ax_buchungsblattbezirk        IS 'Buchungsblatt- B e z i r k';
 COMMENT ON COLUMN ax_buchungsblattbezirk.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- B u c h u n g s s t e l l e
 -- -----------------------------
 CREATE TABLE ax_buchungsstelle (
@@ -907,8 +821,6 @@ CREATE TABLE ax_buchungsstelle (
 	nenner				integer,
 	nummerimaufteilungsplan		character varying(40),   -- (32)
 	beschreibungdessondereigentums	character varying(400),  -- (291)
---	an				character varying,  -- 0.5 bleibt leer, siehe alkis_beziehungen
---	zu				character varying,  -- 0.5 bleibt leer, siehe alkis_beziehungen
 	CONSTRAINT ax_buchungsstelle_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -924,7 +836,6 @@ COMMENT ON TABLE  ax_buchungsstelle        IS 'NREO "Buchungsstelle" ist die unt
 COMMENT ON COLUMN ax_buchungsstelle.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- B u n d e s l a n d
 -- ----------------------------------------------
 CREATE TABLE ax_bundesland (
@@ -933,7 +844,6 @@ CREATE TABLE ax_bundesland (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	schluesselgesamt	integer,
 	bezeichnung		character varying(30), --(22)
@@ -949,7 +859,6 @@ COMMENT ON TABLE  ax_bundesland        IS 'B u n d e s l a n d';
 COMMENT ON COLUMN ax_bundesland.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- D a m m  /  W a l l  /  D e i c h
 -- ----------------------------------------------
 CREATE TABLE ax_dammwalldeich (
@@ -957,7 +866,6 @@ CREATE TABLE ax_dammwalldeich (
 	gml_id			character(16),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	art			integer,
 	CONSTRAINT ax_dammwalldeich_pk PRIMARY KEY (ogc_fid)
@@ -969,7 +877,6 @@ CREATE INDEX ax_dammwalldeich_geom_idx ON ax_dammwalldeich USING gist (wkb_geome
 
 COMMENT ON TABLE  ax_dammwalldeich        IS 'D a m m  /  W a l l  /  D e i c h';
 COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- D e n k m a l s c h u t z r e c h t
@@ -993,7 +900,6 @@ CREATE INDEX ax_denkmalschutzrecht_geom_idx  ON ax_denkmalschutzrecht  USING gis
 
 COMMENT ON TABLE  ax_denkmalschutzrecht        IS 'D e n k m a l s c h u t z r e c h t';
 COMMENT ON COLUMN ax_denkmalschutzrecht.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- D i e n s t s t e l l e
@@ -1027,7 +933,6 @@ COMMENT ON TABLE  ax_dienststelle        IS 'D i e n s t s t e l l e';
 COMMENT ON COLUMN ax_dienststelle.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- F e l s e n ,  F e l s b l o c k ,   F e l s n a d e l
 -- ------------------------------------------------------
 -- Nutzung
@@ -1036,9 +941,8 @@ CREATE TABLE ax_felsenfelsblockfelsnadel (
 	gml_id			character(16),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	sonstigesmodell		character varying[],
 	anlass			integer,
-	name			character varying(30) , --(14)
+	name			character varying(30),
 	CONSTRAINT ax_felsenfelsblockfelsnadel_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1050,7 +954,6 @@ COMMENT ON TABLE  ax_felsenfelsblockfelsnadel        IS 'F e l s e n ,  F e l s 
 COMMENT ON COLUMN ax_felsenfelsblockfelsnadel.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- F i r s t l i n i e
 -- -----------------------------------------------------
 CREATE TABLE ax_firstlinie (
@@ -1060,7 +963,7 @@ CREATE TABLE ax_firstlinie (
 	advstandardmodell	character varying(8),
 	sonstigesmodell		character varying(8),
 	anlass			integer,
-	art			character varying(40),  -- (37)
+	art			character varying(40),
 	uri			character varying(28),
 	CONSTRAINT ax_firstlinie_pk PRIMARY KEY (ogc_fid)
 );
@@ -1071,106 +974,6 @@ CREATE INDEX ax_firstlinie_geom_idx ON ax_firstlinie USING gist (wkb_geometry);
 
 COMMENT ON TABLE  ax_firstlinie        IS 'F i r s t l i n i e';
 COMMENT ON COLUMN ax_firstlinie.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- F l a e c h e   b e s o n d e r e r   f u n k t i o n a l e r   P r a e g u n g
--- -------------------------------------------------------------------------------
--- Nutzung
-CREATE TABLE ax_flaechebesondererfunktionalerpraegung (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	CONSTRAINT ax_flaechebesondererfunktionalerpraegung_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_flaechebesondererfunktionalerpraegung','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_flaechebesondererfunktionalerpraegung_geom_idx ON ax_flaechebesondererfunktionalerpraegung USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_flaechebesondererfunktionalerpraegung        IS 'Fläche besonderer funktionaler Prägung';
-COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- F l a e c h e n   g e m i s c h t e r   N u t z u n g
--- -----------------------------------------------------
--- Nutzung
-CREATE TABLE ax_flaechegemischternutzung (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	--zustand		integer,
-	CONSTRAINT ax_flaechegemischternutzung_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_flaechegemischternutzung','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_flaechegemischternutzung_geom_idx ON ax_flaechegemischternutzung USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_flaechegemischternutzung        IS 'Flächen gemischter Nutzung';
-COMMENT ON COLUMN ax_flaechegemischternutzung.gml_id IS 'Identifikator, global eindeutig';
-
-
--- F l i e s s g e w a e s s e r
--- ----------------------------------------------
-CREATE TABLE ax_fliessgewaesser (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	--land			integer,
-	--regierungsbezirk	integer,
-	--kreis			integer,
-	--gemeinde		integer,
-	--lage			integer,
-	--unverschluesselt	character(13),
-	CONSTRAINT ax_fliessgewaesser_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_fliessgewaesser','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_fliessgewaesser_geom_idx ON ax_fliessgewaesser USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_fliessgewaesser        IS 'F l i e s s g e w a e s s e r';
-COMMENT ON COLUMN ax_fliessgewaesser.gml_id IS 'Identifikator, global eindeutig';
-
-
--- F l u g v e r k e h r
--- ----------------------
--- Nutzung
-CREATE TABLE ax_flugverkehr (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	anlass			integer,
-	funktion 		integer,
-	art			integer,
-	CONSTRAINT ax_flugverkehr_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_flugverkehr','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_flugverkehr_geom_idx  ON ax_flugverkehr  USING gist  (wkb_geometry);
-
-COMMENT ON TABLE  ax_flugverkehr        IS 'F l u g v e r k e h r';
-COMMENT ON COLUMN ax_flugverkehr.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- F l u r s t u e c k
@@ -1198,10 +1001,6 @@ CREATE TABLE ax_flurstueck (
 	rechtsbehelfsverfahren	integer,            -- Konverter-Fehler
 	zeitpunktderentstehung	character(10),      -- inhalt jjjj-mm-tt  besser Format date ?
 	"gemeindezugehoerigkeit|ax_gemeindekennzeichen|land"	integer,
-	-- "zustaendigestelle|ax_dienststelle_schluessel|land"	integer,
-	-- stelle		integer,
-	--kennungschluessel	character(31),      -- manuell hinzu
-	--uri			character(28),
 	CONSTRAINT ax_flurstueck_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1231,31 +1030,6 @@ COMMENT ON COLUMN ax_flurstueck.gml_id IS 'Identifikator, global eindeutig';
 -- weistAuf   --> AX_LagebezeichnungMitHausnummer
 
 
-
--- F r i e d h o f
--- ----------------
--- Nutzung
-CREATE TABLE ax_friedhof (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	-- "name"		character(22),
-	CONSTRAINT ax_friedhof_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_friedhof','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_friedhof_geom_idx ON ax_friedhof USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_friedhof        IS 'F r i e d h o f';
-COMMENT ON COLUMN ax_friedhof.gml_id IS 'Identifikator, global eindeutig';
-
-
 -- G e b a e u d e
 -- ---------------
 CREATE TABLE ax_gebaeude (
@@ -1268,8 +1042,6 @@ CREATE TABLE ax_gebaeude (
 	anlass			integer,
 	gebaeudefunktion	integer,
 	description		integer,
---	hat			character varying,  -- 0.5 bleibt leer, siehe alkis_beziehungen
---	zeigtauf		character varying,  -- 0.5 bleibt leer, siehe alkis_beziehungen
 	"name"			character varying(25),
 	lagezurerdoberflaeche	integer,
 	art			character varying(40),  -- (37)
@@ -1325,29 +1097,6 @@ COMMENT ON COLUMN ax_gebaeude.gml_id IS 'Identifikator, global eindeutig';
 -- GeometryFromText('MULTIPOLYGON((( AUSSEN1 )),(( AUSSEN2)))', srid)
 
 
-
--- G e h o e l z
--- ----------------------------------------------
-CREATE TABLE ax_gehoelz (
-	ogc_fid		serial NOT NULL,
-	gml_id		character(16),
-	identifier	character varying(28),
-	beginnt		character(20),
-	advstandardmodell character varying(8),
-	--sonstigesmodell character(5),
-	anlass integer,
-	CONSTRAINT ax_gehoelz_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_gehoelz','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_gehoelz_geom_idx ON ax_gehoelz USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_gehoelz        IS 'G e h o e l z';
-COMMENT ON COLUMN ax_gehoelz.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- G e m a r k u n g
 -- ----------------------------------------------
 -- NREO, nur Schluesseltabelle: Geometrie entbehrlich
@@ -1357,7 +1106,6 @@ CREATE TABLE ax_gemarkung (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	 character(6),
 	anlass			integer,
 	schluesselgesamt	integer,
 	bezeichnung		character varying(23),
@@ -1383,7 +1131,6 @@ COMMENT ON TABLE  ax_gemarkung        IS 'G e m a r k u n g';
 COMMENT ON COLUMN ax_gemarkung.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- G e m a r k u n g s t e i l   /   F l u r
 -- ----------------------------------------------
 -- Schluesseltabelle: Geometrie entbehrlich
@@ -1393,7 +1140,6 @@ CREATE TABLE ax_gemarkungsteilflur (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	schluesselgesamt	integer,
 	bezeichnung		character varying(7), -- integer,
@@ -1415,7 +1161,6 @@ COMMENT ON TABLE  ax_gemarkungsteilflur        IS 'G e m a r k u n g s t e i l  
 COMMENT ON COLUMN ax_gemarkungsteilflur.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- G e m e i n d e
 -- ----------------------------------------------
 CREATE TABLE ax_gemeinde (
@@ -1424,7 +1169,6 @@ CREATE TABLE ax_gemeinde (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	schluesselgesamt	integer,
 	bezeichnung		character varying(25),
@@ -1444,7 +1188,6 @@ CREATE INDEX ax_gemeinde_gml ON ax_gemeinde USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gemeinde        IS 'G e m e i n d e';
 COMMENT ON COLUMN ax_gemeinde.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- Georeferenzierte  G e b ä u d e a d r e s s e
@@ -1473,10 +1216,6 @@ CREATE TABLE ax_georeferenziertegebaeudeadresse (
 	strassenschluessel	integer,		-- max.  5 Stellen
 	hausnummer		integer,		-- meist 3 Stellen
 	adressierungszusatz	character(1),		-- Hausnummernzusatz-Buchstabe
-
---	hatauch			character varying,	-- 0.5 bleibt leer, siehe alkis_beziehungen
-	--art			character(37),		-- "urn:adv:fachdatenverbindung:AA_Antrag"
-	--uri			character(57),		-- "urn:adv:oid:DENW17APZ00000AN;urn:adv:oid:DENW17APZ00000XU"
 	CONSTRAINT ax_georeferenziertegebaeudeadresse_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1496,7 +1235,6 @@ CREATE INDEX ax_georeferenziertegebaeudeadresse_adr ON ax_georeferenziertegebaeu
 
 COMMENT ON TABLE  ax_georeferenziertegebaeudeadresse        IS 'Georeferenzierte  G e b ä u d e a d r e s s e';
 COMMENT ON COLUMN ax_georeferenziertegebaeudeadresse.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- G r a b l o c h   d e r   B o d e n s c h a e t z u n g
@@ -1527,7 +1265,6 @@ COMMENT ON TABLE  ax_grablochderbodenschaetzung        IS 'G r a b l o c h   d e
 COMMENT ON COLUMN ax_grablochderbodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- G e w a e s s e r m e r k m a l
 -- ----------------------------------------------
 CREATE TABLE ax_gewaessermerkmal (
@@ -1536,7 +1273,6 @@ CREATE TABLE ax_gewaessermerkmal (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	art			integer,
 	CONSTRAINT ax_gewaessermerkmal_pk PRIMARY KEY (ogc_fid)
@@ -1548,7 +1284,6 @@ CREATE INDEX ax_gewaessermerkmal_geom_idx ON ax_gewaessermerkmal USING gist (wkb
 
 COMMENT ON TABLE  ax_gewaessermerkmal        IS 'G e w a e s s e r m e r k m a l';
 COMMENT ON COLUMN ax_gewaessermerkmal.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- G l e i s
@@ -1573,7 +1308,6 @@ COMMENT ON TABLE  ax_gleis        IS 'G l e i s';
 COMMENT ON COLUMN ax_gleis.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- G r e n z p u n k t
 -- ----------------------------------------------
 CREATE TABLE ax_grenzpunkt (
@@ -1582,7 +1316,6 @@ CREATE TABLE ax_grenzpunkt (
 	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(8),
-	--sonstigesmodell		character(5),
 	anlass				integer,
 	punktkennung			character varying(15), -- integer,
 	land				integer,
@@ -1604,76 +1337,6 @@ VALUES ('', 'public', 'ax_grenzpunkt', 'dummy', 2, 25832, 'POINT');
 
 COMMENT ON TABLE  ax_grenzpunkt        IS 'G r e n z p u n k t';
 COMMENT ON COLUMN ax_grenzpunkt.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- H a f e n b e c k e n
--- ---------------------
--- neu 12.2009
-CREATE TABLE ax_hafenbecken (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	anlass			integer,
-	funktion		integer,
-	CONSTRAINT ax_hafenbecken_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_hafenbecken','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_hafenbecken_geom_idx  ON ax_hafenbecken  USING gist  (wkb_geometry);
-
-COMMENT ON TABLE  ax_hafenbecken        IS 'H a f e n b e c k e n';
-COMMENT ON COLUMN ax_hafenbecken.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- H a l d e
--- ----------------------------------------------
-CREATE TABLE ax_halde
-(	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	lagergut		integer,
-	CONSTRAINT ax_halde_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_halde','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_halde_geom_idx ON ax_halde USING gist (wkb_geometry);
-
-COMMENT ON TABLE ax_halde IS 'H a l d e';
-COMMENT ON COLUMN ax_halde.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- H e i d e
--- ----------------------------------------------
--- Nutzung
-CREATE TABLE ax_heide (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
-	anlass			integer,
-	CONSTRAINT ax_heide_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_heide','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_heide_geom_idx ON ax_heide USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_heide        IS 'H e i d e';
-COMMENT ON COLUMN ax_heide.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- Historisches Bauwerk oder historische Einrichtung
@@ -1700,7 +1363,6 @@ CREATE INDEX ax_historischesbauwerkoderhistorischeeinrichtung_geom_idx ON ax_his
 
 COMMENT ON TABLE  ax_historischesbauwerkoderhistorischeeinrichtung        IS 'Historisches Bauwerk oder historische Einrichtung';
 COMMENT ON COLUMN ax_historischesbauwerkoderhistorischeeinrichtung.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- Historisches Flurstück ALB
@@ -1743,35 +1405,6 @@ COMMENT ON TABLE  ax_historischesflurstueckalb        IS 'Historisches Flurstüc
 COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- I n d u s t r i e -   u n d   G e w e r b e f l a e c h e
--- ----------------------------------------------------------
-CREATE TABLE ax_industrieundgewerbeflaeche (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	--zustand		integer,
-	lagergut		integer,
-	CONSTRAINT ax_industrieundgewerbeflaeche_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_industrieundgewerbeflaeche','wkb_geometry','25832','POLYGON',2);
-
--- POLYGON und POINT
-ALTER TABLE ax_industrieundgewerbeflaeche DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_industrieundgewerbeflaeche_geom_idx ON ax_industrieundgewerbeflaeche USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_industrieundgewerbeflaeche        IS 'I n d u s t r i e -   u n d   G e w e r b e f l a e c h e';
-COMMENT ON COLUMN ax_industrieundgewerbeflaeche.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t
 -- -------------------------------------------------------------------
 -- neu 12.2009
@@ -1797,7 +1430,6 @@ COMMENT ON COLUMN ax_klassifizierungnachstrassenrecht.gml_id IS 'Identifikator, 
 
 -- K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t
 -- ---------------------------------------------------------------
--- neu 12.2009
 CREATE TABLE ax_klassifizierungnachwasserrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -1816,7 +1448,6 @@ CREATE INDEX ax_klassifizierungnachwasserrecht_geom_idx
 
 COMMENT ON TABLE  ax_klassifizierungnachwasserrecht        IS 'K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t';
 COMMENT ON COLUMN ax_klassifizierungnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l
@@ -1841,7 +1472,6 @@ CREATE INDEX ax_kleinraeumigerlandschaftsteil_geom_idx ON ax_kleinraeumigerlands
 
 COMMENT ON TABLE  ax_kleinraeumigerlandschaftsteil        IS 'k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l';
 COMMENT ON COLUMN ax_kleinraeumigerlandschaftsteil.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- K o m m u n a l e s   G e b i e t
@@ -1871,7 +1501,6 @@ COMMENT ON TABLE  ax_kommunalesgebiet        IS 'K o m m u n a l e s   G e b i e
 COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- K r e i s   /   R e g i o n
 -- ---------------------------
 CREATE TABLE ax_kreisregion (
@@ -1880,7 +1509,6 @@ CREATE TABLE ax_kreisregion (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	schluesselgesamt	integer,
 	bezeichnung		character varying(20),
@@ -1898,7 +1526,6 @@ COMMENT ON TABLE  ax_kreisregion        IS 'K r e i s  /  R e g i o n';
 COMMENT ON COLUMN ax_kreisregion.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- L a g e b e z e i c h n u n g s - K a t a l o g e i n t r a g
 -- --------------------------------------------------------------
 CREATE TABLE ax_lagebezeichnungkatalogeintrag (
@@ -1907,7 +1534,6 @@ CREATE TABLE ax_lagebezeichnungkatalogeintrag (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	schluesselgesamt	character varying(13),
 	bezeichnung		character varying(28),
@@ -1935,7 +1561,6 @@ COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.lage         IS 'Straßenschl
 COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.bezeichnung  IS 'Straßenname';
 
 
-
 -- L a g e b e z e i c h n u n g   m i t   H a u s n u m m e r
 -- -----------------------------------------------------------
 
@@ -1948,7 +1573,6 @@ CREATE TABLE ax_lagebezeichnungmithausnummer (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
 	anlass			integer,
 	land			integer,
 	regierungsbezirk	integer,
@@ -1981,7 +1605,6 @@ COMMENT ON TABLE  ax_lagebezeichnungmithausnummer        IS 'L a g e b e z e i c
 COMMENT ON COLUMN ax_lagebezeichnungmithausnummer.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- L a g e b e z e i c h n u n g   m i t  P s e u d o n u m m e r
 -- --------------------------------------------------------------
 -- entfallend ?
@@ -1991,7 +1614,6 @@ CREATE TABLE ax_lagebezeichnungmitpseudonummer (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	land			integer,
 	regierungsbezirk	integer,
@@ -2014,7 +1636,6 @@ COMMENT ON TABLE  ax_lagebezeichnungmitpseudonummer        IS 'L a g e b e z e i
 COMMENT ON COLUMN ax_lagebezeichnungmitpseudonummer.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- L a g e b e z e i c h n u n g   o h n e   H a u s n u m m e r
 -- -------------------------------------------------------------
 CREATE TABLE ax_lagebezeichnungohnehausnummer (
@@ -2023,7 +1644,6 @@ CREATE TABLE ax_lagebezeichnungohnehausnummer (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
 	anlass			integer,
 	unverschluesselt	character varying(61), -- Straßenname?
 	land			integer,
@@ -2045,30 +1665,6 @@ COMMENT ON TABLE  ax_lagebezeichnungohnehausnummer        IS 'L a g e b e z e i 
 COMMENT ON COLUMN ax_lagebezeichnungohnehausnummer.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- L a n d w i r t s c h a f t
--- ----------------------------------------------
-CREATE TABLE ax_landwirtschaft (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
-	anlass			integer,
-	vegetationsmerkmal	integer,
-	CONSTRAINT ax_landwirtschaft_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_landwirtschaft','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_landwirtschaft_geom_idx ON ax_landwirtschaft USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_landwirtschaft        IS 'L a n d w i r t s c h a f t';
-COMMENT ON COLUMN ax_landwirtschaft.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- L e i t u n g
 -- ----------------------------------------------
 CREATE TABLE ax_leitung (
@@ -2077,7 +1673,6 @@ CREATE TABLE ax_leitung (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	bauwerksfunktion	integer,
 	spannungsebene		integer,
@@ -2090,29 +1685,6 @@ CREATE INDEX ax_leitung_geom_idx ON ax_leitung USING gist (wkb_geometry);
 
 COMMENT ON TABLE  ax_leitung        IS 'L e i t u n g';
 COMMENT ON COLUMN ax_leitung.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- M o o r
--- -------
--- neu 12.2009
-CREATE TABLE ax_moor (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	anlass			integer,
-	CONSTRAINT ax_moor_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_moor','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_moor_geom_idx  ON ax_moor  USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_moor        IS 'M o o r';
-COMMENT ON COLUMN ax_moor.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- M u s t e r -,  L a n d e s m u s t e r -   u n d   V e r g l e i c h s s t u e c k
@@ -2164,13 +1736,8 @@ CREATE TABLE ax_namensnummer (
 	zaehler				double precision,   -- Anteil ..
 	nenner				double precision,   --    .. als Bruch 
 	eigentuemerart			integer,
---	istbestandteilvon		character varying,  -- 0.5 bleibt leer, siehe alkis_beziehungen
---	benennt				character varying,  -- 0.5 bleibt leer, siehe alkis_beziehungen
---	bestehtausrechtsverhaeltnissenzu character varying, -- 0.5 bleibt leer, siehe alkis_beziehungen
-	nummer				character(6),  -- leer bei NRW GID 5.1 / Inhalt bei RLP GID 6
-	--art character(37),
-	--uri character(28),
-	artderrechtsgemeinschaft	integer,          -- Schlüssel
+	nummer				character(6),       -- leer bei NRW GID 5.1 / Inhalt bei RLP GID 6
+	artderrechtsgemeinschaft	integer,            -- Schlüssel
 	beschriebderrechtsgemeinschaft	character varying(1000),  -- (977)
 	CONSTRAINT ax_namensnummer_pk PRIMARY KEY (ogc_fid)
 );
@@ -2189,7 +1756,6 @@ COMMENT ON TABLE  ax_namensnummer        IS 'NREO "Namensnummer" ist die laufend
 COMMENT ON COLUMN ax_namensnummer.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- N  a t u r -,  U m w e l t -   o d e r   B o d e n s c h u t z r e c h t
 -- ------------------------------------------------------------------------
 CREATE TABLE ax_naturumweltoderbodenschutzrecht (
@@ -2198,7 +1764,6 @@ CREATE TABLE ax_naturumweltoderbodenschutzrecht (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	artderfestlegung	integer,
 	CONSTRAINT ax_naturumweltoderbodenschutzrecht_pk PRIMARY KEY (ogc_fid)
@@ -2213,7 +1778,6 @@ COMMENT ON TABLE  ax_naturumweltoderbodenschutzrecht        IS 'N  a t u r -,  U
 COMMENT ON COLUMN ax_naturumweltoderbodenschutzrecht.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- 21001 P e r s o n
 -- ----------------------------------------------
 -- Buchwerk. Keine Geometrie
@@ -2223,7 +1787,6 @@ CREATE TABLE ax_person (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	nachnameoderfirma	character varying(100), --(97),
 	anrede			integer,        -- 'Anrede' ist die Anrede der Person. Diese Attributart ist optional, da Körperschaften und juristischen Person auch ohne Anrede angeschrieben werden können.
@@ -2260,37 +1823,6 @@ COMMENT ON COLUMN ax_person.namensbestandteil IS 'enthält z.B. Titel wie "Baron
 --		Erbbauberechtigter oder künftiger Erwerber unter der Namensnummer eines Buchungsblattes eingetragen ist.
 
 
-
-
--- P l a t z
--- ----------------------------------------------
-CREATE TABLE ax_platz (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	--land			integer,
-	--regierungsbezirk	integer,
-	--kreis			integer,
-	--gemeinde		integer,
-	--lage			integer,
-	--unverschluesselt	character(16),
-	CONSTRAINT ax_platz_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_platz','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_platz_geom_idx ON ax_platz USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_platz        IS 'P l a t z';
-COMMENT ON COLUMN ax_platz.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- P u n k t o r t   AG
 -- ----------------------------------------------
 CREATE TABLE ax_punktortag (
@@ -2299,24 +1831,14 @@ CREATE TABLE ax_punktortag (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	art			character varying[],
 	"name"			character varying[],
-	--istteilvon		character varying,
 	--kartendarstellung	character varying(5), -- true/false
 	kartendarstellung	integer,
-	-- koordinatenstatus	integer,
-	-- hinweise		character(11),
-	-- description		integer,
-	-- characterstring	character(10),
 	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer, -- character varying[],
-	-- datetime		character varying[],
-	-- individualname	character(7),
-	-- role			character(16),
 	genauigkeitsstufe	integer,
 	vertrauenswuerdigkeit	integer,
-	-- uri			character(28),
 	CONSTRAINT ax_punktortag_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -2337,21 +1859,14 @@ CREATE TABLE ax_punktortau (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
-	--istteilvon		character varying,
 --	kartendarstellung	character varying(5), -- true / false: boolean
 	kartendarstellung	integer, 
 	art			character varying(61),
 	"name"			character varying(26),
-	--koordinatenstatus	integer,
-	--hinweise		character(11),
-	--description		integer,
 	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer,  --character varying[],
 	datetime		character(20),
 	individualname		character(7),
-	--role			character(16),
-	--characterstring	character(10),
 	vertrauenswuerdigkeit	integer,
 	genauigkeitsstufe	integer,
 	CONSTRAINT ax_punktortau_pk PRIMARY KEY (ogc_fid)
@@ -2374,23 +1889,15 @@ CREATE TABLE ax_punktortta (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
 	anlass			integer,
-	--istteilvon		character varying,
 	--kartendarstellung	character(5), -- true/false
 	kartendarstellung	integer,      -- boolean
 	description		integer,
 	art			character varying[],  -- character(61),
 	"name"			character varying[],
-	--koordinatenstatus	integer,
-	--hinweise		character(11),
-	--"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep"	character varying[],
 	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|source|li_s"	integer,
 	characterstring		character varying(10), -- merkwuerdig, rlp: Inhalt = "Berechnung"
 	datetime		character varying(20), -- merkwuerdig, rlp: Inhalt = "1900-01-01T00:00:00Z"
-	--datetime		character varying[],
-	--individualname	character(7),
-	--role			character(16),
 	genauigkeitsstufe	integer,
 	vertrauenswuerdigkeit	integer,
 	CONSTRAINT ax_punktortta_pk PRIMARY KEY (ogc_fid)
@@ -2413,7 +1920,6 @@ CREATE TABLE ax_regierungsbezirk (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	schluesselgesamt	integer,
 	bezeichnung		character varying(20),
@@ -2434,33 +1940,6 @@ COMMENT ON TABLE  ax_regierungsbezirk        IS 'R e g i e r u n g s b e z i r k
 COMMENT ON COLUMN ax_regierungsbezirk.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- S c h i f f s v e r k e h r
--- ---------------------------
--- neu 12.2009
-CREATE TABLE ax_schiffsverkehr (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	anlass			integer,
-	funktion		integer,
-	CONSTRAINT ax_schiffsverkehr_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_schiffsverkehr','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_schiffsverkehr_geom_idx
-  ON ax_schiffsverkehr
-  USING gist
-  (wkb_geometry);
-
-COMMENT ON TABLE  ax_schiffsverkehr        IS 'S c h i f f s v e r k e h r';
-COMMENT ON COLUMN ax_schiffsverkehr.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- S c h u t z g e b i e t   n a c h   W a s s s e r r e c h t
 -- -----------------------------------------------------------
 CREATE TABLE ax_schutzgebietnachwasserrecht (
@@ -2469,7 +1948,6 @@ CREATE TABLE ax_schutzgebietnachwasserrecht (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	artderfestlegung	integer,
 	art			character varying(40), --(15)
@@ -2486,7 +1964,6 @@ COMMENT ON TABLE  ax_schutzgebietnachwasserrecht        IS 'S c h u t z g e b i 
 COMMENT ON COLUMN ax_schutzgebietnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- S c h u t z z o n e
 -- ----------------------------------------------
 CREATE TABLE ax_schutzzone (
@@ -2495,7 +1972,6 @@ CREATE TABLE ax_schutzzone (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 --	istteilvon		character varying, -- 0.5 bleibt leer, siehe alkis_beziehungen
 	"zone"			integer,
@@ -2511,7 +1987,6 @@ COMMENT ON TABLE  ax_schutzzone        IS 'S c h u t z z o n e';
 COMMENT ON COLUMN ax_schutzzone.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- s o n s t i g e r   V e r m e s s u n g s p u n k t
 -- ---------------------------------------------------
 CREATE TABLE ax_sonstigervermessungspunkt (
@@ -2520,7 +1995,6 @@ CREATE TABLE ax_sonstigervermessungspunkt (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(6),
 	anlass			integer,
 	vermarkung_marke	integer,
 	punktkennung		character varying(15), -- integer,
@@ -2538,8 +2012,6 @@ COMMENT ON TABLE  ax_sonstigervermessungspunkt        IS 's o n s t i g e r   V 
 COMMENT ON COLUMN ax_sonstigervermessungspunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
-
-
 -- sonstiges Bauwerk oder sonstige Einrichtung
 -- ----------------------------------------------
 CREATE TABLE ax_sonstigesbauwerkodersonstigeeinrichtung (
@@ -2548,13 +2020,11 @@ CREATE TABLE ax_sonstigesbauwerkodersonstigeeinrichtung (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	art			character varying(40),  -- (15)
 	--description		integer,
 	"name"			character varying(35), -- Lippe immer leer, RLP "Relationsbelegung bei Nachmigration"
 	bauwerksfunktion	integer,
-	-- gehoertzu character	varying,  -- immer leer
 	CONSTRAINT ax_sonstigesbauwerkodersonstigeeinrichtung_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -2569,10 +2039,8 @@ COMMENT ON TABLE  ax_sonstigesbauwerkodersonstigeeinrichtung        IS 'sonstige
 COMMENT ON COLUMN ax_sonstigesbauwerkodersonstigeeinrichtung.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- S o n s t i g e s   R e c h t
 -- -----------------------------
--- neu 12.2009
 CREATE TABLE ax_sonstigesrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -2602,91 +2070,6 @@ COMMENT ON TABLE  ax_sonstigesrecht        IS 'S o n s t i g e s   R e c h t';
 COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- S p o r t - ,   F r e i z e i t -   u n d   E r h o h l u n g s f l ä c h e
--- ---------------------------------------------------------------------------
-CREATE TABLE ax_sportfreizeitunderholungsflaeche (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	zustand			integer, -- ??
-	"name"			character varying(20),  --??
-	CONSTRAINT ax_sportfreizeitunderholungsflaeche_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_sportfreizeitunderholungsflaeche','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_sportfreizeitunderholungsflaeche_geom_idx ON ax_sportfreizeitunderholungsflaeche USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_sportfreizeitunderholungsflaeche        IS 'Sport-, Freizeit- und Erhohlungsfläche';
-COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- s t e h e n d e s   G e w a e s s e r
--- ----------------------------------------------
-CREATE TABLE ax_stehendesgewaesser (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	--land integer,
-	--regierungsbezirk integer,
-	--kreis integer,
-	--gemeinde integer,
-	--lage integer,
-	--unverschluesselt character(13),
-	CONSTRAINT ax_stehendesgewaesser_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_stehendesgewaesser','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_stehendesgewaesser_geom_idx ON ax_stehendesgewaesser USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_stehendesgewaesser        IS 's t e h e n d e s   G e w a e s s e r';
-COMMENT ON COLUMN ax_stehendesgewaesser.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- S t r a s s e n v e r k e h r
--- ----------------------------------------------
-CREATE TABLE ax_strassenverkehr (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	--land integer,
-	--regierungsbezirk integer,
-	--kreis integer,
-	--gemeinde integer,
-	--lage integer,
-	funktion		integer,
-	--unverschluesselt character(27),
-	--zweitname character(41),
-	CONSTRAINT ax_strassenverkehr_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_strassenverkehr','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_strassenverkehr_geom_idx ON ax_strassenverkehr USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_strassenverkehr        IS 'S t r a s s e n v e r k e h r';
-COMMENT ON COLUMN ax_strassenverkehr.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- S t r a s s e n v e r k e h r s a n l a g e
 -- ----------------------------------------------
 CREATE TABLE ax_strassenverkehrsanlage (
@@ -2713,52 +2096,6 @@ COMMENT ON TABLE  ax_strassenverkehrsanlage        IS 'S t r a s s e n v e r k e
 COMMENT ON COLUMN ax_strassenverkehrsanlage.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- S u m p f
--- ----------------------------------------------
-CREATE TABLE ax_sumpf (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
-	anlass			integer,
-  CONSTRAINT ax_sumpf_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_sumpf','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_sumpf_geom_idx ON ax_sumpf USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_sumpf        IS 'S u m p f';
-COMMENT ON COLUMN ax_sumpf.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- T a g e b a u  /  G r u b e  /  S t e i n b r u c h
--- ---------------------------------------------------
-CREATE TABLE ax_tagebaugrubesteinbruch (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	abbaugut		integer,
-	CONSTRAINT ax_tagebaugrubesteinbruch_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_tagebaugrubesteinbruch','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_tagebaugrubesteinbruch_geom_idx ON ax_tagebaugrubesteinbruch USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_tagebaugrubesteinbruch        IS 'T a g e b a u  /  G r u b e  /  S t e i n b r u c h';
-COMMENT ON COLUMN ax_tagebaugrubesteinbruch.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- T r a n s p o r t a n l a g e
 -- ---------------------------------------------------
 CREATE TABLE ax_transportanlage (
@@ -2767,7 +2104,6 @@ CREATE TABLE ax_transportanlage (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	bauwerksfunktion	integer,
 	lagezurerdoberflaeche	integer,
@@ -2784,10 +2120,8 @@ COMMENT ON TABLE  ax_transportanlage        IS 'T r a n s p o r t a n l a g e';
 COMMENT ON COLUMN ax_transportanlage.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- T u r m
 -- -------
--- neu 12.2009
 CREATE TABLE ax_turm (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -2807,32 +2141,6 @@ COMMENT ON TABLE  ax_turm        IS 'T u r m';
 COMMENT ON COLUMN ax_turm.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- U n l a n d  /  V e g e t a t i o n s f l a e c h e
--- ---------------------------------------------------
-
-CREATE TABLE ax_unlandvegetationsloseflaeche (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
-	anlass			integer,
-	funktion		integer,
-	oberflaechenmaterial	integer,
-	CONSTRAINT ax_unlandvegetationsloseflaeche_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_unlandvegetationsloseflaeche','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_unlandvegetationsloseflaeche_geom_idx ON ax_unlandvegetationsloseflaeche USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_unlandvegetationsloseflaeche        IS 'U n l a n d  /  V e g e t a t i o n s f l a e c h e';
-COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- u n t e r g e o r d n e t e s   G e w a e s s e r
 -- -------------------------------------------------
 CREATE TABLE ax_untergeordnetesgewaesser (
@@ -2841,7 +2149,6 @@ CREATE TABLE ax_untergeordnetesgewaesser (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	funktion		integer,
 	CONSTRAINT ax_untergeordnetesgewaesser_pk PRIMARY KEY (ogc_fid)
@@ -2858,7 +2165,6 @@ COMMENT ON TABLE  ax_untergeordnetesgewaesser        IS 'u n t e r g e o r d n e
 COMMENT ON COLUMN ax_untergeordnetesgewaesser.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- V e g a t a t i o n s m e r k m a l
 -- ----------------------------------------------
 CREATE TABLE ax_vegetationsmerkmal (
@@ -2867,7 +2173,6 @@ CREATE TABLE ax_vegetationsmerkmal (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
 	anlass			integer,
 	bewuchs			integer,
 	CONSTRAINT ax_vegetationsmerkmal_pk PRIMARY KEY (ogc_fid)
@@ -2884,7 +2189,6 @@ COMMENT ON TABLE  ax_vegetationsmerkmal        IS 'V e g a t a t i o n s m e r k
 COMMENT ON COLUMN ax_vegetationsmerkmal.gml_id IS 'Identifikator, global eindeutig';
 
 
-
 -- V o r r a t s b e h a e l t e r  /  S p e i c h e r b a u w e r k
 -- -----------------------------------------------------------------
 CREATE TABLE ax_vorratsbehaelterspeicherbauwerk (
@@ -2893,7 +2197,6 @@ CREATE TABLE ax_vorratsbehaelterspeicherbauwerk (
 	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
 	anlass			integer,
 	speicherinhalt		integer,
 	bauwerksfunktion	integer,
@@ -2906,59 +2209,6 @@ CREATE INDEX ax_vorratsbehaelterspeicherbauwerk_geom_idx ON ax_vorratsbehaelters
 
 COMMENT ON TABLE  ax_vorratsbehaelterspeicherbauwerk        IS 'V o r r a t s b e h a e l t e r  /  S p e i c h e r b a u w e r k';
 COMMENT ON COLUMN ax_vorratsbehaelterspeicherbauwerk.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- W a l d 
--- ----------------------------------------------
-CREATE TABLE ax_wald (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character(5),
-	anlass			integer,
-	vegetationsmerkmal	integer,
-	CONSTRAINT ax_wald_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_wald','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_wald_geom_idx ON ax_wald USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_wald        IS 'W a l d';
-COMMENT ON COLUMN ax_wald.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- W e g 
--- ----------------------------------------------
-CREATE TABLE ax_weg (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	funktion		integer,
-	--land integer,
-	--regierungsbezirk integer,
-	--kreis integer,
-	--gemeinde integer,
-	--lage integer,
-	--unverschluesselt character(40),
-	CONSTRAINT ax_weg_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_weg','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_weg_geom_idx ON ax_weg USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_weg        IS 'W e g';
-COMMENT ON COLUMN ax_weg.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- W e g  /  P f a d  /  S t e i g
@@ -2986,36 +2236,8 @@ COMMENT ON TABLE  ax_wegpfadsteig        IS 'W e g  /  P f a d  /  S t e i g';
 COMMENT ON COLUMN ax_wegpfadsteig.gml_id IS 'Identifikator, global eindeutig';
 
 
-
--- W o h n b a u f l a e c h e
--- ----------------------------------------------
-CREATE TABLE ax_wohnbauflaeche (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(8),
-	--sonstigesmodell	character varying[],
-	anlass			integer,
-	--artderbebauung integer,
-	--zustand integer,
-	--art character(37),
-	--uri character(28),
-	CONSTRAINT ax_wohnbauflaeche_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_wohnbauflaeche','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_wohnbauflaeche_geom_idx ON ax_wohnbauflaeche USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_wohnbauflaeche        IS 'W o h n b a u f l a e c h e';
-COMMENT ON COLUMN ax_wohnbauflaeche.gml_id IS 'Identifikator, global eindeutig';
-
-
-
 -- W o h n p l a t z
 -- -----------------
--- neu 12.2009
 CREATE TABLE ax_wohnplatz (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -3040,113 +2262,1104 @@ COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabell
 COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 
 
---- Berechtigungen Tabellen fuer wms Mapserver 5.x
 
-GRANT SELECT ON TABLE alkis_beziehungen TO ms5;
-GRANT SELECT ON TABLE ap_darstellung TO ms5;
-GRANT SELECT ON TABLE ap_lpo TO ms5;
-GRANT SELECT ON TABLE ap_lto TO ms5;
-GRANT SELECT ON TABLE ap_ppo TO ms5;
-GRANT SELECT ON TABLE ap_pto TO ms5;
-GRANT SELECT ON TABLE ax_anderefestlegungnachwasserrecht TO ms5;
-GRANT SELECT ON TABLE ax_anschrift TO ms5;
-GRANT SELECT ON TABLE ax_aufnahmepunkt TO ms5;
-GRANT SELECT ON TABLE ax_bahnverkehr TO ms5;
-GRANT SELECT ON TABLE ax_bahnverkehrsanlage TO ms5;
-GRANT SELECT ON TABLE ax_bauraumoderbodenordnungsrecht TO ms5;
-GRANT SELECT ON TABLE ax_bauteil TO ms5;
-GRANT SELECT ON TABLE ax_bauwerkimgewaesserbereich TO ms5;
-GRANT SELECT ON TABLE ax_bauwerkimverkehrsbereich TO ms5;
-GRANT SELECT ON TABLE ax_bauwerkoderanlagefuerindustrieundgewerbe TO ms5;
-GRANT SELECT ON TABLE ax_bauwerkoderanlagefuersportfreizeitunderholung TO ms5;
-GRANT SELECT ON TABLE ax_bergbaubetrieb TO ms5;
-GRANT SELECT ON TABLE ax_besondereflurstuecksgrenze TO ms5;
-GRANT SELECT ON TABLE ax_besonderegebaeudelinie TO ms5;
-GRANT SELECT ON TABLE ax_besondererbauwerkspunkt TO ms5;
-GRANT SELECT ON TABLE ax_besonderergebaeudepunkt TO ms5;
-GRANT SELECT ON TABLE ax_besonderertopographischerpunkt TO ms5;
-GRANT SELECT ON TABLE ax_bewertung TO ms5;
-GRANT SELECT ON TABLE ax_bodenschaetzung TO ms5;
-GRANT SELECT ON TABLE ax_boeschungkliff TO ms5;
-GRANT SELECT ON TABLE ax_boeschungsflaeche TO ms5;
-GRANT SELECT ON TABLE ax_buchungsblatt TO ms5;
-GRANT SELECT ON TABLE ax_buchungsblattbezirk TO ms5;
-GRANT SELECT ON TABLE ax_buchungsstelle TO ms5;
-GRANT SELECT ON TABLE ax_bundesland TO ms5;
-GRANT SELECT ON TABLE ax_dammwalldeich TO ms5;
-GRANT SELECT ON TABLE ax_denkmalschutzrecht TO ms5;
-GRANT SELECT ON TABLE ax_dienststelle TO ms5;
-GRANT SELECT ON TABLE ax_felsenfelsblockfelsnadel TO ms5;
-GRANT SELECT ON TABLE ax_firstlinie TO ms5;
-GRANT SELECT ON TABLE ax_flaechebesondererfunktionalerpraegung TO ms5;
-GRANT SELECT ON TABLE ax_flaechegemischternutzung TO ms5;
-GRANT SELECT ON TABLE ax_fliessgewaesser TO ms5;
-GRANT SELECT ON TABLE ax_flugverkehr TO ms5;
-GRANT SELECT ON TABLE ax_flurstueck TO ms5;
-GRANT SELECT ON TABLE ax_friedhof TO ms5;
-GRANT SELECT ON TABLE ax_gebaeude TO ms5;
-GRANT SELECT ON TABLE ax_gehoelz TO ms5;
-GRANT SELECT ON TABLE ax_gemarkung TO ms5;
-GRANT SELECT ON TABLE ax_gemarkungsteilflur TO ms5;
-GRANT SELECT ON TABLE ax_gemeinde TO ms5;
-GRANT SELECT ON TABLE ax_georeferenziertegebaeudeadresse TO ms5;
-GRANT SELECT ON TABLE ax_gewaessermerkmal TO ms5;
-GRANT SELECT ON TABLE ax_gleis TO ms5;
-GRANT SELECT ON TABLE ax_grablochderbodenschaetzung TO ms5;
-GRANT SELECT ON TABLE ax_grenzpunkt TO ms5;
-GRANT SELECT ON TABLE ax_hafenbecken TO ms5;
-GRANT SELECT ON TABLE ax_halde TO ms5;
-GRANT SELECT ON TABLE ax_heide TO ms5;
-GRANT SELECT ON TABLE ax_historischesbauwerkoderhistorischeeinrichtung TO ms5;
-GRANT SELECT ON TABLE ax_historischesflurstueckalb TO ms5;
-GRANT SELECT ON TABLE ax_industrieundgewerbeflaeche TO ms5;
-GRANT SELECT ON TABLE ax_klassifizierungnachstrassenrecht TO ms5;
-GRANT SELECT ON TABLE ax_klassifizierungnachwasserrecht TO ms5;
-GRANT SELECT ON TABLE ax_kleinraeumigerlandschaftsteil TO ms5;
-GRANT SELECT ON TABLE ax_kommunalesgebiet TO ms5;
-GRANT SELECT ON TABLE ax_kreisregion TO ms5;
-GRANT SELECT ON TABLE ax_lagebezeichnungkatalogeintrag TO ms5;
-GRANT SELECT ON TABLE ax_lagebezeichnungmithausnummer TO ms5;
-GRANT SELECT ON TABLE ax_lagebezeichnungmitpseudonummer TO ms5;
-GRANT SELECT ON TABLE ax_lagebezeichnungohnehausnummer TO ms5;
-GRANT SELECT ON TABLE ax_landwirtschaft TO ms5;
-GRANT SELECT ON TABLE ax_leitung TO ms5;
-GRANT SELECT ON TABLE ax_moor TO ms5;
-GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck TO ms5;
-GRANT SELECT ON TABLE ax_namensnummer TO ms5;
-GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht TO ms5;
-GRANT SELECT ON TABLE ax_person TO ms5;
-GRANT SELECT ON TABLE ax_platz TO ms5;
-GRANT SELECT ON TABLE ax_punktortag TO ms5;
-GRANT SELECT ON TABLE ax_punktortau TO ms5;
-GRANT SELECT ON TABLE ax_punktortta TO ms5;
-GRANT SELECT ON TABLE ax_regierungsbezirk TO ms5;
-GRANT SELECT ON TABLE ax_schiffsverkehr TO ms5;
-GRANT SELECT ON TABLE ax_schutzgebietnachwasserrecht TO ms5;
-GRANT SELECT ON TABLE ax_schutzzone TO ms5;
-GRANT SELECT ON TABLE ax_sonstigervermessungspunkt TO ms5;
-GRANT SELECT ON TABLE ax_sonstigesbauwerkodersonstigeeinrichtung TO ms5;
-GRANT SELECT ON TABLE ax_sonstigesrecht TO ms5;
-GRANT SELECT ON TABLE ax_sportfreizeitunderholungsflaeche TO ms5;
-GRANT SELECT ON TABLE ax_stehendesgewaesser TO ms5;
-GRANT SELECT ON TABLE ax_strassenverkehr TO ms5;
-GRANT SELECT ON TABLE ax_strassenverkehrsanlage TO ms5;
-GRANT SELECT ON TABLE ax_sumpf TO ms5;
-GRANT SELECT ON TABLE ax_tagebaugrubesteinbruch TO ms5;
-GRANT SELECT ON TABLE ax_transportanlage TO ms5;
-GRANT SELECT ON TABLE ax_turm TO ms5;
-GRANT SELECT ON TABLE ax_unlandvegetationsloseflaeche TO ms5;
-GRANT SELECT ON TABLE ax_untergeordnetesgewaesser TO ms5;
-GRANT SELECT ON TABLE ax_vegetationsmerkmal TO ms5;
-GRANT SELECT ON TABLE ax_vorratsbehaelterspeicherbauwerk TO ms5;
-GRANT SELECT ON TABLE ax_wald TO ms5;
-GRANT SELECT ON TABLE ax_weg TO ms5;
-GRANT SELECT ON TABLE ax_wegpfadsteig TO ms5;
-GRANT SELECT ON TABLE ax_wohnbauflaeche TO ms5;
-GRANT SELECT ON TABLE ax_wohnplatz TO ms5;
+-- ####################  UMSORTIERUNG DER TABELLEN #############################
+-- OBEN  (ALT):  alphabetisch nach Tabellen-Namen 
+-- UNTEN (NEU):  thematische Gliederung (wie in der Dokumentation, besserer Abgleich)
 
-GRANT SELECT ON TABLE geometry_columns TO ms5;
-GRANT SELECT ON TABLE spatial_ref_sys TO ms5;
+
+--*** ############################################################
+--*** Objektbereich: AAA Basisschema
+--*** ############################################################
+
+--** Objektartengruppe: AAA_Praesentationsobjekte
+--   ===================================================================
+
+--AP_GPO
+--AP_PPO
+--AP_LPO
+--AP_FPO
+--AP_TPO
+--AP_PTO
+--AP_LTO
+--AP_Darstellung
+
+--*** ############################################################
+--*** Objektbereich: Flurstücke, Lage, Punkte
+--*** ############################################################
+
+--** Objektartengruppe: Angaben zum Flurstück
+--   ===================================================================
+
+--AX_Flurstueck
+--AX_BesondereFlurstuecksgrenze
+--AX_Grenzpunkt
+--AX_Flurstueck_Kerndaten
+--AX_Flurstuecksnummer
+--AX_SonstigeEigenschaften_Flurstueck
+
+--** Objektartengruppe: Angaben zur Lage
+--   ===================================================================
+
+--AX_LagebezeichnungOhneHausnummer
+--AX_LagebezeichnungMitHausnummer
+--AX_LagebezeichnungMitPseudonummer
+--AX_Lagebezeichnung	Auswahldatentyp
+--AX_Lage Geändert (Revisionsnummer: 1750)
+
+--** Objektartengruppe: Angaben zum Netzpunkt
+--   ===================================================================
+
+--AX_Aufnahmepunkt
+--AX_Sicherungspunkt
+--AX_SonstigerVermessungspunkt
+--AX_Netzpunkt
+
+--** Objektartengruppe: Angaben zum Punktort
+--   ===================================================================
+
+--AX_Punktort
+--AX_PunktortAG
+--AX_PunktortAU
+--AX_PunktortTA
+--AX_DQPunktort
+--AX_LI_Lineage_Punktort
+--AX_LI_ProcessStep_Punktort
+--AX_LI_Source_Punktort
+
+--** Objektartengruppe: Fortführungsnachweis
+--   ===================================================================
+
+--AX_FortfuehrungsnachweisDeckblatt
+--AX_Fortfuehrungsfall
+--AX_Fortfuehrungsnummer
+--AX_Auszug
+--AX_K_ANSCHRIFT
+--AX_K_AUSGKOPF_Standard
+--AX_FGraphik
+--AX_Landeswappen
+
+--** Objektartengruppe: Angaben zur Reservierung
+--   ===================================================================
+
+--AX_Reservierung
+--AX_PunktkennungUntergegangen
+--AX_Reservierungsauftrag_Gebietskennung	Auswahldatentyp
+
+--** Objektartengruppe: Angaben zur Historie
+--   ===================================================================
+
+--AX_HistorischesFlurstueckOhneRaumbezug
+
+--*** ############################################################
+--*** Objektbereich: Eigentümer
+--*** ############################################################
+
+--** Objektartengruppe:Personen- und Bestandsdaten
+--   ===================================================================
+
+--AX_Person
+--AX_Personengruppe
+--AX_Anschrift
+--AX_Namensnummer
+--AX_Buchungsblatt
+--AX_Buchungsstelle
+--AX_Anteil
+--AX_DQOhneDatenerhebung
+--AX_LI_Lineage_OhneDatenerhebung
+--AX_LI_ProcessStep_OhneDatenerhebung
+
+--*** ############################################################
+--*** Objektbereich: Gebäude
+--*** ############################################################
+
+--** Objektartengruppe:Angaben zum Gebäude
+--   ===================================================================
+
+--AX_Gebaeude
+--AX_Bauteil
+--AX_BesondereGebaeudelinie
+--AX_Firstlinie
+--AX_BesondererGebaeudepunkt
+--AX_Nutzung_Gebaeude
+
+
+
+--*** ############################################################
+--*** Objektbereich: Tatsächliche Nutzung (AX_TatsaechlicheNutzung)
+--*** ############################################################
+
+-- Gemeinsame Attribute:
+--  DLU datumDerLetztenUeberpruefung DateTime
+--  DAQ qualitaetsangaben
+
+
+--** Objektartengruppe: Siedlung (in Objektbereich:Tatsächliche Nutzung)
+--   ===================================================================
+
+-- AX_Wohnbauflaeche
+
+-- W o h n b a u f l a e c h e
+-- ----------------------------------------------
+-- 'Wohnbaufläche' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang 
+-- stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen),
+-- die ausschließlich oder vorwiegend dem Wohnen dient.
+
+CREATE TABLE ax_wohnbauflaeche (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	artderbebauung		integer,
+	zustand			integer,
+	name			character(50),
+	CONSTRAINT ax_wohnbauflaeche_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_wohnbauflaeche','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_wohnbauflaeche_geom_idx ON ax_wohnbauflaeche USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_wohnbauflaeche                 IS 'W o h n b a u f l a e c h e  ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient.';
+COMMENT ON COLUMN ax_wohnbauflaeche.gml_id          IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_wohnbauflaeche.artderbebauung  IS 'BEB "Art der Bebauung" differenziert nach offener und geschlossener Bauweise aus topographischer Sicht und nicht nach gesetzlichen Vorgaben (z.B. BauGB).';
+COMMENT ON COLUMN ax_wohnbauflaeche.zustand         IS 'ZUS "Zustand" beschreibt, ob "Wohnbaufläche" ungenutzt ist oder ob eine Fläche als Wohnbaufläche genutzt werden soll.';
+COMMENT ON COLUMN ax_wohnbauflaeche.name            IS 'NAM "Name" ist der Eigenname von "Wohnbaufläche" insbesondere bei Objekten außerhalb von Ortslagen.';
+
+
+
+-- AX_IndustrieUndGewerbeflaeche
+
+-- Objektart: I n d u s t r i e -   u n d   G e w e r b e f l a e c h e
+-- --------------------------------------------------------------------
+-- Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient.
+CREATE TABLE ax_industrieundgewerbeflaeche (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	name			character varying(50),
+	zustand			integer,
+	foerdergut		integer, -- Die Attributart 'Fördergut' kann nur in Verbindung mit der Attributart 'Funktion' und der Werteart 2510 vorkommen.
+	primaerenergie		integer, -- Die Attributart 'Primärenergie' kann nur in Verbindung mit der Attributart 'Funktion' und den Wertearten 2530, 2531, 2532, 2570, 2571 und 2572 vorkommen.
+	lagergut		integer, -- Die Attributart 'Lagergut' kann nur in Verbindung mit der Attributart 'Funktion' und der Werteart 1740 vorkommen.
+	CONSTRAINT ax_industrieundgewerbeflaeche_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_industrieundgewerbeflaeche','wkb_geometry','25832','POLYGON',2);
+
+-- POLYGON und POINT
+ALTER TABLE ax_industrieundgewerbeflaeche DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+CREATE INDEX ax_industrieundgewerbeflaeche_geom_idx ON ax_industrieundgewerbeflaeche USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_industrieundgewerbeflaeche            IS 'I n d u s t r i e -   u n d   G e w e r b e f l a e c h e';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.gml_id     IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.name       IS 'NAM "Name" ist der Eigenname von "Industrie- und Gewerbefläche" insbesondere außerhalb von Ortslagen.';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.zustand    IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Industrie- und Gewerbefläche".';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.funktion   IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung von "Industrie- und Gewerbefläche".';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.foerdergut IS 'FGT "Fördergut" gibt an, welches Produkt gefördert wird.';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.lagergut   IS 'LGT "Lagergut" gibt an, welches Produkt gelagert wird. Diese Attributart kann nur in Verbindung mit der Attributart "Funktion" und der Werteart 1740 vorkommen.';
+COMMENT ON COLUMN ax_industrieundgewerbeflaeche.primaerenergie IS 'PEG "Primärenergie" beschreibt die zur Strom- oder Wärmeerzeugung dienende Energieform oder den Energieträger.';
+
+
+-- AX_Halde
+
+-- H a l d e
+-- ----------------------------------------------
+CREATE TABLE ax_halde
+(	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	lagergut		integer,
+	"name"			character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_halde_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_halde','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_halde_geom_idx ON ax_halde USING gist (wkb_geometry);
+
+COMMENT ON TABLE ax_halde             IS 'H a l d e';
+COMMENT ON COLUMN ax_halde.gml_id     IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_halde.name       IS 'NAM "Name" ist die einer "Halde" zugehörige Bezeichnung oder deren Eigenname.';
+COMMENT ON COLUMN ax_halde.lagergut   IS 'LGT "Lagergut" gibt an, welches Produkt gelagert wird.';
+COMMENT ON COLUMN ax_halde.zustand    IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Halde".';
+
+
+-- AX_Bergbaubetrieb
+
+-- B e r b a u b e t r i e b
+-- -------------------------
+-- 'Bergbaubetrieb' ist eine Fläche, die für die Förderung des Abbaugutes unter Tage genutzt wird.
+CREATE TABLE ax_bergbaubetrieb ( 
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	abbaugut		integer,
+	"name"			character varying(50),
+	bezeichnung		character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_bergbaubetrieb_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_bergbaubetrieb','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_bergbaubetrieb_geom_idx  ON ax_bergbaubetrieb  USING gist  (wkb_geometry);
+
+COMMENT ON TABLE  ax_bergbaubetrieb             IS 'B e r b a u b e t r i e b';
+COMMENT ON COLUMN ax_bergbaubetrieb.gml_id      IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_bergbaubetrieb.abbaugut    IS 'AGT "Abbaugut" gibt an, welches Material abgebaut wird.';
+COMMENT ON COLUMN ax_bergbaubetrieb.name        IS 'NAM "Name" ist der Eigenname von "Bergbaubetrieb".';
+COMMENT ON COLUMN ax_bergbaubetrieb.zustand     IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Bergbaubetrieb".';
+COMMENT ON COLUMN ax_bergbaubetrieb.bezeichnung IS 'BEZ "Bezeichnung" ist die von einer Fachstelle vergebene Kurzbezeichnung.';
+
+
+-- AX_TagebauGrubeSteinbruch
+
+-- T a g e b a u  /  G r u b e  /  S t e i n b r u c h
+-- ---------------------------------------------------
+CREATE TABLE ax_tagebaugrubesteinbruch (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	abbaugut		integer,
+	"name"			character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_tagebaugrubesteinbruch_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_tagebaugrubesteinbruch','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_tagebaugrubesteinbruch_geom_idx ON ax_tagebaugrubesteinbruch USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_tagebaugrubesteinbruch          IS '"T a g e b a u ,  G r u b e ,  S t e i n b r u c h"  ist eine Fläche, auf der oberirdisch Bodenmaterial abgebaut wird. Rekultivierte Tagebaue, Gruben, Steinbrüche werden als Objekte entsprechend der vorhandenen Nutzung erfasst.';
+COMMENT ON COLUMN ax_tagebaugrubesteinbruch.gml_id   IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_tagebaugrubesteinbruch.name     IS 'NAM "Name" ist der Eigenname von "Tagebau, Grube, Steinbruch".';
+COMMENT ON COLUMN ax_tagebaugrubesteinbruch.abbaugut IS 'AGT "Abbaugut" gibt an, welches Material abgebaut wird.';
+COMMENT ON COLUMN ax_tagebaugrubesteinbruch.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Tagebau, Grube, Steinbruch".';
+
+
+-- AX_FlaecheGemischterNutzung
+
+-- F l a e c h e n   g e m i s c h t e r   N u t z u n g
+-- -----------------------------------------------------
+-- Nutzung
+CREATE TABLE ax_flaechegemischternutzung (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	artderbebauung		integer,
+	funktion		integer,
+	"name"			character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_flaechegemischternutzung_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_flaechegemischternutzung','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_flaechegemischternutzung_geom_idx ON ax_flaechegemischternutzung USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_flaechegemischternutzung        IS '"Fläche gemischter Nutzung" ist eine bebaute Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche (Hofraumfläche, Hausgarten), auf der keine Art der baulichen Nutzung vorherrscht. Solche Flächen sind insbesondere ländlich-dörflich geprägte Flächen mit land- und forstwirtschaftlichen Betrieben, Wohngebäuden u.a. sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung.';
+COMMENT ON COLUMN ax_flaechegemischternutzung.gml_id IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_flaechegemischternutzung.artderbebauung IS 'BEB "Art der Bebauung" differenziert nach offener und geschlossener Bauweise aus topographischer Sicht und nicht nach gesetzlichen Vorgaben (z.B. BauGB).';
+COMMENT ON COLUMN ax_flaechegemischternutzung.funktion       IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung (Dominanzprinzip).';
+COMMENT ON COLUMN ax_flaechegemischternutzung.name           IS 'NAM "Name" ist der Eigenname von "Fläche gemischter Nutzung" insbesondere bei Objekten außerhalb von Ortslagen.';
+COMMENT ON COLUMN ax_flaechegemischternutzung.zustand        IS 'ZUS "Zustand" beschreibt, ob "Fläche gemischter Nutzung" ungenutzt ist.';
+
+
+-- AX_FlaecheBesondererFunktionalerPraegung
+
+-- F l a e c h e   b e s o n d e r e r   f u n k t i o n a l e r   P r a e g u n g
+-- -------------------------------------------------------------------------------
+-- Nutzung
+CREATE TABLE ax_flaechebesondererfunktionalerpraegung (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	artderbebauung		integer,
+	"name"			character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_flaechebesondererfunktionalerpraegung_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_flaechebesondererfunktionalerpraegung','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_flaechebesondererfunktionalerpraegung_geom_idx ON ax_flaechebesondererfunktionalerpraegung USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_flaechebesondererfunktionalerpraegung        IS '"Fläche besonderer funktionaler Prägung" ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind.';
+COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.gml_id IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.funktion       IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung von "Fläche besonderer funktionaler Prägung".';
+COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.artderbebauung IS 'BEB "Art der Bebauung" differenziert nach offener und geschlossener Bauweise aus topographischer Sicht und nicht nach gesetzlichen Vorgaben (z.B. BauGB).';
+COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.name           IS 'NAM "Name" ist der Eigenname von "Fläche besonderer funktionaler Prägung" insbesondere außerhalb von Ortslagen.';
+COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.zustand        IS 'ZUS  "Zustand" beschreibt die Betriebsbereitschaft von "Fläche funktionaler Prägung".';
+
+
+-- AX_SportFreizeitUndErholungsflaeche
+
+-- S p o r t - ,   F r e i z e i t -   u n d   E r h o h l u n g s f l ä c h e
+-- ---------------------------------------------------------------------------
+-- tatsächliche Nutzung
+
+CREATE TABLE ax_sportfreizeitunderholungsflaeche (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	zustand			integer,
+	"name"			character varying(50),
+	CONSTRAINT ax_sportfreizeitunderholungsflaeche_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_sportfreizeitunderholungsflaeche','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_sportfreizeitunderholungsflaeche_geom_idx ON ax_sportfreizeitunderholungsflaeche USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_sportfreizeitunderholungsflaeche          IS '"Sport-, Freizeit- und Erhohlungsfläche" ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient.';
+COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.gml_id   IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.funktion IS 'FKT "Funktion" ist die Art der Nutzung von "Sport-, Freizeit- und Erholungsfläche".';
+COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "SportFreizeitUndErholungsflaeche ".';
+COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.name     IS 'NAM "Name" ist der Eigenname von "Sport-, Freizeit- und Erholungsfläche".';
+
+
+-- AX_Friedhof
+
+-- F r i e d h o f
+-- ----------------
+-- Nutzung
+CREATE TABLE ax_friedhof (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character(50),
+	zustand			integer,
+	CONSTRAINT ax_friedhof_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_friedhof','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_friedhof_geom_idx ON ax_friedhof USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_friedhof           IS '"F r i e d h o f"  ist eine Fläche, auf der Tote bestattet sind.';
+COMMENT ON COLUMN ax_friedhof.gml_id    IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_friedhof.funktion  IS 'FKT "Funktion" ist die Art der Begräbnisstätte.';
+COMMENT ON COLUMN ax_friedhof.name      IS 'NAM "Name" ist der Eigenname von "Friedhof".';
+COMMENT ON COLUMN ax_friedhof.zustand   IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Friedhof".';
+
+
+--** Objektartengruppe: Verkehr (in Objektbereich:Tatsächliche Nutzung)
+--   ===================================================================
+
+-- AX_Strassenverkehr
+
+-- S t r a s s e n v e r k e h r
+-- ----------------------------------------------
+CREATE TABLE ax_strassenverkehr (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character(50),
+	zweitname		character(50),
+	zustand			integer,
+	CONSTRAINT ax_strassenverkehr_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_strassenverkehr','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_strassenverkehr_geom_idx ON ax_strassenverkehr USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_strassenverkehr           IS '"S t r a s s e n v e r k e h r" umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen.';
+COMMENT ON COLUMN ax_strassenverkehr.gml_id    IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_strassenverkehr.funktion  IS 'FKT "Funktion" beschreibt die verkehrliche Nutzung von "Straßenverkehr".';
+COMMENT ON COLUMN ax_strassenverkehr.name      IS 'NAM "Name" ist der Eigenname von "Strassenverkehr".';
+COMMENT ON COLUMN ax_strassenverkehr.zweitname IS 'ZNM "Zweitname" ist ein von der Lagebezeichnung abweichender Name von "Strassenverkehrsflaeche" (z.B. "Deutsche Weinstraße").';
+COMMENT ON COLUMN ax_strassenverkehr.zustand   IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Strassenverkehrsflaeche".';
+
+
+-- AX_Weg
+
+-- W e g 
+-- ----------------------------------------------
+-- 'Weg' umfasst alle Flächen, die zum Befahren und/oder Begehen vorgesehen sind. 
+-- Zum 'Weg' gehören auch Seitenstreifen und Gräben zur Wegentwässerung.
+CREATE TABLE ax_weg (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	name			character varying(50),
+	bezeichnung		character varying(50),
+	CONSTRAINT ax_weg_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_weg','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_weg_geom_idx ON ax_weg USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_weg              IS '"W e g" umfasst alle Flächen, die zum Befahren und/oder Begehen vorgesehen sind. Zum "Weg" gehören auch Seitenstreifen und Gräben zur Wegentwässerung.';
+COMMENT ON COLUMN ax_weg.gml_id       IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_weg.funktion     IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung objektiv erkennbare oder feststellbare vorherrschend vorkommende Nutzung.';
+COMMENT ON COLUMN ax_weg.name         IS 'NAM "Name" ist die Bezeichnung oder der Eigenname von "Wegflaeche".';
+COMMENT ON COLUMN ax_weg.bezeichnung  IS 'BEZ "Bezeichnung" ist die amtliche Nummer des Weges.';
+
+
+-- AX_Platz
+
+-- P l a t z
+-- ----------------------------------------------
+-- Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen).
+CREATE TABLE ax_platz (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character varying(50),
+	zweitname		character varying(50),
+	CONSTRAINT ax_platz_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_platz','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_platz_geom_idx ON ax_platz USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_platz           IS 'P l a t z   ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen).';
+COMMENT ON COLUMN ax_platz.gml_id    IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_platz.funktion  IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung objektiv erkennbare oder feststellbare vorkommende Nutzung.';
+COMMENT ON COLUMN ax_platz.name      IS 'NAM "Name" ist der Eigenname von "Platz".';
+COMMENT ON COLUMN ax_platz.zweitname IS 'ZNM "Zweitname" ist der touristische oder volkstümliche Name von "Platz".';
+
+
+-- AX_Bahnverkehr
+
+-- B a h n v e r k e h r 
+-- ----------------------------------------------
+CREATE TABLE ax_bahnverkehr (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	bahnkategorie		integer,
+	bezeichnung		character varying(50),
+	nummerderbahnstrecke	character varying(20),
+	zweitname		character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_bahnverkehr_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_bahnverkehr','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_bahnverkehr_geom_idx ON ax_bahnverkehr USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_bahnverkehr        IS '"B a h n v e r k e h r"  umfasst alle für den Schienenverkehr erforderlichen Flächen.';
+-- Flächen von Bahnverkehr sind
+--  * der Bahnkörper (Unterbau für Gleise; bestehend aus Dämmen oder Einschnitten und deren kleineren Böschungen, 
+--    Durchlässen, schmalen Gräben zur Entwässerung, Stützmauern, Unter- und Überführung, Seiten und Schutzstreifen) mit seinen Bahnstrecken
+--  * an den Bahnkörper angrenzende bebaute und unbebaute Flächen (z.B. größere Böschungsflächen).
+
+COMMENT ON COLUMN ax_bahnverkehr.gml_id               IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_bahnverkehr.funktion             IS 'FKT "Funktion" ist die objektiv feststellbare Nutzung von "Bahnverkehr".';
+COMMENT ON COLUMN ax_bahnverkehr.bahnkategorie        IS 'BKT "Bahnkategorie" beschreibt die Art des Verkehrsmittels.';
+COMMENT ON COLUMN ax_bahnverkehr.bezeichnung          IS 'BEZ "Bezeichnung" ist die Angabe der Orte, in denen die Bahnlinie beginnt und endet (z. B. "Bahnlinie Frankfurt - Würzburg").';
+COMMENT ON COLUMN ax_bahnverkehr.nummerderbahnstrecke IS 'NRB "Nummer der Bahnstrecke" ist die von der Bahn AG festgelegte Verschlüsselung der Bahnstrecke.';
+COMMENT ON COLUMN ax_bahnverkehr.zweitname            IS 'ZNM "Zweitname" ist der von der Lagebezeichnung abweichende Name von "Bahnverkehr" (z. B. "Höllentalbahn").';
+COMMENT ON COLUMN ax_bahnverkehr.zustand              IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Bahnverkehr".';
+
+
+-- AX_Flugverkehr
+
+-- F l u g v e r k e h r
+-- ----------------------
+CREATE TABLE ax_flugverkehr (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion 		integer,
+	art			integer,
+	"name"			character varying(50),
+	bezeichnung		character varying(50),
+	nutzung			integer,
+	zustand			integer,
+	CONSTRAINT ax_flugverkehr_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_flugverkehr','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_flugverkehr_geom_idx  ON ax_flugverkehr  USING gist  (wkb_geometry);
+
+COMMENT ON TABLE  ax_flugverkehr             IS '"F l u g v e r k e h r"  umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Flugverkehr dient.';
+COMMENT ON COLUMN ax_flugverkehr.gml_id      IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_flugverkehr.funktion    IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung (Dominanzprinzip).';
+COMMENT ON COLUMN ax_flugverkehr.art         IS 'ART "Art" ist Einstufung der Flugverkehrsfläche durch das Luftfahrtbundesamt.';
+COMMENT ON COLUMN ax_flugverkehr.name        IS 'NAM "Name" ist der Eigenname von "Flugverkehr".';
+COMMENT ON COLUMN ax_flugverkehr.bezeichnung IS 'BEZ "Bezeichnung" ist die von einer Fachstelle vergebene Kennziffer von "Flugverkehr".';
+COMMENT ON COLUMN ax_flugverkehr.nutzung     IS 'NTZ "Nutzung" gibt den Nutzerkreis von "Flugverkehr" an.';
+COMMENT ON COLUMN ax_flugverkehr.zustand     IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Flugverkehr".';
+
+
+-- AX_Schiffsverkehr
+
+-- S c h i f f s v e r k e h r
+-- ---------------------------
+CREATE TABLE ax_schiffsverkehr (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_schiffsverkehr_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_schiffsverkehr','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_schiffsverkehr_geom_idx
+  ON ax_schiffsverkehr USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_schiffsverkehr          IS '"S c h i f f s v e r k e h r"  umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient.';
+COMMENT ON COLUMN ax_schiffsverkehr.gml_id   IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_schiffsverkehr.funktion IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung von "Schiffsverkehr".';
+COMMENT ON COLUMN ax_schiffsverkehr.name     IS 'NAM "Name" ist der Eigenname von "Schiffsverkehr".';
+COMMENT ON COLUMN ax_schiffsverkehr.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Schiffsverkehr".';
+-- Diese Attributart kann nur in Verbindung mit der Attributart 'Funktion' und der Werteart 5620 vorkommen.
+
+
+--** Objektartengruppe:Vegetation (in Objektbereich:Tatsächliche Nutzung)
+--   ===================================================================
+
+
+-- AX_Landwirtschaft
+
+-- L a n d w i r t s c h a f t
+-- ----------------------------------------------
+CREATE TABLE ax_landwirtschaft (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	vegetationsmerkmal	integer,
+	name			character varying(50),
+	CONSTRAINT ax_landwirtschaft_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_landwirtschaft','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_landwirtschaft_geom_idx ON ax_landwirtschaft USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_landwirtschaft                    IS '"L a n d w i r t s c h a f t"  ist eine Fläche für den Anbau von Feldfrüchten sowie eine Fläche, die beweidet und gemäht werden kann, einschließlich der mit besonderen Pflanzen angebauten Fläche. Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als "Landwirtschaft" bzw. "Ackerland" zu erfassen';
+COMMENT ON COLUMN ax_landwirtschaft.gml_id             IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_landwirtschaft.vegetationsmerkmal IS 'VEG "Vegetationsmerkmal" ist die zum Zeitpunkt der Erhebung erkennbare oder feststellbare vorherrschend vorkommende landwirtschaftliche Nutzung (Dominanzprinzip).';
+COMMENT ON COLUMN ax_landwirtschaft.name               IS 'NAM "Name" ist die Bezeichnung oder der Eigenname von "Landwirtschaft".';
+
+
+-- AX_Wald
+
+-- W a l d 
+-- ----------------------------------------------
+CREATE TABLE ax_wald (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	vegetationsmerkmal	integer,
+	name			character varying(50),
+	bezeichnung		character varying(40),
+	CONSTRAINT ax_wald_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_wald','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_wald_geom_idx ON ax_wald USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_wald             IS '"W a l d" ist eine Fläche, die mit Forstpflanzen (Waldbäume und Waldsträucher) bestockt ist.';
+COMMENT ON COLUMN ax_wald.gml_id      IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_wald.vegetationsmerkmal IS 'VEG "Vegetationsmerkmal" beschreibt den Bewuchs von "Wald".';
+COMMENT ON COLUMN ax_wald.name        IS 'NAM "Name" ist der Eigenname von "Wald".';
+COMMENT ON COLUMN ax_wald.bezeichnung IS 'BEZ "Bezeichnung" ist die von einer Fachstelle vergebene Kennziffer (Forstabteilungsnummer, Jagenzahl) von "Wald".';
+
+
+-- AX_Gehoelz
+
+-- G e h o e l z
+-- ----------------------------------------------
+CREATE TABLE ax_gehoelz (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass 			integer,
+	vegetationsmerkmal	integer,
+	"name"			character varying(50),
+	funktion		integer,
+	CONSTRAINT ax_gehoelz_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_gehoelz','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_gehoelz_geom_idx ON ax_gehoelz USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_gehoelz        IS '"G e h o e l z" ist eine Fläche, die mit einzelnen Bäumen, Baumgruppen, Büschen, Hecken und Sträuchern bestockt ist.';
+COMMENT ON COLUMN ax_gehoelz.gml_id IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_gehoelz.vegetationsmerkmal IS 'VEG "Vegetationsmerkmal" beschreibt den Bewuchs von "Gehölz".';
+COMMENT ON COLUMN ax_gehoelz.name               IS 'NAM "Name" ist der Eigenname von "Wald".';
+COMMENT ON COLUMN ax_gehoelz.funktion           IS 'FKT "Funktion" beschreibt, welchem Zweck "Gehölz" dient.';
+
+
+-- AX_Heide
+
+-- H e i d e
+-- ----------------------------------------------
+CREATE TABLE ax_heide (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	"name"			character varying(50),
+	CONSTRAINT ax_heide_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_heide','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_heide_geom_idx ON ax_heide USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_heide        IS '"H e i d e"  ist eine meist sandige Fläche mit typischen Sträuchern, Gräsern und geringwertigem Baumbestand.';
+COMMENT ON COLUMN ax_heide.gml_id IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_heide.name   IS 'NAM "Name" ist der Eigenname von "Heide".';
+
+
+-- AX_Moor
+
+-- M o o r
+-- -------
+CREATE TABLE ax_moor (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	"name"			character varying(50),
+	CONSTRAINT ax_moor_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_moor','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_moor_geom_idx  ON ax_moor  USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_moor        IS '"M o o r"  ist eine unkultivierte Fläche, deren obere Schicht aus vertorften oder zersetzten Pflanzenresten besteht.';
+-- Torfstich bzw. Torfabbaufläche wird der Objektart 41005 'Tagebau, Grube, Steinbruch' mit AGT 'Torf' zugeordnet.
+COMMENT ON COLUMN ax_moor.gml_id IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_moor.name IS 'NAM "Name" ist der Eigenname von "Moor".';
+
+
+-- AX_Sumpf
+
+-- S u m p f
+-- ----------------------------------------------
+CREATE TABLE ax_sumpf (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	"name"			character varying(50),
+  CONSTRAINT ax_sumpf_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_sumpf','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_sumpf_geom_idx ON ax_sumpf USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_sumpf        IS '"S u m p f" ist ein wassergesättigtes, zeitweise unter Wasser stehendes Gelände. Nach Regenfällen kurzzeitig nasse Stellen im Boden werden nicht als "Sumpf" erfasst.';
+COMMENT ON COLUMN ax_sumpf.gml_id IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_sumpf.name   IS 'NAM "Name" ist der Eigenname von "Sumpf".';
+
+
+-- AX_UnlandVegetationsloseFlaeche
+
+-- U n l a n d  /  V e g e t a t i o n s f l a e c h e
+-- ---------------------------------------------------
+CREATE TABLE ax_unlandvegetationsloseflaeche (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	oberflaechenmaterial	integer,
+	"name"			character varying(50),
+	funktion		integer,
+	CONSTRAINT ax_unlandvegetationsloseflaeche_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_unlandvegetationsloseflaeche','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_unlandvegetationsloseflaeche_geom_idx ON ax_unlandvegetationsloseflaeche USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_unlandvegetationsloseflaeche        IS '"Unland/Vegetationslose Fläche" ist eine Fläche, die dauerhaft landwirtschaftlich nicht genutzt wird, wie z.B. nicht aus dem Geländerelief herausragende Felspartien, Sand- oder Eisflächen, Uferstreifen längs von Gewässern und Sukzessionsflächen.';
+COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.gml_id IS 'Identifikator, global eindeutig';
+-- Die Attributart 'Oberflächenmaterial' kann nur im Zusammenhang mit der Attributart 'Funktion' und der Werteart 1000 vorkommen.
+COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.oberflaechenmaterial IS 'OFM "Oberflächenmaterial" ist die Beschaffenheit des Bodens von "Unland/Vegetationslose Fläche".';
+COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.name                 IS 'NAM "Name" ist die Bezeichnung oder der Eigenname von "Unland/ VegetationsloseFlaeche".';
+COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.funktion             IS 'FKT "Funktion" ist die erkennbare Art von "Unland/Vegetationslose Fläche".';
+
+
+--** Objektartengruppe: Gewässer (in Objektbereich:Tatsächliche Nutzung)
+--   ===================================================================
+
+
+-- AX_Fliessgewaesser
+
+-- F l i e s s g e w a e s s e r
+-- ----------------------------------------------
+-- 'Fließgewässer' ist ein geometrisch begrenztes, oberirdisches, auf dem Festland fließendes Gewässer, 
+-- das die Wassermengen sammelt, die als Niederschläge auf die Erdoberfläche fallen oder in Quellen austreten, 
+-- und in ein anderes Gewässer, ein Meer oder in einen See transportiert
+--   oder
+-- in einem System von natürlichen oder künstlichen Bodenvertiefungen verlaufendes Wasser, 
+-- das zur Be- und Entwässerung an- oder abgeleitet wird
+--   oder
+-- ein geometrisch begrenzter, für die Schifffahrt angelegter künstlicher Wasserlauf, 
+-- der in einem oder in mehreren Abschnitten die jeweils gleiche Höhe des Wasserspiegels besitzt.
+CREATE TABLE ax_fliessgewaesser (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character varying(50),
+	zustand			integer,
+	CONSTRAINT ax_fliessgewaesser_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_fliessgewaesser','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_fliessgewaesser_geom_idx ON ax_fliessgewaesser USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_fliessgewaesser          IS '"F l i e s s g e w a e s s e r" ist ein geometrisch begrenztes, oberirdisches, auf dem Festland fließendes Gewässer, das die Wassermengen sammelt, die als Niederschläge auf die Erdoberfläche fallen oder in Quellen austreten, und in ein anderes Gewässer, ein Meer oder in einen See transportiert';
+COMMENT ON COLUMN ax_fliessgewaesser.gml_id   IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_fliessgewaesser.funktion IS 'FKT "Funktion" ist die Art von "Fließgewässer".';
+COMMENT ON COLUMN ax_fliessgewaesser.name     IS 'NAM "Name" ist die Bezeichnung oder der Eigenname von "Fließgewässer".';
+COMMENT ON COLUMN ax_fliessgewaesser.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Fließgewässer" mit FKT=8300 (Kanal).';
+
+
+-- AX_Hafenbecken
+
+-- H a f e n b e c k e n
+-- ---------------------
+CREATE TABLE ax_hafenbecken (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character varying(50),
+	nutzung			integer,
+	CONSTRAINT ax_hafenbecken_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_hafenbecken','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_hafenbecken_geom_idx  ON ax_hafenbecken  USING gist  (wkb_geometry);
+
+COMMENT ON TABLE  ax_hafenbecken        IS '"H a f e n b e c k e n"  ist ein natürlicher oder künstlich angelegter oder abgetrennter Teil eines Gewässers, in dem Schiffe be- und entladen werden.';
+COMMENT ON COLUMN ax_hafenbecken.gml_id IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_hafenbecken.funktion IS 'FKT "Funktion" ist die objektiv erkennbare Nutzung von "Hafenbecken".';
+COMMENT ON COLUMN ax_hafenbecken.name     IS 'NAM "Name" ist der Eigenname von "Hafenbecken".';
+COMMENT ON COLUMN ax_hafenbecken.nutzung  IS 'NTZ "Nutzung" gibt den Nutzerkreis von "Hafenbecken" an.';
+
+
+-- AX_StehendesGewaesser
+
+-- s t e h e n d e s   G e w a e s s e r
+-- ----------------------------------------------
+-- 'Stehendes Gewässer' ist eine natürliche oder künstliche mit Wasser gefüllte, 
+-- allseitig umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit 'Meer'.
+CREATE TABLE ax_stehendesgewaesser (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	name			character varying(50),
+	gewaesserkennziffer	character varying(30),
+	hydrologischesMerkmal	integer,
+	CONSTRAINT ax_stehendesgewaesser_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_stehendesgewaesser','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_stehendesgewaesser_geom_idx ON ax_stehendesgewaesser USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_stehendesgewaesser           IS 's t e h e n d e s   G e w a e s s e r  ist eine natürliche oder künstliche mit Wasser gefüllte, allseitig umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit "Meer".';
+COMMENT ON COLUMN ax_stehendesgewaesser.gml_id    IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_stehendesgewaesser.funktion  IS 'FKT "Funktion" ist die Art von "Stehendes Gewässer".';
+COMMENT ON COLUMN ax_stehendesgewaesser.name      IS 'NAM "Name" ist der Eigenname von "Stehendes Gewässer".';
+COMMENT ON COLUMN ax_stehendesgewaesser.gewaesserkennziffer   IS '"Gewässerkennziffer" ist die von der zuständigen Fachstelle vergebene Verschlüsselung.';
+COMMENT ON COLUMN ax_stehendesgewaesser.hydrologischesMerkmal IS '"Hydrologisches Merkmal" gibt die Wasserverhältnisse von "Stehendes Gewässer" an.';
+
+
+-- AX_Meer
+
+-- M e e r
+-- ----------------------------------------------
+CREATE TABLE ax_meer (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(8),
+	anlass			integer,
+	funktion		integer,
+	"name"			character varying(50),
+	bezeichnung		character varying(50),
+	tidemerkmal		integer,
+	CONSTRAINT ax_meer_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_meer','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_meer_geom_idx ON ax_meer USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_meer              IS '"M e e r" ist die das Festland umgebende Wasserfläche.';
+COMMENT ON COLUMN ax_meer.gml_id       IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_meer.funktion     IS 'FKT "Funktion" ist die Art von "Meer".';
+COMMENT ON COLUMN ax_meer.name         IS 'NAM "Name" ist der Eigenname von "Meer".';
+COMMENT ON COLUMN ax_meer.bezeichnung  IS 'BEZ "Bezeichnung" ist die von der zuständigen Fachbehörde vergebene Verschlüsselung.';
+COMMENT ON COLUMN ax_meer.tidemerkmal  IS 'TID "Tidemerkmal" gibt an, ob "Meer" von den periodischen Wasserstandsänderungen beeinflusst wird.';
+
+
+
+--*** ############################################################
+--*** Objektbereich: Bauwerke, Einrichtungen und sonstige Angaben
+--*** ############################################################
+
+--AX_BauwerkeEinrichtungenUndSonstigeAngaben
+--AX_DQMitDatenerhebung
+--AX_LI_Lineage_MitDatenerhebung
+--AX_LI_ProcessStep_MitDatenerhebung
+--AX_LI_Source_MitDatenerhebung
+
+--** Objektartengruppe: Bauwerke und Einrichtungen in Siedlungsflächen
+--   ===================================================================
+
+--AX_Turm
+--AX_BauwerkOderAnlageFuerIndustrieUndGewerbe
+--AX_VorratsbehaelterSpeicherbauwerk
+--AX_Transportanlage
+--AX_Leitung
+--AX_BauwerkOderAnlageFuerSportFreizeitUndErholung
+--AX_HistorischesBauwerkOderHistorischeEinrichtung
+--AX_HeilquelleGasquelle
+--AX_SonstigesBauwerkOderSonstigeEinrichtung
+--AX_EinrichtungInOeffentlichenBereichen
+--AX_BesondererBauwerkspunkt
+
+--** Objektartengruppe: Besondere Anlagen auf Siedlungsflächen
+--   ===================================================================
+
+--** Objektartengruppe: Bauwerke, Anlagen und Einrichtungen für den Verkehr
+--   ===================================================================
+
+--AX_BauwerkImVerkehrsbereich
+--AX_Strassenverkehrsanlage
+--AX_WegPfadSteig
+--AX_Bahnverkehrsanlage
+--AX_SeilbahnSchwebebahn
+--AX_Gleis
+--AX_Flugverkehrsanlage
+--AX_EinrichtungenFuerDenSchiffsverkehr
+--AX_BauwerkImGewaesserbereich
+
+--** Objektartengruppe: Besondere Vegetationsmerkmale
+--   ===================================================================
+
+--AX_Vegetationsmerkmal
+
+--** Objektartengruppe: Besondere Eigenschaften von Gewässern
+--   ===================================================================
+
+--AX_Gewaessermerkmal
+--AX_UntergeordnetesGewaesser
+
+--** Objektartengruppe: Besondere Angaben zum Verkehr
+--   ===================================================================
+
+--** Objektartengruppe: Besondere Angaben zum Gewässer
+--   ===================================================================
+
+--AX_Wasserspiegelhoehe
+--AX_SchifffahrtslinieFaehrverkehr
+
+--*** ############################################################
+--*** Objektbereich: Relief
+--*** ############################################################
+
+--** Objektartengruppe: Reliefformen
+--   ===================================================================
+
+--AX_BoeschungKliff
+--AX_Boeschungsflaeche Geändert (Revisionsnummer: 1623)
+--AX_DammWallDeich
+--AX_Hoehleneingang
+--AX_FelsenFelsblockFelsnadel
+--AX_Duene
+--AX_Hoehenlinie
+
+--** Objektartengruppe: Primäres DGM
+--   ===================================================================
+
+--AX_Erfassung_DGM
+--AX_ErfassungMarkanterGelaendepunkt
+--AX_Gelaendekante
+--AX_MarkanterGelaendepunkt
+--AX_BesondererHoehenpunkt
+
+--** Objektartengruppe:Sekundäres DGM
+--   ===================================================================
+
+--*** ############################################################
+--*** Objektbereich: Gesetzliche Festlegungen, Gebietseinheiten, Kataloge
+--*** ############################################################
+
+--** Objektartengruppe: Öffentlich-rechtliche und sonstige Festlegungen
+--   ===================================================================
+
+--AX_KlassifizierungNachStrassenrecht
+--AX_KlassifizierungNachWasserrecht
+--AX_BauRaumOderBodenordnungsrecht
+--AX_SonstigesRecht
+
+--** Objektartengruppe: Bodenschätzung, Bewertung
+--   ===================================================================
+
+--AX_Bodenschaetzung
+--AX_MusterLandesmusterUndVergleichsstueck
+
+--** Objektartengruppe: Kataloge
+--   ===================================================================
+
+--AX_Bundesland
+--AX_Regierungsbezirk
+--AX_KreisRegion Geändert (Revisionsnummer: 1658)
+--AX_Gemeinde
+--AX_Gemeindeteil
+--AX_Gemarkung
+--AX_GemarkungsteilFlur
+--AX_Buchungsblattbezirk
+--AX_Dienststelle
+--AX_LagebezeichnungKatalogeintrag
+--AX_Gemeindekennzeichen
+--AX_Katalogeintrag	
+--AX_Buchungsblattbezirk_Schluessel
+--AX_Dienststelle_Schluessel
+--AX_Bundesland_Schluessel
+--AX_Gemarkung_Schluessel
+--AX_GemarkungsteilFlur_Schluessel
+--AX_Regierungsbezirk_Schluessel
+--AX_Kreis_Schluessel
+--AX_VerschluesselteLagebezeichnung
+
+--** Objektartengruppe: Geographische Gebietseinheiten
+--   ===================================================================
+
+--AX_Landschaft
+--AX_KleinraeumigerLandschaftsteil
+--AX_Wohnplatz
+
+--** Objektartengruppe: Administrative Gebietseinheiten
+--   ===================================================================
+
+--AX_KommunalesGebiet
+--AX_Gebiet
+
+--*** ############################################################
+--*** Objektbereich: Nutzerprofile
+--*** ############################################################
+
+--** Objektartengruppe: Nutzerprofile
+--   ===================================================================
+
+--AX_FOLGEVA
+
+--*** ############################################################
+--*** Objektbereich: Migration
+--*** ############################################################
+
+--** Objektartengruppe: Migrationsobjekte
+--   ===================================================================
+
+
+
+
 
 
 -- Schlüsseltabelle "advstandardmodell" (9):

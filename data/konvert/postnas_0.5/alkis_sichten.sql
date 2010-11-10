@@ -60,7 +60,7 @@
 
 -- Bruchnummerierung erzeugen
 -- (ersetzt s_flurstuecksnummer_flurstueck ab Sept. 2010)
-DROP VIEW s_flurstueck_nr;
+--DROP VIEW s_flurstueck_nr;
 CREATE OR REPLACE VIEW s_flurstueck_nr
 AS 
  SELECT ap_pto.ogc_fid, 
@@ -144,8 +144,8 @@ AS
 COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck IS 'fuer Kartendarstellung';
 
 
--- Layer "ag_l_flurstueck"
--- -----------------------
+-- Layer "s_zuordungspfeil_flurstueck"
+-- -----------------------------------
 
 CREATE OR REPLACE VIEW s_zuordungspfeil_flurstueck 
 AS 
@@ -159,7 +159,7 @@ AS
   WHERE ap_lpo.art = 'Pfeil'
     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
-COMMENT ON VIEW ag_l_flurstueck IS 'fuer Kartendarstellung';
+COMMENT ON VIEW s_zuordungspfeil_flurstueck IS 'fuer Kartendarstellung';
 
 
 -- Layer NAME "ap_pto" GROUP "praesentation"

@@ -8,6 +8,7 @@
 		02.09.2010  mit Icons
 		07.09.2010  Schluessel anschaltbar
 		15.09.2010  Function "buchungsart" durch JOIN ersetzt
+		09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
 */
 function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
 	// Einen Seitenfuss ausgeben.
@@ -105,168 +106,6 @@ function kurz_namnr($lang) {
 	return $kurz;
 }
 
-function fs_gebietszug($con, $gemeinde, $kreis, $bezirk, $showkey) {
-	// eine Tabellenzeile mit der Gebietszugehoerigkeit eines Flurstuecks wird ausgegeben
-	// Parameter = Schluesselwerte
-	// Schluessel "land" wird nicht verwendet, gibt es Bestaende wo das nicht einheitlich ist?
-
-	echo "\n<tr>\n\t<td class='ll'><img src='ico/Gemeinde.ico' width='16' height='16' alt=''> Im Gebiet von:</td>";
-	
-	// G e m e i n d e
-	$sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk='".$bezirk."' AND kreis='".$kreis."' AND gemeinde='".$gemeinde."' "; 
-	$res=pg_query($con, $sql);
-	if (!$res) echo "<p class='err'>Fehler bei Gemeinde<br>".$sql."<br></p>";
-	$row = pg_fetch_array($res);
-	$gnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-	echo "\n\t<td class='lr'>Gemeinde ";
-	if ($showkey) {
-		echo "<span class='key'>(".$gemeinde.")</span> ";
-	}
-	echo $gnam."<br>";
-
-	// K r e i s
-	$sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk='".$bezirk."' AND kreis='".$kreis."' "; 
-	$res=pg_query($con, $sql);
-	if (!$res) echo "<p class='err'>Fehler bei Kreis<br>".$sql."<br></p>";
-	$row = pg_fetch_array($res);
-	$knam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-	echo "Kreis ";
-	if ($showkey) {
-		echo "<span class='key'>(".$kreis.")</span> ";
-	}	
-	echo $knam."<br>";
-
-	// R e g - B e z
-	$sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk='".$bezirk."' "; 
-	$res=pg_query($con, $sql);
-	if (!$res) echo "<p class='err'>Fehler bei Regierungsbezirk<br>".$sql."<br></p>";
-	$row = pg_fetch_array($res);
-	$bnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-	echo "Regierungsbezirk ";
-	if ($showkey) {
-		echo "<span class='key'>(".$bezirk.")</span> ";
-	}
-	echo $bnam."</td>";
-	
-	// 3. Spalte für NW-Link (in weiteren Tab-Zeilen)
-	echo "\n\t<td>&nbsp;</td>\n</tr>";
-	return 0;
-}
-
-function fs_lage($con, $gmlid, $gkz, $showkey) {
-	// Tabellenzeilen mit Lage eines FS
-	// Parameter = ID des FS
-
-	// Lagebezeichnung Mit Hausnummer
-	//   ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
-	//                  <gehoertZu<
-	$sql ="SELECT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
-	$sql.="FROM  alkis_beziehungen v ";
-	$sql.="JOIN  ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-	$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
-	$sql.="WHERE v.beziehung_von='".$gmlid."' "; // id FS";
-	$sql.="AND   v.beziehungsart='weistAuf' ";
-	$sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
-
-	// Theoretisch JOIN notwendig über den kompletten Schlüssel bestehend aus land+regierungsbezirk+kreis+gemeinde+lage
-	// bei einem Sekundärbestand für eine Gemeinde oder einen Kreis reicht dies hier:
-
-	//$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-	// Problem: ax_lagebezeichnungkatalogeintrag.lage  ist char,
-	//          ax_lagebezeichnungmithausnummer.lage   ist integer,
-
-	// cast() scheitert weil auch nicht numerische Inhalte
-	//$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.gemeinde=s.gemeinde AND l.lage=cast(s.lage AS integer) ";
-
-	// http://www.postgresql.org/docs/8.3/static/functions-formatting.html
-
-	$res=pg_query($con, $sql);
-	if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n".$sql."</p>";}
-	$j=0;
-	while($row = pg_fetch_array($res)) {
-		$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
-		//echo "<!-- Adresse -->";		
-		echo "\n<tr>\n\t";
-			if ($j == 0) {		
-				echo "<td class='ll'><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Adresse:</td>";
-			} else {
-				echo "<td>&nbsp;</td>";
-			}
-			echo "\n\t<td class='lr'>";
-			if ($showkey) {
-				echo "<span class='key'>(".$row["lage"].")</span>&nbsp;";
-			}
-			echo $sname."&nbsp;".$row["hausnummer"]."</td>";
-			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-				echo "\n\t\t\t<a href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
-				echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
-			echo "\n\t\t</p>\n\t</td>";
-		echo "\n</tr>";
-		$j++;
-	}
-	$z=$j;
-
-	// L a g e b e z e i c h n u n g   O h n e   H a u s n u m m e r  (Gewanne oder nur Strasse)
-	//   ax_flurstueck  >zeigtAuf>  AX_LagebezeichnungOhneHausnummer
-	//                  <gehoertZu<
-	$sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung ";
-	$sql.="FROM alkis_beziehungen v ";
-	$sql.="JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=v.beziehung_zu ";
-	$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-//	$sql.="AND l.lage=s.lage ";
-	// hier beide .lage als Char(5)
-	//  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
-	//  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
-	$sql.="AND l.lage=trim(leading '0' from s.lage) ";
-//	$sql.="AND cast(l.lage AS integer)=cast(s.lage AS integer) "; // Fehlversuch, auch nicht-numerische Inhalte
-	$sql.="WHERE v.beziehung_von='".$gmlid."' "; // id FS";
-	$sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
-	$res=pg_query($con, $sql);
-	if (!$res) echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer<br>\n".$sql."</p>";
-	$j=0;
-	// Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!	
-	while($row = pg_fetch_array($res)) {
-		$gewann = htmlentities($row["unverschluesselt"], ENT_QUOTES, "UTF-8");		$skey=$row["lage"]; // Strassenschluessel
-		$lgml=$row["gml_id"]; // key der Lage
-		if (!$gewann == "") {
-			echo "\n<tr>";		
-				echo "\n\t<td class='ll'><img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''> Gewanne:</td>";
-				echo "\n\t<td class='lr'>".$gewann."</td>";
-				echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-					echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml."'>";
-					echo "\n\t\t\tLage <img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''></a>";
-				echo "\n\t\t</p>\n\t</td>";
-			echo "\n</tr>";		
-		}
-		// Gleicher DB-Eintrag in zwei HTML-Zeilen, besser nur ein Link	
-		if ($skey > 0) {
-			echo "\n<tr>";	
-				echo "\n\t<td class='ll'><img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''> Stra&szlig;e:</td>";				
-				echo "\n\t<td class='lr'>";
-				if ($showkey) {
-					echo "<span class='key'>(".$skey.")</span>&nbsp;";
-				}
-				echo $row["bezeichnung"]."</td>";
-				echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-					echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml."'>";
-					echo "\n\t\t\tLage <img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''>\n\t\t\t</a>";
-				echo "\n\t\t</p>\n\t</td>";
-			echo "\n</tr>";
-		}		
-		$j++;
-	}
-	$z=$z+$j;
-	return $z; // Anzahl Zeilen
-}
-
-function fs_nutz($con, $gmlid) {
-	// Tabellenzeilen (3 Sp.) mit tats. Nutzung zu einem FS ausgeben
-	// Parameter = ID des FS
-	echo "\n<tr>\n\t<td class='ll'><img src='ico/Abschnitt.ico' width='16' height='16' alt=''> Nutzungsarten:</td>";
-	echo "\n\t<td class='ph'>(Programmteil ist noch in Arbeit)</td>";
-	echo "\n\t<td>&nbsp;</td>\n</tr>";
-}
-
 function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus, $showkey) {
 /*	Bestandsnachweis - Flurstuecksdaten
 	Die Tabellenzeilen mit den Flurstuecksdaten zu einer Buchungsstelle im Bestandsnachweis ausgeben.
@@ -291,7 +130,6 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	if($bvnraus) { // nur bei direkten Buchungen die lfdNr ausgeben
 		$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);	
 	}
-
 	$altlfdnr="";
 	$j=0;
 	while($rowf = pg_fetch_array($resf)) {

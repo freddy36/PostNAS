@@ -4,6 +4,7 @@
 
 	Version:	21.09.2010  Neu
 	22.09.2010  Feintuning, sql-Limit
+	11.10.2010  simplify Geometrie: Schwellwert Verschneidung Fläche>0 anpassen
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -23,6 +24,7 @@ if ($auth == "mapbender") {
 	<title>ALKIS Bau-, Raum- oder Bodenordnungsrecht</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Gericht.ico">
+	<base target="_blank">
 </head>
 <body>
 
@@ -98,7 +100,7 @@ $sql.="round(st_area(ST_Intersection(r.wkb_geometry,f.wkb_geometry))::numeric,1)
 $sql.="FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r  ";
 $sql.="WHERE r.gml_id='".$gmlid."' "; 
 $sql.="AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true ";
-$sql.="AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0 ";
+$sql.="AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 ";  // > 0.0 ist gemeint, Ungenauigkeit durch st_simplify
 $sql.="ORDER BY schnittflae DESC ";
 // Limit: Flurbereinigungsgebiete koennen sehr gross werden!
 $sql.="LIMIT 40;";
