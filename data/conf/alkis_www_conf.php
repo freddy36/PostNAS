@@ -8,6 +8,7 @@
 // Datenbank-Zugangsdaten
 $dbhost = 'localhost';
 $dbport = '5432';
+$dbname = 'alkis05' . $gkz; 
 $dbuser = '***';
 $dbpass = '***';
 
