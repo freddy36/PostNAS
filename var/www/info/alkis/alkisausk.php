@@ -19,7 +19,8 @@
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
-require_once("/data/conf/alkis_www_conf.php");
+$gkz=urldecode($_REQUEST["gkz"]);
+require_once(dirname(__FILE__)."../alkis_conf_location.php");
 if ($auth == "mapbender") {
 	// Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
@@ -44,7 +45,7 @@ include("alkisfkt.php");
 <body>
 <?php
 $gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-$gkz=urldecode($_REQUEST["gkz"]);
+
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 if ($id == "j") {
 	$idanzeige=true;
@@ -57,7 +58,7 @@ if ($keys == "j") {
 } else {
 	$showkey=false;
 }
-$dbname = 'alkis05' . $gkz;
+
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
