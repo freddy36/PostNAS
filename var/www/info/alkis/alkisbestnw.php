@@ -5,12 +5,9 @@
 	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
 
 	Version:
-	31.08.2010	$style=ALKIS entfernt, alles Kompakt
-	02.09.2010  Mit Icons
-	06.09.2010  Schluessel anschaltbar
-	08.09.2010  berechtigte GB-Blätter an fiktivem Blatt auflisten
 	14.09.2010  Grundbuch unter Flurstueck, BVNR in Tabelle anzeigen und als Sprungmarke
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
+	14.12.2010  Pfad zur Conf
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
@@ -18,7 +15,8 @@
 //ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 ini_set('error_reporting', 'E_ALL');
 session_start();
-require_once("/data/conf/alkis_www_conf.php");
+$gkz=urldecode($_REQUEST["gkz"]);
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {
 	// Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
@@ -37,14 +35,12 @@ include("alkisfkt.php");
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Grundbuch.ico">
 	<style type='text/css' media='print'>
-		.noprint { visibility: hidden;}
+		.noprint {visibility: hidden;}
 	</style>
 </head>
 <body>
 <?php
-$gkz=urldecode($_REQUEST["gkz"]);
 $gmlid=urldecode($_REQUEST["gmlid"]);
-
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 if ($id == "j") {
 	$idanzeige=true;
@@ -57,8 +53,6 @@ if ($keys == "j") {
 } else {
 	$showkey=false;
 }
-
-$dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
@@ -123,7 +117,11 @@ if ($blattkey == 5000) { // fikt. Blatt
 } else { // E I G E N T U E M E R
 	echo "\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
-	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true); // hier mit Adressen
+	// HIER MIT Adressen.
+	// Im offiziellen ALKIS-Buchnachweis hier ohne Adressen.
+	// Weglassen damit es uebersichtlicher wird?
+	// Doppelte Adressen (alt/neu?): Konverter-Fehler oder bestimmtes Kennzeichen?
+	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true);
 
 	if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 		echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
@@ -153,7 +151,7 @@ echo "\n<tr>";
 	echo "\n\t<td class='head'>Flur</td>";				//5
 	echo "\n\t<td class='head' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>Flurst.</span></td>";
 	echo "\n\t<td class='head fla'>Fl&auml;che</td>"; // 7
-	echo "\n\t<td class='head nwlink' title='Link: weitere Auskunft'>weit. Auskunft</td>";
+	echo "\n\t<td class='head nwlink noprint' title='Link: weitere Auskunft'>weit. Auskunft</td>";
 echo "\n</tr>";
 
 // Blatt ->  B u c h u n g s s t e l l e
@@ -169,7 +167,8 @@ $sql.="ORDER BY s.laufendenummer;";
 $res=pg_query($con,$sql);
 if (!$res) echo "<p class='err'>Fehler bei Buchung.</p>\n";
 $i=0;
-while($row = pg_fetch_array($res)) {	$lfdnr  = $row["lfd"];
+while($row = pg_fetch_array($res)) {
+	$lfdnr  = $row["lfd"];
 	$bvnr   = str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
 	$gml_bs = $row["gml_id"]; // id der buchungsstelle
 	$ba     = $row["bart"]; // Buchungsart aus Schluesseltabelle
@@ -418,7 +417,7 @@ if ($i == 0) {
 				echo "\n\t<td class='head'>Blatt</td>";
 				echo "\n\t<td class='head'>BVNR</td>"; // Neu
 				echo "\n\t<td class='head'>Buchungsart</td>"; // Neu
-				echo "\n\t<td class='head nwlink'>Weitere Auskunft</td>";
+				echo "\n\t<td class='head nwlink noprint'>Weitere Auskunft</td>";
 			echo "\n</tr>";
 		}
 

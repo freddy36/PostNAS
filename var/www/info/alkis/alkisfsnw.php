@@ -5,19 +5,17 @@
 	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
 	Version:
-	31.08.2010	$style=ALKIS entfernt, alles Kompakt
-	02.09.2010  Mit Icons
-	07.09.2010  Kennzeichen-Rahmen f. fiktives Blatt, Schluessel anschaltbar
-	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 	30.09.2010  noprint
 	09.11.2010  Nutzung, ehem. php-Functions hier integriert
-	10.11.2010  Felder nutzung.zustand und nutzung.name 
+	10.11.2010  Felder nutzung.zustand und nutzung.name
+	14.12.2010  Pfad zur Conf
 
 	ToDo: 
 	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum*/
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-require_once("/data/conf/alkis_www_conf.php");
+$gkz=urldecode($_REQUEST["gkz"]);
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {
 	// Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
@@ -41,7 +39,6 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gkz=urldecode($_REQUEST["gkz"]);
 $gmlid=urldecode($_REQUEST["gmlid"]);
 $eig=urldecode($_REQUEST["eig"]);
 
@@ -58,9 +55,8 @@ if ($keys == "j") {
 } else {
 	$showkey=false;
 }
-
-$dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
+if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // F L U R S T U E C K
 $sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, f.zeitpunktderentstehung, ";

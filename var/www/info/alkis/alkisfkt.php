@@ -4,11 +4,9 @@
 	Functions
 
 	Version:
-		31.08.2010	$style=ALKIS entfernt, link zu alkislage.php
-		02.09.2010  mit Icons
-		07.09.2010  Schluessel anschaltbar
-		15.09.2010  Function "buchungsart" durch JOIN ersetzt
-		09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
+	07.09.2010  Schluessel anschaltbar
+	15.09.2010  Function "buchungsart" durch JOIN ersetzt
+	09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
 */
 function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
 	// Einen Seitenfuss ausgeben.

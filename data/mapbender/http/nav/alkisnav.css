@@ -1,0 +1,97 @@
+/* Style fuer ALKIS-Navigation 
+	Vers. 2010-11-23
+*/
+body,p,a,.textfield,.sbutton,.cityText,.streetText,.city {font-family: Verdana, Arial, Helvetica, sans-serif;}
+body		{	font-size: 11px; color: #000000; margin: 0px;}
+
+p			{font-size: 10px;}
+p.hilfe 	{font-size: 9px; text-align: right; color: gray;} /* Programmier-Hilfsfelder */
+p.start 	{font-size: 9px; color: gray;}
+p.nam		{font-size: 10px; border: 1px solid navy; padding: 3px; margin: 0px;}
+p.err		{font-size: 11px; color: red;}
+
+a {font-size: 11px; text-decoration: none; margin: 0px;}
+/*	a:link 	{color: #000000;} a:visited{color: #000000;} */
+	a:hover	{color: red;}
+	a:active	{color: red;}
+
+/* abgestufte Treffer in Suche */
+div			{margin: 0px; padding: 0px;}
+div.back 	{font-size: 10px; color: gray; border-bottom: 1px dotted gray;}
+div.nam		{color: maroon;} /* Name */
+div.gb		{color: green;  margin-left: 6px;} /* Grundbuch */
+div.gk		{color: black;  margin-left: 0px; margin-top: 6px;} /* Gemarkung */
+div.fl		{color: olive;  margin-left: 6px; margin-top: 4px;} /* Flur */
+div.fs		{color: navy;   margin-left: 12px; margin-top: 0px;} /* Flurstueck */
+div.st		{color: maroon;}
+
+td.hsnr {text-align: center; margin: 2px;}
+hr {color: gray;}
+
+.textfield{
+	border: 1px solid #990000;
+	height: 20px;
+	width: 140px;
+	background: #FFFFFF;
+}
+.sbutton{font-size: 11px;
+	font-weight: normal;
+	border: solid thin;
+	width: 22px;
+	height: 20px;
+	background: #6699FF;
+}
+img.nwlink	{border: 0px; margin: 0px; padding: 0px;} /* Icons */
+.letter		{cursor: pointer; font-weight: bold;}
+.cityText	{color: black;}
+.streetText	{color: #6699FF; font-size: 13px; font-weight: bold;}
+
+/* Registertabs */
+/* ul in einem <div id='tabs' */
+div#tabs ul {
+	position: absolute; top: 0px;
+	margin-top: 0px;	
+	margin-left: 0px;
+	margin-bottom: 20px;
+	padding: 0px;
+	width: 220px;
+	text-align: left;
+	border:0px dashed #00aa00;
+}
+div#tabs li {
+	cursor: pointer;
+	list-style: none; /* Eintraege NEBENeinander */
+	float: left;
+	text-align: center;
+	background-color: #F9F9F9;
+	border: 1px solid #CCD5DE;
+	border-bottom-width: 1px;
+	vertical-align: text-bottom;
+	position: relative;
+	background-image: url(./img/tab_bg_grau.gif); /* inaktive Tabs grau */
+	background-repeat: repeat-x;
+	background-position: top left;
+	margin: 0 3px 0 0;
+	padding: 2px;
+}
+div#tabs li.aktiveTab {
+	background-image: url(./img/tab_bg_rot.gif);  /* aktive Tabs rot */
+	background-color: #F9F9F9;
+	border-bottom-color: #F9F9F9; /* nicht sichtbar, wie Hintergrund */
+}
+
+/* passt in Mapbender 2.5: tabs width=280, tab_frameHeight[n]=360 */
+iframe.OuterFrame{
+	width: 260px; height: 330px; 
+	padding: 0px; margin: 0px;
+	border:0px dotted #ff0000;
+	overflow: hidden;
+	background-color: white;
+}
+form.nav {position: absolute; top: 22px;}
+iframe.ResultFrame {
+	position: absolute; top: 78px;
+	width: 235px; height: 220px;
+	padding: 0px; margin: 0px;
+	border:0px dotted #00ff00;
+}

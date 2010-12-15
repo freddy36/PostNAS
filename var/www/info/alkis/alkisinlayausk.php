@@ -1,21 +1,26 @@
 <?php
-/*	alkisausk.php
+/*	alkisinlayausk.php
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
-	Dies Programm wird aus dem Mapserver-Template (FeatureInfo) aufgerufen.
-	Parameter:&gkz, &gml_id (optional &id)
+	Dies Programm wird in einen iFrame im Mapserver-Template (FeatureInfo) geladen.
+	Parameter:&gkz, &gml_id
 	Dies Programm gibt einen kurzen Ueberblick zum Flurstueck.
 	Eigentuemer ohne Adresse.
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
+	Dies ist eine Variante von alkisausk.ph 
+	 welches als vollstaendige Seite aufgerufen wird.
 
 	Version:
-		11.10.2010  Umbau alkisausk zu inlay-Version
+	11.10.2010  Umbau alkisausk zu inlay-Version
+	12.10.2010  korrekturen
+	14.12.2010  Pfad zur Conf
 		
-	ToDo:  Eigentum evtl. rausnehmen (Platz im iFrame?)
+	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
-require_once("/data/conf/alkis_www_conf.php");
+$gkz=urldecode($_REQUEST["gkz"]);
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {
 	// Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
@@ -38,9 +43,7 @@ include("alkisfkt.php");
 <body>
 <?php
 $gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-$gkz=urldecode($_REQUEST["gkz"]);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
-$dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
@@ -118,7 +121,6 @@ $sql.="AND   bsb.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 $resg=pg_query($con,$sql);
 if (!$resg) echo "\n<p class='err'>Keine Buchungen.<br>\nSQL= ".$sql."</p>\n";
-$j=0; // Z.Blatt
 while($rowg = pg_fetch_array($resg)) {
 	$beznam=$rowg["bezeichnung"];
 	echo "\n<hr>\n<table class='outer'>";
@@ -169,14 +171,14 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		$n = eigentuemer($con, $gkz, $idanzeige, $rowg["gml_id"], false); // hier ohne Adressen
+		$n = eigentuemer($con, $gkz, false, $rowg["gml_id"], false); // hier ohne Adressen
 
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
 			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
 			linkgml($gkz, $gmlid, "Buchungsblatt");
 		}
-	}	$j++;
+	}
 }
 
 ?>

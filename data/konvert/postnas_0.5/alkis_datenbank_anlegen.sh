@@ -10,6 +10,7 @@
 ##  2010-08-27 Schluesseltabellen (Konstanten) dazu laden, 
 ##             Grant von Views getrennt
 ##  2010-11-10 Nutzungsarten
+##  2010-11-25 Gemeinden
 ##
 ## Dialog mit Anwender
 function get_db_config(){
@@ -87,6 +88,11 @@ psql $con -U ${DBUSER}  < /data/konvert/postnas_0.5/alkis_nutzungsart_definition
 ##
 ## Laden der Metadaten und Schlüsseltabellen
 psql $con -U ${DBUSER}  < /data/konvert/postnas_0.5/alkis_nutzungsart_metadaten.sql
+##
+echo "** Anlegen Optimierung Gemeinden"
+##
+## Anlegen der Tabellen
+psql $con -U ${DBUSER}  < /data/konvert/postnas_0.5/alkis_gemeinden_definition.sql
 ##
 echo " "
 echo "** Definition von Views"

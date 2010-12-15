@@ -10,6 +10,7 @@
 ##  2010-08-16 Dateiname als Zwischen-Ueberschrift in Fehlerprotokoll
 ##  2010-10-14  gdal 1.8 compile aus svn gdal-trunk
 ##  2010-11-10  Tabellen "Optimierte Nutzungsarten" Laden
+##  2010-11-25  Tabelle  "Optimierte Gemeinden"     Laden
 ## 
 ## Konverter:   /opt/gdal-1.8/bin/ = GDAL 1.8 / PostNAS 0.5
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -24,8 +25,11 @@ DBNAME=$2
 DBUSER=$3
 DBPASS=$4
 UPD=$5
+##
 ## Fehlerprotokoll
 errprot='/data/konvert/postnas_0.5/log/postnas_err.prot'
+## ! Bei parallelen Konvertierungen sollte die Ausgabe in getrennte Logfiles ausgegeben werden.
+## ! Ggf. die Start-Zeit in den Namen einbauen?
 ##
 if [ $ORDNER = "" ]
 then
@@ -90,4 +94,7 @@ layer=""
 ##
   echo "** Optimierte Nutzungsarten neu Laden:"
   psql -p 5432 -d ${DBNAME}  -U ${DBUSER}  < /data/konvert/postnas_0.5/alkis_nutzungsart_laden.sql
+##
+  echo "** Optimierte Gemeindetabelle neu Laden:"
+  psql -p 5432 -d ${DBNAME}  -U ${DBUSER}  < /data/konvert/postnas_0.5/alkis_gemeinden_laden.sql
 ##

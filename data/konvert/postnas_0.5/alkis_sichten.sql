@@ -11,7 +11,7 @@
 --   21.01.2010  F.J. ap-pto.art
 --   14.06.2010  F.J. GRANT entfernt
 --   24.09.2010  F.J. "s_flurstueck_nr" ersetzt "s_flurstuecksnummer_flurstueck" (Bruchnummer)
-
+--   01.12.2010  F.J. Gemeinde/Gemarkung
 
 --   Verbindungen werden seit PostNAS 0.5 nicht mehr nachträglich mit einem Script generiert
 --   sondern vom Konverter PostNAS gesetzt.
@@ -286,6 +286,38 @@ AS
 
 -- MAP NEU:
 -- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, adfkey, name, stelle, rechtbez, adfbez, stellbez, wkb_geometry FROM baurecht) as foo using unique ogc_fid using SRID=25832" # gespeicherter View
+
+
+-- Man glaubt es kaum, aber im ALKIS haben Gemeinde und Gemarkung keinerlei Beziehung miteinander
+-- Nur durch Auswertung der Flurstücke kann man ermitteln, in welcher Gemeinde eine Gemarkung liegt.
+
+CREATE VIEW gemeinde_in_gemarkung
+AS
+  SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
+  FROM            ax_flurstueck
+  ORDER BY        land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
+;
+
+COMMENT ON VIEW gemeinde_in_gemarkung IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
+
+
+-- Untersuchen, welche Geometrie-Typen vorkommen
+
+CREATE VIEW arten_von_flurstuecksgeometrie
+AS
+ SELECT   count(gml_id) as anzahl,
+          st_geometrytype(wkb_geometry)
+ FROM     ax_flurstueck
+ GROUP BY st_geometrytype(wkb_geometry);
+
+-- Lage
+--   256 ST_MultiPolygon
+-- 23377 ST_Polygon
+
+-- RLP
+--    2 ST_MultiPolygon
+-- 2367 ST_Polygon
+
 
 
 -- END --

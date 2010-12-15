@@ -4,11 +4,13 @@
 
 	Version:	21.09.2010  Neu
 	22.09.2010  Feintuning, sql-Limit
-	11.10.2010  simplify Geometrie: Schwellwert Verschneidung Fläche>0 anpassen
+	11.10.2010  simplify Geometrie: Schwellwert Verschneidung Flaeche>0 anpassen
+	14.12.2010  Pfad zur Conf
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-require_once("/data/conf/alkis_www_conf.php");
+$gkz=urldecode($_REQUEST["gkz"]);
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {
 	require_once($mapbender);
 }
@@ -29,10 +31,10 @@ if ($auth == "mapbender") {
 <body>
 
 <?php
-$gkz=urldecode($_REQUEST["gkz"]);
 $gmlid=urldecode($_REQUEST["gmlid"]);
-$dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
+if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
+
 // wie View "baurecht"
 $sql ="SELECT r.ogc_fid,  r.artderfestlegung as adfkey, r.name, r.stelle, r.bezeichnung AS rechtbez, ";
 $sql.="a.bezeichner  AS adfbez, d.bezeichnung AS stellbez, d.stellenart, ";

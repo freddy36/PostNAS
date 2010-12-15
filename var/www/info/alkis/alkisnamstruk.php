@@ -5,17 +5,17 @@
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
 
 	Version:
-	30.08.2010	$style=ALKIS entfernt, alles Kompakt
-	02.09.2010  Mit Icons
 	06.09.2010  Schluessel anschaltbar
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt, Tabelle GB einzeilig
+	14.12.2010  Pfad zur Conf
 
 	ToDo: 
-	Sortierung der Grundbücher zum Namen
+	Sortierung der GrundbÃ¼cher zum Namen
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-require_once("/data/conf/alkis_www_conf.php");
+$gkz=urldecode($_REQUEST["gkz"]);
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {
 	// Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
@@ -34,13 +34,12 @@ include("alkisfkt.php");
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Eigentuemer_2.ico">
 	<style type='text/css' media='print'>
-		.noprint { visibility: hidden;}
+		.noprint {visibility: hidden;}
 	</style>
 </head>
 <body>
 <?php
 $gmlid=urldecode($_REQUEST["gmlid"]);
-$gkz=urldecode($_REQUEST["gkz"]);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 if ($id == "j") {
 	$idanzeige=true;
@@ -53,8 +52,8 @@ if ($keys == "j") {
 } else {
 	$showkey=false;
 }
-$dbname = 'alkis05' . $gkz;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
+if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // Balken
 echo "<p class='nakennz'>ALKIS Name id=".$gmlid."&nbsp;</p>\n";
@@ -126,7 +125,7 @@ if ($row = pg_fetch_array($res)) {
 	// *** G R U N D B U C H ***
 	echo "\n<hr>\n<h3><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundb&uuml;cher</h3>\n";
 	// person <benennt< namensnummer >istBestandteilVon>                Buchungsblatt
-	//                               >bestehtAusRechtsverhaeltnissenZu> namensnummer   (Nebenzweig/Sonderfälle?)
+	//                               >bestehtAusRechtsverhaeltnissenZu> namensnummer   (Nebenzweig/SonderfÃ¤lle?)
 
 	$sql ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
 	$sql.="g.gml_id AS gml_g, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, ";
@@ -154,7 +153,7 @@ if ($row = pg_fetch_array($res)) {
 		echo "\n\t<td class='head'>Blatt</td>";
 		echo "\n\t<td class='head'>Namensnummer</td>";
 		echo "\n\t<td class='head'>Anteil</td>";
-		echo "\n\t<td class='head nwlink' title='Link: weitere Auskunft'>weit. Auskunft</td>";
+		echo "\n\t<td class='head nwlink noprint' title='Link: weitere Auskunft'>weit. Auskunft</td>";
 	echo "\n</tr>";
 
 	while($rowg = pg_fetch_array($resg)) {
@@ -218,7 +217,7 @@ if ($row = pg_fetch_array($res)) {
 
 		echo "\n</tr>";
 		// +++ >bestehtAusRechtsverhaeltnissenZu> namensnummer ??
-		//     z.B. eine Namennummer "Erbengemeinschaft" zeigt auf Namensnummern mit Eigentümern
+		//     z.B. eine Namennummer "Erbengemeinschaft" zeigt auf Namensnummern mit EigentÃ¼mern
 		$i++;
 	}
 	echo "</table>";

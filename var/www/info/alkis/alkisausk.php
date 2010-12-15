@@ -7,20 +7,17 @@
 	Dies Programm gibt einen kurzen Ueberblick zum Flurstueck.
 	Eigentuemer ohne Adresse.
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
+	Siehe auch alkisinlayausk.php - eine Variante für den Einbau in einen iFrame
 
 	Version:
-		28.05.2010	Eigentümerausgabe in einer Function
-		27.08.2010	Erweiterung um Link zu Gebaeudenachweis der WhereGroup
-		31.08.2010	$style=ALKIS entfernt, alles Kompakt
-		02.09.2010  Mit Icons
-		07.09.2010  Schluessel anschaltbar
-		15.09.2010  Function "buchungsart" durch JOIN ersetzt
-		17.09.2010  Authentifizierung Konfigurierbar
+	15.09.2010  Function "buchungsart" durch JOIN ersetzt
+	17.09.2010  Authentifizierung Konfigurierbar
+	14.12.2010  Pfad zur Conf
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
-require_once(dirname(__FILE__)."../alkis_conf_location.php");
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {
 	// Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
@@ -45,7 +42,6 @@ include("alkisfkt.php");
 <body>
 <?php
 $gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 if ($id == "j") {
 	$idanzeige=true;
@@ -58,7 +54,6 @@ if ($keys == "j") {
 } else {
 	$showkey=false;
 }
-
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 

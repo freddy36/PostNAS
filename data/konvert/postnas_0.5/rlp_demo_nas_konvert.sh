@@ -23,6 +23,7 @@
 ## alt?
 #	/data/konvert/nas_daten/rlp/gm2566-testdaten-gid60-2008-11-11.xml
 #
-echo "** Optimierte Nutzungsarten neu Laden:"
+echo "** Optimierte Tabellen neu Laden:"
 psql -p 5432 -d alkis05rlpneu -U b600352 < /data/konvert/postnas_0.5/alkis_nutzungsart_laden.sql
+psql -p 5432 -d alkis05rlpneu -U b600352 < /data/konvert/postnas_0.5/alkis_gemeinden_laden.sql
 #

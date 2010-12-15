@@ -2,9 +2,6 @@
 	S t y l e s zur ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
 	Version:
-	31.08.2010	Prototyp
-	02.09.2010  Mit img
-	06.09.2010  Kennzeichen-Rahmenfarben differenziert
 	21.09.2010  Inlay
 	30.09.2010  body-width bei Print
 	12.10.2010  class p.fsd: margin statt position-relative, dann keine Scrollbar
@@ -64,7 +61,7 @@ div.adr {border-left-width: 0px;
 
 span.key 		{color: gray; font-style: italic;} /* Schluesselwert vor Text, Wert zurueck nehmen */
 span.wichtig	{color: #BB0000; font-weight: bold;} /* Wert hervorheben */
-span.flae		{font-weight: bold;} /* Flächensume Flurst. */
+span.flae		{font-weight: bold;} /* FlÃ¤chensume Flurst. */
 
 /* ** T a b e l l e n ** */
 table 		{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: 10pt; color: #000033;}

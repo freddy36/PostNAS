@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="alkisnav.css">
+	<script type="text/javascript" language="JavaScript">
+		function showHighlight(x,y){
+			parent.mb_showHighlight("mapframe1",x,y);
+			parent.mb_showHighlight("overview",x,y);
+		}		function hideHighlight(){
+			parent.mb_hideHighlight("mapframe1");
+			parent.mb_hideHighlight("overview");
+		}
+		function validate(){
+			if(document.forms[0].street.value.length < 1) {return false;}
+			else {return true;}
+		}
+		// Parameter fuer Mandant aus url lesen
+		// &gkz=150&gemeinde=40&test=ja
+		var parms = location.search.split("&");    // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"		
+		var arr = parms[0].split("=", 2); // 0: "?gkz"  1: "150"
+		var gkz = "000";
+		if(arr[0] == "?gkz") {gkz = arr[1];}
+		var arr = parms[1].split("=", 2)
+		var gem = "0";
+		if(arr[0] == "gemeinde") {gem = arr[1];}
+	</script>
+	<title>ALKIS-Suche</title>
+</head>
+<body>
+
+<script type="text/javascript" language="JavaScript">
+	document.writeln("<!-- gkz=" + gkz + " gemeinde=" + gem + "-->");	
+	// Rahmen mit Form und ResultFrame
+	document.writeln("<iframe frameborder='0' name='OuterFrame' src='alkisnav_eig.htm?gkz=" + gkz + "&gemeinde=" + gem + "' class='OuterFrame' scrolling='auto'></iframe>");
+</script>
+
+</body>
+</html>
