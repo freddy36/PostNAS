@@ -11,7 +11,8 @@
 	14.12.2010  Pfad zur Conf
 
 	ToDo: 
-	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum*/
+	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
+*/
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
@@ -63,8 +64,11 @@ $sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.k
 $sql.="g.gemarkungsnummer, g.bezeichnung ";
 $sql.="FROM ax_flurstueck f ";
 $sql.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="WHERE f.gml_id='".$gmlid."';";
-$res=pg_query($con,$sql);
+$sql.="WHERE f.gml_id= $1";
+
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 if (!$res) echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";
 if ($row = pg_fetch_array($res)) {
 	$gemkname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
@@ -126,8 +130,11 @@ echo "\n<table class='fs'>";
 echo "\n<tr>\n\t<td class='ll'><img src='ico/Gemeinde.ico' width='16' height='16' alt=''> Im Gebiet von:</td>";
 
 // G e m e i n d e
-$sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk='".$bezirk."' AND kreis='".$kreis."' AND gemeinde='".$gemeinde."' "; 
-$res=pg_query($con, $sql);
+$sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk= $1 AND kreis= $2 AND gemeinde= $3"; 
+
+$v = array($bezirk,$kreis,$gemeinde);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Gemeinde<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $gnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
@@ -138,8 +145,11 @@ if ($showkey) {
 echo $gnam."<br>";
 
 // K r e i s
-$sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk='".$bezirk."' AND kreis='".$kreis."' "; 
-$res=pg_query($con, $sql);
+$sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2"; 
+
+$v = array($bezirk,$kreis);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Kreis<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $knam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
@@ -169,11 +179,12 @@ echo "\n\t<td>&nbsp;</td>\n</tr>"; // 3. Spalte für NW-Link (in weiteren Tab-Ze
 // Lagebezeichnung Mit Hausnummer
 //   ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
 //                  <gehoertZu<
-$sql ="SELECT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
+$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
 $sql.="FROM  alkis_beziehungen v ";
 $sql.="JOIN  ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
-$sql.="WHERE v.beziehung_von='".$gmlid."' "; // id FS";
+$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
+$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+$sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND   v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 
@@ -189,7 +200,9 @@ $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 
 // http://www.postgresql.org/docs/8.3/static/functions-formatting.html
 
-$res=pg_query($con, $sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n".$sql."</p>";}
 $j=0;
 while($row = pg_fetch_array($res)) {
@@ -226,16 +239,19 @@ $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gem
 // hier beide .lage als Char(5)
 //  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
 //  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
-$sql.="AND l.lage=trim(leading '0' from s.lage) ";
+$sql.="AND l.lage::text=trim(leading '0' from s.lage) ";
 //	$sql.="AND cast(l.lage AS integer)=cast(s.lage AS integer) "; // Fehlversuch, auch nicht-numerische Inhalte
-$sql.="WHERE v.beziehung_von='".$gmlid."' "; // id FS";
+$sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
-$res=pg_query($con, $sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer<br>\n".$sql."</p>";
 $j=0;
 // Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!	
 while($row = pg_fetch_array($res)) {
-	$gewann = htmlentities($row["unverschluesselt"], ENT_QUOTES, "UTF-8");	$skey=$row["lage"]; // Strassenschluessel
+	$gewann = htmlentities($row["unverschluesselt"], ENT_QUOTES, "UTF-8");
+	$skey=$row["lage"]; // Strassenschluessel
 	$lgml=$row["gml_id"]; // key der Lage
 	if (!$gewann == "") {
 		echo "\n<tr>";		
@@ -277,14 +293,18 @@ $sql.="c.label, c.blabla ";
 $sql.="FROM ax_flurstueck f, nutzung n ";
 $sql.="JOIN nutzung_meta m ON m.nutz_id=n.nutz_id ";
 $sql.="LEFT JOIN nutzung_class c ON c.nutz_id=n.nutz_id AND c.class=n.class ";
-$sql.="WHERE f.gml_id='".$gmlid."' "; // id FS";$sql.="AND st_intersects(n.wkb_geometry,f.wkb_geometry) = true "; // ueberlappende Flaechen
+$sql.="WHERE f.gml_id= $1 "; // id FS";
+$sql.="AND st_intersects(n.wkb_geometry,f.wkb_geometry) = true "; // ueberlappende Flaechen
 $sql.="AND st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) > 0.05 "; // unter Rundung
 $sql.="ORDER BY schnittflae DESC;";
 
-$res=pg_query($con, $sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 if (!$res) {echo "<p class='err'>Fehler bei Suche tats. Nutzung<br>\n".$sql."</p>";}
 $j=0;
-while($row = pg_fetch_array($res)) {//	$grupp = $row["gruppe"];  // Individuelles Icon?
+while($row = pg_fetch_array($res)) {
+//	$grupp = $row["gruppe"];  // Individuelles Icon?
 	$title = htmlentities($row["title"], ENT_QUOTES, "UTF-8"); // NUA-Titel
 	$fldclass=$row["fldclass"]; // Feldname erstes  Zusatzfeld
 	$fldinfo= $row["fldinfo"];  // Feldname zweites Zusatzfeld
@@ -375,7 +395,8 @@ echo "\n<tr>";
 echo "\n</tr>";
 
 echo "\n</table>";
-// ALB: KLASSIFIZIERUNG  BAULASTEN  HINWEISE  TEXTE  VERFAHREN
+
+// ALB: KLASSIFIZIERUNG  BAULASTEN  HINWEISE  TEXTE  VERFAHREN
 
 // G R U N D B U C H
 echo "\n<table class='outer'>";
@@ -394,7 +415,8 @@ echo "\n<table class='outer'>";
 				} else {	
 					echo "&amp;eig=j#gb' title='Flurst&uuml;cks- und Eigent&uuml;mernachweis'>mit Eigent&uuml;mer ";
 					echo "<img src='ico/EigentuemerGBzeile.ico' width='16' height='16' alt=''></a>";
-				}			echo "\n\t\t</p>";
+				}
+			echo "\n\t\t</p>";
 		echo "\n\t</td>";
 	echo "\n</tr>";
 echo "\n</table>\n";
@@ -408,10 +430,13 @@ $sql.="JOIN  ax_buchungsstelle  s ON v.beziehung_zu=s.gml_id ";
 
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
 
-$sql.="WHERE v.beziehung_von='".$gmlid."' "; // id FS
-$sql.="AND   v.beziehungsart='istGebucht' ";
+$sql.="WHERE v.beziehung_von= $1 "; // id FS
+$sql.="AND   v.beziehungsart= $2 ";
 $sql.="ORDER BY s.laufendenummer;";
-$ress=pg_query($con,$sql);
+
+$v = array($gmlid,'istGebucht');
+$ress = pg_prepare("", $sql);
+$ress = pg_execute("", $v);
 if (!$ress) {
 	echo "\n<p class='err'>Keine Buchungsstelle.<br>\nSQL= ".$sql."</p>\n";
 }
@@ -426,11 +451,13 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="FROM  alkis_beziehungen      v "; // Bez. Stelle - Blatt
 	$sql.="JOIN  ax_buchungsblatt       b ON v.beziehung_zu=b.gml_id ";
 	$sql.="JOIN  ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-	$sql.="WHERE v.beziehung_von='".$gmls."' "; // id Buchungsstelle
-	$sql.="AND   v.beziehungsart='istBestandteilVon' ";
+	$sql.="WHERE v.beziehung_von= $1 "; // id Buchungsstelle
+	$sql.="AND   v.beziehungsart= $2 ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
 
-	$resg=pg_query($con,$sql);
+	$v = array($gmls,'istBestandteilVon');
+	$resg = pg_prepare("", $sql);
+	$resg = pg_execute("", $v);
 	if (!$resg) {
 		echo "\n<p class='err'>Keine Buchungsblatt.<br>\nSQL= ".$sql."</p>\n";
 	}
@@ -507,24 +534,29 @@ while($rows = pg_fetch_array($ress)) {
 		echo "\n</tr>";
 		echo "\n</table>";
 
-		// +++ Weitere Felder ausgeben ?? beschreibungdesumfangsderbuchung		if ($rows["sond"] != "") {
+		// +++ Weitere Felder ausgeben ?? beschreibungdesumfangsderbuchung
+		if ($rows["sond"] != "") {
 			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rows["sond"]."</p>";
 		}
 		if ($rows["nrpl"] != "") {
 			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rows["nrpl"]."</span> im Aufteilungsplan.</p>";		
 		}
-		// E I G E N T U E M E R, zum GB
+
+		// E I G E N T U E M E R, zum GB
 		// Person <-benennt< AX_Namensnummer  >istBestandteilVon-> AX_Buchungsblatt
-		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer			$n = eigentuemer($con, $gkz, $idanzeige, $gmlg, false); // hier aber ohne Adresse
+		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer
+			$n = eigentuemer($con, $gkz, $idanzeige, $gmlg, false); // hier aber ohne Adresse
  			if ($n == 0) {
 				if ($blattkeyg == 1000) {
 					echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
 					linkgml($gkz, $gmlg, "Buchungsblatt");
 				} else {
-					echo "\n<p>ohne Eigent&uuml;mer.</p>";				}
+					echo "\n<p>ohne Eigent&uuml;mer.</p>";
+				}
 			}
 		}
-		$bl++;	}
+		$bl++;
+	}
 	if ($bl == 0) {
 		echo "\n<p class='err'>Kein Buchungsblatt gefunden.</p>";
 		linkgml($gkz, $gmls, "Buchungstelle");
@@ -542,12 +574,14 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="JOIN  ax_buchungsblatt  b ON v.beziehung_zu = b.gml_id ";
 	$sql.="JOIN  ax_buchungsblattbezirk z ON z.land = b.land AND z.bezirk = b.bezirk ";
 	$sql.="JOIN  ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-	$sql.="WHERE an.beziehung_zu = '".$gmls."' "; // id herrschende Buchungsstelle
+	$sql.="WHERE an.beziehung_zu = $1 "; // id herrschende Buchungsstelle
 	$sql.="AND   an.beziehungsart = 'an' ";
 	$sql.="AND   v.beziehungsart = 'istBestandteilVon' ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 
-	$resan=pg_query($con,$sql);
+	$v = array($gmls);
+	$resan = pg_prepare("", $sql);
+	$resan = pg_execute("", $v);
 
 	if (!$resan) {
 		echo "\n<p class='err'>Keine weiteren Buchungsstellen.<br>\nSQL=<br>".$sql."</p>\n";
@@ -625,7 +659,8 @@ while($rows = pg_fetch_array($ress)) {
 			echo "\n<p>Blattart: ".$blattartan." (".$blattkeyan.").<br>\n"; 
 		}
 
-		// +++ Weitere Felder ausgeben ?? BeschreibungDesUmfangsDerBuchung		if ($rowan["nrpl"] != "") {
+		// +++ Weitere Felder ausgeben ?? BeschreibungDesUmfangsDerBuchung
+		if ($rowan["nrpl"] != "") {
 			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rowan["nrpl"]."</span> im Aufteilungsplan.</p>";
 		}
 		if ($rowan["sond"] != "") {
