@@ -38,7 +38,7 @@ INSERT INTO gemeinde_gemarkung
 -- Namen der Gemeinde dazu als Optimierung bei der Auskunft 
 UPDATE gemeinde_gemarkung a
    SET gemeindename =
-   ( SELECT b.bezeichnung 
+   ( SELECT DISTINCT b.bezeichnung 
      FROM    ax_gemeinde b
      WHERE a.land=b.land 
        AND a.regierungsbezirk=b.regierungsbezirk 
@@ -50,8 +50,8 @@ UPDATE gemeinde_gemarkung a
 -- Namen der Gemarkung dazu als Optimierung bei der Auskunft 
 UPDATE gemeinde_gemarkung a
    SET gemarkungsname =
-   ( SELECT b.bezeichnung 
-     FROM    ax_gemarkung b
+   ( SELECT DISTINCT b.bezeichnung 
+     FROM ax_gemarkung b
      WHERE a.land=b.land 
        AND a.gemarkung=b.gemarkungsnummer
    );
