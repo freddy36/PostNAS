@@ -62,10 +62,13 @@ $sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, ";
 $sql.=" g.gemarkungsnummer, g.bezeichnung ";
 $sql.="FROM ax_flurstueck f ";
 $sql.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="WHERE f.gml_id='".$gmlid."';";
+$sql.="WHERE f.gml_id= $1;";
 // Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
 
-$res=pg_query($con,$sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+
 if (!$res) {echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";}
 
 if ($row = pg_fetch_array($res)) {
@@ -146,11 +149,15 @@ $sql.="JOIN  ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
 
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
 
-$sql.="WHERE bfs.beziehung_von='".$gmlid."' ";
+$sql.="WHERE bfs.beziehung_von= $1 ";
 $sql.="AND   bfs.beziehungsart='istGebucht' ";
 $sql.="AND   bsb.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
-$resg=pg_query($con,$sql);
+
+$v = array($gmlid);
+$resg = pg_prepare("", $sql);
+$resg = pg_execute("", $v);
+
 if (!$resg) echo "\n<p class='err'>Keine Buchungen.<br>\nSQL= ".$sql."</p>\n";
 $j=0; // Z.Blatt
 while($rowg = pg_fetch_array($resg)) {

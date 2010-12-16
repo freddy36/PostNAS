@@ -65,10 +65,13 @@ $sql.="a.gml_id, a.land, a.bezeichnung, a.stelle, a.stellenart "; // Amtsgericht
 $sql.="FROM  ax_buchungsblatt  g ";
 $sql.="JOIN  ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk ";  // BBZ
 $sql.="JOIN  ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
-$sql.="WHERE g.gml_id='".$gmlid."' ";
+$sql.="WHERE g.gml_id= $1 ";
 $sql.="AND   a.stellenart=1000;"; // Amtsgericht
 
-$res=pg_query($con, $sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+
 if (!$res) {
 	echo "<p class='err'>Fehler bei Grundbuchdaten<br>\n".$sql."</p>";
 }
@@ -161,10 +164,14 @@ $sql.="s.zaehler, s.nenner, s.nummerimaufteilungsplan AS nrap, s.beschreibungdes
 $sql.="FROM  ax_buchungsstelle s ";
 $sql.="JOIN  alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-$sql.="WHERE v.beziehung_zu='".$gmlid."' ";
+$sql.="WHERE v.beziehung_zu= $1 ";
 $sql.="AND   v.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY s.laufendenummer;";
-$res=pg_query($con,$sql);
+
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+
 if (!$res) echo "<p class='err'>Fehler bei Buchung.</p>\n";
 $i=0;
 while($row = pg_fetch_array($res)) {
@@ -391,13 +398,16 @@ if ($i == 0) {
 
 	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart ba ON sb.buchungsart = ba.wert ";
 
-	$sql.="WHERE vf.beziehung_zu='".$gmlid."' ";
+	$sql.="WHERE vf.beziehung_zu= $1 ";
 	$sql.="AND  vf.beziehungsart='istBestandteilVon' ";
 	$sql.="AND (vs.beziehungsart='an' OR vs.beziehungsart='zu') ";
 	$sql.="AND  vb.beziehungsart= 'istBestandteilVon' ";
 	$sql.="ORDER BY bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung;";
 
-	$resb=pg_query($con,$sql);
+	$v = array($gmlid);
+	$resb = pg_prepare("", $sql);
+	$resb = pg_execute("", $v);
+
 	if (!$resb) {
 		echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter:'<br>".$sql."</p>\n";
 	}

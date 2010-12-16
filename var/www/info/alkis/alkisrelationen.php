@@ -48,8 +48,12 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 	echo "\n<p>von ALKIS-".$otyp."</p>";
 	echo "<p>gml_id =</p>";
 	echo "\n\n<h3 title='Die gml_is ist global eindeutig'>".$gmlid."</h3>";
-	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von='".$gmlid."';";
-	$res=pg_query($con,$sql);
+	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von= $1;";
+	
+	$v = array($gmlid);
+	$res = pg_prepare("", $sql);
+	$res = pg_execute("", $v);
+	
 	echo "\n<table>";
 	if (!$res) { // vorab Anzahl der Saetze ermitteln?
 		echo "\n<tr>\n\t<td colspan=3><b>Keine</b> Beziehungen vom Objekt</td>\n</tr>";
@@ -65,8 +69,12 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 		}
 		if ($i == 0) echo "<tr><td colspan=3>.. keine</td></tr>";
 	}
-	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu='".$gmlid."';";
-	$res=pg_query($con,$sql);
+	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";
+	
+	$v = array($gmlid);
+	$res = pg_prepare("", $sql);
+	$res = pg_execute("", $v);
+
 	if (!$res) {
 		echo "<tr><td colspan=3><b>Keine</b> Beziehungen zum Objekt</td></tr>";
 	} else {

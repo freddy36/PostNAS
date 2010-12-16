@@ -62,9 +62,12 @@ echo "\n<h2><img src='ico/Eigentuemer.ico' width='16' height='16' alt=''> Person
 if (!$con) "\n<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 $sql="SELECT nachnameoderfirma, anrede, vorname, geburtsname, geburtsdatum, namensbestandteil, akademischergrad ";
-$sql.="FROM ax_person WHERE gml_id='".$gmlid."'";
+$sql.="FROM ax_person WHERE gml_id= $1;";
 
-$res=pg_query($con,$sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+
 if (!$res) {echo "\n<p class='err'>Fehler bei Zugriff auf Namensnummer</p>\n";}
 if ($idanzeige) { linkgml($gkz, $gmlid, "Person"); }
 if ($row = pg_fetch_array($res)) {
@@ -89,10 +92,14 @@ if ($row = pg_fetch_array($res)) {
 	$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
 	$sql.="FROM   ax_anschrift a ";
 	$sql.="JOIN   alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-	$sql.="WHERE  b.beziehung_von='".$gmlid."' ";
+	$sql.="WHERE  b.beziehung_von= $1 ";
 	$sql.="AND    b.beziehungsart='hat';"; //"ORDER  BY ?;";
 	//echo "\n<p class='err'>".$sql."</p>\n";
-	$resa=pg_query($con,$sql);
+	
+	$v = array($gmlid);
+	$resa = pg_prepare("", $sql);
+	$resa = pg_execute("", $v);
+
 	if (!$resa) echo "\n<p class='err'>Fehler bei Adressen.<br>\nSQL= ".$sql."</p>\n";
 	$j=0;
 	while($rowa = pg_fetch_array($resa)) {
@@ -135,14 +142,16 @@ if ($row = pg_fetch_array($res)) {
 	$sql.="JOIN  alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
 	$sql.="JOIN  ax_buchungsblatt  g   ON bng.beziehung_zu=g.gml_id ";
 	$sql.="JOIN  ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
-	$sql.="WHERE bpn.beziehung_zu='".$gmlid."' ";
+	$sql.="WHERE bpn.beziehung_zu= $1 ";
 	$sql.="AND   bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung;";
 	// buchungsblatt... mal mit und mal ohne fuehrende Nullen, bringt die Sortierung durcheinander
 
 	//echo "\n<p class='err'>".$sql."</p>\n";
+	$v = array($gmlid);
+	$resg = pg_prepare("", $sql);
+	$resg = pg_execute("", $v);
 
-	$resg=pg_query($con,$sql);
 	if (!$resg) echo "\n<p class='err'>Fehler bei Grundbuch.<br>\nSQL= ".$sql."</p>\n";
 	$j=0;
 	echo "<table class='eig'>";

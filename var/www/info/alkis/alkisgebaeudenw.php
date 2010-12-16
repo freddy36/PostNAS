@@ -55,8 +55,12 @@ $sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.z
 $sqlf.="g.gemarkungsnummer, g.bezeichnung ";
 $sqlf.="FROM ax_flurstueck f ";
 $sqlf.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sqlf.="WHERE f.gml_id='".$gmlid."';";
-$resf=pg_query($con,$sqlf);
+$sqlf.="WHERE f.gml_id= $1;";
+
+$v = array($gmlid);
+$resf = pg_prepare("", $sqlf);
+$resf = pg_execute("", $v);
+
 if (!$resf) {
 	echo "\n<p class='err'>Fehler bei Flurst&uuml;cksdaten\n<br>".$sqlf."</p>\n";
 }
@@ -143,7 +147,7 @@ $sqlg.="LEFT JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "
 // $sqlg.="LEFT JOIN ax_lagebezeichnungmitpseudonummer p ON v.beziehung_zu=p.gml_id ";
 
 // ID des aktuellen FS
-$sqlg.="WHERE f.gml_id='".$gmlid."' "; 
+$sqlg.="WHERE f.gml_id= $1 "; 
 
 // ALT: "within" liefert nur Gebaeude, die komplett im Flurstueck liegen
 //$sqlg.="AND within(g.wkb_geometry,f.wkb_geometry) = true ";
@@ -162,7 +166,11 @@ $sqlg.="ORDER BY schnittflae DESC;";
 
 // ax_gebaeude  (zeigtAuf) ax_LagebezeichnungMitHausnummer    (Hauptgebäude)
 // ax_gebaeude  (hat)      ax_LagebezeichnungMitPseudonummer  (Nebengebäude)
-$resg=pg_query($con,$sqlg);
+
+$v = array($gmlid);
+$resg = pg_prepare("", $sqlg);
+$resg = pg_execute("", $v);
+
 if (!$resg) {
 	echo "\n<p class='err'>Keine Geb&auml;ude ermittelt.<br>\nSQL=<br></p>\n";
 	echo "\n<p class='err'>".$sqlg."</p>\n";

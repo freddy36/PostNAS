@@ -104,9 +104,12 @@ switch ($ltyp) {
 	break;
 }
 
-$sql.="WHERE l.gml_id='".$gmlid."';";
+$sql.="WHERE l.gml_id= $1;";
 
-$res=pg_query($con,$sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+
 if (!$res) echo "\n<p class='err'>Fehler bei Lagebezeichnung\n<br>".$sql."</p>\n";
 
 if ($row = pg_fetch_array($res)) {	
@@ -238,11 +241,14 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	$sql.="FROM ax_gemarkung g ";
 	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="JOIN alkis_beziehungen v ON f.gml_id=v.beziehung_von "; 
-	$sql.="WHERE v.beziehung_zu='".$gmlid."' "; // id Lage
-	$sql.="AND v.beziehungsart='".$bezart."' ";
+	$sql.="WHERE v.beziehung_zu= $1 "; // id Lage
+	$sql.="AND v.beziehungsart= $2 ";
 	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
-	$resf=pg_query($con,$sql);
+	$v = array($gmlid,$bezart);
+	$resf = pg_prepare("", $sql);
+	$resf = pg_execute("", $v);
+
 	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck<br><br>".$sql."</p>\n";}
 
 	echo "\n<table class='fs'>";
@@ -293,7 +299,7 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 	echo "\n\n<a name='lage'></a><h3><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Lage</h3>\n";
 	echo "\n<p>andere Lagebezeichnungen zur gleichen Hausnummer.</p>";
-	$whereclaus="WHERE land='".$land."' AND regierungsbezirk='".$regbez."' AND kreis='".$kreis."' AND gemeinde='".$gem."' AND lage=".$lage." ";
+	$whereclaus="WHERE land= $1 AND regierungsbezirk= $2 AND kreis= $3 AND gemeinde= $4 AND lage= $5 ";
 	$url=$self."gkz=".$gkz."&amp;id=".$id."&amp;gmlid="; // Basis
 
 	switch ($ltyp) {
@@ -301,9 +307,13 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 			// dazu alle Nebengebäude suchen
 			echo "\n<p>Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
-			$sql.=$whereclaus."AND lage=".$lage." AND pseudonummer='".$hsnr."' ORDER BY laufendenummer;";
+			$sql.=$whereclaus."AND lage= $6 AND pseudonummer= $7 ORDER BY laufendenummer;";
 		// pseudonummer character varying(5), laufendenummer character varying(2),
-			$res=pg_query($con,$sql);
+			
+			$v = array($land,$regbez,$kreis,$gem,$lage,$lage,$hsnr);
+			$res = pg_prepare("", $sql);
+			$res = pg_execute("", $v);
+			
 			if (!$res) echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
 			while($row = pg_fetch_array($res)) {
 				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
@@ -314,8 +324,12 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 		case "p": // aktuell Nebengebäude: Haupt- und Nebengebäude suchen
 			echo "\n<p>Hauptgeb&auml;ude: ";
 			$sql ="SELECT l.gml_id FROM ax_lagebezeichnungmithausnummer l ";
-			$sql.=$whereclaus."AND hausnummer='".$pseu."';";
-			$res=pg_query($con,$sql);
+			$sql.=$whereclaus."AND hausnummer= $6;";
+			
+			$v = array($land,$regbez,$kreis,$gem,$lage,$pseu);
+			$res = pg_prepare("", $sql);
+			$res = pg_execute("", $v);
+			
 			if (!$res) echo "<p class='err'>Fehler bei Hauptgeb&auml;ude.<br>".$sql."</p>\n";
 			while($row = pg_fetch_array($res)) {
 				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=m'>Haus-Nr ".$pseu."</a>&nbsp;&nbsp;";
@@ -324,8 +338,12 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 
 			echo "\n<p>weitere Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
-			$sql.=$whereclaus."AND pseudonummer='".$pseu."' AND laufendenummer <> '".$lfd."' ORDER BY laufendenummer;";
-			$res=pg_query($con,$sql);
+			$sql.=$whereclaus."AND pseudonummer= $6 AND laufendenummer <> $7 ORDER BY laufendenummer;";
+			
+			$v = array($land,$regbez,$kreis,$gem,$lage,$pseu,$lfd);
+			$res = pg_prepare("", $sql);
+			$res = pg_execute("", $v);
+			
 			if (!$res) echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
 			while($row = pg_fetch_array($res)) {
 				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
@@ -360,9 +378,12 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	$sql.="JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
 	$sql.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 	$sql.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
-	$sql.="WHERE v.beziehung_zu='".$gmlid."' ";
-	$sql.="AND   v.beziehungsart='".$bezart."' ;";
-	$res=pg_query($con,$sql);
+	$sql.="WHERE v.beziehung_zu= $1 ";
+	$sql.="AND   v.beziehungsart= $2 ;";
+	
+	$v = array($gmlid,$bezart);
+	$res = pg_prepare("", $sql);
+	$res = pg_execute("", $v);
 
 	if (!$res) echo "<p class='err'>Fehler bei Gebaeude.<br>".$sql."</p>\n";
 	$i=0;

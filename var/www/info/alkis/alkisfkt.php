@@ -118,11 +118,14 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	$sql.="FROM ax_gemarkung g ";
 	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="JOIN alkis_beziehungen v ON f.gml_id=v.beziehung_von "; 
-	$sql.="WHERE v.beziehung_zu='".$gml_bs."' "; // id buchungsstelle
+	$sql.="WHERE v.beziehung_zu= $1 "; // id buchungsstelle
 	$sql.="AND   v.beziehungsart='istGebucht' ";
 	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
-	$resf=pg_query($con,$sql);
+	$v = array($gml_bs);
+	$resf = pg_prepare("", $sql);
+	$resf = pg_execute("", $v);
+	
 	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck<br><br>".$sql."</p>\n";}
 
 	if($bvnraus) { // nur bei direkten Buchungen die lfdNr ausgeben
@@ -209,11 +212,14 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 	$sql.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
 	$sql.="FROM  ax_namensnummer n ";
 	$sql.="JOIN  alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
-	$sql.="WHERE b.beziehung_zu='".$gmlid."' "; // id blatt
+	$sql.="WHERE b.beziehung_zu= $1 "; // id blatt
 	$sql.="AND   b.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY laufendenummernachdin1421;";
 	
-	$resn=pg_query($con, $sql);
+	$v = array($gmlid);
+	$resn = pg_prepare("", $sql);
+	$resn = pg_execute("", $v);
+
 	if (!$resn) {echo "<p class='err'>Fehler bei Eigentuemer<br>SQL= ".$sql."<br></p>\n";}
 
 	//echo "<p class='nwlink noprint'>weitere Auskunft:</p>"; // oben rechts von der Tabelle
@@ -261,10 +267,13 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 		$sql="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
 		$sql.="FROM  ax_person p ";
 		$sql.="JOIN  alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
-		$sql.="WHERE v.beziehung_von='".$rown["gml_id"]."' "; // id num
+		$sql.="WHERE v.beziehung_von= $1 "; // id num
 		$sql.="AND   v.beziehungsart='benennt';";
 	
-		$rese=pg_query($con, $sql);
+		$v = array($rown["gml_id"]);
+		$rese = pg_prepare("", $sql);
+		$rese = pg_execute("", $v);
+
 		if (!$rese) {echo "\n\t<p class='err'>Fehler bei Eigentuemer<br>SQL= ".$sql."<br></p>\n";}
 		$i=0; // Z.Eig.
 		//echo "\n<!-- vor Schleife 2 Person -->";		
@@ -300,10 +309,13 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
 				$sql.="FROM ax_anschrift a ";
 				$sql.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-				$sql.="WHERE b.beziehung_von='".$rowe["gml_id"]."' ";
+				$sql.="WHERE b.beziehung_von= $1 ";
 				$sql.="AND b.beziehungsart='hat';"; // ORDER?
 
-				$resa=pg_query($con,$sql);
+				$v = array($rowe["gml_id"]);
+				$resa = pg_prepare("", $sql);
+				$resa = pg_execute("", $v);
+				
 				if (!$resa) {
 					echo "\n\t<p class='err'>Fehler bei Adressen.<br>\nSQL= ".$sql."</p>\n";
 				}

@@ -42,9 +42,12 @@ $sql.="round(st_area(r.wkb_geometry)::numeric,0) AS flae ";
 $sql.="FROM ax_bauraumoderbodenordnungsrecht r ";
 $sql.="LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung = a.wert ";
 $sql.="LEFT JOIN ax_dienststelle d ON r.land = d.land AND r.stelle = d.stelle ";
-$sql.="WHERE r.gml_id='".$gmlid."';";
+$sql.="WHERE r.gml_id= $1;";
 
-$res=pg_query($con,$sql);
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+
 if (!$res) {
 	echo "\n<p class='err'>Fehler bei Baurecht:<br>";
 	echo "\n<br>SQL=<br>\n".$sql;
@@ -100,15 +103,17 @@ echo "\n<p>Ermittelt durch geometrische Verschneidung. Nach Gr&ouml;&szlig;e abs
 $sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, ";
 $sql.="round(st_area(ST_Intersection(r.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae ";
 $sql.="FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r  ";
-$sql.="WHERE r.gml_id='".$gmlid."' "; 
+$sql.="WHERE r.gml_id= $1 "; 
 $sql.="AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true ";
 $sql.="AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 ";  // > 0.0 ist gemeint, Ungenauigkeit durch st_simplify
 $sql.="ORDER BY schnittflae DESC ";
 // Limit: Flurbereinigungsgebiete koennen sehr gross werden!
 $sql.="LIMIT 40;";
 // Trotz Limit lange Antwortzeit, wegen OrderBy -> intersection
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
 
-$res=pg_query($con,$sql);
 if (!$res) {
 	echo "\n<p class='err'>Keine Flurst&uuml;cke ermittelt.<br>\nSQL=<br></p>\n";
 	echo "\n<p class='err'>".$sql."</p>\n";
