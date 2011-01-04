@@ -6,6 +6,7 @@
 	22.09.2010  Feintuning, sql-Limit
 	11.10.2010  simplify Geometrie: Schwellwert Verschneidung Flaeche>0 anpassen
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -65,10 +66,10 @@ if ($row = pg_fetch_array($res)) {
 
 		$enam=$row["name"];
 		if ($enam != "") {
-			echo "\n<tr>";		
+			echo "\n<tr>";
 				echo "\n\t<td class='li'>Eigenname des Gebietes:</td>\n\t<td>".$enam."</td>";
 			echo "\n</tr>";
-		}	
+		}
 		echo "\n<tr>";
 			echo "\n\t<td class='li'>Verfahrensnummer:</td>";
 			echo "\n\t<td>".$row["rechtbez"]."</td>";
@@ -81,7 +82,7 @@ if ($row = pg_fetch_array($res)) {
 				$stellart=$row["stellenart"];
 				if ($stellart != "") {
 					echo " (".$stellart.")"; // d.stellenart -- weiter entschluesseln
-				}		
+				}
 				echo "</td>";
 			echo "\n</tr>";
 		}
@@ -128,8 +129,8 @@ echo "\n<table class='fs'>";
 	echo "\n</tr>";
 
 	$fscnt=0;
-	while($row = pg_fetch_array($res)) {	
-		$fscnt++;		
+	while($row = pg_fetch_array($res)) {
+		$fscnt++;
 		echo "\n<tr>";
 			echo "\n\t<td>".$row["flurnummer"]."-<span class='wichtig'>".$row["zaehler"];
 			$nen=$row["nenner"];

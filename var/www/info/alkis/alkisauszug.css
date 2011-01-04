@@ -5,6 +5,7 @@
 	21.09.2010  Inlay
 	30.09.2010  body-width bei Print
 	12.10.2010  class p.fsd: margin statt position-relative, dann keine Scrollbar
+	04.01.2010  Spalte td.fla im fsnw
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -61,7 +62,7 @@ div.adr {border-left-width: 0px;
 
 span.key 		{color: gray; font-style: italic;} /* Schluesselwert vor Text, Wert zurueck nehmen */
 span.wichtig	{color: #BB0000; font-weight: bold;} /* Wert hervorheben */
-span.flae		{font-weight: bold;} /* FlÃ¤chensume Flurst. */
+span.flae		{font-weight: bold;} /* Flächensume Flurst. */
 
 /* ** T a b e l l e n ** */
 table 		{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif; font-size: 10pt; color: #000033;}
@@ -85,9 +86,8 @@ td.lr	{color: black; padding-top: 8px;}	/* Liste Rechts */
 td.ph	{color: gray;  padding-top: 8px;}	/* Platzhalter, vorlaeufig, spaeter loschen */
 
 /* Flaechen rechtsbuendig (stellengerecht) */
-/* td.fla	{width: 90px; padding-right: 4px; text-align: right;} */
-td.fla	{padding-right: 4px; text-align: right;}
-td.key	{width: 35px; padding-right: 4px; padding-left: 4px;}
+td.fla	{width: 110px; padding-right: 4px; padding-top:  8px; text-align: right;}
+td.key	{width:  35px; padding-right: 4px; padding-left: 4px;}
 /* Ertragsmesszahl der Bodenschaetzung
 td.emz	{width: 45px; padding-right: 4px; padding-left: 4px; 
 			text-align: right;} */

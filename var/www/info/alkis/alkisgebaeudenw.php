@@ -7,6 +7,7 @@
 	21.09.2010  vergessenen Parameter &style und Kommentar entfernt
 	01.10.2010  Geschoss-Anzahl
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -192,12 +193,12 @@ echo "\n<hr>\n<table class='geb'>";
 	// Body
 	while($rowg = pg_fetch_array($resg)) {
 		$gebnr = $gebnr + 1;
-		$gebflsum = $gebflsum + $rowg["schnittflae"];		
+		$gebflsum = $gebflsum + $rowg["schnittflae"];
 		echo "\n<tr>";
 			echo "\n\t<td>".$rowg["hausnummer"]."&nbsp;".$rowg["name"];
 				if ($idanzeige) {
 					linkgml($gkz, $rowg["gml_id"], "Geb&auml;ude");
-				}	
+				}
 			echo "</td>";
 
 			if ($rowg["drin"] == "t") { // 3 komplett enthalten
@@ -228,7 +229,7 @@ echo "\n<hr>\n<table class='geb'>";
 			echo $rowg["bauweise_beschreibung"]."</td>";
 
 			echo "\n\t<td class='nwlink noprint'>";
-			$bezieh=$rowg["beziehungsart"];		
+			$bezieh=$rowg["beziehungsart"];
 			if (!$bezieh == "" ) {
 				$gmllag=$rowg["beziehung_zu"];
 				switch ($bezieh) {
@@ -246,7 +247,7 @@ echo "\n<hr>\n<table class='geb'>";
 						echo "<p>unbekannte Beziehungsart ".$bezieh."</p>";
 						break;
 				}
-			}			
+			}
 			echo "\n\t</td>";
 		echo "\n</tr>";
 	}// Footer

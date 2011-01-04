@@ -8,6 +8,7 @@
 	06.09.2010  Schluessel anschaltbar
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt, Tabelle GB einzeilig
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 
 	ToDo: 
 	Sortierung der Grundbücher zum Namen
@@ -86,7 +87,7 @@ if ($row = pg_fetch_array($res)) {
 		echo "\t<tr><td class='nhd'>Namensbestandteil:</td><td class='nam'>".$row["namensbestandteil"]."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>akademischer Grad:</td><td class='nam'>".$aka."</td></tr>\n";
 	echo "\n</table>\n<hr>\n";
-	
+
 	// A d r e s s e
 	echo "\n<h3><img src='ico/Strasse_mit_Haus.ico' width='16' height='16' alt=''> Adresse</h3>\n";
 	$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
@@ -95,7 +96,7 @@ if ($row = pg_fetch_array($res)) {
 	$sql.="WHERE  b.beziehung_von= $1 ";
 	$sql.="AND    b.beziehungsart='hat';"; //"ORDER  BY ?;";
 	//echo "\n<p class='err'>".$sql."</p>\n";
-	
+
 	$v = array($gmlid);
 	$resa = pg_prepare("", $sql);
 	$resa = pg_execute("", $v);
@@ -122,7 +123,7 @@ if ($row = pg_fetch_array($res)) {
 
 		// Name und Adresse Kompakt (im Rahmen)
 		// Alles was man fuer ein Anschreiben braucht
-		echo "<img src='ico/Namen.ico' width='16' height='16' alt='Brief' title='Anschrift'>"; // Symbol "Brief"	
+		echo "<img src='ico/Namen.ico' width='16' height='16' alt='Brief' title='Anschrift'>"; // Symbol "Brief"
 		echo "\n<div class='adr' title='Anschrift'>".$anr." ".$aka." ".$vor." ".$nam."<br>";
 		echo "\n".$str." ".$hsnr."<br>";
 		echo "\n".$plz." ".$ort."</div>";
@@ -178,14 +179,14 @@ if ($row = pg_fetch_array($res)) {
 			echo "\n\t<td class='gbl'>"; // GB-Bezirk"
 				if ($showkey) {
 					echo "<span class='key'>".$rowg["bezirk"]."</span> ";
-				}				
+				}
 				echo $rowg["beznam"];
 			echo "</td>";
 
 			echo "\n\t<td class='gbl'>"; // Blattart
 				if ($showkey) {
 					echo "<span class='key'>".$blattkey."</span> ";
-				}			
+				}
 				echo $blattart;
 			echo "</td>";
 
@@ -197,7 +198,7 @@ if ($row = pg_fetch_array($res)) {
 
 			echo "\n\t<td class='gbl'>"; // Namensnummer
 				If ($namnum == "") {
-					echo "&nbsp;";					
+					echo "&nbsp;";
 				} else {
 					echo $namnum;
 				}

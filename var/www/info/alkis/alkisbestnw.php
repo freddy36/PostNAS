@@ -8,11 +8,11 @@
 	14.09.2010  Grundbuch unter Flurstueck, BVNR in Tabelle anzeigen und als Sprungmarke
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
-//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 ini_set('error_reporting', 'E_ALL');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
@@ -79,18 +79,18 @@ if ($row = pg_fetch_array($res)) {
 	$blattkey=$row["blattart"]; // Schluessel
 	$blattart=blattart($blattkey);
 
-	// Balken	
+	// Balken
 	echo "<p class='gbkennz'>ALKIS Bestand ".$row["bezirk"]." - ".$row["nr"]."&nbsp;</p>\n";
 
 	echo "\n<h2><img src='ico/Grundbuch.ico' width='16' height='16' alt=''> Grundbuch</h2>";
 
 	// Kennzeichen im Rahmen
 	echo "\n<table class='outer'>\n<tr>\n\t<td>";
-		if ($blattkey == 1000) {		
+		if ($blattkey == 1000) {
 			echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
-		} else {		
+		} else {
 			echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
-		}			
+		}
 			echo "\n\t<tr>";
 				echo "\n\t\t<td class='head'>".dienststellenart($row["stellenart"])."</td>";
 				echo "\n\t\t<td class='head'>Bezirk</td>";
@@ -105,7 +105,7 @@ if ($row = pg_fetch_array($res)) {
 				if ($showkey) {
 					echo "<span class='key'>".$row["bezirk"]."</span><br>";
 				}
-				echo htmlentities($row["beznam"], ENT_QUOTES, "UTF-8")."</td>";				
+				echo htmlentities($row["beznam"], ENT_QUOTES, "UTF-8")."</td>";
 				echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$row["nr"]."</span></td>";
 			echo "\n\t</tr>";
 		echo "\n\t</table>";
@@ -148,10 +148,10 @@ echo "\n<tr>";
 echo "\n</tr>";
 echo "\n<tr>";
 	echo "\n\t<td class='head'>&nbsp;</td>";
-	echo "\n\t<td class='head'>Buchungsart</td>";	//2
+	echo "\n\t<td class='head'>Buchungsart</td>";
 	echo "\n\t<td class='head'>Anteil</td>";
-	echo "\n\t<td class='head'>Gemarkung</td>";		//4
-	echo "\n\t<td class='head'>Flur</td>";				//5
+	echo "\n\t<td class='head'>Gemarkung</td>";
+	echo "\n\t<td class='head'>Flur</td>";
 	echo "\n\t<td class='head' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>Flurst.</span></td>";
 	echo "\n\t<td class='head fla'>Fl&auml;che</td>"; // 7
 	echo "\n\t<td class='head nwlink noprint' title='Link: weitere Auskunft'>weit. Auskunft</td>";
@@ -223,7 +223,7 @@ while($row = pg_fetch_array($res)) {
 			$sql.="WHERE v.beziehung_von='".$gml_bsan."' ";
 			$sql.="AND   v.beziehungsart='istBestandteilVon' ";
 			$sql.="ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
-			
+
 			$fbres=pg_query($con,$sql);
 			if (!$fbres) {echo "<p class='err'>Fehler bei fiktivem Blatt<br>".$sql."</p>\n";}
 			$b=0;
@@ -232,8 +232,8 @@ while($row = pg_fetch_array($res)) {
 				$fbland  = $fbrow["land"];
 				$fbbez   = $fbrow["bezirk"];
 				$fbblatt = $fbrow["blatt"];
-				$fbbart  = blattart($fbrow["blattart"]);	
-				$beznam	= $fbrow["beznam"];			
+				$fbbart  = blattart($fbrow["blattart"]);
+				$beznam	= $fbrow["beznam"];
 				$b++;
 			}
 			if ($b != 1) {
@@ -243,19 +243,19 @@ while($row = pg_fetch_array($res)) {
 			// G r u n d b u c h d a t e n  zur  a n d e r e n  Buchungsstelle
 			echo "\n<tr>";
 
-				echo"\n\t<td>";			
+				echo"\n\t<td>";
 					if($bvnr == $altbvnr) {	// gleiches Grundstueck
 						echo "&nbsp;"; // Anzeige unterdruecken
 					} else {
-						echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke				
+						echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke
 						echo "<span class='wichtig'>".$bvnr."</span>"; // Sp.1 Erbbau BVNR
 						if ($idanzeige) {linkgml($gkz, $gml_bs, "Buchungsstelle");}
 						$altbvnr = $bvnr; // Gruppenwechsel merken
-					}			
+					}
 				echo "</td>";
 
 				echo "\n\t<td class='dien'>"; // Sp.2 Buchung
-					if ($showkey) {					
+					if ($showkey) {
 						echo "<span class='key'>".$row["buchungsart"]."</span> ";
 					}
 				echo $ba." an</td>";
@@ -263,9 +263,9 @@ while($row = pg_fetch_array($res)) {
 				echo "\n\t<td>".$anteil."</td>"; // Sp.3 Anteil
 
 				echo "\n\t<td class='dien'>"; // Sp.4 Gemarkg. hier Bezirk
-					if ($showkey) {					
+					if ($showkey) {
 						echo "<span class='key'>".$fbbez."</span> ";
-					}					
+					}
 					echo $beznam;
 				echo "</td>"; // Sp.4 hier Bezirk
 
@@ -280,7 +280,7 @@ while($row = pg_fetch_array($res)) {
 					echo str_pad($lfdnran, 4, "0", STR_PAD_LEFT);
 					if ($idanzeige) {
 						linkgml($gkz, $gml_bsan, "Buchungsstelle");
-					}	
+					}
 
 				echo "</td>"; 
 
@@ -288,7 +288,7 @@ while($row = pg_fetch_array($res)) {
 					if ($showkey) {
 						echo "<span class='key'>".$rowan["buchungsart"]."</span> ";
 					}
-					echo $baan." ";					
+					echo $baan." ";
 				echo "</td>";
 
 				echo "\n\t<td>";  // Sp.8 Link ("an" oder "zu" ?)
@@ -305,9 +305,9 @@ while($row = pg_fetch_array($res)) {
 			echo "\n</tr>"; 
 
 			// F l u r s t u e c k s d a t e n  zur  a n d e r e n  Buchungsstelle
-		//	$aj = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnran, $gml_bsan, $baan, $anteil, false);			// Buchungsart wird nur in erster Zeile ausgegeben, hier leer		
+		//	$aj = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnran, $gml_bsan, $baan, $anteil, false);			// Buchungsart wird nur in erster Zeile ausgegeben, hier leer
 		   $aj = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnran, $gml_bsan, "", $anteil, false); // return = Anzahl der FS
-			
+
 			// +++ Gibt es ueberhaupt Sondereigentum beim fiktiven Blatt??			if ($rowan["nrap"] != "") {
 				echo "\n<tr>";
 					echo "\n\t<td class='sond' colspan=8>Nr. im Aufteilungsplan: ".$rowan["nrap"]."</td>";
@@ -330,10 +330,10 @@ while($row = pg_fetch_array($res)) {
 					echo "</td>"; 
 					echo "\n\t<td></td>";
 					echo "\n\t<td colspan=4>"; // Gemarkg, Flur, Flurst, Flaeche
-						echo "<p class='warn'>(keine Flurst&uuml;cke)";					
+						echo "<p class='warn'>(keine Flurst&uuml;cke)";
 					echo "</td>";
 					echo "\n\t<td></td>";
-				echo "\n</tr>";			
+				echo "\n</tr>";
 			} 
 			*/
 		}
@@ -358,7 +358,7 @@ while($row = pg_fetch_array($res)) {
 			echo "\n\t<td class='nrap' colspan=8>Nummer <span class='wichtig'>".$row["nrap"]."</span> im Aufteilungsplan.</td>";
 		echo "\n</tr>";
 	}
-	// Sondereigentumsbeschreibung	
+	// Sondereigentumsbeschreibung
 	if ($row["sond"] != "") {
 		echo "\n<tr>";
 			echo "\n\t<td class='sond' colspan=8>Verbunden mit dem Sondereigentum an: ".$row["sond"]."</td>";
@@ -417,7 +417,7 @@ if ($i == 0) {
 		if ($b == 0) { // Ueberschrift und Tabelle nur ausgeben, wenn etwas gefunden wurde
 
 			echo "\n<h3><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Berechtigte Grundb&uuml;cher</h3>\n";
-			
+
 			// Tabelle Kopf ausgeben
 			echo "\n<table class='outer'>";
 			echo "\n<tr>";
@@ -438,13 +438,13 @@ if ($i == 0) {
 		$bart=$rowb["bart"];				// Buchungsart entschluesselt
 		$lfdnr=$rowb["lfdnr"];
 		$bvnr   = str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
-		
+
 		echo "\n<tr>";
 			echo "\n\t<td>".$rowb["land"]."</td>";
 
 			echo "\n\t<td>"; // Amtsgericht
 				echo dienststellenart($rowb["stellenart"])." ";
-				if ($showkey) {				
+				if ($showkey) {
 					echo "<span class='key'>".$rowb["stelle"]."</span> ";
 				}
 				echo $rowb["bezeichnung"];
@@ -452,12 +452,12 @@ if ($i == 0) {
 
 
 			echo "\n\t<td>";
-				if ($showkey) {				
+				if ($showkey) {
 					echo "<span class='key'>".$rowb["bezirk"]."</span> ";
 				}
 				echo $rowb["beznam"];
 			echo "</td>";
-			
+
 			echo "\n\t<td><span class='wichtig'>".$rowb["blatt"]."</span>";
 				if ($idanzeige) {linkgml($gkz, $gml_b, "Buchungsblatt");}
 			echo "</td>";

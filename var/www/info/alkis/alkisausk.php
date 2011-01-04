@@ -13,6 +13,7 @@
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 	17.09.2010  Authentifizierung Konfigurierbar
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -168,9 +169,9 @@ while($rowg = pg_fetch_array($resg)) {
 
 		$blattkey=$rowg["blattart"];
 		$blattart=blattart($blattkey);
-		if ($blattkey == 1000) {		
+		if ($blattkey == 1000) {
 			echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
-		} else {		
+		} else {
 			echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
 		}
 			echo "\n\t<tr>";
@@ -212,7 +213,7 @@ while($rowg = pg_fetch_array($resg)) {
 	echo "\n</td>";
 	echo "\n</tr>";
 	echo "\n</table>";
-	
+
 	// E I G E N T U E M E R
 	if ($blattkey == 5000) { // Schluessel Blattart
 		echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt</p>\n";

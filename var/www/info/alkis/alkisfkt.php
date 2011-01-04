@@ -7,6 +7,7 @@
 	07.09.2010  Schluessel anschaltbar
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 	09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 */
 function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
 	// Einen Seitenfuss ausgeben.
@@ -15,7 +16,7 @@
 
 	// Der Parameter $append wird angehaengt wenn gefuellt
 	//  Anwendung: &eig=j bei FS-NW, &ltyp=m/p/o bei Lage
-	
+
 	$customer=$_SESSION["mb_user_name"];
 	echo "\n<div class='confbereich noprint'>";
 
@@ -23,14 +24,14 @@
 
 	// Spalte 1: Info Benutzerkennung
 	echo "\n\t<td title='Info'><i>Benutzer:&nbsp;".$customer."</i></td>";
-	
+
 	// Spalte 2: Umschalter
 	echo "\n\t<td title='Konfiguration'>";
 		// Umschalter:
-		// - Schluessel		
+		// - Schluessel
 		// - Testmodus ID-Anzeige
-		
-		// bei beiden		
+
+		// bei beiden
 		$mylink ="\n\t\t<a class='gmlid' href='".$link."gkz=".$gkz."&amp;gmlid=".$gmlid.$append;
 
 		if ($showkey) { // bleibt so
@@ -82,8 +83,8 @@
 	echo "link=".$link."<br>";
 	echo "hilfeurl=".$hilfeurl."<br>";
 	echo "append=".$append."<br>";
-	echo "showkey=".$showkey;	
-	echo "</p>"; */
+	echo "showkey=".$showkey;
+	echo "</p>"; */
 	return 0;
 }
 
@@ -125,11 +126,11 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	$v = array($gml_bs);
 	$resf = pg_prepare("", $sql);
 	$resf = pg_execute("", $v);
-	
+
 	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck<br><br>".$sql."</p>\n";}
 
 	if($bvnraus) { // nur bei direkten Buchungen die lfdNr ausgeben
-		$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);	
+		$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
 	}
 	$altlfdnr="";
 	$j=0;
@@ -151,14 +152,14 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 
 		echo "\n<tr>"; // eine Zeile je Flurstueck
 			// Sp. 1-3 der Tab. aus Buchungsstelle, nicht aus FS
-			if($lfdnr == $altlfdnr) {	// gleiches Grundstueck		
+			if($lfdnr == $altlfdnr) {	// gleiches Grundstueck
 				echo "\n\t<td>&nbsp;</td>";
 				echo "\n\t<td>&nbsp;</td>";
 				echo "\n\t<td>&nbsp;</td>";
 			} else {
 
 				echo "\n\t<td>";
-					echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke	
+					echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke
 					echo "<span class='wichtig'>".$bvnr."</span>";  // BVNR
 					if ($idanzeige) {linkgml($gkz, $gml_bs, "Buchungsstelle");}
 				echo "</td>";
@@ -168,8 +169,8 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 					echo $ba; // entschluesselt
 				echo "</td>"; 
 				echo "\n\t<td>&nbsp;</td>"; // Anteil
-				$altlfdnr=$lfdnr;	
-			}		
+				$altlfdnr=$lfdnr;
+			}
 			//Sp. 4-7 aus Flurstueck
 			echo "\n\t<td>";
 			if ($showkey) {
@@ -181,7 +182,7 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 				if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck");}
 			echo "</td>";
 			echo "\n\t<td class='fla'>".$flae."</td>";
-	
+
 			echo "\n\t<td><p class='nwlink noprint'>";
 				echo "<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$rowf["gml_id"]."&amp;eig=n";
 					if ($idanzeige) {echo "&amp;id=j";}
@@ -204,10 +205,10 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 	//		$gmlid = ID des GB-Blattes
 	//		$mitadresse = Option (true/false) ob auch die Adresszeile ausgegeben werden soll
 	// Return = Anzahl Namensnummern
-	
+
 	// Schleife 1: N a m e n s n u m m e r
 	// Beziehung: ax_namensnummer  >istBestandteilVon>  ax_buchungsblatt
-	
+
 	$sql="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
 	$sql.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
 	$sql.="FROM  ax_namensnummer n ";
@@ -215,7 +216,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 	$sql.="WHERE b.beziehung_zu= $1 "; // id blatt
 	$sql.="AND   b.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY laufendenummernachdin1421;";
-	
+
 	$v = array($gmlid);
 	$resn = pg_prepare("", $sql);
 	$resn = pg_execute("", $v);
@@ -226,7 +227,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 	echo "\n\n<table class='eig'>";
 	$n=0; // Z.NamNum.
 
-	//echo "\n\n<!-- vor Schleife 1 Namensnummer -->";	
+	//echo "\n\n<!-- vor Schleife 1 Namensnummer -->";
 	while($rown = pg_fetch_array($resn)) {
 		echo "\n<tr>";
 			echo "\n\t<td class='nanu' title='Namens-Nummer'>\n\t\t<p>"; // Sp. 1
@@ -244,24 +245,24 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				} else {
 					echo "\n\t\t<p class='zus' title='Art der Rechtsgemeinschaft'>".htmlentities(rechtsgemeinschaft($rown["adr"]), ENT_QUOTES, "UTF-8")."</p>";
 					// !! Feld /td und Zeile /tr nicht geschlossen
-					//	echo "\n\t</td>\n</tr>"; // !!! IMMER? oder nur wenn letzte Zeile?			
+					//	echo "\n\t</td>\n</tr>"; // !!! IMMER? oder nur wenn letzte Zeile?
 				}
 			}
 			//if ($rown["anlass"] > 0 ) {echo "<p>Anlass=".$rown["anlass"]."</p>";} // TEST:
-		
+
 			//echo "\n\t\t</td>\n\t\t<td></td>\n</tr>";
-		
+
 			// Schleife Ebene 2: andere Namensnummern
 			// Beziehung   ax_namensnummer >bestehtAusRechtsverhaeltnissenZu>  ax_namensnummer 
-		
+
 			// Die Relation 'Namensnummer' besteht aus Rechtsverhältnissen zu 'Namensnummer' sagt aus, 
 			// dass mehrere Namensnummern zu einer Rechtsgemeinschaft gehören können. 
 			// Die Rechtsgemeinschaft selbst steht unter einer eigenen AX_Namensnummer, 
 			// die zu allen Namensnummern der Rechtsgemeinschaft eine Relation besitzt.
-		
+
 			// Die Relation 'Namensnummer' hat Vorgänger 'Namensnummer' gibt Auskunft darüber, 
 			// aus welchen Namensnummern die aktuelle entstanden ist.
-	
+
 		// Schleife 2: P e r s o n  
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
 		$sql="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
@@ -269,14 +270,14 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 		$sql.="JOIN  alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
 		$sql.="WHERE v.beziehung_von= $1 "; // id num
 		$sql.="AND   v.beziehungsart='benennt';";
-	
+
 		$v = array($rown["gml_id"]);
 		$rese = pg_prepare("", $sql);
 		$rese = pg_execute("", $v);
 
 		if (!$rese) {echo "\n\t<p class='err'>Fehler bei Eigentuemer<br>SQL= ".$sql."<br></p>\n";}
 		$i=0; // Z.Eig.
-		//echo "\n<!-- vor Schleife 2 Person -->";		
+		//echo "\n<!-- vor Schleife 2 Person -->";
 		while($rowe = pg_fetch_array($rese)) {
 			$diePerson="";
 			if ($rowe["akademischergrad"] <> "") {$diePerson=$rowe["akademischergrad"]." ";}
@@ -286,7 +287,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 			if ($rowe["geburtsdatum"] <> "") {$diePerson.=", geb. ".$rowe["geburtsdatum"];}
 			if ($rowe["geburtsname"] <> "") {$diePerson.=", geb. ".$rowe["geburtsname"];}
 			$diePerson=htmlentities($diePerson, ENT_QUOTES, "UTF-8"); // Umlaute
-	
+
 			// Spalte 1 enthält die Namensnummer, nur in Zeile 0
 			if ($i > 0) {
 				echo "\n<tr>\n\t<td>&nbsp;</td>\n\t<td>";
@@ -303,7 +304,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				echo "' title='vollst&auml;ndiger Name und Adresse eines Eigent&uuml;mers'>".$eiart;
 				echo " <img src='ico/Eigentuemer.ico' width='16' height='16' alt=''></a>\n\t\t</p>";
 			echo "\n\t</td>\n</tr>";
-	
+
 			if ($mitadresse) {
 				// Schleife 3:  A d r e s s e  (OPTIONAL)
 				$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
@@ -315,12 +316,12 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				$v = array($rowe["gml_id"]);
 				$resa = pg_prepare("", $sql);
 				$resa = pg_execute("", $v);
-				
+
 				if (!$resa) {
 					echo "\n\t<p class='err'>Fehler bei Adressen.<br>\nSQL= ".$sql."</p>\n";
 				}
 				$j=0;
-				//echo "\n<!-- vor Schleife 3 Adresse -->";	
+				//echo "\n<!-- vor Schleife 3 Adresse -->";
 				while($rowa = pg_fetch_array($resa)) {
 					$gmla=$rowa["gml_id"];
 					$plz=$rowa["plz"]; // integer
@@ -352,7 +353,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 						linkgml($gkz, $gmla, "Adresse");
 						echo "</p>";
 					} else { 
-						echo "&nbsp;";					
+						echo "&nbsp;";
 					}
 					echo "</td>\n</tr>";
 					$j++;
@@ -370,8 +371,8 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
 		}
-		//echo "\n<!-- nach Schleife 2 Person -->";	
-		
+		//echo "\n<!-- nach Schleife 2 Person -->";
+
 		if ($i == 0) { // keine Pers zur NamNum
 			echo "\n<!-- Rechtsgemeinscahft='".$rechtsg."' -->";
 			// Wann warnen?
@@ -383,10 +384,10 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 			//}
 			echo "</td>\n\t<td>&nbsp;</td>\n<tr>";
 		}
-		$n++; // cnt NamNum	
+		$n++; // cnt NamNum
 	} // End Loop NamNum
-	//echo "\n<!-- nach Schleife 1 Namensnummer -->";	
-	echo "\n</table>\n";	
+	//echo "\n<!-- nach Schleife 1 Namensnummer -->";
+	echo "\n</table>\n";
 	return $n; 
 } // End Function eigentuemer
 

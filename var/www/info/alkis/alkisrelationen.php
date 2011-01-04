@@ -9,6 +9,7 @@
 	Version:
 	01.10.2010  htmlentities $otyp
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -49,11 +50,11 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 	echo "<p>gml_id =</p>";
 	echo "\n\n<h3 title='Die gml_is ist global eindeutig'>".$gmlid."</h3>";
 	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von= $1;";
-	
+
 	$v = array($gmlid);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
-	
+
 	echo "\n<table>";
 	if (!$res) { // vorab Anzahl der Saetze ermitteln?
 		echo "\n<tr>\n\t<td colspan=3><b>Keine</b> Beziehungen vom Objekt</td>\n</tr>";
@@ -70,7 +71,7 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 		if ($i == 0) echo "<tr><td colspan=3>.. keine</td></tr>";
 	}
 	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";
-	
+
 	$v = array($gmlid);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);

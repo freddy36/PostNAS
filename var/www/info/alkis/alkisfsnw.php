@@ -9,9 +9,12 @@
 	09.11.2010  Nutzung, ehem. php-Functions hier integriert
 	10.11.2010  Felder nutzung.zustand und nutzung.name
 	14.12.2010  Pfad zur Conf
+	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon
 
 	ToDo: 
 	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
+	Kürzere Bezeichnung der Nutzungsart
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -43,7 +46,6 @@ include("alkisfkt.php");
 $gmlid=urldecode($_REQUEST["gmlid"]);
 $eig=urldecode($_REQUEST["eig"]);
 
-// getswitch($idanzeige, $showkey);
 $id = isset($_GET["id"]) ? $_GET["id"] : "n";
 if ($id == "j") {
 	$idanzeige=true;
@@ -97,9 +99,9 @@ echo "\n<table class='outer'>\n<tr>\n\t<td>"; // linke Seite
 	echo "\n\t<table class='kennzfs' title='Flurst&uuml;ckskennzeichen'>\n\t<tr>";
 		echo "\n\t\t<td class='head'>Gmkg</td>\n\t\t<td class='head'>Flur</td>\n\t\t<td class='head'>Flurst-Nr.</td>\n\t</tr>";
 		echo "\n\t<tr>\n\t\t<td title='Gemarkung'>";
-		if ($showkey) {		
+		if ($showkey) {
 			echo "<span class='key'>".$gmkgnr."</span><br>";
-		}		
+		}
 		echo $gemkname."</td>";
 		echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
 		echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>\n\t</tr>";
@@ -123,11 +125,11 @@ echo "\n\t</td>\n</tr>\n</table>";
 echo "\n<hr>";
 echo "\n<p class='nwlink noprint'>weitere Auskunft:</p>"; // oben rechts von der Tabelle
 echo "\n<table class='fs'>";
-	
+
 // ** G e b i e t s z u g e h o e r i g k e i t **
 // eine Tabellenzeile mit der Gebietszugehoerigkeit eines Flurstuecks wird ausgegeben
 // Schluessel "land" wird nicht verwendet, gibt es Bestaende wo das nicht einheitlich ist?
-echo "\n<tr>\n\t<td class='ll'><img src='ico/Gemeinde.ico' width='16' height='16' alt=''> Im Gebiet von:</td>";
+echo "\n<tr>\n\t<td class='ll'><img title='Im Gebiet von' src='ico/Gemeinde.ico' width='16' height='16' alt=''> Gebiet:</td>";
 
 // G e m e i n d e
 $sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk= $1 AND kreis= $2 AND gemeinde= $3"; 
@@ -138,11 +140,11 @@ $res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Gemeinde<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $gnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-echo "\n\t<td class='lr'>Gemeinde ";
+echo "\n\t<td class='lr'>Gemeinde</td><td class='lr'>";
 if ($showkey) {
 	echo "<span class='key'>(".$gemeinde.")</span> ";
 }
-echo $gnam."<br>";
+echo $gnam."</td><td></td></tr>";
 
 // K r e i s
 $sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2"; 
@@ -153,11 +155,11 @@ $res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Kreis<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $knam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-echo "Kreis ";
+echo "<tr><td></td><td>Kreis</td><td>";
 if ($showkey) {
 	echo "<span class='key'>(".$kreis.")</span> ";
-}	
-echo $knam."<br>";
+}
+echo $knam."</td><td></td></tr>";
 
 // R e g - B e z
 $sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk='".$bezirk."' "; 
@@ -165,14 +167,12 @@ $res=pg_query($con, $sql);
 if (!$res) echo "<p class='err'>Fehler bei Regierungsbezirk<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $bnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-echo "Regierungsbezirk ";
+echo "<tr><td></td><td>Regierungsbezirk</td><td>";
 if ($showkey) {
 	echo "<span class='key'>(".$bezirk.")</span> ";
 }
-echo $bnam."</td>";
-echo "\n\t<td>&nbsp;</td>\n</tr>"; // 3. Spalte für NW-Link (in weiteren Tab-Zeilen)
+echo $bnam."</td><td></td></tr>";
 // ENDE G e b i e t s z u g e h o e r i g k e i t
-
 
 // ** L a g e b e z e i c h n u n g **
 
@@ -207,20 +207,20 @@ if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
-	//echo "<!-- Adresse -->";		
 	echo "\n<tr>\n\t";
-		if ($j == 0) {		
+		if ($j == 0) {
 			echo "<td class='ll'><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Adresse:</td>";
 		} else {
 			echo "<td>&nbsp;</td>";
 		}
+		echo "\n\t<td></td>";
 		echo "\n\t<td class='lr'>";
 		if ($showkey) {
 			echo "<span class='key'>(".$row["lage"].")</span>&nbsp;";
 		}
 		echo $sname."&nbsp;".$row["hausnummer"]."</td>";
 		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-			echo "\n\t\t\t<a href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
+			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
 			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
 		echo "\n\t\t</p>\n\t</td>";
 	echo "\n</tr>";
@@ -248,25 +248,27 @@ $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer<br>\n".$sql."</p>";
 $j=0;
-// Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!	
+// Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!
 while($row = pg_fetch_array($res)) {
 	$gewann = htmlentities($row["unverschluesselt"], ENT_QUOTES, "UTF-8");
 	$skey=$row["lage"]; // Strassenschluessel
 	$lgml=$row["gml_id"]; // key der Lage
 	if (!$gewann == "") {
-		echo "\n<tr>";		
+		echo "\n<tr>";
 			echo "\n\t<td class='ll'><img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''> Gewanne:</td>";
+			echo "\n\t<td></td>";
 			echo "\n\t<td class='lr'>".$gewann."</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml."'>";
 				echo "\n\t\t\tLage <img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''></a>";
 			echo "\n\t\t</p>\n\t</td>";
-		echo "\n</tr>";		
+		echo "\n</tr>";
 	}
-	// Gleicher DB-Eintrag in zwei HTML-Zeilen, besser nur ein Link	
+	// Gleicher DB-Eintrag in zwei HTML-Zeilen, besser nur ein Link
 	if ($skey > 0) {
-		echo "\n<tr>";	
-			echo "\n\t<td class='ll'><img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''> Stra&szlig;e:</td>";				
+		echo "\n<tr>";
+			echo "\n\t<td class='ll'><img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''> Stra&szlig;e:</td>";
+			echo "\n\t<td></td>";
 			echo "\n\t<td class='lr'>";
 			if ($showkey) {
 				echo "<span class='key'>(".$skey.")</span>&nbsp;";
@@ -277,15 +279,14 @@ while($row = pg_fetch_array($res)) {
 				echo "\n\t\t\tLage <img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''>\n\t\t\t</a>";
 			echo "\n\t\t</p>\n\t</td>";
 		echo "\n</tr>";
-	}		
+	}
 	$j++;
 }
 // ENDE  L a g e b e z e i c h n u n g
 
 // ** N U T Z U N G **
 // Tabellenzeilen (3 Spalten) mit tats. Nutzung zu einem FS ausgeben
-$sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, c.class, n.info, n.zustand, n.name, n.bezeichnung, ";
-// ", m.gruppe,  ";
+$sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, c.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, ";
 // Gemeinsame Fläche von NUA und FS
 $sql.="round(st_area(st_intersection(n.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae, ";
 $sql.="c.label, c.blabla ";
@@ -304,7 +305,7 @@ $res = pg_execute("", $v);
 if (!$res) {echo "<p class='err'>Fehler bei Suche tats. Nutzung<br>\n".$sql."</p>";}
 $j=0;
 while($row = pg_fetch_array($res)) {
-//	$grupp = $row["gruppe"];  // Individuelles Icon?
+	$grupp = $row["gruppe"];  // Individuelles Icon?
 	$title = htmlentities($row["title"], ENT_QUOTES, "UTF-8"); // NUA-Titel
 	$fldclass=$row["fldclass"]; // Feldname erstes  Zusatzfeld
 	$fldinfo= $row["fldinfo"];  // Feldname zweites Zusatzfeld
@@ -312,41 +313,52 @@ while($row = pg_fetch_array($res)) {
 	$class=$row["class"];  // erstes Zusatzfeld verschlüsselt -> nutzung_class
 	$info=$row["info"]; // zweites Zusatzfeld verschlüsselt (noch keine Info zum entschl.)
 	$schnittflae=$row["schnittflae"];
-	$label=$row["label"]; // Nutzungsart
+	$label=$row["label"]; // Nutzungsart entschlüsselt
 	$zus=$row["zustand"]; // im Bau
 	$nam=$row["name"]; // Eigenname
 	$bez=$row["bezeichnung"]; // weiterer Name (unverschl.)
-	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8");  // Achtung, enthält auch ""
+	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8"); // Beschr. aus GeoInfoDok als PopUp-Label, enthält auch ""
 //	$nflae=$row["nflae"];
 
-// Icon nach Gruppe?: 
-// Siedlung - Abschnitt.ico, Verkehr - Strassen_Klassifikation.ico, Gewässer - Wasser.ico
-// Vegetation - Wald.ico, Title=Landwirtschaft Landwirt.ico
+	// Beispiele:
+	// group     Verkehr           
+	// title     Weg               
+	// fldclass  Funktion          
+	// class     5250              
+	// label     Rad- und Fußweg   
+
 	echo "\n<tr>\n\t";
-		if ($j == 0) {		
+		if ($j == 0) {
 			echo "<td class='ll'><img src='ico/Abschnitt.ico' width='16' height='16' alt=''> Nutzung:</td>";
 		} else {
 			echo "<td>&nbsp;</td>";
 		}
-		echo "\n\t<td class='lr'>".$schnittflae." m&#178;</td>";
-		
+		echo "\n\t<td class='fla'>".$schnittflae." m&#178;</td>";
 		echo "\n\t<td class='lr'>";
-			// Eigene Nachweis-Seite für Nutzungsart-Fläche sinnvoll? dann hier verlinken 
-			//echo "\n\t\t<p class='nwlink noprint'>";
-				//echo "\n\t\t\t<a href='alkisnua.php?gkz=".$gkz."amp;gmlid=".$gml."'>Nutzung ";
-				//echo "<img src='ico/Abschnitt.ico' width='16' height='16' alt=''></a>";
-				//if ($idanzeige) {linkgml($gkz, $gml, "Nutzung");} // Nein, ist mit nix verknuepft
-			//echo "\n\t\t</p>";
-			echo $title;
-			If ($class != "") {  // Schlüssel
-				echo ", ".$fldclass.": "; // Feldname
-				if ($label != "") { // Bedeutung dazu wurde erfasst
-					if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
-					echo "<span title='".$blabla."'>".$label."</span> ";
-				} else { // muss noch erfasst werden
-					echo $class." "; // Schlüssel als Ersatz für Bedeutung
+			If ($fldclass = "Funktion" and $label != "") { // Kurze Anzeige
+				if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
+				if ($blabla = "") {
+					echo $label;
+				} else {
+					echo "<span title='".$blabla."'>".$label."</span>";
+				}
+			} else { // ausfuehrlichere Anzeige
+				echo $title; // NUA-Tabelle
+				If ($class != "") { // NUA-Schlüssel
+					echo ", ".$fldclass.": "; // Feldname
+					if ($label != "") { // Bedeutung dazu wurde erfasst
+						if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
+						if ($blabla = "") {
+							echo $label;
+						} else {
+							echo "<span title='".$blabla."'>".$label."</span>";
+						}
+					} else { // muss noch erfasst werden
+						echo $class." "; // Schlüssel als Ersatz für Bedeutung
+					}
 				}
 			}
+
 			If ($info != "") { // manchmal ein zweites Zusatzfeld (wie entschlüsseln?)
 				echo ", ".$fldinfo."=".$info;
 			}
@@ -373,7 +385,26 @@ while($row = pg_fetch_array($res)) {
 			}
 			If ($bez != "") {
 				echo "<br>Bezeichnung: ".$bez;
+			//	echo "\"".$bez."\""; // +++ in "" dahinter?
 			}
+		echo "</td>";
+		echo "\n\t<td>";
+			// Eigene Nachweis-Seite für Nutzungsart-Fläche sinnvoll? dann hier verlinken 
+			//echo "\n\t\t\t<a href='alkisnua.php?gkz=".$gkz."amp;gmlid=".$gml."'>Nutzung ";
+			//if ($idanzeige) {linkgml($gkz, $gml, "Nutzung");} // Nein, ist mit nix verknuepft
+			switch ($grupp) { // Icon nach 4 Objektartengruppen
+				case "Siedlung":
+					$ico = "Abschnitt.ico";	break;
+				case "Verkehr":
+					$ico = "Strassen_Klassifikation.ico";	break;
+				case "Vegetation":
+					$ico = "Wald.ico";	break;
+				case "Gewässer":
+					$ico = "Wasser.ico";	break;
+				default:
+					$ico = "Abschnitt.ico";	break;
+			}
+			echo "<p class='nwlink'><img title='".$title."' src='ico/".$ico."' width='16' height='16' alt='NUA'></p>";
 		echo "</td>";
 	echo "\n</tr>";
 	$j++;
@@ -382,9 +413,9 @@ while($row = pg_fetch_array($res)) {
 
 // Flaeche und Link auf Gebäude-Auswertung
 echo "\n<tr>";
-	echo "\n\t<td class='ll'>Fl&auml;che:</td>"; // Sp. 1
-	echo "\n\t<td class='lr'><span class='flae'>".$flae."</span></td>"; // Sp. 2
-	echo "\n\t<td>"; // Sp. 3
+	echo "\n\t<td class='ll'>Fl&auml;che:</td>";
+	echo "\n\t<td class='fla'><span class='flae'>".$flae."</span></td>";
+	echo "\n\t<td>&nbsp;</td>\n\t<td>";
 		echo "\n\t\t<p class='nwlink noprint'>"; // Gebaeude-Verschneidung
 			echo "\n\t\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
 			if ($idanzeige) {echo "&amp;id=j";}
@@ -412,7 +443,7 @@ echo "\n<table class='outer'>";
 				// Umschalter: FS-Nachw ruft sich selbst mit geaend. Param. auf. Posit. auf Marke #gb
 				if ($eig=="j") {
 					echo "&amp;eig=n#gb' title='Flurst&uuml;cksnachweis'>ohne Eigent&uuml;mer</a>";
-				} else {	
+				} else {
 					echo "&amp;eig=j#gb' title='Flurst&uuml;cks- und Eigent&uuml;mernachweis'>mit Eigent&uuml;mer ";
 					echo "<img src='ico/EigentuemerGBzeile.ico' width='16' height='16' alt=''></a>";
 				}
@@ -478,7 +509,7 @@ while($rows = pg_fetch_array($ress)) {
 					echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
 				}else {
 					echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
-				}				
+				}
 					echo "\n\t<tr>\n\t\t<td class='head'>Bezirk</td>";
 						echo "\n\t\t<td class='head'>".$blattartg."</td>";
 						echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
@@ -486,9 +517,9 @@ while($rows = pg_fetch_array($ress)) {
 					echo "\n\t</tr>";
 					echo "\n\t<tr>";
 						echo "\n\t\t<td title='Grundbuchbezirk'>";
-							if ($showkey) {						
-								echo "<span class='key'>".$rowg["bezirk"]."</span><br>";						
-							}						
+							if ($showkey) {
+								echo "<span class='key'>".$rowg["bezirk"]."</span><br>";
+							}
 							echo $beznam;
 						echo "</td>";
 
@@ -502,7 +533,7 @@ while($rows = pg_fetch_array($ress)) {
 							}
 							echo $rows["bart"];
 						echo "</td>";
-						
+
 					echo "\n\t</tr>";
 				echo "\n\t</table>";
 
@@ -522,11 +553,11 @@ while($rows = pg_fetch_array($ress)) {
 					echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg."#bvnr".$lfd;
 						if ($idanzeige) {echo "&amp;id=j";}
 						if ($showkey)   {echo "&amp;showkey=j";}
-						if ($blattkeyg == 1000) {						
+						if ($blattkeyg == 1000) {
 							echo "' title='Grundbuchnachweis mit kompletter Eigent&uuml;merangabe'>";
 						} else {
 							echo "' title='Grundbuchnachweis'>";
-						}						
+						}
 						echo $blattartg." <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
 					echo "</a>";
 				echo "\n\t</p>";
@@ -539,7 +570,7 @@ while($rows = pg_fetch_array($ress)) {
 			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rows["sond"]."</p>";
 		}
 		if ($rows["nrpl"] != "") {
-			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rows["nrpl"]."</span> im Aufteilungsplan.</p>";		
+			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rows["nrpl"]."</span> im Aufteilungsplan.</p>";
 		}
 
 		// E I G E N T U E M E R, zum GB
@@ -603,7 +634,7 @@ while($rows = pg_fetch_array($ress)) {
 					echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
 				} else {
 					echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
-				}				
+				}
 					echo "\n\t<tr>";
 						echo "\n\t\t<td class='head'>Bezirk</td>";
 						echo "\n\t\t<td class='head'>".$blattartan."</td>";
@@ -613,9 +644,9 @@ while($rows = pg_fetch_array($ress)) {
 
 					echo "\n\t<tr>";
 						echo "\n\t\t<td title='Grundbuchbezirk'>";
-						if ($showkey) {						
+						if ($showkey) {
 							echo "<span class='key'>".$rowan["bezirk"]."</span><br>";
-						}						
+						}
 						echo $beznam."</td>";
 
 						echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowan["blatt"]."</span></td>";
@@ -623,7 +654,7 @@ while($rows = pg_fetch_array($ress)) {
 						echo "\n\t\t<td title='Bestandsverzeichnis-Nummer (BVNR, Grundst&uuml;ck)'>".$rowan["lfd"]."</td>";
 
 						echo "\n\t\t<td title='Buchungsart'>";
-							if ($showkey) {						
+							if ($showkey) {
 								echo "<span class='key'>".$rowan["buchungsart"]."</span><br>";
 							}
 							echo $rowan["bart"];
@@ -648,7 +679,7 @@ while($rows = pg_fetch_array($ress)) {
 						if ($showkey)   {echo "&amp;showkey=j";}
 						echo "' title='Grundbuchnachweis mit kompletter Eigent&uuml;merangabe'>";
 						echo $blattartan;
-						echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";				
+						echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
 					echo "</a>";
 				echo "\n\t</p>";
 			echo "\n\t</td>";
