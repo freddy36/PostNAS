@@ -10,11 +10,11 @@
 	10.11.2010  Felder nutzung.zustand und nutzung.name
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon
+	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon. Tabelle Gebiet/Lage/Nutzung 4spaltig.
+	04.01.2011  Korrektur der Fallunterscheidung "Funktion"
 
 	ToDo: 
 	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
-	Kürzere Bezeichnung der Nutzungsart
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -320,12 +320,12 @@ while($row = pg_fetch_array($res)) {
 	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8"); // Beschr. aus GeoInfoDok als PopUp-Label, enthält auch ""
 //	$nflae=$row["nflae"];
 
-	// Beispiele:
-	// group     Verkehr           
-	// title     Weg               
-	// fldclass  Funktion          
-	// class     5250              
-	// label     Rad- und Fußweg   
+	// Beispiele (verkürzte Anzeige):
+	// $group:    Verkehr           Vegatation       -> Icon
+	// $title:    Weg               Landwirtschaft   -> PopUp über Icon
+	// $fldclass: Funktion          Funktion
+	// $class:    5250              ___
+	// $label:    Rad- und Fußweg   Grünland         -> angezeigter Text
 
 	echo "\n<tr>\n\t";
 		if ($j == 0) {
@@ -335,7 +335,8 @@ while($row = pg_fetch_array($res)) {
 		}
 		echo "\n\t<td class='fla'>".$schnittflae." m&#178;</td>";
 		echo "\n\t<td class='lr'>";
-			If ($fldclass = "Funktion" and $label != "") { // Kurze Anzeige
+			If ($fldclass == "Funktion" AND $label != "") { // Kurze Anzeige
+				// evtl. analog bei "Vegetationsmerkmal"?
 				if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
 				if ($blabla = "") {
 					echo $label;
@@ -346,8 +347,8 @@ while($row = pg_fetch_array($res)) {
 				echo $title; // NUA-Tabelle
 				If ($class != "") { // NUA-Schlüssel
 					echo ", ".$fldclass.": "; // Feldname
+					if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
 					if ($label != "") { // Bedeutung dazu wurde erfasst
-						if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
 						if ($blabla = "") {
 							echo $label;
 						} else {
@@ -362,31 +363,22 @@ while($row = pg_fetch_array($res)) {
 			If ($info != "") { // manchmal ein zweites Zusatzfeld (wie entschlüsseln?)
 				echo ", ".$fldinfo."=".$info;
 			}
-			If ($zus != "") {
+			If ($zus != "") { // Zustand
 				echo "\n\t\t<br>";
 				if ($showkey) {echo "<span class='key'>(".$zus.")</span> ";}
 				switch ($zus) {
 					case 2100:
-						echo "Außer Betrieb, stillgelegt, verlassen";
-						break;
+						echo "Außer Betrieb, stillgelegt, verlassen";	break;
 					case 4000:
-						echo "Im Bau";
-						break;
+						echo "Im Bau";	break;
 					case 8000:
-						echo "Erweiterung, Neuansiedlung";
-						break;
+						echo "Erweiterung, Neuansiedlung";	break;
 					default:
-						echo "Zustand: ".$zus;
-						break;
+						echo "Zustand: ".$zus;	break;
 				}
 			}
-			If ($nam != "") {
-				echo "<br>Name: ".$nam;
-			}
-			If ($bez != "") {
-				echo "<br>Bezeichnung: ".$bez;
-			//	echo "\"".$bez."\""; // +++ in "" dahinter?
-			}
+			If ($nam != "") {echo "<br>Name: ".$nam;}
+			If ($bez != "") {echo "<br>Bezeichnung: ".$bez;}
 		echo "</td>";
 		echo "\n\t<td>";
 			// Eigene Nachweis-Seite für Nutzungsart-Fläche sinnvoll? dann hier verlinken 
