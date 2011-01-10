@@ -11,10 +11,9 @@
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon. Tabelle Gebiet/Lage/Nutzung 4spaltig.
-	04.01.2011  Korrektur der Fallunterscheidung "Funktion"
+	05.01.2011  Korrektur der Fallunterscheidung "Funktion", auch "Vegetationsmerkmal", Title auf "Zustand".
 
-	ToDo: 
-	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
+	ToDo: 	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -335,8 +334,7 @@ while($row = pg_fetch_array($res)) {
 		}
 		echo "\n\t<td class='fla'>".$schnittflae." m&#178;</td>";
 		echo "\n\t<td class='lr'>";
-			If ($fldclass == "Funktion" AND $label != "") { // Kurze Anzeige
-				// evtl. analog bei "Vegetationsmerkmal"?
+			If ( ($fldclass == "Funktion" OR $fldclass == "Vegetationsmerkmal") AND $label != "") { // Kurze Anzeige
 				if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
 				if ($blabla = "") {
 					echo $label;
@@ -366,6 +364,7 @@ while($row = pg_fetch_array($res)) {
 			If ($zus != "") { // Zustand
 				echo "\n\t\t<br>";
 				if ($showkey) {echo "<span class='key'>(".$zus.")</span> ";}
+				echo "<span title='Zustand'>";				
 				switch ($zus) {
 					case 2100:
 						echo "Außer Betrieb, stillgelegt, verlassen";	break;
@@ -376,6 +375,7 @@ while($row = pg_fetch_array($res)) {
 					default:
 						echo "Zustand: ".$zus;	break;
 				}
+				echo "</span>";
 			}
 			If ($nam != "") {echo "<br>Name: ".$nam;}
 			If ($bez != "") {echo "<br>Bezeichnung: ".$bez;}

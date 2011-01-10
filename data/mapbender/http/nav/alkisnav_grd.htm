@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="cache-control" content="no-cache">
+	<meta http-equiv="pragma" content="no-cache">
+	<meta http-equiv="expires" content="0">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<base target="_self">
+	<title>ALKIS-Suche Grundbuch</title>
+	<link rel="stylesheet" type="text/css" href="alkisnav.css">
+	<script type="text/javascript" language="JavaScript">
+		// Parameter fuer Mandant aus url lesen
+		// &gkz=150&gemeinde=40&test=ja
+		var parms = location.search.split("&");    // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"		
+		var arr = parms[0].split("=", 2); // 0: "?gkz"  1: "150"
+		var gkz = "000";
+		if(arr[0] == "?gkz") {gkz = arr[1];}
+		var arr = parms[1].split("=", 2)
+		var gem = "0";
+		if(arr[0] == "gemeinde") {gem = arr[1];}
+		// aktueller EPSG-Code der GUI  ++ funktioniert noch nicht ++
+		var ind = parent.parent.parent.getMapObjIndexByName("mapframe1");
+		epsg = parent.parent.parent.mb_mapObj[ind].epsg;
+	</script>
+</head>
+<body>
+
+<div id='tabs'>
+<ul>
+	<script type="text/javascript" language="JavaScript">
+		document.writeln("<li><a target='_self' href='alkisnav_adr.htm?gkz=" + gkz + "&amp;gemeinde=" + gem + "'>Adresse</a></li>");
+		document.writeln("<li><a target='_self' href='alkisnav_eig.htm?gkz=" + gkz + "&amp;gemeinde=" + gem + "'>Name</a></li>");
+		document.writeln("<li><a target='_self' href='alkisnav_fls.htm?gkz=" + gkz + "&amp;gemeinde=" + gem + "'>Flurst&uuml;ck</a></li>");
+		document.writeln("<li class='aktiveTab'>Grundb.</li>");
+	</script>
+</ul>
+</div>
+
+<form class='nav' name='GrdGazetteerFrame' onsubmit='return validate()' target='GrdResultFrame' action='alkisnav_grd.php'>
+<script type="text/javascript" language="JavaScript">
+		document.writeln("<input name='gkz' type='hidden' value='" + gkz + "'>");
+		document.writeln("<input name='gemeinde' type='hidden' value='" + gem + "'>");
+		document.writeln("<input name='epsg' type='hidden' value='" + epsg + "'>");
+</script>
+<input class='textfield' name='gbkennz' type='text' size='22' title='Grunbuchkennzeichen'>
+<input class='sbutton' type='submit' value='ok'>
+</form>
+
+<iframe name="GrdResultFrame" src="blank_grd.html" class='ResultFrame'></iframe>
+
+</body>
+</html>
