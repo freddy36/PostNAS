@@ -1,5 +1,5 @@
 <?php
-// Version vom 10.01.2011  
+// Version vom 12.01.2011  
 $gkz = urldecode($_REQUEST["gkz"]); // Mandant
 include("../../conf/alkisnav_conf.php");
 import_request_variables("PG");
@@ -35,17 +35,11 @@ function is_blatt(&$wert) {
 	$len=strlen($wert);
 	if ($len < 1 or $len > 7) {return false;};
 	if (trim($wert, "0..9") == "") { // Normalfall: nur Zahlen
-		If (strlen($wert) < 6) {
-			$wert = str_pad($wert, 6, "0", STR_PAD_LEFT);
-		}	
 		return true;
 	} else { // Sonderfall Zusatz-Buchstabe am Ende 
 		$zahl=substr($wert,0,$len-1);
 		$zus=strtoupper(substr($wert,$len-1,1));
 		if ( (trim($zahl, "0..9") == "") and (trim($zus, "A..Z") == "")) {
-			If (strlen($zahl) < 6) {
-				$zahl = str_pad($zahl, 6, "0", STR_PAD_LEFT);
-			}
 			$wert=$zahl.$zus;	
 			return true;		
 		} else {		
@@ -215,8 +209,11 @@ function gml_blatt() {
 	// Blatt ->  B u c h u n g s s t e l l e
 	// ax_buchungsblatt   <istBestandteilVon<  ax_buchungsstelle 	
 	$sql ="SELECT b.gml_id FROM ax_buchungsblatt b "; 
-	$sql.="WHERE b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung= $2 ;";
-	$v=array($zgbbez, $zblatt);
+	$sql.="WHERE b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung IN ( $2 , $3 );";
+	// Unterschiedliche Formate in ax_buchungsblatt.buchungsblattnummermitbuchstabenerweiterung
+	// Musterdaten RLP: ohne fuehrende Nullen, Lippe NRW: mit!
+	$zblatt0v=str_pad($zblatt, 7, "0", STR_PAD_LEFT); // Nullen vorne oder Blanks hinten ?
+	$v=array($zgbbez,$zblatt,$zblatt0);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -230,6 +227,7 @@ function gml_blatt() {
 	}
 	if($cntbl == 0) { 
 		echo "\n<p class='err'>Grundbuchblatt '".$zgbbez."-".$zblatt."' nicht gefunden.</p>";
+		if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
 	} elseif($cntbl == 1) {
 		return $bl_gml;
 	}
@@ -277,7 +275,7 @@ function EinBlatt($showParent) {
 	}
 	if($cntbu == 0) { 
 		echo "\n<p class='err'>Keine Buchung gefunden.</p>";
-	} elseif($cntbu = 1) {
+	} elseif($cntbu == 1) {
 		//echo "\n<p>genau EINE Buchung gefunden".$lfd."</p>";
 		$zbvnr=$lfd; // mit dieser BVNR gleich weiter machen 
 	}
@@ -309,7 +307,7 @@ function gml_buchungsstelle() {
 		$zbs++;
 	}
 	if($zbs == 0) { 
-		echo "\n<p class='err'>Die Buchungsstelle wurde nicht gefunden.</p>";
+		echo "\n<p class='err'>Buchung ".$zgbbez."-".$zblatt."-".$zbvnr." nicht gefunden.</p>";
 		return;
 	} elseif($zbs > 1) { // nur TEST
 		echo "\n<p class='err'>Buchungsstelle mehrfach gefunden.</p>";
