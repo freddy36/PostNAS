@@ -1,10 +1,10 @@
 <?php
-// Version vom 10.01.2011 
-$gkz = urldecode($_REQUEST["gkz"]); // Mandant
-include("../../conf/alkisnav_conf.php");
+// Version vom 13.01.2011 
 import_request_variables("PG");
+include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindung zur Datenbank</p>".$dbname);
+// ToDo: Buchung zwischen Blatt und Flst?
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -20,6 +20,7 @@ $con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindun
 <body>
 
 <?php
+
 function getEigByName() {
 // 1 =============================
 // Eigentuemer nach Name(-nsanfang)
@@ -48,7 +49,7 @@ function getEigByName() {
 		$vnam=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
 		$gml=$row["gml_id"];		// +++ Icon mit Link auf Person-Auskunft, über gml_id	
 		// Zur Zeit siehe unten: erst nach Auswahl einer einzelnen Person
-		echo "\n<a class='nam' title='Person' href='alkisnav_eig.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";		$cnt++;
+		echo "\n<a class='nam' title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";		$cnt++;
 	}
 	if($cnt == 0){ 
 		echo "\n<p class='err'>Keine Person.</p>";
@@ -69,7 +70,7 @@ function getGBbyPerson() {
 	if(isset($name)) { // Familiensuche
 		echo "\n<div class='back' title='Andere Personen mit diesem Nachnamen'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer_2.ico' width='16' height='16' alt='FAM'> ";
-			echo "\n<a class='back' href='alkisnav_eig.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;name=".$name."'>\"".$name."\"</a>";
+			echo "\n<a class='back' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;name=".$name."'>\"".$name."\"</a>";
 		echo "\n</div>\n<br>";	
 	}
 	$sql="SELECT p.nachnameoderfirma, p.vorname, p.geburtsdatum, p.namensbestandteil, ";
@@ -81,10 +82,7 @@ function getGBbyPerson() {
 	$v=array($person);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
-	if (!$res) {
-		echo "\n<p class='err'>Fehler bei Name</p>\n";
-		if ($debug >= 3) {echo "<p class='err'>".$sql."</p>";}
-	}
+	if (!$res) {echo "\n<p class='err'>Fehler bei Name</p>\n";}
 	// Daten der Person
 	echo "\n<div class='nam'>";
 		// Link zur Auskunft Person
@@ -130,7 +128,7 @@ function getGBbyPerson() {
 			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='GB'>";
 			echo "\n\t</a> ";		
-			echo $beznam." <a title='Grundbuch' href='alkisnav_eig.php?gkz=".$gkz."&amp;gb=".$gml."&amp;person=".$person."'>Blatt ".$nr."</a>";
+			echo "\n\t".$beznam."<a title='Grundbuch' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gb=".$gml."&amp;person=".$person."'> Blatt ".$nr."&nbsp;</a>";
 		echo "\n</div>";
 		$cnt++;
 	}
@@ -154,7 +152,7 @@ function getFSbyGB($backlink) {
 	if($backlink) {	
 		echo "\n\t<div class='back' title='zur&uuml;ck zur Person'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'> ";
-			echo "\n\t<a href='alkisnav_eig.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;person=".$person."'>";
+			echo "\n\t<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;person=".$person."'>";
 			echo "zur&uuml;ck</a><br>";		
 		echo "</div>";
 		echo "<div class='gb'>";

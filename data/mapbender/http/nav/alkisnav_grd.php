@@ -1,13 +1,9 @@
 <?php
-// Version vom 12.01.2011  
-$gkz = urldecode($_REQUEST["gkz"]); // Mandant
-include("../../conf/alkisnav_conf.php");
+// Version vom 13.01.2011  
 import_request_variables("PG");
-
-// Datenbank-Connection
+include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname);
-
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -28,59 +24,56 @@ function is_ne_zahl($wert) {
 	if (trim($wert, "0..9") == "") {return true;} else {return false;}
 }
 
-function is_blatt(&$wert) {
-	// Prueft, ob eine Eingabe dem Format von Grundbuch-Blatt entspricht.
-	// Die Blatt-Nummern wird dabei auf das Datenbank-Format mit fuehrenden Nullen ergaenzt (&).
-	// +++ Nur ein Aufruf der Function. In aufrufendes Programm integrieren? 	
-	$len=strlen($wert);
-	if ($len < 1 or $len > 7) {return false;};
-	if (trim($wert, "0..9") == "") { // Normalfall: nur Zahlen
-		return true;
-	} else { // Sonderfall Zusatz-Buchstabe am Ende 
-		$zahl=substr($wert,0,$len-1);
-		$zus=strtoupper(substr($wert,$len-1,1));
-		if ( (trim($zahl, "0..9") == "") and (trim($zus, "A..Z") == "")) {
-			$wert=$zahl.$zus;	
-			return true;		
-		} else {		
-			return false;
-		}
-	}
-}
-
 function ZerlegungGBKennz($gbkennz) {
-// Das eingegebene Grundbuch-Kennzeichen auseinander nehmen (gggg-999999z-BVNR)
-// Return: 0=Fehler, 1=Such Bezirk-Name oder Listen alle Bezirke
-//         2=Such Bezirk-Nummer $zgbbez, 3=Such Blatt $zblatt, 4=Such BVNR $zbvnr
-	global $debug, $zgbbez, $zblatt, $zbvnr;		$arr = explode("-", $gbkennz, 3);
+	// Das eingegebene Grundbuch-Kennzeichen auseinander nehmen (gggg-999999z-BVNR)
+	// Return: 0=Fehler, 1=Such Bezirk-Name oder Listen alle Bezirke
+	//         2=Such Bezirk-Nummer $zgbbez, 3=Such Blatt $zblatt, 4=Such BVNR $zbvnr
+	global $debug, $zgbbez, $zblatt, $zblattn, $zblattz, $zbvnr;		$arr=explode("-", $gbkennz, 3);
 	$zgbbez=trim($arr[0]);
 	$zblatt=trim($arr[1]);
 	$zbvnr=trim($arr[2]);
 	if ($zgbbez == "") { // keine Eingabe
 		return 1; // alle Bezirke listen
-	} elseif ( ! is_ne_zahl($zgbbez)) {
+	} elseif ( ! is_ne_zahl($zgbbez)) { // Alphabetische Eingabe
 		return 1; // Such Bezirk-NAME
 	} elseif ($zblatt == "") {
 		return 2; // Such Bezirk-NUMMER
-	} elseif (is_blatt($zblatt)) {
-		if ($zbvnr == "") {
-			return 3; // Such BLATT
-		} elseif (is_ne_zahl($zbvnr)) {		
-			// $zbvnr=ltrim($zbvnr,"0"); // DB-Format ist integer
-			// Vorsicht, Wert "0" ist moeglich und gueltig
-			return 4; // Such Grundstueck
+	} else  { // Format von Blatt pruefen
+		$len=strlen($zblatt);
+		if ($len > 0 AND $len < 8) {		
+			if (trim($zblatt, "0..9") == "") { // Normalfall: nur Zahlen
+				$zblattn= ltrim($zblatt, "0");
+				$zblattz="";
+			} else { // Sonderfall: Zusatz-Buchstabe am Ende
+				$zblattn=substr($zblatt,0,$len-1);
+				$zblattz=strtoupper(substr($zblatt,$len-1,1)); 
+				if ( (trim($zblattn, "0..9") == "") and (trim($zblattz, "A..Z") == "")) {
+					$zblatt=$zblattn.$zblattz;
+					$zblattn= ltrim($zblattn, "0"); // ohne fuehrende Nullen
+				} else {
+					echo "<p class='err>Format 'Blatt': bis zu 6 Zahlen und ggf. ein Buchstabe</p>";	
+					return 0;
+				}
+			}
+			if ($zbvnr == "") {
+				return 3; // Such BLATT
+			} elseif (is_ne_zahl($zbvnr)) {		
+				// $zbvnr=ltrim($zbvnr,"0"); // DB-Format ist integer
+				// Vorsicht, Wert "0" ist moeglich und gueltig
+				return 4; // Such Grundstueck
+			} else {
+				echo "<p class='err>Die Buchungsstelle (BVNR) '".$zbvnr."' ist nicht numerisch</p>";
+				return 0;
+			}
 		} else {
-			echo "<p class='err>Die Buchungsstelle (BVNR) '".$zbvnr."' ist nicht numerisch</p>";
+			echo "<p class='err>Das Grundbuch-Blatt '".$zblatt."' ist ung&uuml;ltig.</p>";
 			return 0;
 		}
-	} else {
-		echo "<p class='err>Das Grundbuch-Blatt '".$zblatt."' ist ung&uuml;ltig.</p>";
-		return 0;
 	}
 }
 
 function SuchGBBezName() {
-// Grundbuch-Bezirk suchen nach Name(-nsanfang)
+	// Grundbuch-Bezirk suchen nach Name(-nsanfang)
 	global $con, $gkz, $gemeinde, $debug, $gbkennz;
 	$linelimit=50;
 	$sql ="SELECT a.bezeichnung AS ag, g.bezirk, g.bezeichnung FROM ax_buchungsblattbezirk g ";
@@ -132,10 +125,9 @@ function EinBezirk($showParent) {
 	// Kennzeichen bestehend nur aus GB-Bezirk-Schlüssel wurde eingegeben
 	global $con, $gkz, $gemeinde, $debug, $zgbbez, $auskpath;
 	$linelimit=200; // max. Blatt je Bezirk
-	// Dies linelimit nicht ausreichend fuer alle Blaetter eines Bezirks, aber ...
-	//  Wenn man die Blatt-Nr nicht kennt, kommt man hier sowieso nicht weiter.
-	//  Es nutzt also nichts, hier Tausende Nummern aufzulisten.
-	// +++ Wildcard in Blatt zulassen? Schwiegig bei numerischem Wert mit fuehrenden Nullen.
+	// Dies linelimit ist nicht ausreichend fuer alle Blaetter eines Bezirks, aber ...
+	// Wenn man die Blatt-Nr nicht kennt, kommt man hier sowieso nicht weiter.
+	// Es nutzt also nichts, hier Tausende Nummern aufzulisten.
 	if ($showParent) {
 		$sql ="SELECT a.bezeichnung AS ag, g.bezeichnung FROM ax_buchungsblattbezirk g ";
 		$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle ";
@@ -161,10 +153,10 @@ function EinBezirk($showParent) {
 			echo "\n</div>";
 			return;
 		}
-		// > 1 auch möglich ???
+		// > 1 auch möglich?
 		echo "\n<div class='gk' title='GB-Bezirk'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Gericht.ico' width='16' height='16' alt='Bez.'> ";
-			echo "<a href='alkisnav_grd.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbkennz=".$zgbbez."'>";		
+			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbkennz=".$zgbbez."'>";		
 			echo $gnam."</a> (".$zgbbez.") AG ".$ag;
 		echo "\n</div>";
 	}
@@ -186,7 +178,7 @@ function EinBezirk($showParent) {
 			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gml."'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='Blatt'>";
 			echo "\n\t</a> ";
-			echo "Blatt <a href='alkisnav_grd.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gblatt=".$gml."&amp;gbkennz=".$zgbbez."-".$blatt."'>&nbsp;".$blatt."&nbsp;</a>";
+			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gblatt=".$gml."&amp;gbkennz=".$zgbbez."-".$blatt."'>&nbsp;".$blatt."&nbsp;</a>";
 		echo "\n</div>";
 		$cntbl++;
 	}
@@ -202,18 +194,14 @@ function EinBezirk($showParent) {
 }
 
 function gml_blatt() {
-	// Komplettes Kennzeichen "Bezirk + Blatt" wurde eingegeben.
-	// Dazu die gml_id des GB-Blattes ermitteln.
-	global $con, $gkz, $debug, $zgbbez, $zblatt;
-
-	// Blatt ->  B u c h u n g s s t e l l e
-	// ax_buchungsblatt   <istBestandteilVon<  ax_buchungsstelle 	
-	$sql ="SELECT b.gml_id FROM ax_buchungsblatt b "; 
+	// Kennzeichen "Bezirk + Blatt" eingegeben. Dazu die gml_id des Blattes ermitteln.
+	global $con, $gkz, $debug, $zgbbez, $zblatt, $zblattn, $zblattz;
+	$sql ="SELECT b.gml_id, b.buchungsblattnummermitbuchstabenerweiterung AS blatt FROM ax_buchungsblatt b "; 
 	$sql.="WHERE b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung IN ( $2 , $3 );";
 	// Unterschiedliche Formate in ax_buchungsblatt.buchungsblattnummermitbuchstabenerweiterung
 	// Musterdaten RLP: ohne fuehrende Nullen, Lippe NRW: mit!
-	$zblatt0v=str_pad($zblatt, 7, "0", STR_PAD_LEFT); // Nullen vorne oder Blanks hinten ?
-	$v=array($zgbbez,$zblatt,$zblatt0);
+	$zblatt0v=str_pad($zblattn, 6, "0", STR_PAD_LEFT).$zblattz;	// mit 0 vorne
+	$v=array($zgbbez,$zblattn.$zblattz,$zblatt0v);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -223,6 +211,7 @@ function gml_blatt() {
 	$cntbl=0; // Counter Blatt
 	while($row = pg_fetch_array($res)) {	
 		$bl_gml=$row["gml_id"];
+		$zblatt=$row["blatt"]; // das tatsaechliche Format (mit/ohne fuehrende 0)
 		$cntbl++;
 	}
 	if($cntbl == 0) { 
@@ -239,22 +228,25 @@ function EinBlatt($showParent) {
 	global $con, $gkz, $debug, $gemeinde, $auskpath, $zgbbez, $zblatt, $gblatt, $zbvnr;
 
 	if ($showParent) {	
+		echo "\n<div class='gk' title='GB-Bezirk'>";
+			echo "\n\t\t<img class='nwlink' src='ico/Gericht.ico' width='16' height='16' alt='Bez.'> ";
+			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbkennz=".$zgbbez."'>";		
+			echo "Bezirk ".$zgbbez."</a>";
+			// Key ist bekannt. Sollte man sich die Muehe machen, Namen und Amtsgericht zu ermitteln?
+		echo "\n</div>";
 		echo "\n<div class='gb' title='GB-Blatt'>";
 			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gblatt."'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='Blatt'>";
 			echo "\n\t</a> ";
-			echo "Blatt <a href='alkisnav_grd.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gblatt=".$gblatt."&amp;gbkennz=".$zgbbez."-".$zblatt."'> ".$zblatt."</a>";
+			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gblatt=".$gblatt."&amp;gbkennz=".$zgbbez."-".$zblatt."'>&nbsp;".$zblatt."&nbsp;</a>";
 		echo "\n</div>";
 	}
 	// Blatt ->  B u c h u n g s s t e l l e
-	// ax_buchungsblatt   <istBestandteilVon<  ax_buchungsstelle 
-	$sql ="SELECT s.gml_id, s.laufendenummer AS lfd ";
-	$sql.="FROM ax_buchungsstelle s ";
+	$sql ="SELECT s.gml_id, s.laufendenummer AS lfd FROM ax_buchungsstelle s ";
 	$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
 	$sql.="JOIN ax_buchungsblatt b ON v.beziehung_zu=b.gml_id ";
-	$sql.="WHERE v.beziehungsart='istBestandteilVon' AND b.gml_id= $1 ";
-	$sql.="ORDER BY s.laufendenummer;";
-	// +++ Buchungen ohne FLST weglassen ??
+	$sql.="WHERE v.beziehungsart='istBestandteilVon' AND b.gml_id= $1 ORDER BY s.laufendenummer;";
+	// +++ Buchungen ohne FLST weglassen?
 	// +++ Counter FLST ausgeben, Buchungen mit 0 weglassen 
 	$v=array($gblatt);
 	$res=pg_prepare("", $sql);
@@ -269,7 +261,7 @@ function EinBlatt($showParent) {
 		$lfd=$row["lfd"];
 		echo "\n<div class='gs'>";
 			echo "\n\t\t<img class='nwlink' title='Grundst&uuml;ck' src='ico/Grundstueck.ico' width='16' height='16' alt='GS'> ";
-			echo "Buchung <a href='alkisnav_grd.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbuchung=".$bs_gml."&amp;gbkennz=".$zgbbez."-".$zblatt."-".$lfd."'>".$lfd."</a>";
+			echo "Buchung <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbuchung=".$bs_gml."&amp;gbkennz=".$zgbbez."-".$zblatt."-".$lfd."'>&nbsp;".$lfd."&nbsp;</a>";
 		echo "\n</div>";
 		$cntbu++;
 	}
@@ -283,12 +275,9 @@ function EinBlatt($showParent) {
 }
 
 function gml_buchungsstelle() {
-	// Komplettes Kennzeichen "Bezirk + Blatt + BVNR" wurde eingegeben.
-	// Dazu die gml_id der Buchungsstelle ermitteln fuer die weitere Verfolgung der Beziehungen.
+	// Kennzeichen "Bezirk + Blatt + BVNR" eingegeben. Dazu die gml_id der Buchungsstelle ermitteln.
 	global $con, $gkz, $debug, $zgbbez, $zblatt, $zbvnr;
-
 	// Blatt ->  B u c h u n g s s t e l l e
-	// ax_buchungsblatt   <istBestandteilVon<  ax_buchungsstelle 	
 	$sql ="SELECT s.gml_id FROM ax_buchungsstelle s ";
 	$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
 	$sql.="JOIN ax_buchungsblatt b ON b.gml_id=v.beziehung_zu "; 
@@ -320,20 +309,24 @@ function gml_buchungsstelle() {
 function EinGrundstueck($showParent) {
 	// Die gml_id der Buchungsstelle ist bekannt.
 	global $con, $gkz, $debug, $gemeinde, $scalefs, $epsg, $auskpath, $gbuchung, $zgbbez, $zblatt, $zbvnr;
-
-	if ($showParent) {	
-		// wenn Kennzeichen bekannt ist, dann auch Blatt ausgeben
+	if ($showParent) { // wenn Kennzeichen bekannt ist, dann auch Blatt ausgeben
 		if (isset($zgbbez) and isset($zblatt)) {
+			echo "\n<div class='gk' title='GB-Bezirk'>";
+				echo "\n\t\t<img class='nwlink' src='ico/Gericht.ico' width='16' height='16' alt='Bez.'> ";
+				echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbkennz=".$zgbbez."'>";		
+				echo "Bezirk ".$zgbbez."</a>";
+				// Key ist bekannt. Sollte man sich die Muehe machen, Namen und Amtsgericht zu ermitteln?
+			echo "\n</div>";			
 			echo "\n<div class='gb' title='GB-Blatt'>";
-				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt.ico' width='16' height='16' alt='Blatt'>";
-				echo "Blatt <a href='alkisnav_grd.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbkennz=".$zgbbez."-".$zblatt."'>&nbsp;".$zblatt."&nbsp;</a>";
+				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt.ico' width='16' height='16' alt='Blatt'> ";
+				echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbkennz=".$zgbbez."-".$zblatt."'>&nbsp;".$zblatt."&nbsp;</a>";
 			echo "\n</div>";
 		} else {
 			echo "<p class='err'>Kennzeichen Bezirk und Blatt nicht gesetzt</p>";
 		}
 		echo "\n<div class='gs'>";
 			echo "\n\t\t<img class='nwlink' title='Grundst&uuml;ck' src='ico/Grundstueck.ico' width='16' height='16' alt='GS'> ";
-			echo "Buchung <a href='alkisnav_grd.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbuchung=".$gbuchung."&amp;gbkennz=".$zgbbez."-".$zblatt."-".$zbvnr."'>&nbsp;".$zbvnr."&nbsp;</a>";
+			echo "Buchung <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gbuchung=".$gbuchung."&amp;gbkennz=".$zgbbez."-".$zblatt."-".$zbvnr."'>&nbsp;".$zbvnr."&nbsp;</a>";
 		echo "\n</div>";
 	}
 	// +++ Ermitteln anderer Buchungsstellen mit Rechten an dieser
@@ -376,13 +369,13 @@ function EinGrundstueck($showParent) {
 			echo "\n<div class='fs'>";
 				echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
 					echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
-				echo "\n\t</a>";
-				echo "\n\t<a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
+				echo "\n\t</a> ";
+				echo "\n\t".$gmkg." <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
 					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
 					echo "parent.parent.hideHighlight();' ";
 					echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
-					echo "onmouseout='parent.parent.hideHighlight()'>";
-				echo $gmkg." ".$flur."-".$fskenn."</a>";
+					echo "onmouseout='parent.parent.hideHighlight()'>&nbsp;";
+				echo $flur."-".$fskenn."&nbsp;</a>";
 			echo "\n</div>";
 		}
 		$zfs++;
@@ -409,7 +402,9 @@ if ($debug >= 2) {
 // Auch wenn redundant: Das Kennzeichen für Anzeige und weitere Links zerlegen
 $kennztyp=ZerlegungGBKennz($gbkennz);
 if ($debug >= 2) {echo "<p>GB-Kennzeichen Typ=".$kennztyp."</p>";}
-// Wurde eine gml_id (internes Kennzeichen) aus einem Link verwendet?
+
+// Wurde eine gml_id (internes Kennzeichen) aus einem Self-Link verwendet?
+// Dann hat das Prioritaet, nicht nach $gbkennz suchen.
 If (isset($gbuchung)) { // gml der Buchungsstelle
 	if ($debug >= 2) {echo "<p>Link Buchung(gml)=".$gbuchung."</p>";}
 	EinGrundstueck(true);
@@ -420,7 +415,7 @@ If (isset($gbuchung)) { // gml der Buchungsstelle
 		EinGrundstueck(false);
 	};
 } else {
-	// Kein internes Kennzeichen (gml_id), also nur die (manuelle) Eingabe interpretieren.
+	// Kein internes Kennzeichen (gml_id), die (manuelle) Eingabe interpretieren.
 	switch ($kennztyp) {
 	// +++ Ersten Schritt "Suche Amtsgericht" voranstellen?
 	// +++ Wie kann Filter "Gemeinde" berücksichtigt werden?

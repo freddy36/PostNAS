@@ -1,12 +1,7 @@
 <?php
-// Version vom 10.01.2011 
-// Test: http://mapserver.krz.de/mapbenderneu/nav/alkisnav_eig.htm?gkz=150&gemeinde=40
-$gkz = urldecode($_REQUEST["gkz"]); // Mandant
-include("../../conf/alkisnav_conf.php");
+// Version vom 13.01.2011 
 import_request_variables("PG");
-
-// Datenbank-Connection
-$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
+include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname);
 ?>
 
@@ -76,7 +71,6 @@ function SuchGmkgName() {
 	$sql ="SELECT v.gemeindename, g.gemarkungsnummer, g.bezeichnung ";
 	$sql.="FROM ax_gemarkung g JOIN gemeinde_gemarkung v ON g.gemarkungsnummer=v.gemarkung ";
    $sql.="WHERE bezeichnung ILIKE $1 ";
-	// GUI-Parameter filtert auf Gemeindegebiet
 	if($gemeinde > 0) {$sql.=" AND v.gemeinde=".$gemeinde;} // wie prepared?
 	$sql.=" ORDER BY g.bezeichnung LIMIT $2 ;";
 	$v=array($match, $linelimit);
@@ -93,10 +87,9 @@ function SuchGmkgName() {
 		$gnr=$row["gemarkungsnummer"];
 		$stadt=$row["gemeindename"];		echo "\n<div class='gk' title='Gemarkung'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'>";
-			echo "<a href='alkisnav_fls.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$gnr."'>";		
-				echo  " ".$gnam." (".$gnr.")";
-				if ($gemeinde == 0) {echo  " ".$stadt;} // Kreisweit
-			echo "</a>";
+			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$gnr."'>";		
+			echo  " ".$gnam."</a> (".$gnr.")";
+			if ($gemeinde == 0) {echo " ".$stadt;} // Kreisweit
 		echo "\n</div>";
 		$cnt++;
 	}
@@ -134,10 +127,9 @@ function EineGemarkung($AuchGemkZeile) {
 		}
 		// > 1 auch möglich ???
 		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'>";
-			echo "<a href='alkisnav_fls.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."'>";		
-				echo  " Gemarkung ".$gmkg." (".$zgemkg.")";
-			echo "</a>";
+			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'> ";
+			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."'>";		
+			echo $gmkg."</a>  (".$zgemkg.")"; // in Gemeinde?
 		echo "\n</div>";
 	}
 	$sql ="SELECT gemarkungsteilflur AS flur FROM ax_gemarkungsteilflur f ";
@@ -151,7 +143,7 @@ function EineGemarkung($AuchGemkZeile) {
 		$flur=$row["flur"];
 		echo "\n<div class='fl' title='Flur'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
-			echo "Flur<a href='alkisnav_fls.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."-".$flur."'>&nbsp;".$flur."&nbsp;</a>";
+			echo "Flur<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."-".$flur."'>&nbsp;".$flur."&nbsp;</a>";
 		echo "\n</div>";
 		$zfl++;
 	}
@@ -164,7 +156,7 @@ function EineGemarkung($AuchGemkZeile) {
 }
 
 function EineFlur() {
-	// Kennzeichen bestehend aus Gemarkung und Flurnummer wurde eingegeben
+	// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben
 	global $con, $gkz, $gemeinde, $debug, $scalefs, $epsg, $auskpath, $zgemkg, $zflur;
 	$linelimit=600; // Wie groß kann eine Flur sein?
 	$sql ="SELECT bezeichnung FROM ax_gemarkung g WHERE g.gemarkungsnummer= $1 ;";
@@ -186,11 +178,11 @@ function EineFlur() {
 	}
 	echo "\n<div class='gk' title='Gemarkung'>";
 		echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'> ";
-		echo "Gemarkung <a href='alkisnav_fls.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."'> ".$gmkg." (".$zgemkg.")</a>";
+		echo "Gemarkung <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."'> ".$gmkg." (".$zgemkg.")</a>";
 	echo "\n</div>";
 	echo "\n<div class='fl' title='Flur'>";
 		echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
-		echo "Flur <a href='alkisnav_fls.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."-".$zflur."'> ".$zflur."</a>";
+		echo "Flur <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."-".$zflur."'> ".$zflur."</a>";
 	echo "\n</div>";
 
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
@@ -230,7 +222,7 @@ function EineFlur() {
 	return;
 }
 
-function nurEinFlurstueck() {
+function EinFlurstueck() {
 	// Flurstückskennzeichen komplett bis zum Zaehler eingegeben
 	// Sonderfall: bei Bruchnummer, mehrere Nenner zum Zaehler
 	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $zgemkg, $zflur, $zzaehler, $znenner;
@@ -242,8 +234,7 @@ function nurEinFlurstueck() {
    $sql.="FROM ax_flurstueck f JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND f.zaehler= $3 ";
 	If ($znenner != "") {$sql.="AND f.nenner=".$znenner." ";} // wie prepared?
-	$sql.="ORDER BY f.zaehler, f.nenner;";
-	// WHERE f.land= ?
+	$sql.="ORDER BY f.zaehler, f.nenner;"; // WHERE f.land= ?
 	$v=array($zgemkg, $zflur, $zzaehler);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -312,11 +303,11 @@ case 3:
 	break;
 case 4:
 	if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."</p>";}
-	nurEinFlurstueck();
+	EinFlurstueck();
 	break;
 case 5:
 	if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."/".$znenner."</p>";}
-	nurEinFlurstueck();
+	EinFlurstueck();
 	break;
 }
 ?>
