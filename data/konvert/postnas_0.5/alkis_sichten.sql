@@ -265,7 +265,7 @@ COMMENT ON VIEW flurstuecks_minmax IS 'Maximale Ausdehnung von ax_flurstueck fue
 -- MAP ALT:
 -- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
 
-CREATE VIEW baurecht
+CREATE OR REPLACE VIEW baurecht
 AS
   SELECT r.ogc_fid, 
          r.wkb_geometry, 
@@ -291,7 +291,7 @@ AS
 -- Man glaubt es kaum, aber im ALKIS haben Gemeinde und Gemarkung keinerlei Beziehung miteinander
 -- Nur durch Auswertung der Flurstücke kann man ermitteln, in welcher Gemeinde eine Gemarkung liegt.
 
-CREATE VIEW gemeinde_in_gemarkung
+CREATE OR REPLACE VIEW gemeinde_in_gemarkung
 AS
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
   FROM            ax_flurstueck
@@ -303,7 +303,7 @@ COMMENT ON VIEW gemeinde_in_gemarkung IS 'Welche Gemarkung liegt in welcher Geme
 
 -- Untersuchen, welche Geometrie-Typen vorkommen
 
-CREATE VIEW arten_von_flurstuecksgeometrie
+CREATE OR REPLACE VIEW arten_von_flurstuecksgeometrie
 AS
  SELECT   count(gml_id) as anzahl,
           st_geometrytype(wkb_geometry)
