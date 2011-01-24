@@ -471,7 +471,7 @@ INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,
 
 -- Bauteil Bauart
 
-CREATE TABLE ax_bauteil_bauart (
+CREATE TABLE ax_bauart_bauteil (
     wert integer NOT NULL,
     bezeichner character varying,
     kennung integer,
@@ -479,28 +479,49 @@ CREATE TABLE ax_bauteil_bauart (
 );
 
 
-ALTER TABLE ax_bauteil_bauart 
-ADD CONSTRAINT pk_ax_bauteil_bauart_wert 
+ALTER TABLE ax_bauart_bauteil 
+ADD CONSTRAINT pk_ax_bauart_bauteil_wert 
 PRIMARY KEY (wert);
 
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (1100, 'Geringergeschossiger Gebäudeteil', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (1200, 'Höhergeschossiger Gebäudeteil (nicht Hochhaus)', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (1300, 'Hochhausgebäudeteil', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (1400, 'Abweichende Geschosshöhe', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2000, 'Keller', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2100, 'Tiefgarage', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2300, 'Loggia', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2350, 'Wintergarten', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2400, 'Arkade', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2500, 'Auskragende/zurückspringende Geschosse', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2510, 'Auskragende Geschosse', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2520, 'Zurückspringende Geschosse', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2610, 'Durchfahrt im Gebäude', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2620, 'Durchfahrt an überbauter Verkehrsstraße', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2710, 'Schornstein im Gebäude', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (2720, 'Turm im Gebäude', 31002, 'ax_bauteil');
-INSERT INTO ax_bauteil_bauart (wert, bezeichner, kennung, objektart) VALUES (9999, 'Sonstiges', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1100, 'Geringergeschossiger Gebäudeteil', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1200, 'Höhergeschossiger Gebäudeteil (nicht Hochhaus)', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1300, 'Hochhausgebäudeteil', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1400, 'Abweichende Geschosshöhe', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2000, 'Keller', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2100, 'Tiefgarage', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2300, 'Loggia', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2350, 'Wintergarten', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2400, 'Arkade', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2500, 'Auskragende/zurückspringende Geschosse', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2510, 'Auskragende Geschosse', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2520, 'Zurückspringende Geschosse', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2610, 'Durchfahrt im Gebäude', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2620, 'Durchfahrt an überbauter Verkehrsstraße', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2710, 'Schornstein im Gebäude', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2720, 'Turm im Gebäude', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (9999, 'Sonstiges', 31002, 'ax_bauteil');
 
+
+-- Gebaeude Zusatnd
+CREATE TABLE ax_gebaeude_zustand (
+    wert integer NOT NULL,
+    bezeichner character varying,
+    kennung integer,
+    objektart character varying
+);
+
+
+ALTER TABLE ax_gebaeude_zustand
+ADD CONSTRAINT pk_ax_gebaeude_zustand_wert 
+PRIMARY KEY (wert);
+
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (1000, 'In behelfsmäßigem Zustand', NULL, 'ax_gebaeude');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (2000, 'In ungenutztem Zustand', NULL, 'ax_gebaeude');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (2100, 'Außer Betrieb, stillgelegt, verlassen', NULL, 'ax_gebaeude');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (2200, 'Verfallen, zerstört', NULL, 'ax_gebaeude');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (2300, 'Teilweise zerstört', NULL, 'ax_gebaeude');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (3000, 'Geplant und beantragt', NULL, 'ax_gebaeude');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (4000, 'Im Bau', NULL, 'ax_gebaeude');
 
 -- Entschlüsseln von Nutzungsarten
 --
