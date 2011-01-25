@@ -8,6 +8,10 @@
 	01.10.2010  Geschoss-Anzahl
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	25.01.2011  F.J.: Strassennamen zur Hausnummer
+					https://trac.wheregroup.com/PostNAS/ticket/6
+	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
+		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -122,7 +126,7 @@ echo "\n<p>.. auf oder an dem Flurst&uuml;ck. Ermittelt durch Verschneidung der 
 
 // G e b a e u d e
 $sqlg ="SELECT g.gml_id, g.name, g.description, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, ";
-$sqlg.=" h.bauweise_beschreibung, u.bezeichner, v.beziehungsart, v.beziehung_zu, l.hausnummer, ";
+$sqlg.="h.bauweise_beschreibung, u.bezeichner, v.beziehungsart, v.beziehung_zu, s.lage, s.bezeichnung, l.hausnummer, ";
 
 // Gebaeudeflaeche komplett auch ausserhalb des FS
 $sqlg.="round(area(g.wkb_geometry)::numeric,2) AS gebflae, ";
@@ -140,12 +144,16 @@ $sqlg.="FROM ax_flurstueck f, ax_gebaeude g ";
 $sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 $sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
 
-// Beziehungen verfolgen (holt die Hausnummer)
+// Beziehungen verfolgen (holt die Hausnummer Hauptgeb.)
 $sqlg.="LEFT JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
 $sqlg.="LEFT JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id ";
+// Straßen-Name
+$sqlg.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
+$sqlg.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
 
-// auch die Nebengebaeude-Pseudo-Nummern suchen?
-// $sqlg.="LEFT JOIN ax_lagebezeichnungmitpseudonummer p ON v.beziehung_zu=p.gml_id ";
+// Alternativ zur Hauptgebaeude-Hausnummer auch die Nebengebaeude-Pseudo-Nummern suchen?
+// $sqlg.="LEFT JOIN ax_lagebezeichnungmitpseudonummer p ON ... ";
+// oder in Loop: Wenn HsNr leer ist, eine kurze Abfrage auf Nebengebäude-Nr.
 
 // ID des aktuellen FS
 $sqlg.="WHERE f.gml_id= $1 "; 
@@ -161,10 +169,7 @@ $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
 	//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
 
 $sqlg.="ORDER BY schnittflae DESC;";
-
-// Problem: HsNr ist linksbuedig Char:
-//$sqlg.="ORDER BY hausnummer, flaeche DESC;";  
-
+ 
 // ax_gebaeude  (zeigtAuf) ax_LagebezeichnungMitHausnummer    (Hauptgebäude)
 // ax_gebaeude  (hat)      ax_LagebezeichnungMitPseudonummer  (Nebengebäude)
 
@@ -195,10 +200,17 @@ echo "\n<hr>\n<table class='geb'>";
 		$gebnr = $gebnr + 1;
 		$gebflsum = $gebflsum + $rowg["schnittflae"];
 		echo "\n<tr>";
-			echo "\n\t<td>".$rowg["hausnummer"]."&nbsp;".$rowg["name"];
+			echo "\n\t<td>";
+				// Hausnummer und Strassenname oder Gebaeudename				
+				if ($showkey) {
+					echo "<span class='key'>(".$rowg["lage"].")</span>&nbsp;";
+				}
+				echo htmlentities($rowg["bezeichnung"], ENT_QUOTES, "UTF-8")."&nbsp;"; // Str.-Name
+				echo $rowg["hausnummer"]."&nbsp;".$rowg["name"];
 				if ($idanzeige) {
 					linkgml($gkz, $rowg["gml_id"], "Geb&auml;ude");
 				}
+				// +++ Wenn HsNr leer ist: hier eine Abfrage auf Nebengebäude-Nr.
 			echo "</td>";
 
 			if ($rowg["drin"] == "t") { // 3 komplett enthalten
