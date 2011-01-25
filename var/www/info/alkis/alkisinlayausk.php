@@ -15,6 +15,8 @@
 	12.10.2010  korrekturen
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	25.01.2011  F. Jäger: Adressen (Lage mit HsNr) zum FS anzeigen	
+					https://trac.wheregroup.com/PostNAS/ticket/6
 
 	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
 */
@@ -101,7 +103,35 @@ echo "' title='Geb&auml;udenachweis'>Geb&auml;ude <img src='ico/Haus.ico' width=
 // FS-Historie (noch nicht in DB)
 //echo "&nbsp;|&nbsp;<a href='alkisfshist.php?gkz=".$gkz."&amp;flurstkennz=".$gmlid."' title='Vorg&auml;nger- und Nachfolger-Flurst&uuml;cke'>Historie</a>\n";
 echo "\n\t</p>\n</td>";
+
+// Lagebezeichnung Mit Hausnummer (Adresse)
+// Analog zu alkisfsnachw.php, Kommentare siehe dort$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
+$sql.="FROM  alkis_beziehungen v ";
+$sql.="JOIN  ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
+$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
+$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+$sql.="WHERE v.beziehung_von= $1 "; // id FS";
+$sql.="AND   v.beziehungsart='weistAuf' ";
+$sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
+$v = array($gmlid);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n".$sql."</p>";}
+$j=0;
+while($row = pg_fetch_array($res)) {
+	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
+	echo "\n<tr>\n\t";
+		echo "\n\t<td class='lr'>".$sname."&nbsp;".$row["hausnummer"]."</td>";
+		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
+			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
+			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
+		echo "\n\t\t</p>\n\t</td>";
+	echo "\n</tr>";
+	$j++;
+}
 echo "\n</tr>\n</table>\n";
+
+// Flurstuecksflaeche
 echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
 
 // *** G R U N D B U C H ***
