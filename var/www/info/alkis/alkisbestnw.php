@@ -9,7 +9,7 @@
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-
+	26.01.2011  Space in leere td
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
@@ -123,7 +123,6 @@ if ($blattkey == 5000) { // fikt. Blatt
 	// HIER MIT Adressen.
 	// Im offiziellen ALKIS-Buchnachweis hier ohne Adressen.
 	// Weglassen damit es uebersichtlicher wird?
-	// Doppelte Adressen (alt/neu?): Konverter-Fehler oder bestimmtes Kennzeichen?
 	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true);
 
 	if ($n == 0) { // keine Namensnummer, kein Eigentuemer
@@ -139,12 +138,12 @@ echo "\n<table class='fs'>";
 echo "\n<tr>";
 	echo "\n\t<td title='laufende Nummer Bestandsverzeichnis (BVNR) = Grundst&uuml;ck'><span class='wichtig'>BVNR</span></td>";
 	echo "\n\t<td class='dien' title='herrschendes Grundst&uuml;ck'>herrschende Buchungsart</td>";
-	echo "\n\t<td></td>";
+	echo "\n\t<td>&nbsp;</td>";
 	echo "\n\t<td class='dien'>Bezirk</td>";
 	echo "\n\t<td class='dien'>Blatt</td>";
 	echo "\n\t<td class='dien'>BVNR</td>";
 	echo "\n\t<td class='dien' title='dienendes Grundst&uuml;ck'>Buchungsart</td>";
-	echo "\n\t<td></td>";
+	echo "\n\t<td>&nbsp;</td>";
 echo "\n</tr>";
 echo "\n<tr>";
 	echo "\n\t<td class='head'>&nbsp;</td>";
@@ -161,16 +160,15 @@ echo "\n</tr>";
 // ax_buchungsblatt   <istBestandteilVon<  ax_buchungsstelle 
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, ";
 $sql.="s.zaehler, s.nenner, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond, b.bezeichner as bart ";
-$sql.="FROM  ax_buchungsstelle s ";
-$sql.="JOIN  alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
+$sql.="FROM ax_buchungsstelle s ";
+$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-$sql.="WHERE v.beziehung_zu= $1 ";
-$sql.="AND   v.beziehungsart='istBestandteilVon' ";
+$sql.="WHERE v.beziehung_zu= $1 AND v.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY s.laufendenummer;";
 
-$v = array($gmlid);
-$res = pg_prepare("", $sql);
-$res = pg_execute("", $v);
+$v=array($gmlid);
+$res=pg_prepare("", $sql);
+$res=pg_execute("", $v);
 
 if (!$res) echo "<p class='err'>Fehler bei Buchung.</p>\n";
 $i=0;
@@ -198,9 +196,9 @@ while($row = pg_fetch_array($res)) {
 		// aktuelles Blatt (herrschendes GB) hat Recht "an" fiktives Blatt (dienendes GB-Blatt)
 		// a n d e r e  Buchungsstelle
 		$sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, ";
-		$sql.="v.beziehungsart, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond, b.bezeichner AS bart ";		$sql.="FROM  ax_buchungsstelle s ";
-		$sql.="JOIN  alkis_beziehungen v ON s.gml_id=v.beziehung_zu "; 		$sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-		$sql.="WHERE v.beziehung_von='".$gml_bs."' "; // id buchungsstelle (fiktives Blatt)		$sql.="AND   (v.beziehungsart='an' OR v.beziehungsart='zu') ";
+		$sql.="v.beziehungsart, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond, b.bezeichner AS bart ";		$sql.="FROM ax_buchungsstelle s ";
+		$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_zu "; 		$sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
+		$sql.="WHERE v.beziehung_von='".$gml_bs."' "; // id buchungsstelle (fiktives Blatt)		$sql.="AND (v.beziehungsart='an' OR v.beziehungsart='zu') ";
 		$sql.="ORDER BY s.laufendenummer;";
 
 		$resan=pg_query($con,$sql);

@@ -5,7 +5,8 @@
 	21.09.2010  Inlay
 	30.09.2010  body-width bei Print
 	12.10.2010  class p.fsd: margin statt position-relative, dann keine Scrollbar
-	04.01.2010  Spalte td.fla im fsnw
+	04.01.2011  Spalte td.fla im fsnw
+	26.01.2011  einheitlich td padding-top 6px
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -53,9 +54,7 @@ div.adr {border-left-width: 0px;
 	font-size: 12pt;
 	margin-bottom: 8px;
 	margin-top: 8px;
-	margin-left: 0.7in;
-	/* margin-right: 0.7in; */
-	overflow: auto;
+	margin-left: 0.7in;	overflow: auto;
 	padding: 6px;
 	background: #e4f7dd;
 }
@@ -78,15 +77,15 @@ table.kennzla	{border: 2px solid  lime;  padding: 3px; margin: 0px;}	/* Lage */
 /* volle Breite fuer verschiedene Zwecke */
 table.fs, table.nua, table.klas, table.eig, table.outer, table.geb {width: 100%;}
 
-td	{vertical-align: top;}			/*  ** Tabellenfelder ** */
-/* td	{vertical-align: top; border: 1px dotted gray; }  Variante fuer TEST */
+td	{vertical-align: top; padding-top: 6px;}	/* ** Tabellenfelder ** */
+/* border: 1px dotted gray;  Variante fuer TEST */
 
-td.ll	{width: 130px; padding-top: 8px;}	/* Liste Links */
-td.lr	{color: black; padding-top: 8px;}	/* Liste Rechts */
-td.ph	{color: gray;  padding-top: 8px;}	/* Platzhalter, vorlaeufig, spaeter loschen */
+td.ll	{width: 130px;}	/* Liste Links */
+td.lr	{color: black;}	/* Liste Rechts */
+td.ph	{color: gray;}		/* Platzhalter, vorlaeufig, spaeter loschen */
 
 /* Flaechen rechtsbuendig (stellengerecht) */
-td.fla	{width: 110px; padding-right: 4px; padding-top:  8px; text-align: right;}
+td.fla	{width: 110px; padding-right: 4px; text-align: right;}
 td.key	{width:  35px; padding-right: 4px; padding-left: 4px;}
 /* Ertragsmesszahl der Bodenschaetzung
 td.emz	{width: 45px; padding-right: 4px; padding-left: 4px; 
@@ -98,9 +97,9 @@ td.sond, p.sond	{font-size: 9pt; font-style: italic; background-color: white;
 
 td.nrap, p.nrap	{font-size: 9pt; font-style: italic; background-color: white;}			/* Nummer im Aufteilungsplan */
 
-td.fett	{padding-top: 8px; font-weight: bold;}
-td.head	{border-bottom: 1px solid gray; font-style: italic;}	/* Kopfzeile, Spaltenueberschrift */
-td.sum {border-top:2px dotted maroon;	border-bottom:3px solid maroon;
+td.fett	{font-weight: bold;}
+td.head	{border-bottom: 1px solid gray; font-style: italic; padding-top: 2px;}	/* Kopfzeile, Spaltenueberschrift */
+td.sum {border-top: 2px dotted maroon;	border-bottom:3px solid maroon;
 	border-left:0px dotted maroon;	border-right:0px dotted maroon;
 	font-weight: bold;}				/* unter dem Strich = Summenzeile */
 td.bez	{font-weight: bold;}		/* Beziehungen */
@@ -108,7 +107,7 @@ td.nhd	{width: 150px;}			/* Namen - linke / rechte Spalte */
 td.nam	{font-weight: bold;}
 td.gbl	{border-bottom: 1px dotted green;}	/* Name: GB-Liste */
 /* Inlay analog Template: linke Tabellenspalte - Feldname */
-td.li, td.gr {color:gray; padding-left:8px; padding-right:8px; border-bottom:0px; vertical-align:top;}
+td.li, td.gr {color:gray; padding-left: 8px; padding-right:8px; border-bottom: 0px; vertical-align:top;}
 /* dienendes GB in FS-Tab im Best-NW  */
 td.dien	{font-size: 9pt; font-style: italic; color: purple; border-bottom: 1px solid silver;}
 

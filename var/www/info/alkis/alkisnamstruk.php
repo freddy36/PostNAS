@@ -9,7 +9,7 @@
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt, Tabelle GB einzeilig
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-
+	26.01.2011  Space in leere td
 	ToDo: 
 	Sortierung der Grundbücher zum Namen
 */
@@ -83,9 +83,9 @@ if ($row = pg_fetch_array($res)) {
 		echo "\t<tr><td class='nhd'>Nachname oder Firma:</td><td class='nam'>".$nam."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Vorname:</td><td class='nam'>".$vor."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Geburtsname:</td><td class='nam'>".$geb."</td></tr>\n";
-		echo "\t<tr><td class='nhd'>Geburtsdatum:</td><td class='nam'>".$row["geburtsdatum"]."</td></tr>\n";
-		echo "\t<tr><td class='nhd'>Namensbestandteil:</td><td class='nam'>".$row["namensbestandteil"]."</td></tr>\n";
-		echo "\t<tr><td class='nhd'>akademischer Grad:</td><td class='nam'>".$aka."</td></tr>\n";
+		echo "\t<tr><td class='nhd'>Geburtsdatum:</td><td class='nam'>".$row["geburtsdatum"]."&nbsp;</td></tr>\n";
+		echo "\t<tr><td class='nhd'>Namensbestandteil:</td><td class='nam'>".$row["namensbestandteil"]."&nbsp;</td></tr>\n";
+		echo "\t<tr><td class='nhd'>akademischer Grad:</td><td class='nam'>".$aka."&nbsp;</td></tr>\n";
 	echo "\n</table>\n<hr>\n";
 
 	// A d r e s s e

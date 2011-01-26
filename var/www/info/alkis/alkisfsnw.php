@@ -12,8 +12,10 @@
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon. Tabelle Gebiet/Lage/Nutzung 4spaltig.
 	05.01.2011  Korrektur der Fallunterscheidung "Funktion", auch "Vegetationsmerkmal", Title auf "Zustand".
-
-	ToDo: 	NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
+	26.01.2011  Space in leere td
+	ToDo:
+	- Entschlüsseln "Bahnkategorie" bei Behnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
+	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -143,7 +145,7 @@ echo "\n\t<td class='lr'>Gemeinde</td><td class='lr'>";
 if ($showkey) {
 	echo "<span class='key'>(".$gemeinde.")</span> ";
 }
-echo $gnam."</td><td></td></tr>";
+echo $gnam."</td><td>&nbsp;</td></tr>";
 
 // K r e i s
 $sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2"; 
@@ -154,11 +156,11 @@ $res = pg_execute("", $v);
 if (!$res) echo "<p class='err'>Fehler bei Kreis<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $knam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-echo "<tr><td></td><td>Kreis</td><td>";
+echo "<tr><td>&nbsp;</td><td>Kreis</td><td>";
 if ($showkey) {
 	echo "<span class='key'>(".$kreis.")</span> ";
 }
-echo $knam."</td><td></td></tr>";
+echo $knam."</td><td>&nbsp;</td></tr>";
 
 // R e g - B e z
 $sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk='".$bezirk."' "; 
@@ -166,11 +168,11 @@ $res=pg_query($con, $sql);
 if (!$res) echo "<p class='err'>Fehler bei Regierungsbezirk<br>".$sql."<br></p>";
 $row = pg_fetch_array($res);
 $bnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
-echo "<tr><td></td><td>Regierungsbezirk</td><td>";
+echo "<tr><td>&nbsp;</td><td>Regierungsbezirk</td><td>";
 if ($showkey) {
 	echo "<span class='key'>(".$bezirk.")</span> ";
 }
-echo $bnam."</td><td></td></tr>";
+echo $bnam."</td><td>&nbsp;</td></tr>";
 // ENDE G e b i e t s z u g e h o e r i g k e i t
 
 // ** L a g e b e z e i c h n u n g **
@@ -212,7 +214,7 @@ while($row = pg_fetch_array($res)) {
 		} else {
 			echo "<td>&nbsp;</td>";
 		}
-		echo "\n\t<td></td>";
+		echo "\n\t<td>&nbsp;</td>";
 		echo "\n\t<td class='lr'>";
 		if ($showkey) {
 			echo "<span class='key'>(".$row["lage"].")</span>&nbsp;";

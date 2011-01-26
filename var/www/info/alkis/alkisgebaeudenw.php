@@ -10,6 +10,7 @@
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	25.01.2011  F.J.: Strassennamen zur Hausnummer
 					https://trac.wheregroup.com/PostNAS/ticket/6
+	26.01.2011  Space in leere td
 	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
 		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
 */
@@ -199,19 +200,26 @@ echo "\n<hr>\n<table class='geb'>";
 	while($rowg = pg_fetch_array($resg)) {
 		$gebnr = $gebnr + 1;
 		$gebflsum = $gebflsum + $rowg["schnittflae"];
+		$skey=$rowg["lage"]; // Strassenschluessel		
+		$gnam=$rowg["name"];
 		echo "\n<tr>";
-			echo "\n\t<td>";
-				// Hausnummer und Strassenname oder Gebaeudename				
-				if ($showkey) {
-					echo "<span class='key'>(".$rowg["lage"].")</span>&nbsp;";
-				}
-				echo htmlentities($rowg["bezeichnung"], ENT_QUOTES, "UTF-8")."&nbsp;"; // Str.-Name
-				echo $rowg["hausnummer"]."&nbsp;".$rowg["name"];
-				if ($idanzeige) {
-					linkgml($gkz, $rowg["gml_id"], "Geb&auml;ude");
-				}
-				// +++ Wenn HsNr leer ist: hier eine Abfrage auf Nebengebäude-Nr.
-			echo "</td>";
+			if ($skey.$gnam != "") {	// Hausnummer und Strassenname oder Gebaeudename
+				echo "\n\t<td title='Hauptgeb&auml;ude'>";
+					if ($showkey) {
+						echo "<span class='key'>(".$skey.")</span>&nbsp;";
+					}
+					echo htmlentities($rowg["bezeichnung"], ENT_QUOTES, "UTF-8")."&nbsp;"; // Str.-Name
+					echo $rowg["hausnummer"]."&nbsp;".$gnam;
+					if ($idanzeige) {
+						linkgml($gkz, $rowg["gml_id"], "Geb&auml;ude");
+					}
+				echo "</td>";
+			} else {
+				echo "\n\t<td title='Nebengeb&auml;ude'>";
+					echo "(Nebengeb&auml;ude)"; // +++ nur vorlaeufiger Platzhalter! Hier kommt lfd-Nr hin.
+					// +++ SQL-Abfrage auf ax_LagebezeichnungMitPseudonummer
+				echo "</td>";		
+			}
 
 			if ($rowg["drin"] == "t") { // 3 komplett enthalten
 				echo "\n\t<td class='fla'>".$rowg["schnittflae"]." m&#178;</td>"; 
@@ -226,7 +234,7 @@ echo "\n<hr>\n<table class='geb'>";
 				}
 			}
 
-			echo "\n\t<td>".$rowg["aog"]."</td>";
+			echo "\n\t<td>".$rowg["aog"]."&nbsp;</td>";
 
 			echo "\n\t<td>";
 			if ($showkey) {
@@ -238,7 +246,7 @@ echo "\n<hr>\n<table class='geb'>";
 			if ($showkey) {
 				echo "<span class='key'>".$rowg["bauweise"]."</span>&nbsp;";
 			}
-			echo $rowg["bauweise_beschreibung"]."</td>";
+			echo $rowg["bauweise_beschreibung"]."&nbsp;</td>";
 
 			echo "\n\t<td class='nwlink noprint'>";
 			$bezieh=$rowg["beziehungsart"];
@@ -274,9 +282,10 @@ echo "\n<hr>\n<table class='geb'>";
 			echo "\n\t<td>&nbsp;</td>"; // 4
 			echo "\n\t<td>&nbsp;</td>"; // 5
 			echo "\n\t<td>&nbsp;</td>"; // 6
+			echo "\n\t<td>&nbsp;</td>"; // 7
 		echo "\n</tr>";
 	echo "\n</table>";
-	$unbebaut = number_format(($flstflaeche - $gebflsum),0,",",".") . " m&#178;";	echo "\n<p>Flurst&uuml;cksfl&auml;che abz&uuml;glich Geb&auml;udefl&auml;che: <b>".$unbebaut."</b></p>";
+	$unbebaut = number_format(($flstflaeche - $gebflsum),0,",",".") . " m&#178;";	echo "\n<p>Flurst&uuml;cksfl&auml;che abz&uuml;glich Geb&auml;udefl&auml;che: <b>".$unbebaut."</b></p><br>";
 }
 
 ?>
