@@ -2,20 +2,10 @@
 -- ALKIS
 -- =====
 
---  PostNAS 0.3, 24.02.2009  R. Segsa, DT
-
---  PostNAS 0.4, 02.04.2009
-
 --  PostNAS 0.5, 
---   06.01.2010  F, Jaeger, KRZ
---   21.01.2010  F.J. ap-pto.art
---   14.06.2010  F.J. GRANT entfernt
---   24.09.2010  F.J. "s_flurstueck_nr" ersetzt "s_flurstuecksnummer_flurstueck" (Bruchnummer)
---   01.12.2010  F.J. Gemeinde/Gemarkung
-
---   Verbindungen werden seit PostNAS 0.5 nicht mehr nachträglich mit einem Script generiert
---   sondern vom Konverter PostNAS gesetzt.
---   Jetzt zentrale Tabelle "alkis_beziehungen" statt der Felder (ForeignKey) in den einzelnen Tabellen.
+--  01.12.2010  F.J. Gemeinde/Gemarkung
+--  26.01.2011  F.J. Liste der Hausnummern in einer Gemeinde
+--  27.01.2011  F.J. Auflistung der Flurstücke eines (kommunalen) Eigentümers
 
 
 --  -----------------------------------------
@@ -40,27 +30,8 @@
 -- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
 
 
--- Version "s_flurstuecksnummer_flurstueck" bis 24.09.2010, 
--- wird ersetzt durch "s_flurstueck_nr"
-
---CREATE OR REPLACE VIEW s_flurstuecksnummer_flurstueck 
---AS 
--- SELECT ap_pto.ogc_fid, 
---        ap_pto.wkb_geometry, 
---        ax_flurstueck.flurstueckskennzeichen, 
---        ax_flurstueck.zaehler,                 -- umn: LABELITEM
---        ax_flurstueck.nenner
---   FROM ap_pto
---   JOIN alkis_beziehungen 
---     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
---   JOIN ax_flurstueck 
---     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
---  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
-
-
 -- Bruchnummerierung erzeugen
--- (ersetzt s_flurstuecksnummer_flurstueck ab Sept. 2010)
---DROP VIEW s_flurstueck_nr;
+
 CREATE OR REPLACE VIEW s_flurstueck_nr
 AS 
  SELECT ap_pto.ogc_fid, 
@@ -86,25 +57,9 @@ COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Fl
 -- Layer "ag_t_gebaeude"
 -- ---------------------
 
---CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
---AS 
--- SELECT ap_pto.ogc_fid, 
---        ap_pto.wkb_geometry, 
---        ap_pto.drehwinkel * 57.296 AS drehwinkel,   -- umn: ANGLE [drehwinkel]
---        ax_lagebezeichnungmithausnummer.hausnummer  -- umn: LABELITEM
---   FROM ap_pto
---   JOIN alkis_beziehungen 
---     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
---   JOIN ax_lagebezeichnungmithausnummer 
---     ON alkis_beziehungen.beziehung_zu  = ax_lagebezeichnungmithausnummer.gml_id
---  WHERE ap_pto.art = 'HNR'  -- Hausnummer
---     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
-
-
 -- In einigen Gebieten in Lippe enthält das Feld "ap_pto.art"
 -- nicht den Wert 'HNR'. Die Hausnummer fehlt dann im WMS.
 -- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
-
 
 CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 AS 
@@ -120,7 +75,6 @@ AS
   WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
 COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
-
 
 
 
@@ -166,7 +120,6 @@ COMMENT ON VIEW s_zuordungspfeil_flurstueck IS 'fuer Kartendarstellung';
 -- ----------------------------------------
 -- Texte, die nicht schon in einem anderen Layer ausgegeben werden
 
-
 CREATE OR REPLACE VIEW s_beschriftung 
 AS 
   SELECT ap_pto.ogc_fid, 
@@ -185,14 +138,11 @@ AS
 
 -- Lippe: Der Wert 'ZAE_NEN' fehlt. Diese Fälle anders identifizieren?
 
-GRANT SELECT ON TABLE s_beschriftung                    TO ms5;
-
 COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
 
 --  ------------------------------------------
 --  Sichten fuer Fehlersuche und Daten-Analyse
 --  ------------------------------------------
-
 
 -- Zeigt die Texte an, die nicht in einem der Mapfile-Views verarbeitet werden
 CREATE OR REPLACE VIEW s_allgemeine_texte 
@@ -209,7 +159,6 @@ AS
     AND NOT ap_pto.art = 'FKT' 
     AND NOT ap_pto.art = 'Friedhof' 
     AND ap_pto.schriftinhalt IS NOT NULL;
-
 
 
 -- Analyse zu o.g. Fehler:
@@ -261,7 +210,6 @@ COMMENT ON VIEW flurstuecks_minmax IS 'Maximale Ausdehnung von ax_flurstueck fue
 
 -- Nach Laden der Keytables:
 
-
 -- MAP ALT:
 -- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
 
@@ -276,7 +224,7 @@ AS
          r.bezeichnung AS rechtbez,    -- Verfahrensnummer
          a.bezeichner  AS adfbez,      -- Art der Festlegung - Bezeichnung
          d.bezeichnung AS stellbez     -- Stelle Bezeichnung
-      -- , d.stellenart  --- weiter entschluesseln?
+      -- , d.stellenart                -- weiter entschluesseln?
     FROM ax_bauraumoderbodenordnungsrecht r
     LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a
       ON r.artderfestlegung = a.wert
@@ -318,6 +266,212 @@ AS
 --    2 ST_MultiPolygon
 -- 2367 ST_Polygon
 
+
+-- A d r e s s e n 
+
+-- Verschluesselte Lagebezeichnung (Strasse und Hausnummer) fuer eine Gemeinde
+-- Schluessel der Gemeinde nach Bedarf anpassen!
+
+CREATE VIEW  adressen_hausnummern
+AS
+    SELECT 
+        s.bezeichnung AS strassenname, 
+         g.bezeichnung AS gemeindename, 
+         l.land, 
+         l.regierungsbezirk, 
+         l.kreis, 
+         l.gemeinde, 
+         l.lage        AS strassenschluessel, 
+         l.hausnummer 
+    FROM   ax_lagebezeichnungmithausnummer l  
+    JOIN   ax_gemeinde g 
+      ON l.kreis=g.kreis 
+     AND l.gemeinde=g.gemeinde 
+    JOIN   ax_lagebezeichnungkatalogeintrag s 
+      ON l.kreis=s.kreis 
+     AND l.gemeinde=s.gemeinde 
+     AND to_char(l.lage, 'FM00000')=s.lage 
+    WHERE     l.gemeinde = 40  -- 40 = Lage
+ -- LIMIT 200
+;
+
+
+-- Zuordnung dieser Adressen zu Flurstuecken
+-- Schluessel der Gemeinde nach Bedarf anpassen!
+
+CREATE VIEW adressen_zum_flurstueck
+AS
+    SELECT
+           f.gemarkungsnummer, 
+           f.flurnummer, 
+           f.zaehler, 
+           f.nenner,
+           g.bezeichnung AS gemeindename, 
+           s.bezeichnung AS strassenname, 
+           l.lage        AS strassenschluessel, 
+           l.hausnummer 
+      FROM   ax_flurstueck f 
+      JOIN   alkis_beziehungen v 
+        ON f.gml_id=v.beziehung_von
+      JOIN   ax_lagebezeichnungmithausnummer l  
+        ON l.gml_id=v.beziehung_zu
+      JOIN   ax_gemeinde g 
+        ON l.kreis=g.kreis 
+       AND l.gemeinde=g.gemeinde 
+      JOIN   ax_lagebezeichnungkatalogeintrag s 
+        ON l.kreis=s.kreis 
+       AND l.gemeinde=s.gemeinde 
+       AND to_char(l.lage, 'FM00000')=s.lage 
+     WHERE v.beziehungsart='weistAuf'
+       AND l.gemeinde = 40  -- 40 = Lage
+     ORDER BY 
+           f.gemarkungsnummer,
+           f.flurnummer,
+           f.zaehler,
+           f.nenner
+   -- LIMIT 200
+;
+
+
+-- Flurstücke eines Eigentümers
+-- ----------------------------
+
+-- Dieser View liefert nur die (einfache) Buchungsart "Grundstück"
+-- Solche Fälle wie "Erbbaurecht an Grundstück" oder "Wohnungs-/Teileigentum an aufgeteiltes Grundstück"
+-- oder "Miteigentum an aufteteiltes Grundstück" fehlen in deisere Auswertung.
+-- Dazu siehe: "rechte_eines_eigentuemers".
+
+-- Das Ergbenis ist gedacht für den Export als CSV und Weiterverarbeitung mit einer Tabellenkalkulation
+-- oder einer einfachen Datenbank.
+
+-- Übersicht der Tabellen:
+--
+-- Person <benennt< NamNum. >istBestandteilVon> Blatt <istBestandteilVon< Stelle >istGebucht> Flurstueck
+--                                              *-> Bezirk                *-> Buchungsart     *-> Gemarkung
+
+-- Wobei ">xxx>" = JOIN über die Verbindungs-Tabelle "alkis_beziehungen" mit der Beziehungsart "xxx".
+
+CREATE VIEW flurstuecke_eines_eigentuemers 
+AS 
+   SELECT 
+      k.bezeichnung                AS gemarkung, 
+      k.gemarkungsnummer, 
+      f.flurnummer                 AS flur, 
+      f.zaehler                    AS fs_zaehler, 
+      f.nenner                     AS fs_nenner, 
+      f.amtlicheflaeche, 
+   -- g.bezirk, 
+      b.bezeichnung                AS bezirkname,
+      g.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt, 
+      g.blattart, 
+      s.laufendenummer             AS bvnr, 
+      art.bezeichner               AS buchungsart, 
+   -- s.zaehler || '/' || s.nenner AS buchg_anteil, 
+      n.laufendenummernachdin1421  AS lfd_name_num, 
+   -- n.zaehler || '/' || n.nenner AS nam_anteil, 
+      p.nachnameoderfirma  --, 
+   -- p.vorname 
+   FROM       ax_person              p
+        JOIN  alkis_beziehungen      bpn  ON bpn.beziehung_zu  = p.gml_id 
+        JOIN  ax_namensnummer        n    ON bpn.beziehung_von =n.gml_id 
+        JOIN  alkis_beziehungen      bng  ON n.gml_id = bng.beziehung_von 
+        JOIN  ax_buchungsblatt       g    ON bng.beziehung_zu = g.gml_id 
+        JOIN  ax_buchungsblattbezirk b    ON g.land = b.land AND g.bezirk = b.bezirk 
+        JOIN  alkis_beziehungen      bgs  ON bgs.beziehung_zu = g.gml_id 
+        JOIN  ax_buchungsstelle      s    ON s.gml_id = bgs.beziehung_von 
+        JOIN  ax_buchungsstelle_buchungsart art ON s.buchungsart = art.wert 
+        JOIN  alkis_beziehungen      bsf  ON bsf.beziehung_zu = s.gml_id
+        JOIN  ax_flurstueck          f    ON f.gml_id = bsf.beziehung_von 
+        JOIN  ax_gemarkung           k    ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
+   WHERE p.nachnameoderfirma LIKE 'Stadt %'   -- ** Bei Bedarf anpassen!
+     AND bpn.beziehungsart = 'benennt'           -- Namennummer     >> Person
+     AND bng.beziehungsart = 'istBestandteilVon' -- Namensnummer    >> Grundbuch
+     AND bgs.beziehungsart = 'istBestandteilVon' -- Buchungs-Stelle >> Grundbuch
+     AND bsf.beziehungsart = 'istGebucht'        -- Flurstueck      >> Buchungs-Stelle
+   ORDER BY   
+         k.bezeichnung,
+         f.flurnummer,
+         f.zaehler,
+         f.nenner,
+         g.bezirk, 
+         g.buchungsblattnummermitbuchstabenerweiterung,
+         s.laufendenummer 
+;
+
+
+-- Rechte eines Eigentümers
+-- ------------------------
+
+-- Dieser View sucht speziell die Fälle wo eine Buchungsstelle ein Recht "an" einer anderen Buchungsstelle hat.
+--  - "Erbbaurecht *an* Grundstück" 
+--  - "Wohnungs-/Teileigentum *an* Aufgeteiltes Grundstück"
+--  - "Miteigentum *an* Aufteteiltes Grundstück"
+-- Suchkriterium ist der Name des Eigentümers auf dem "herrschenden" Grundbuch, also dem Besitzer des Rechtes.
+
+-- Diese Fälle fehlen im View "flurstuecke_eines_eigentuemers".
+
+-- Übersicht der Tabellen:
+--
+-- Person <benennt< NamNum. >istBestandteilVon> Blatt <istBestandteilVon< Stelle-h >an> Stelle-d >istGebucht> Flurstueck
+-- 
+
+-- Wobei ">xxx>" = JOIN über die Verbindungs-Tabelle "alkis_beziehungen" mit der Beziehungsart "xxx".
+
+
+CREATE VIEW rechte_eines_eigentuemers 
+AS
+   SELECT 
+      k.bezeichnung                AS gemarkung, 
+      k.gemarkungsnummer, 
+      f.flurnummer                 AS flur, 
+      f.zaehler                    AS fs_zaehler, 
+      f.nenner                     AS fs_nenner, 
+      f.amtlicheflaeche, 
+   -- g.bezirk, 
+      b.bezeichnung                AS bezirkname,
+      g.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt, 
+   -- g.blattart, 
+      sh.laufendenummer            AS bvnr_herr, 
+      sh.zaehler || '/' || sh.nenner AS buchg_anteil_herr, 
+      arth.bezeichner              AS buchungsart_herrschend, 
+      bss.beziehungsart            AS bez_art,
+      artd.bezeichner              AS buchungsart_dienend, 
+      sd.laufendenummer            AS bvnr_dien, 
+   -- sd.zaehler || '/' || sd.nenner AS buchg_anteil_dien,
+      n.laufendenummernachdin1421  AS lfd_name_num, 
+   -- n.zaehler || '/' || n.nenner AS nam_anteil, 
+      p.nachnameoderfirma  --, 
+   -- p.vorname 
+   FROM       ax_person              p
+        JOIN  alkis_beziehungen      bpn  ON bpn.beziehung_zu  = p.gml_id 
+        JOIN  ax_namensnummer        n    ON bpn.beziehung_von =n.gml_id 
+        JOIN  alkis_beziehungen      bng  ON n.gml_id = bng.beziehung_von 
+        JOIN  ax_buchungsblatt       g    ON bng.beziehung_zu = g.gml_id 
+        JOIN  ax_buchungsblattbezirk b    ON g.land = b.land AND g.bezirk = b.bezirk 
+        JOIN  alkis_beziehungen      bgs  ON bgs.beziehung_zu = g.gml_id 
+        JOIN  ax_buchungsstelle      sh   ON sh.gml_id = bgs.beziehung_von  -- herrschende Buchung
+        JOIN  ax_buchungsstelle_buchungsart arth ON sh.buchungsart = arth.wert 
+        JOIN  alkis_beziehungen      bss  ON sh.gml_id = bss.beziehung_von
+        JOIN  ax_buchungsstelle      sd   ON sd.gml_id = bss.beziehung_zu   -- dienende Buchung
+        JOIN  ax_buchungsstelle_buchungsart artd ON sd.buchungsart = artd.wert 
+        JOIN  alkis_beziehungen      bsf  ON bsf.beziehung_zu = sd.gml_id
+        JOIN  ax_flurstueck          f    ON f.gml_id = bsf.beziehung_von 
+        JOIN  ax_gemarkung           k    ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
+   WHERE p.nachnameoderfirma LIKE 'Stadt %'   -- ** Bei Bedarf anpassen!
+     AND bpn.beziehungsart = 'benennt'           -- Namennummer     >> Person
+     AND bng.beziehungsart = 'istBestandteilVon' -- Namensnummer    >> Grundbuch
+     AND bgs.beziehungsart = 'istBestandteilVon' -- B-Stelle herr   >> Grundbuch
+     AND bss.beziehungsart in ('an','zu')        -- B-Stelle herr.  >> B-Stelle dien.
+     AND bsf.beziehungsart = 'istGebucht'        -- Flurstueck      >> B-Stelle dien
+   ORDER BY   
+         k.bezeichnung,
+         f.flurnummer,
+         f.zaehler,
+         f.nenner,
+         g.bezirk, 
+         g.buchungsblattnummermitbuchstabenerweiterung,
+         sh.laufendenummer 
+;
 
 
 -- END --
