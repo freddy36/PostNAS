@@ -8,6 +8,7 @@
 	15.09.2010  Function "buchungsart" durch JOIN ersetzt
 	09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 */
 function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
 	// Einen Seitenfuss ausgeben.
@@ -84,7 +85,7 @@
 	echo "hilfeurl=".$hilfeurl."<br>";
 	echo "append=".$append."<br>";
 	echo "showkey=".$showkey;
-	echo "</p>"; */
+	echo "</p>"; */
 	return 0;
 }
 
@@ -116,11 +117,11 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	// F L U R S T U E C K
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, ";
 	$sql.="f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
-	$sql.="FROM ax_gemarkung g ";
-	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+	$sql.="FROM ax_flurstueck f ";
 	$sql.="JOIN alkis_beziehungen v ON f.gml_id=v.beziehung_von "; 
+	$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="WHERE v.beziehung_zu= $1 "; // id buchungsstelle
-	$sql.="AND   v.beziehungsart='istGebucht' ";
+	$sql.="AND v.beziehungsart='istGebucht' ";
 	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 	$v = array($gml_bs);
@@ -211,10 +212,10 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 
 	$sql="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
 	$sql.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
-	$sql.="FROM  ax_namensnummer n ";
-	$sql.="JOIN  alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
+	$sql.="FROM ax_namensnummer n ";
+	$sql.="JOIN alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
 	$sql.="WHERE b.beziehung_zu= $1 "; // id blatt
-	$sql.="AND   b.beziehungsart='istBestandteilVon' ";
+	$sql.="AND b.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY laufendenummernachdin1421;";
 
 	$v = array($gmlid);
@@ -229,6 +230,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 
 	//echo "\n\n<!-- vor Schleife 1 Namensnummer -->";
 	while($rown = pg_fetch_array($resn)) {
+		$gmlnn=$rown["gml_id"];
 		echo "\n<tr>";
 			echo "\n\t<td class='nanu' title='Namens-Nummer'>\n\t\t<p>"; // Sp. 1
 				// VOR die Tabelle: "Eigentümer"
@@ -265,15 +267,14 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 
 		// Schleife 2: P e r s o n  
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
-		$sql="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
-		$sql.="FROM  ax_person p ";
-		$sql.="JOIN  alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
-		$sql.="WHERE v.beziehung_von= $1 "; // id num
-		$sql.="AND   v.beziehungsart='benennt';";
+		$sql ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
+		$sql.="FROM ax_person p JOIN alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
+		$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='benennt';";
 
-		$v = array($rown["gml_id"]);
+		$v = array($gmlnn);
 		$rese = pg_prepare("", $sql);
 		$rese = pg_execute("", $v);
+		// +++ kein Ergebnis bei leeren Schluesseltabellen !?
 
 		if (!$rese) {echo "\n\t<p class='err'>Fehler bei Eigentuemer<br>SQL= ".$sql."<br></p>\n";}
 		$i=0; // Z.Eig.
@@ -310,8 +311,7 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
 				$sql.="FROM ax_anschrift a ";
 				$sql.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-				$sql.="WHERE b.beziehung_von= $1 ";
-				$sql.="AND b.beziehungsart='hat';"; // ORDER?
+				$sql.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat';"; // ORDER?
 
 				$v = array($rowe["gml_id"]);
 				$resa = pg_prepare("", $sql);

@@ -17,6 +17,7 @@
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	25.01.2011  F. Jäger: Adressen (Lage mit HsNr) zum FS anzeigen	
 					https://trac.wheregroup.com/PostNAS/ticket/6
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 
 	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
 */
@@ -54,7 +55,7 @@ if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 $sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, ";
 $sql.=" g.gemarkungsnummer, g.bezeichnung ";
 $sql.="FROM ax_flurstueck f ";
-$sql.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sql.="LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sql.="WHERE f.gml_id= $1;";
 // Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
 $v = array($gmlid);
@@ -106,12 +107,12 @@ echo "\n\t</p>\n</td>";
 
 // Lagebezeichnung Mit Hausnummer (Adresse)
 // Analog zu alkisfsnachw.php, Kommentare siehe dort$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
-$sql.="FROM  alkis_beziehungen v ";
-$sql.="JOIN  ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
+$sql.="FROM alkis_beziehungen v ";
+$sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
+$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
 $sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
-$sql.="AND   v.beziehungsart='weistAuf' ";
+$sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -140,17 +141,15 @@ echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grund
 $sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
 $sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, ";
 $sql.="z.bezeichnung, a.bezeichner AS bart ";  // stelle -> amtsgericht
-$sql.="FROM  alkis_beziehungen    bfs "; // Bez Flurst.- Stelle.
-$sql.="JOIN  ax_buchungsstelle      s ON bfs.beziehung_zu=s.gml_id ";
-$sql.="JOIN  alkis_beziehungen    bsb ON s.gml_id=bsb.beziehung_von "; // Bez. Stelle - Blatt
-$sql.="JOIN  ax_buchungsblatt       b ON bsb.beziehung_zu=b.gml_id ";
-$sql.="JOIN  ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-
+$sql.="FROM alkis_beziehungen bfs "; // Bez Flurst.- Stelle.
+$sql.="JOIN ax_buchungsstelle s ON bfs.beziehung_zu=s.gml_id ";
+$sql.="JOIN alkis_beziehungen bsb ON s.gml_id=bsb.beziehung_von "; // Bez. Stelle - Blatt
+$sql.="JOIN ax_buchungsblatt b ON bsb.beziehung_zu=b.gml_id ";
+$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-
 $sql.="WHERE bfs.beziehung_von= $1 ";
-$sql.="AND   bfs.beziehungsart='istGebucht' ";
-$sql.="AND   bsb.beziehungsart='istBestandteilVon' ";
+$sql.="AND bfs.beziehungsart='istGebucht' ";
+$sql.="AND bsb.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 
 $v = array($gmlid);

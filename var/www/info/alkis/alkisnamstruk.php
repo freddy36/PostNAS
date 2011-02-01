@@ -10,6 +10,7 @@
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	26.01.2011  Space in leere td
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	ToDo: 
 	Sortierung der Grundbücher zum Namen
 */
@@ -91,10 +92,10 @@ if ($row = pg_fetch_array($res)) {
 	// A d r e s s e
 	echo "\n<h3><img src='ico/Strasse_mit_Haus.ico' width='16' height='16' alt=''> Adresse</h3>\n";
 	$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-	$sql.="FROM   ax_anschrift a ";
-	$sql.="JOIN   alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-	$sql.="WHERE  b.beziehung_von= $1 ";
-	$sql.="AND    b.beziehungsart='hat';"; //"ORDER  BY ?;";
+	$sql.="FROM ax_anschrift a ";
+	$sql.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
+	$sql.="WHERE b.beziehung_von= $1 ";
+	$sql.="AND b.beziehungsart='hat';"; //"ORDER  BY ?;";
 	//echo "\n<p class='err'>".$sql."</p>\n";
 
 	$v = array($gmlid);
@@ -138,13 +139,13 @@ if ($row = pg_fetch_array($res)) {
 	$sql ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
 	$sql.="g.gml_id AS gml_g, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, ";
 	$sql.="b.bezeichnung AS beznam ";
-	$sql.="FROM  alkis_beziehungen bpn ";
-	$sql.="JOIN  ax_namensnummer   n   ON bpn.beziehung_von=n.gml_id ";
-	$sql.="JOIN  alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
-	$sql.="JOIN  ax_buchungsblatt  g   ON bng.beziehung_zu=g.gml_id ";
-	$sql.="JOIN  ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
+	$sql.="FROM alkis_beziehungen bpn ";
+	$sql.="JOIN ax_namensnummer n ON bpn.beziehung_von=n.gml_id ";
+	$sql.="JOIN alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
+	$sql.="JOIN ax_buchungsblatt g ON bng.beziehung_zu=g.gml_id ";
+	$sql.="LEFT JOIN ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
 	$sql.="WHERE bpn.beziehung_zu= $1 ";
-	$sql.="AND   bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
+	$sql.="AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
 	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung;";
 	// buchungsblatt... mal mit und mal ohne fuehrende Nullen, bringt die Sortierung durcheinander
 

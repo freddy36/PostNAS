@@ -11,6 +11,8 @@
 	25.01.2011  F.J.: Strassennamen zur Hausnummer
 					https://trac.wheregroup.com/PostNAS/ticket/6
 	26.01.2011  Space in leere td
+
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
 		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
 */
@@ -60,7 +62,7 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 $sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.zeitpunktderentstehung, ";
 $sqlf.="g.gemarkungsnummer, g.bezeichnung ";
 $sqlf.="FROM ax_flurstueck f ";
-$sqlf.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sqlf.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sqlf.="WHERE f.gml_id= $1;";
 
 $v = array($gmlid);

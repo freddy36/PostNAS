@@ -8,6 +8,7 @@
 	01.10.2010  Flaeche umgruppiert
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -83,11 +84,10 @@ switch ($ltyp) {
 $sql.="FROM ".$tnam." l ";
 
 // Gemeinde entschluesseln
-$sql.="LEFT JOIN  ax_gemeinde g ";
-$sql.="ON l.kreis=g.kreis AND l.gemeinde=g.gemeinde ";
+$sql.="LEFT JOIN  ax_gemeinde g ON l.kreis=g.kreis AND l.gemeinde=g.gemeinde ";
 
 // Strasse entschluesseln
-$sql.="LEFT JOIN  ax_lagebezeichnungkatalogeintrag s ";
+$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ";
 // Besonderheit: unterschiedliche Feldformate und Fuellungen!!!
 
 switch ($ltyp) {
@@ -104,7 +104,6 @@ switch ($ltyp) {
 		$sql.="ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
 	break;
 }
-
 $sql.="WHERE l.gml_id= $1;";
 
 $v = array($gmlid);
@@ -238,9 +237,9 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	}
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, ";
 	$sql.="f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
-	$sql.="FROM ax_gemarkung g ";
-	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+	$sql.="FROM ax_flurstueck f ";
 	$sql.="JOIN alkis_beziehungen v ON f.gml_id=v.beziehung_von "; 
+	$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="WHERE v.beziehung_zu= $1 "; // id Lage
 	$sql.="AND v.beziehungsart= $2 ";
 	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";

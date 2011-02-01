@@ -10,6 +10,7 @@
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	26.01.2011  Space in leere td
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
@@ -62,11 +63,11 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 $sql ="SELECT g.gml_id, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung AS nr, g.blattart, "; // GB-Blatt
 $sql.="b.gml_id, b.bezirk, b.bezeichnung AS beznam, "; // Bezirk
 $sql.="a.gml_id, a.land, a.bezeichnung, a.stelle, a.stellenart "; // Amtsgericht
-$sql.="FROM  ax_buchungsblatt  g ";
-$sql.="JOIN  ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk ";  // BBZ
-$sql.="JOIN  ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
+$sql.="FROM ax_buchungsblatt g ";
+$sql.="LEFT JOIN ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk ";  // BBZ
+$sql.="LEFT JOIN ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
 $sql.="WHERE g.gml_id= $1 ";
-$sql.="AND   a.stellenart=1000;"; // Amtsgericht
+$sql.="AND a.stellenart=1000;"; // Amtsgericht
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -215,11 +216,11 @@ while($row = pg_fetch_array($res)) {
 			// a n d e r e s   B l a t t  (an dem das aktuelle Blatt Rechte hat)
 			// dienendes Grundbuch
 			$sql ="SELECT b.gml_id, b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung AS blatt, b.blattart, z.bezeichnung AS beznam ";
-			$sql.="FROM  ax_buchungsblatt  b ";
-			$sql.="JOIN  alkis_beziehungen v ON b.gml_id=v.beziehung_zu ";
-			$sql.="JOIN  ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk ";
+			$sql.="FROM ax_buchungsblatt  b ";
+			$sql.="JOIN alkis_beziehungen v ON b.gml_id=v.beziehung_zu ";
+			$sql.="LEFT JOIN ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk ";
 			$sql.="WHERE v.beziehung_von='".$gml_bsan."' ";
-			$sql.="AND   v.beziehungsart='istBestandteilVon' ";
+			$sql.="AND v.beziehungsart='istBestandteilVon' ";
 			$sql.="ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 
 			$fbres=pg_query($con,$sql);
@@ -384,18 +385,15 @@ if ($i == 0) {
 	$sql.=" bz.bezeichnung AS beznam, "; // Bezirk
 	$sql.=" ag.bezeichnung, ag.stelle, ag.stellenart "; // Amtsgericht
 
-	$sql.="FROM  alkis_beziehungen  vf ";											// Verbindung fiktiv
-	$sql.="JOIN  ax_buchungsstelle  sf  ON sf.gml_id = vf.beziehung_von ";	// Stelle fiktiv
-	$sql.="JOIN  alkis_beziehungen  vs  ON sf.gml_id = vs.beziehung_zu ";	// Verbindung Stellen
-	$sql.="JOIN  ax_buchungsstelle  sb  ON sb.gml_id = vs.beziehung_von "; // Stelle berechtigt
-	$sql.="JOIN  alkis_beziehungen  vb  ON sb.gml_id = vb.beziehung_von ";	// Verbindung berechtigt
-	$sql.="JOIN  ax_buchungsblatt   bb  ON bb.gml_id = vb.beziehung_zu ";	// Blatt berechtigt
-
-	$sql.="JOIN  ax_buchungsblattbezirk bz ON bb.land = bz.land AND bb.bezirk = bz.bezirk ";
-	$sql.="JOIN  ax_dienststelle ag ON bz.\"gehoertzu|ax_dienststelle_schluessel|land\" = ag.land AND bz.stelle=ag.stelle ";
-
+	$sql.="FROM alkis_beziehungen vf ";											// Verbindung fiktiv
+	$sql.="JOIN ax_buchungsstelle sf ON sf.gml_id = vf.beziehung_von ";	// Stelle fiktiv
+	$sql.="JOIN alkis_beziehungen vs ON sf.gml_id = vs.beziehung_zu ";	// Verbindung Stellen
+	$sql.="JOIN ax_buchungsstelle sb ON sb.gml_id = vs.beziehung_von "; // Stelle berechtigt
+	$sql.="JOIN alkis_beziehungen vb ON sb.gml_id = vb.beziehung_von ";	// Verbindung berechtigt
+	$sql.="JOIN ax_buchungsblatt  bb ON bb.gml_id = vb.beziehung_zu ";	// Blatt berechtigt
+	$sql.="LEFT JOIN ax_buchungsblattbezirk bz ON bb.land = bz.land AND bb.bezirk = bz.bezirk ";
+	$sql.="LEFT JOIN ax_dienststelle ag ON bz.\"gehoertzu|ax_dienststelle_schluessel|land\" = ag.land AND bz.stelle=ag.stelle ";
 	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart ba ON sb.buchungsart = ba.wert ";
-
 	$sql.="WHERE vf.beziehung_zu= $1 ";
 	$sql.="AND  vf.beziehungsart='istBestandteilVon' ";
 	$sql.="AND (vs.beziehungsart='an' OR vs.beziehungsart='zu') ";
@@ -447,7 +445,6 @@ if ($i == 0) {
 				}
 				echo $rowb["bezeichnung"];
 			echo "</td>";
-
 
 			echo "\n\t<td>";
 				if ($showkey) {

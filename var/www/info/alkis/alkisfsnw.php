@@ -13,6 +13,7 @@
 	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon. Tabelle Gebiet/Lage/Nutzung 4spaltig.
 	05.01.2011  Korrektur der Fallunterscheidung "Funktion", auch "Vegetationsmerkmal", Title auf "Zustand".
 	26.01.2011  Space in leere td
+	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	ToDo:
 	- Entschlüsseln "Bahnkategorie" bei Behnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
@@ -66,7 +67,7 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 $sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, f.zeitpunktderentstehung, ";
 $sql.="g.gemarkungsnummer, g.bezeichnung ";
 $sql.="FROM ax_flurstueck f ";
-$sql.="JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sql.="LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sql.="WHERE f.gml_id= $1";
 
 $v = array($gmlid);
@@ -84,8 +85,10 @@ if ($row = pg_fetch_array($res)) {
 	$nenner=$row["nenner"];
 	if ($nenner > 0) {$flstnummer.="/".$nenner;} // BruchNr
 	$flae=number_format($row["amtlicheflaeche"],0,",",".") . " m&#178;";
-} else {echo "Fehler! Kein Treffer fuer gml_id=".$gmlid;}
-
+} else {
+	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
+	//echo "<p class='err'>SQL=".$sql."</p>";
+}
 // Balken
 if ($eig=="j") {
 	echo "<p class='fsei'>ALKIS Flurst&uuml;ck ".$gmkgnr."-".$flurnummer."-".$flstnummer."&nbsp;</p>\n";
@@ -181,12 +184,12 @@ echo $bnam."</td><td>&nbsp;</td></tr>";
 //   ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
 //                  <gehoertZu<
 $sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
-$sql.="FROM  alkis_beziehungen v ";
-$sql.="JOIN  ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
+$sql.="FROM alkis_beziehungen v ";
+$sql.="JOIN ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
+$sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
 $sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
-$sql.="AND   v.beziehungsart='weistAuf' ";
+$sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 
 // Theoretisch JOIN notwendig über den kompletten Schlüssel bestehend aus land+regierungsbezirk+kreis+gemeinde+lage
@@ -398,6 +401,7 @@ while($row = pg_fetch_array($res)) {
 				default:
 					$ico = "Abschnitt.ico";	break;
 			}
+			// Icon ist auch im Druck sichtbar, class='noprint' ?		
 			echo "<p class='nwlink'><img title='".$title."' src='ico/".$ico."' width='16' height='16' alt='NUA'></p>";
 		echo "</td>";
 	echo "\n</tr>";
@@ -450,13 +454,11 @@ echo "\n</table>\n";
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer as lfd, s.zaehler, s.nenner, ";
 $sql.="s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, b.bezeichner AS bart ";
 //  s.beschreibungdesumfangsderbuchung as umf,  ?
-$sql.="FROM  alkis_beziehungen  v "; // Bez Flurst.- Stelle.
-$sql.="JOIN  ax_buchungsstelle  s ON v.beziehung_zu=s.gml_id ";
-
+$sql.="FROM alkis_beziehungen v "; // Bez Flurst.- Stelle.
+$sql.="JOIN ax_buchungsstelle s ON v.beziehung_zu=s.gml_id ";
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-
 $sql.="WHERE v.beziehung_von= $1 "; // id FS
-$sql.="AND   v.beziehungsart= $2 ";
+$sql.="AND v.beziehungsart= $2 ";
 $sql.="ORDER BY s.laufendenummer;";
 
 $v = array($gmlid,'istGebucht');
@@ -467,24 +469,24 @@ if (!$ress) {
 }
 $bs=0; // Z.Buchungsstelle
 while($rows = pg_fetch_array($ress)) {
-	$gmls=$rows["gml_id"];
+	$gmls=$rows["gml_id"]; // gml b-Stelle
 	$lfd=$rows["lfd"]; // BVNR
 
 	// B U C H U N G S B L A T T  zur Buchungsstelle (istBestandteilVon)
 	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
 	$sql.="z.bezeichnung ";  // stelle -> amtsgericht
-	$sql.="FROM  alkis_beziehungen      v "; // Bez. Stelle - Blatt
-	$sql.="JOIN  ax_buchungsblatt       b ON v.beziehung_zu=b.gml_id ";
-	$sql.="JOIN  ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
+	$sql.="FROM alkis_beziehungen v "; // Bez. Stelle - Blatt
+	$sql.="JOIN ax_buchungsblatt b ON v.beziehung_zu=b.gml_id ";
+	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
 	$sql.="WHERE v.beziehung_von= $1 "; // id Buchungsstelle
-	$sql.="AND   v.beziehungsart= $2 ";
+	$sql.="AND v.beziehungsart= $2 ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
 
 	$v = array($gmls,'istBestandteilVon');
 	$resg = pg_prepare("", $sql);
 	$resg = pg_execute("", $v);
 	if (!$resg) {
-		echo "\n<p class='err'>Keine Buchungsblatt.<br>\nSQL= ".$sql."</p>\n";
+		echo "\n<p class='err'>Kein Buchungsblatt.<br>\nSQL= ".$sql."</p>\n";
 	}
 	$bl=0; // Z.Blatt
 	while($rowg = pg_fetch_array($resg)) {
@@ -583,7 +585,8 @@ while($rows = pg_fetch_array($ress)) {
 		$bl++;
 	}
 	if ($bl == 0) {
-		echo "\n<p class='err'>Kein Buchungsblatt gefunden.</p>";
+		echo "\n<p class='err'>Kein Buchungsblatt gefunden<br>\nSQL= ".$sql."</p>";
+		echo "\n<p class='err'>Parameter: gml_id= ".$gmls.", Beziehung='istBestandteilVon'</p>";
 		linkgml($gkz, $gmls, "Buchungstelle");
 	}
 
@@ -593,15 +596,15 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="s.zaehler, s.nenner, s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, ";
 	$sql.="b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
 	$sql.="z.bezeichnung, a.bezeichner AS bart ";  // stelle -> amtsgericht
-	$sql.="FROM  alkis_beziehungen an "; // Bez. Stelle - Stelle
-	$sql.="JOIN  ax_buchungsstelle s ON an.beziehung_von = s.gml_id ";
-	$sql.="JOIN  alkis_beziehungen v ON s.gml_id = v.beziehung_von "; // Bez. Stelle - Blatt
-	$sql.="JOIN  ax_buchungsblatt  b ON v.beziehung_zu = b.gml_id ";
-	$sql.="JOIN  ax_buchungsblattbezirk z ON z.land = b.land AND z.bezirk = b.bezirk ";
-	$sql.="JOIN  ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
+	$sql.="FROM alkis_beziehungen an "; // Bez. Stelle - Stelle
+	$sql.="JOIN ax_buchungsstelle s ON an.beziehung_von = s.gml_id ";
+	$sql.="JOIN alkis_beziehungen v ON s.gml_id = v.beziehung_von "; // Bez. Stelle - Blatt
+	$sql.="JOIN ax_buchungsblatt  b ON v.beziehung_zu = b.gml_id ";
+	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land = b.land AND z.bezirk = b.bezirk ";
+	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
 	$sql.="WHERE an.beziehung_zu = $1 "; // id herrschende Buchungsstelle
-	$sql.="AND   an.beziehungsart = 'an' ";
-	$sql.="AND   v.beziehungsart = 'istBestandteilVon' ";
+	$sql.="AND an.beziehungsart = 'an' ";
+	$sql.="AND v.beziehungsart = 'istBestandteilVon' ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 
 	$v = array($gmls);
