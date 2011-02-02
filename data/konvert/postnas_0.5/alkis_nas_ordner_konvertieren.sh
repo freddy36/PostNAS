@@ -4,7 +4,9 @@
 ## NAS-Daten in einem Ordner konvertieren          -
 ## Dialog-Teil zum Ermitteln der Parameter         -
 ## -------------------------------------------------
-## Stand: 2010-01-06
+## Stand:
+##  2010-01-06
+##  2011-02-02  Umstellung auf gezippte NAS-Daten 
 ## 
 function get_db_config(){
 
@@ -28,10 +30,9 @@ function get_db_config(){
 
 	## Ordner (Eingabedaten)
 	echo ""
-	echo "Ordner mit NAS-Daten (*.XML)? (Absoluter Pfad)"
+	echo "Ordner mit gezippten NAS-Daten (*.xml.zip)? (Absoluter Pfad)"
 	echo "  z.B.  /data/konvert/nas_daten/150/0001"
 	read ORDNER
-	: ${ORDNER:="/data/konvert/nas_daten/150/0001"}
 	# Inhalt des Ordners anzeigen
 	ls  ${ORDNER}
 	LSRESULT=$?
@@ -71,8 +72,10 @@ then
 	exit 1
 fi
 # Protokolldatei ueberschreiben
-echo "** Konvertierung ALKIS **" | /data/konvert/postnas_0.5/log/postnas_err.prot
+echo "** Konvertierung ALKIS **" > /data/konvert/postnas_0.5/log/postnas_err.prot
 echo "** Beginn Batch **"
+echo "   Kommando fuer Wiederholung:"
+echo "   ./alkis_konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD"
 ##                     1        2        3        4        5
 ./alkis_konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD
 result=$?

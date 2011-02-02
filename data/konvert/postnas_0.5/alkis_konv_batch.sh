@@ -11,7 +11,26 @@
 ##  2010-10-14  gdal 1.8 compile aus svn gdal-trunk
 ##  2010-11-10  Tabellen "Optimierte Nutzungsarten" Laden
 ##  2010-11-25  Tabelle  "Optimierte Gemeinden"     Laden
-## 
+##
+##  2011-02-01  Umstellen auf die Verarbeitung gezippter NAS-Daten.
+##       Es wird dabei folgende Ordner-Struktur erwartet:
+##       /mandant/
+##               /0001/*.xml.zip
+##               /0002/*.xml.zip
+##             usw.
+##               /temp/
+##       Also auf der gleichen Ebene wie die Datenordner muss ein Ordner /temp/ existieren.
+##       Dort werden die NAS-Daten temporär ausgepackt.
+##       Relativ zum mitgegebenen Parameter ist das: ../temp/
+##
+##       Achtung: Parallel laufende Konvertierungen zum gleichen Mandanten 
+##                würden hier durcheinander geraten. Vermeiden!
+##
+##       Alternative:
+##       Könnte ogr2ogr auch pipe mit stdin verarbeiten?
+##       $  unzip -p  aktuelle.xml.zip  | ogr2ogr ....
+##       Wahrscheinlich nicht, wie heisst dann die *.gfs?
+##
 ## Konverter:   /opt/gdal-1.8/bin/ = GDAL 1.8 / PostNAS 0.5
 ## Koordinaten: EPSG:25832  UTM, Zone 32
 ##              -a_srs EPSG:25832   - bleibt im UTM-System (korrigierte Werte)
@@ -72,23 +91,32 @@ layer=""
   echo "Datenbank-Name . . = ${DBNAME}"
   echo "Ordner NAS-Daten . = ${ORDNER}"
   echo "Datenbank-User . . = ${DBUSER}"
- #echo "Datenbank-Pass . . = ${DBPASS}"
   echo "Verarbeitungs-Modus= ${verarb}"
   echo " "
-  for nasdatei in ${ORDNER}/*.xml ; do 
-	echo "  *******"
-	echo "  * Datei: " $nasdatei
-	# Zwischenueberschrift im Fehlerprotokoll
-	echo "  * Datei: " $nasdatei >> $errprot
-	# Groesse und Datum anzeigen
-	#ls -l ${nasdatei}
-	/opt/gdal-1.8/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-		PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
-		-a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
-	# Abbruch bei Fehler?
-	nasresult=$?
-	echo "  * Resultat: " $nasresult " fuer " ${nasdatei}
+  cd ${ORDNER}
+  rm ../temp/*.gfs
+  # for zipfile in ${ORDNER}/*.xml.zip ; do 
+  for zipfile in ${ORDNER}/*.zip ; do 
+    echo " "
+    echo "*******"
+    echo "* Archiv: " $zipfile
+    rm ../temp/*.xml
+    unzip ${zipfile}  -d ../temp
+    for nasdatei in ../temp/*.xml ; do 
+      echo "* Datei:  " $nasdatei
+      # Zwischenueberschrift im Fehlerprotokoll
+      echo "* Datei: " $nasdatei >> $errprot
+      # Groesse und Datum anzeigen
+      #ls -l ${nasdatei}
+      /opt/gdal-1.8/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+        PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+        -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
+      # Abbruch bei Fehler?
+      nasresult=$?
+      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+    done
   done
+  rm ../temp/*.xml
   echo "** Ende Konvertierung Ordner ${ORDNER}"
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei " $errprot
 ##
