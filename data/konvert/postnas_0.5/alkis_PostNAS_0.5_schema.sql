@@ -49,8 +49,16 @@
 -- Zur Datenstruktur siehe Dokument: 
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
 
-
+-- *****
 -- ToDo:
+-- *****
+
+--  "gml_id" sollte in allen(?) Tabellen als eindeutig definiert werden.
+--   Versehentlich doppelt konvertierte NAS-Dateien werden sonst "fehlerfrei" eingetragen.
+
+--  CREATE UNIQUE INDEX ax_XXXX_gml 
+--                   ON ax_XXXX USING btree (gml_id);
+
 --   - Abgleich mit GeoInfoDok 6.0
 --   - nicht benötigte (immer leere) Felder rausnehmen
 --   - Indizierung optimieren?
@@ -108,6 +116,8 @@
 -- Nicht benoetigt?
 -- Durch unnoetig umfangreich konfiguruierten NBA generiert?
 
+-- aa_aktivitaet
+-- ----------------------------------------------
 CREATE TABLE aa_aktivitaet (
 	ogc_fid serial NOT NULL,
 	gml_id character(16),
@@ -118,14 +128,14 @@ CREATE TABLE aa_aktivitaet (
 	art character(16),
 	CONSTRAINT aa_aktivitaet_pk PRIMARY KEY (ogc_fid)
 );
-
--- keine Geometrie
--- daher ersatzweise: Dummy-Eintrag in Metatabelle
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'aa_aktivitaet', 'dummy', 2, 25832, 'POINT');
 
 
+-- aa_antrag
+-- ----------------------------------------------
 CREATE TABLE aa_antrag (
 	ogc_fid serial NOT NULL,
 	gml_id character(16),
@@ -142,13 +152,14 @@ CREATE TABLE aa_antrag (
 	art_ character(16),
 	CONSTRAINT aa_antrag_pk PRIMARY KEY (ogc_fid)
 );
--- keine Geometrie
--- daher ersatzweise: Dummy-Eintrag in Metatabelle
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'aa_antrag', 'dummy', 2, 25832, 'POINT');
 
 
+-- aa_antragsgebiet
+-- ----------------------------------------------
 CREATE TABLE aa_antragsgebiet (
 	ogc_fid serial NOT NULL,
 	gml_id character(16),
@@ -158,12 +169,12 @@ CREATE TABLE aa_antragsgebiet (
 	anlass integer,
 	CONSTRAINT aa_antragsgebiet_pk PRIMARY KEY (ogc_fid)
 );
-
 SELECT AddGeometryColumn('aa_antragsgebiet','wkb_geometry','25832','POLYGON',2);
-
 CREATE INDEX aa_antragsgebiet_geom_idx ON aa_antragsgebiet USING gist (wkb_geometry);
 
 
+-- aa_meilenstein
+-- ----------------------------------------------
 CREATE TABLE aa_meilenstein (
 	ogc_fid serial NOT NULL,
  	gml_id character(16),
@@ -185,6 +196,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'aa_meilenstein', 'dummy', 2, 25832, 'POINT');
 
 
+-- aa_projektsteuerung
+-- ----------------------------------------------
 CREATE TABLE aa_projektsteuerung (
 	ogc_fid serial NOT NULL,
 	gml_id character(16),
@@ -196,13 +209,14 @@ CREATE TABLE aa_projektsteuerung (
 	art character(16),
 	CONSTRAINT aa_projektsteuerung_pk PRIMARY KEY (ogc_fid)
 );
--- keine Geometrie
--- daher ersatzweise: Dummy-Eintrag in Metatabelle
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'aa_projektsteuerung', 'dummy', 2, 25832, 'POINT');
 
 
+-- aa_vorgang
+-- ----------------------------------------------
 CREATE TABLE aa_vorgang (
 	ogc_fid serial NOT NULL,
 	gml_id character(16),
@@ -215,17 +229,132 @@ CREATE TABLE aa_vorgang (
 	art character(16),
 	CONSTRAINT aa_vorgang_pk PRIMARY KEY (ogc_fid)
 );
--- keine Geometrie
--- daher ersatzweise: Dummy-Eintrag in Metatabelle
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'aa_vorgang', 'dummy', 2, 25832, 'POINT');
 
 
+-- ax_
+-- ----------------------------------------------
+CREATE TABLE ax_benutzer
+(
+  ogc_fid serial NOT NULL,
+  gml_id character(16),
+  identifier character(28),
+  beginnt character(20),
+  advstandardmodell character(4),
+  anlass integer,
+  profilkennung character(5),
+  direkt character(4),
+  ist character varying,
+  gehoertzu character varying,
+  CONSTRAINT ax_benutzer_pk PRIMARY KEY (ogc_fid)
+);
+
+
+-- ax_
+-- ----------------------------------------------
+CREATE TABLE ax_benutzergruppemitzugriffskontrolle (
+  ogc_fid serial NOT NULL,
+  gml_id character(16),
+  identifier character(28),
+  beginnt character(20),
+  advstandardmodell character(4),
+  anlass integer,
+  bezeichnung character(5),
+  land integer,
+  stelle integer,
+  bestehtaus character varying,
+  query character varying,
+  zugriffhistorie character(4),
+  CONSTRAINT ax_benutzergruppemitzugriffskontrolle_pk PRIMARY KEY (ogc_fid)
+);
+
+
+-- ax_
+-- ----------------------------------------------
+CREATE TABLE ax_benutzergruppenba (
+  ogc_fid serial NOT NULL,
+  gml_id character(16),
+  identifier character(28),
+  beginnt character(20),
+  advstandardmodell character(4),
+  bezeichnung character(14),
+  land integer,
+  stelle integer,
+  koordinatenreferenzsystem character varying,
+  bestehtaus character varying,
+  query character varying,
+  art integer,
+  ersterstichtag character(10),
+  intervall character(14),
+  CONSTRAINT ax_benutzergruppenba_pk PRIMARY KEY (ogc_fid)
+);
+ALTER TABLE ax_benutzergruppenba OWNER TO b600352;
+
+
+-- ax_
+-- ----------------------------------------------
+CREATE TABLE ax_punktkennunguntergegangen (
+  ogc_fid serial NOT NULL,
+  gml_id character(16),
+  identifier character(28),
+  beginnt character(20),
+  advstandardmodell character(4),
+  anlass integer,
+  punktkennung double precision,
+  art integer,
+  CONSTRAINT ax_punktkennunguntergegangen_pk PRIMARY KEY (ogc_fid)
+);
+
+
+-- ax_
+-- ----------------------------------------------
+CREATE TABLE ax_reservierung (
+  ogc_fid serial NOT NULL,
+  gml_id character(16),
+  identifier character(28),
+  beginnt character(20),
+  advstandardmodell character(4),
+  art integer,
+  nummer character(20),
+  land integer,
+  stelle integer,
+  ablaufderreservierung character(10),
+  antragsnummer character(18),
+  auftragsnummer character(18),
+  "gebietskennung|ax_reservierungsauftrag_gebietskennung|gemarkung" integer,
+  gemarkungsnummer integer,
+  "gebietskennung|ax_reservierungsauftrag_gebietskennung|flur|ax_g" integer,
+  gemarkung integer,
+  gemarkungsteilflur integer,
+  nummerierungsbezirk integer,
+  CONSTRAINT ax_reservierung_pk PRIMARY KEY (ogc_fid)
+);
+
+
+-- 
+-- ----------------------------------------------
+CREATE TABLE ks_sonstigesbauwerk (
+  ogc_fid serial NOT NULL,
+  gml_id character(16),
+  identifier character(28),
+  beginnt character(20),
+  sonstigesmodell character(6),
+  anlass integer,
+  bauwerksfunktion integer,
+  CONSTRAINT ks_sonstigesbauwerk_pk PRIMARY KEY (ogc_fid),
+);
+
+SELECT AddGeometryColumn('ks_sonstigesbauwerk','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ks_sonstigesbauwerk_geom_idx ON ks_sonstigesbauwerk USING gist (wkb_geometry);
+
+
+
 -- B e z i e h u n g e n 
 -- ----------------------------------------------
--- ab PostNAS 0.5
-
 -- Zentrale Tabelle fuer alle Relationen im Buchwerk.
 
 -- Statt Relationen und FOREIGN-KEY-CONSTRAINTS zwischen Tabellen direkt zu legen, gehen 
@@ -255,11 +384,14 @@ COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf gml_id';
 COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung';
 
 -- Beziehungsarten:
-
+--
 -- "an" "benennt" "bestehtAusRechtsverhaeltnissenZu" "beziehtSichAuchAuf" "dientZurDarstellungVon"
 -- "durch" "gehoertAnteiligZu" "gehoertZu" "hat" "hatAuch" "istBestandteilVon"
 -- "istGebucht" "istTeilVon" "weistAuf" "zeigtAuf" "zu"
 
+-- Hinweis:
+-- Diese Tabelle enthält für ein Kreisgebiet ca. 5 Mio. Zeilen und wird ständig benutzt.
+-- Optimierung z.B. über passende Indices ist wichtig.
 
 
 -- A n d e r e   F e s t l e g u n g   n a c h   W a s s e r r e c h t
@@ -285,37 +417,6 @@ COMMENT ON TABLE  ax_anderefestlegungnachwasserrecht        IS 'Andere Festlegun
 COMMENT ON COLUMN ax_anderefestlegungnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
 
 
--- A n s c h r i f t
--- ----------------------------------------------
--- Buchwerk, keine Geometrie.
--- Konverter versucht Tabelle noch einmal anzulegen, wenn kein (Dummy-) Eintrag in Metatabelle 'geometry_columns'.
-CREATE TABLE ax_anschrift (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	ort_post		character varying(30),
-	postleitzahlpostzustellung	integer,
-	strasse			character varying(40),    -- (28)
-	hausnummer		character varying(9),
-	bestimmungsland		character varying(30),    -- (3)
-	--art			character(37),
-	CONSTRAINT ax_anschrift_pk PRIMARY KEY (ogc_fid)
-);
--- Dummy-Eintrag in Metatabelle
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_anschrift', 'dummy', 2, 25832, 'POINT');
-
--- Index für alkis_beziehungen
-CREATE INDEX ax_anschrift_gml ON ax_anschrift USING btree (gml_id);
-
-COMMENT ON TABLE  ax_anschrift        IS 'A n s c h r i f t';
-COMMENT ON COLUMN ax_anschrift.gml_id IS 'Identifikator, global eindeutig';
-
-
 -- B a u b l o c k
 -- ----------------------------------------------
 -- neu 02.2011
@@ -329,118 +430,12 @@ CREATE TABLE ax_baublock (
 	baublockbezeichnung integer,
   CONSTRAINT ax_baublock_pk PRIMARY KEY (ogc_fid)
 );
-
 SELECT AddGeometryColumn('ax_baublock','wkb_geometry','25832','MULTIPOLYGON',2);
 
 CREATE INDEX ax_baublock_geom_idx ON ax_baublock USING gist (wkb_geometry);
 
 COMMENT ON TABLE  ax_baublock        IS 'B a u b l o c k';
 COMMENT ON COLUMN ax_baublock.gml_id IS 'Identifikator, global eindeutig';
-
-
--- B a u - ,   R a u m -   o d e r   B o d e n o r d n u n g s r e c h t
--- ---------------------------------------------------------------------
--- 'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen 
--- mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften.
-CREATE TABLE ax_bauraumoderbodenordnungsrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	art			character varying(40), -- (15)
-	"name"			character varying(15),
-	artderfestlegung	integer,
-	land			integer,
-	stelle			character varying(7), 
-	bezeichnung		character varying(24), 
-	CONSTRAINT ax_bauraumoderbodenordnungsrecht_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_bauraumoderbodenordnungsrecht','wkb_geometry','25832','MULTIPOLYGON',2);
-
--- verschiedene Goemetrie-Typen
-ALTER TABLE ax_bauraumoderbodenordnungsrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_bauraumoderbodenordnungsrecht_geom_idx ON ax_bauraumoderbodenordnungsrecht USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_bauraumoderbodenordnungsrecht             IS 'REO: Bau-, Raum- oder Bodenordnungsrecht';
-COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.gml_id      IS 'Identifikator, global eindeutig';
-COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.artderfestlegung IS 'ADF';
-COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht."name"      IS 'NAM, Eigenname von "Bau-, Raum- oder Bodenordnungsrecht"';
-COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.bezeichnung IS 'BEZ, Amtlich festgelegte Verschlüsselung von "Bau-, Raum- oder Bodenordnungsrecht"';
-
-
--- B a u t e i l
--- -------------
-CREATE TABLE ax_bauteil (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	sonstigesmodell		character varying[],
-	anlass			integer,
-	bauart			integer,
-	lagezurerdoberflaeche	integer,
-	CONSTRAINT ax_bauteil_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_bauteil','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_bauteil_geom_idx ON ax_bauteil USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_bauteil        IS 'B a u t e i l';
-COMMENT ON COLUMN ax_bauteil.gml_id IS 'Identifikator, global eindeutig';
-
-
-
-
--- B e s o n d e r e   G e b a e u d e l i n i e
--- ----------------------------------------------
-CREATE TABLE ax_besonderegebaeudelinie (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	beschaffenheit		integer,
-	anlass			integer,
-	CONSTRAINT ax_besonderegebaeudelinie_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_besonderegebaeudelinie','wkb_geometry','25832','LINESTRING',2);
-
-CREATE INDEX ax_besonderegebaeudelinie_geom_idx ON ax_besonderegebaeudelinie USING gist (wkb_geometry);
-
-COMMENT ON TABLE ax_besonderegebaeudelinie IS 'B e s o n d e r e   G e b a e u d e l i n i e';
-COMMENT ON COLUMN ax_besonderegebaeudelinie.gml_id IS 'Identifikator, global eindeutig';
-
-
--- B e s o n d e r e r   G e b a e u d e p u n k t
--- -----------------------------------------------
-CREATE TABLE ax_besonderergebaeudepunkt (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	land			integer,
-	stelle			integer,
-	punktkennung		character varying(15), -- integer,
-	--sonstigeeigenschaft	character(26),
-	art			character varying(40), --(37)
-	"name"			character varying[],
-	CONSTRAINT ax_besonderergebaeudepunkt_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_besonderergebaeudepunkt', 'dummy', 2, 25832, 'POINT');
-
-COMMENT ON TABLE  ax_besonderergebaeudepunkt        IS 'B e s o n d e r e r   G e b a e u d e p u n k t';
-COMMENT ON COLUMN ax_besonderergebaeudepunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- B e s o n d e r e r   T o p o g r a f i s c h e r   P u n k t
@@ -488,155 +483,6 @@ COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
 
 
--- B o d e n s c h a e t z u n g
--- ----------------------------------------------
-CREATE TABLE ax_bodenschaetzung (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	art			character varying(40), -- (15)
-	"name"			character varying(33),
-	kulturart				integer,
-	bodenart				integer,
-	zustandsstufeoderbodenstufe		integer,
-	entstehungsartoderklimastufewasserverhaeltnisse	integer,
-	bodenzahlodergruenlandgrundzahl		integer,
-	ackerzahlodergruenlandzahl		integer,
-	sonstigeangaben				integer,
-	jahreszahl				integer,
-	CONSTRAINT ax_bodenschaetzung_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry','25832','MULTIPOLYGON',2);
-
--- POLYGON und MULTIPOLYGON
-ALTER TABLE ONLY ax_bodenschaetzung DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_bodenschaetzung_geom_idx ON ax_bodenschaetzung USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_bodenschaetzung        IS 'B o d e n s c h a e t z u n g';
-COMMENT ON COLUMN ax_bodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
-
-
--- B u c h u n g s b l a t t
--- -------------------------
-CREATE TABLE ax_buchungsblatt (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	buchungsblattkennzeichen	character(13), -- integer
-	land			integer,
-	bezirk			integer,
-	buchungsblattnummermitbuchstabenerweiterung	character(7),
-	blattart		integer,
-	art			character varying(15),
-	-- "name" character(13),  -- immer leer?
-	CONSTRAINT ax_buchungsblatt_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_buchungsblatt', 'dummy', 2, 25832, 'POINT');
-
--- Index für alkis_beziehungen
-CREATE INDEX ax_buchungsblatt_gml ON ax_buchungsblatt USING btree (gml_id);
-
-COMMENT ON TABLE  ax_buchungsblatt        IS 'NREO "Buchungsblatt" enthält die Buchungen (Buchungsstellen und Namensnummern) des Grundbuchs und des Liegenschhaftskatasters (bei buchungsfreien Grundstücken).';
-COMMENT ON COLUMN ax_buchungsblatt.gml_id IS 'Identifikator, global eindeutig';
-
-
--- B u c h u n g s b l a t t - B e z i r k
--- ----------------------------------------------
-CREATE TABLE ax_buchungsblattbezirk (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(26),
-	land			integer,
-	bezirk			integer,
-	"gehoertzu|ax_dienststelle_schluessel|land" integer,
-	stelle			character varying(4),
-	CONSTRAINT ax_buchungsblattbezirk_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_buchungsblattbezirk', 'dummy', 2, 25832, 'POINT');
-
--- Such-Index auf Land + Bezirk 
--- Der Verweis von ax_buchungsblatt hat keine alkis_beziehung.
-CREATE INDEX ax_buchungsblattbez_key ON ax_buchungsblattbezirk USING btree (land, bezirk);
-
-COMMENT ON TABLE  ax_buchungsblattbezirk        IS 'Buchungsblatt- B e z i r k';
-COMMENT ON COLUMN ax_buchungsblattbezirk.gml_id IS 'Identifikator, global eindeutig';
-
-
--- B u c h u n g s s t e l l e
--- -----------------------------
-CREATE TABLE ax_buchungsstelle (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character varying(28),
-	beginnt				character(20),
-	advstandardmodell		character varying(8),
-	anlass				integer,
-	buchungsart			integer,
-	laufendenummer			integer,
-	beschreibungdesumfangsderbuchung	character(1),
-	--art				character(37),
-	--uri				character(12),
-	zaehler				double precision,
-	nenner				integer,
-	nummerimaufteilungsplan		character varying(40),   -- (32)
-	beschreibungdessondereigentums	character varying(400),  -- (291)
-	CONSTRAINT ax_buchungsstelle_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_buchungsstelle', 'dummy', 2, 25832, 'POINT');
-
-
---Index für alkis_beziehungen
-  CREATE INDEX id_ax_buchungsstelle_gml ON ax_buchungsstelle USING btree (gml_id);
-
-COMMENT ON TABLE  ax_buchungsstelle        IS 'NREO "Buchungsstelle" ist die unter einer laufenden Nummer im Verzeichnis des Buchungsblattes eingetragene Buchung.';
-COMMENT ON COLUMN ax_buchungsstelle.gml_id IS 'Identifikator, global eindeutig';
-
-
--- B u n d e s l a n d
--- ----------------------------------------------
-CREATE TABLE ax_bundesland (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(30), --(22)
-	land			integer,
-	CONSTRAINT ax_bundesland_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_bundesland', 'dummy', 2, 25832, 'POINT');
-
-COMMENT ON TABLE  ax_bundesland        IS 'B u n d e s l a n d';
-COMMENT ON COLUMN ax_bundesland.gml_id IS 'Identifikator, global eindeutig';
-
-
 -- D e n k m a l s c h u t z r e c h t
 -- -----------------------------------
 CREATE TABLE ax_denkmalschutzrecht (
@@ -663,116 +509,6 @@ COMMENT ON TABLE  ax_denkmalschutzrecht        IS 'D e n k m a l s c h u t z r e
 COMMENT ON COLUMN ax_denkmalschutzrecht.gml_id IS 'Identifikator, global eindeutig';
 
 
--- D i e n s t s t e l l e
--- ----------------------------------------------
--- NREO, nur Schluesseltabelle: Geometrie entbehrlich
-CREATE TABLE ax_dienststelle (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	sonstigesmodell		character varying(8),
-	anlass			integer,
-	schluesselgesamt	character varying(7),
-	bezeichnung		character varying(120), -- 102
-	land			integer,
-	stelle			character varying(5),
-	stellenart		integer,
-	-- hat character	varying,
-	CONSTRAINT ax_dienststelle_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_dienststelle', 'dummy', 2, 25832, 'POINT');
-
--- Index für alkis_beziehungen
-CREATE INDEX ax_dienststelle_gml ON ax_dienststelle USING btree (gml_id);
-
-COMMENT ON TABLE  ax_dienststelle        IS 'D i e n s t s t e l l e';
-COMMENT ON COLUMN ax_dienststelle.gml_id IS 'Identifikator, global eindeutig';
-
-
--- F i r s t l i n i e
--- -----------------------------------------------------
-CREATE TABLE ax_firstlinie (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	sonstigesmodell		character varying(8),
-	anlass			integer,
-	art			character varying(40),
-	uri			character varying(28),
-	CONSTRAINT ax_firstlinie_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_firstlinie','wkb_geometry','25832','LINESTRING',2);
-
-CREATE INDEX ax_firstlinie_geom_idx ON ax_firstlinie USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_firstlinie        IS 'F i r s t l i n i e';
-COMMENT ON COLUMN ax_firstlinie.gml_id IS 'Identifikator, global eindeutig';
-
-
--- G e b a e u d e
--- ---------------
-CREATE TABLE ax_gebaeude (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	gebaeudefunktion	integer,
-	description		integer,
-	"name"			character varying(25),
-	lagezurerdoberflaeche	integer,
-	art			character varying(40),  -- (37)
-	bauweise		integer,
-	anzahlderoberirdischengeschosse	integer,
-	grundflaeche		integer,
-	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
-	individualname		character varying(7),
-	zustand			integer,
-	CONSTRAINT ax_gebaeude_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_gebaeude','wkb_geometry','25832','MULTIPOLYGON',2);
-
--- POLYGON und MULTIPOLYGON
-ALTER TABLE ax_gebaeude DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_gebaeude_geom_idx ON ax_gebaeude USING gist (wkb_geometry);
-
-CREATE INDEX id_ax_gebaeude_gml               ON ax_gebaeude  USING btree  (gml_id);
-
-COMMENT ON TABLE  ax_gebaeude        IS 'G e b a e u d e';
-COMMENT ON COLUMN ax_gebaeude.gml_id IS 'Identifikator, global eindeutig';
-
-
-
--- Wíe oft kommt welcher Typ vor
---  CREATE VIEW gebauede_geometrie_arten AS
---    SELECT geometrytype(wkb_geometry) AS geotyp,
---           COUNT(ogc_fid)             AS anzahl
---      FROM ax_gebaeude
---  GROUP BY geometrytype(wkb_geometry);
--- Ergebnis: nur 3 mal MULTIPOLYGON in einer Gemeinde, Rest POLYGON
-
--- Welche sind das?
---  CREATE VIEW gebauede_geometrie_multipolygone AS
---    SELECT ogc_fid, 
---           astext(wkb_geometry) AS geometrie
---      FROM ax_gebaeude
---     WHERE geometrytype(wkb_geometry) = 'MULTIPOLYGON';
-
-
--- GeometryFromText('MULTIPOLYGON((( AUSSEN ), ( INNEN1 ), ( INNEN2 )))', srid)
--- GeometryFromText('MULTIPOLYGON((( AUSSEN1 )),(( AUSSEN2)))', srid)
-
-
 -- G e b a e u d e a u s g e s t a l t u n g
 -- -----------------------------------------
 -- neu 02.2011
@@ -795,98 +531,6 @@ CREATE INDEX ax_gebaeudeausgestaltung_geom_idx ON ax_gebaeudeausgestaltung USING
 COMMENT ON TABLE  ax_gebaeudeausgestaltung        IS 'G e b a e u d e a u s g e s t a l t u n g';
 COMMENT ON COLUMN ax_gebaeudeausgestaltung.gml_id IS 'Identifikator, global eindeutig';
 
-
--- G e m a r k u n g
--- ----------------------------------------------
--- NREO, nur Schluesseltabelle: Geometrie entbehrlich
-CREATE TABLE ax_gemarkung (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(23),
-	land			integer,
-	gemarkungsnummer	integer,  -- Key
-	"istamtsbezirkvon|ax_dienststelle_schluessel|land" integer,
-	stelle			integer,
-	CONSTRAINT ax_gemarkung_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_gemarkung', 'dummy', 2, 25832, 'POINT');
-
--- Index für alkis_beziehungen
---CREATE INDEX ax_gemarkung_gml ON ax_gemarkung USING btree (gml_id);
-
--- Such-Index, Verweis aus ax_Flurstueck
-CREATE INDEX ax_gemarkung_nr  ON ax_gemarkung USING btree (land, gemarkungsnummer);
-
-
-COMMENT ON TABLE  ax_gemarkung        IS 'G e m a r k u n g';
-COMMENT ON COLUMN ax_gemarkung.gml_id IS 'Identifikator, global eindeutig';
-
-
--- G e m a r k u n g s t e i l   /   F l u r
--- ----------------------------------------------
--- Schluesseltabelle: Geometrie entbehrlich
-CREATE TABLE ax_gemarkungsteilflur (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(7), -- integer,
-	land			integer,
-	gemarkung		integer,
-	gemarkungsteilflur	integer,
-	CONSTRAINT ax_gemarkungsteilflur_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_gemarkungsteilflur', 'dummy', 2, 25832, 'POINT');
-
--- Index für alkis_beziehungen
-CREATE INDEX ax_gemarkungsteilflur_gml ON ax_gemarkungsteilflur USING btree (gml_id);
-
-
-COMMENT ON TABLE  ax_gemarkungsteilflur        IS 'G e m a r k u n g s t e i l   /   F l u r';
-COMMENT ON COLUMN ax_gemarkungsteilflur.gml_id IS 'Identifikator, global eindeutig';
-
-
--- G e m e i n d e
--- ----------------------------------------------
-CREATE TABLE ax_gemeinde (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(25),
-	land			integer,
-	regierungsbezirk	integer,
-	kreis			integer,
-	gemeinde		integer,
-	CONSTRAINT ax_gemeinde_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_gemeinde', 'dummy', 2, 25832, 'POINT');
-
--- Index für alkis_beziehungen
-CREATE INDEX ax_gemeinde_gml ON ax_gemeinde USING btree (gml_id);
-
-COMMENT ON TABLE  ax_gemeinde        IS 'G e m e i n d e';
-COMMENT ON COLUMN ax_gemeinde.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- Georeferenzierte  G e b ä u d e a d r e s s e
@@ -1009,9 +653,7 @@ COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global 
 -- Historisches Flurstück (ALKIS)
 -- ------------------------------
 -- neu 02.2011
-
 -- Die "neue" Historie, die durch Fortführungen innehal ALKIS entstanden ist.
-
 CREATE TABLE ax_historischesflurstueck (
 	ogc_fid					serial NOT NULL,
 	gml_id					character(16),
@@ -1057,233 +699,6 @@ COMMENT ON TABLE  ax_historischesflurstueck        IS 'Historisches Flurstück, 
 COMMENT ON COLUMN ax_historischesflurstueck.gml_id IS 'Identifikator, global eindeutig';
 
 
--- K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t
--- -------------------------------------------------------------------
-CREATE TABLE ax_klassifizierungnachstrassenrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	qadvstandardmodell	character varying(9),
-	anlass			integer,
-	artderfestlegung	integer,
-	bezeichnung		character varying(20),
-	CONSTRAINT ax_klassifizierungnachstrassenrecht_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_klassifizierungnachstrassenrecht','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_klassifizierungnachstrassenrecht_geom_idx  ON ax_klassifizierungnachstrassenrecht  USING gist  (wkb_geometry);
-
-COMMENT ON TABLE  ax_klassifizierungnachstrassenrecht        IS 'K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t';
-COMMENT ON COLUMN ax_klassifizierungnachstrassenrecht.gml_id IS 'Identifikator, global eindeutig';
-
-
--- K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t
--- ---------------------------------------------------------------
-CREATE TABLE ax_klassifizierungnachwasserrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	artderfestlegung	integer,
-	CONSTRAINT ax_klassifizierungnachwasserrecht_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_klassifizierungnachwasserrecht','wkb_geometry','25832','POLYGON',2);
-
-CREATE INDEX ax_klassifizierungnachwasserrecht_geom_idx
-  ON ax_klassifizierungnachwasserrecht USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_klassifizierungnachwasserrecht        IS 'K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t';
-COMMENT ON COLUMN ax_klassifizierungnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
-
-
--- k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l
--- -----------------------------------------------------------
-CREATE TABLE ax_kleinraeumigerlandschaftsteil (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	sonstigesmodell		character varying[],
-	anlass			integer,
-	landschaftstyp		integer,
-	name			character varying(20)
-);
-
-SELECT AddGeometryColumn('ax_kleinraeumigerlandschaftsteil','wkb_geometry','25832','POINT',2);
-
-ALTER TABLE ONLY ax_kleinraeumigerlandschaftsteil
-	ADD CONSTRAINT ax_kleinraeumigerlandschaftsteil_pk PRIMARY KEY (ogc_fid);
-
-CREATE INDEX ax_kleinraeumigerlandschaftsteil_geom_idx ON ax_kleinraeumigerlandschaftsteil USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_kleinraeumigerlandschaftsteil        IS 'k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l';
-COMMENT ON COLUMN ax_kleinraeumigerlandschaftsteil.gml_id IS 'Identifikator, global eindeutig';
-
-
--- K o m m u n a l e s   G e b i e t
--- ----------------------------------------------
-CREATE TABLE ax_kommunalesgebiet (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	land			integer,
-	regierungsbezirk	integer,
-	kreis			integer,
-	gemeinde		integer,
-	CONSTRAINT ax_kommunalesgebiet_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_kommunalesgebiet','wkb_geometry','25832','MULTIPOLYGON',2);
-
--- verschiedene Geometrietypen?
-ALTER TABLE ax_kommunalesgebiet DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_kommunalesgebiet_geom_idx ON ax_kommunalesgebiet USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_kommunalesgebiet        IS 'K o m m u n a l e s   G e b i e t';
-COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig';
-
-
--- K r e i s   /   R e g i o n
--- ---------------------------
-CREATE TABLE ax_kreisregion (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(20),
-	land			integer,
-	regierungsbezirk	integer,
-	kreis			integer,
-	CONSTRAINT ax_kreisregion_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_kreisregion', 'dummy', 2, 25832, 'POINT');
-
-COMMENT ON TABLE  ax_kreisregion        IS 'K r e i s  /  R e g i o n';
-COMMENT ON COLUMN ax_kreisregion.gml_id IS 'Identifikator, global eindeutig';
-
-
--- L a g e b e z e i c h n u n g s - K a t a l o g e i n t r a g
--- --------------------------------------------------------------
-CREATE TABLE ax_lagebezeichnungkatalogeintrag (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	character varying(13),
-	bezeichnung		character varying(28),
-	land			integer,
-	regierungsbezirk	integer,
-	kreis			integer,
-	gemeinde		integer,
-	lage			character varying(5),
-	CONSTRAINT ax_lagebezeichnungkatalogeintrag_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_lagebezeichnungkatalogeintrag', 'dummy', 2, 25832, 'POINT');
-
--- NRW: Nummerierung Strassenschluessel innerhalb einer Gemeinde
--- Die Kombination Gemeinde und Straßenschlüssel ist also ein eindeutiges Suchkriterium.
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_lage ON ax_lagebezeichnungkatalogeintrag USING btree (gemeinde, lage);
-
--- Suchindex (Verwendung in Navigations-Programm)
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_gesa ON ax_lagebezeichnungkatalogeintrag USING btree (schluesselgesamt);
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_bez  ON ax_lagebezeichnungkatalogeintrag USING btree (bezeichnung);
-
-COMMENT ON TABLE  ax_lagebezeichnungkatalogeintrag              IS 'Straßentabelle';
-COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.gml_id       IS 'Identifikator, global eindeutig';
-
-COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.lage         IS 'Straßenschlüssel';
-COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.bezeichnung  IS 'Straßenname';
-
-
--- M u s t e r -,  L a n d e s m u s t e r -   u n d   V e r g l e i c h s s t u e c k
--- -----------------------------------------------------------------------------------
-CREATE TABLE ax_musterlandesmusterundvergleichsstueck (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character varying(28),
-	beginnt				character(20), 
-	advstandardmodell		character varying(8),
-	anlass				integer,
-	merkmal				integer,
-	nummer				integer,
-	kulturart			integer,
-	bodenart			integer,
-	zustandsstufeoderbodenstufe	integer,
-	entstehungsartoderklimastufewasserverhaeltnisse	integer,
-	bodenzahlodergruenlandgrundzahl	integer,
-	ackerzahlodergruenlandzahl	integer,
-	art				character varying(40),  -- (15)
-	"name"				character varying(27),
-	CONSTRAINT ax_musterlandesmusterundvergleichsstueck_pk PRIMARY KEY (ogc_fid)
-);
-
-
-SELECT AddGeometryColumn('ax_musterlandesmusterundvergleichsstueck','wkb_geometry','25832','POLYGON',2);
-
--- POLYGON  und POINT
-ALTER TABLE ax_musterlandesmusterundvergleichsstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_musterlandesmusterundvergleichsstueck_geom_idx
-  ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_musterlandesmusterundvergleichsstueck        IS 'Muster-, Landesmuster- und Vergleichsstueck';
-COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.gml_id IS 'Identifikator, global eindeutig';
-
-
--- N a m e n s n u m m e r
--- ----------------------------------------------
--- Buchwerk. Keine Geometrie
-CREATE TABLE ax_namensnummer (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character varying(28),
-	beginnt				character(20),
-	advstandardmodell		character varying(8),
-	anlass				integer,
-	laufendenummernachdin1421	character(16),      -- 0000.00.00.00.00
-	zaehler				double precision,   -- Anteil ..
-	nenner				double precision,   --    .. als Bruch 
-	eigentuemerart			integer,
-	nummer				character(6),       -- leer bei NRW GID 5.1 / Inhalt bei RLP GID 6
-	artderrechtsgemeinschaft	integer,            -- Schlüssel
-	beschriebderrechtsgemeinschaft	character varying(1000),  -- (977)
-	CONSTRAINT ax_namensnummer_pk PRIMARY KEY (ogc_fid)
-);
-
--- Filter   istbestandteilvon <> '' or benennt <> '' or bestehtausrechtsverhaeltnissenzu <> ''
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_namensnummer', 'dummy', 2, 25832, 'POINT');
-
--- Verbindungstabellen indizieren
-  CREATE INDEX ax_namensnummer_gml ON ax_namensnummer USING btree (gml_id);
-
-
-COMMENT ON TABLE  ax_namensnummer        IS 'NREO "Namensnummer" ist die laufende Nummer der Eintragung, unter welcher der Eigentümer oder Erbbauberechtigte im Buchungsblatt geführt wird. Rechtsgemeinschaften werden auch unter AX_Namensnummer geführt.';
-COMMENT ON COLUMN ax_namensnummer.gml_id IS 'Identifikator, global eindeutig';
-
-
 -- N  a t u r -,  U m w e l t -   o d e r   B o d e n s c h u t z r e c h t
 -- ------------------------------------------------------------------------
 CREATE TABLE ax_naturumweltoderbodenschutzrecht (
@@ -1308,83 +723,6 @@ CREATE INDEX ax_naturumweltoderbodenschutzrecht_geom_idx
 
 COMMENT ON TABLE  ax_naturumweltoderbodenschutzrecht        IS 'N  a t u r -,  U m w e l t -   o d e r   B o d e n s c h u t z r e c h t';
 COMMENT ON COLUMN ax_naturumweltoderbodenschutzrecht.gml_id IS 'Identifikator, global eindeutig';
-
-
--- 21001 P e r s o n
--- ----------------------------------------------
--- Buchwerk. Keine Geometrie
-CREATE TABLE ax_person (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	nachnameoderfirma	character varying(100), --(97),
-	anrede			integer,        -- 'Anrede' ist die Anrede der Person. Diese Attributart ist optional, da Körperschaften und juristischen Person auch ohne Anrede angeschrieben werden können.
-	-- Bezeichner	Wert
-	--       Frau	1000
-	--       Herr	2000
-	--      Firma	3000
-	vorname			character varying(40),  --(31),
-	geburtsname		character varying(50),  --(36),
-	geburtsdatum		character varying(10),  -- Datumsformat?
-	namensbestandteil	character varying(20),
-	akademischergrad	character varying(16),  -- 'Akademischer Grad' ist der akademische Grad der Person (z.B. Dipl.-Ing., Dr., Prof. Dr.)
-	art			character varying(40),  -- (37)
-	uri			character varying(28),
-	CONSTRAINT ax_person_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_person', 'dummy', 2, 25832, 'POINT');
-
--- Verbindungstabellen indizieren
-  CREATE INDEX id_ax_person_gml   ON ax_person  USING btree (gml_id);
-
-COMMENT ON TABLE  ax_person        IS 'NREO "Person" ist eine natürliche oder juristische Person und kann z.B. in den Rollen Eigentümer, Erwerber, Verwalter oder Vertreter in Katasterangelegenheiten geführt werden.';
-COMMENT ON COLUMN ax_person.gml_id IS 'Identifikator, global eindeutig';
-
-COMMENT ON COLUMN ax_person.namensbestandteil IS 'enthält z.B. Titel wie "Baron"';
-
--- Relationen:
--- hat:		Die 'Person' hat 'Anschrift'.
--- weist auf:	Durch die Relation 'Person' weist auf 'Namensnummer' wird ausgedrückt, dass die Person als Eigentümer,
---		Erbbauberechtigter oder künftiger Erwerber unter der Namensnummer eines Buchungsblattes eingetragen ist.
-
-
-
-
-
-
-
--- R e g i e r u n g s b e z i r k
--- ----------------------------------------------
-CREATE TABLE ax_regierungsbezirk (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	schluesselgesamt	integer,
-	bezeichnung		character varying(20),
-	land			integer,
-	regierungsbezirk	integer,
-	CONSTRAINT ax_regierungsbezirk_pk PRIMARY KEY (ogc_fid)
-);
-
-INSERT INTO geometry_columns 
-       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
-VALUES ('', 'public', 'ax_regierungsbezirk', 'dummy', 2, 25832, 'POINT');
-
--- Verbindungstabellen indizieren
-  CREATE INDEX ax_regierungsbezirk_gml ON ax_regierungsbezirk USING btree (gml_id);
-
-
-COMMENT ON TABLE  ax_regierungsbezirk        IS 'R e g i e r u n g s b e z i r k';
-COMMENT ON COLUMN ax_regierungsbezirk.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- S c h u t z g e b i e t   n a c h   W a s s s e r r e c h t
@@ -1436,37 +774,6 @@ COMMENT ON TABLE  ax_schutzzone        IS 'S c h u t z z o n e';
 COMMENT ON COLUMN ax_schutzzone.gml_id IS 'Identifikator, global eindeutig';
 
 
--- S o n s t i g e s   R e c h t
--- -----------------------------
-CREATE TABLE ax_sonstigesrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	artderfestlegung	integer,
-	land			integer,
-	stelle			character varying(5),
-	bezeichnung		character varying(20),
-	characterstring		integer,
-	art			character varying(40),  --(15)
-	"name"			character varying(20), 
-	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
-	datetime		character(20),
-	CONSTRAINT ax_sonstigesrecht_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_sonstigesrecht','wkb_geometry','25832','POLYGON',2);
-
-ALTER TABLE ax_sonstigesrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
-
-CREATE INDEX ax_sonstigesrecht_geom_idx  ON ax_sonstigesrecht USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_sonstigesrecht        IS 'S o n s t i g e s   R e c h t';
-COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
-
-
 -- T o p o g r a p h i s c h e   L i n i e 
 -- ---------------------------------------------------
 -- neu 02.2011
@@ -1490,35 +797,9 @@ COMMENT ON TABLE  ax_topographischelinie        IS 'T o p o g r a p h i s c h e 
 COMMENT ON COLUMN ax_topographischelinie.gml_id IS 'Identifikator, global eindeutig';
 
 
--- W o h n p l a t z
--- -----------------
-CREATE TABLE ax_wohnplatz (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character varying(28),
-	beginnt			character(20),
-	advstandardmodell	character varying(9),
-	anlass			integer,
-	"name"			character varying(20),
-	CONSTRAINT ax_wohnplatz_pk PRIMARY KEY (ogc_fid)
-);
-
-SELECT AddGeometryColumn('ax_wohnplatz','wkb_geometry','25832','POINT',2);
-
-CREATE INDEX ax_wohnplatz_geom_idx ON ax_wohnplatz USING gist (wkb_geometry);
-
-COMMENT ON TABLE  ax_wohnplatz        IS 'W o h n p l a t z';
-COMMENT ON COLUMN ax_wohnplatz.gml_id IS 'Identifikator, global eindeutig';
-
-
--- wenn schon, dann auch alle
-COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL)';
-COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
-
-
--- ####################  UMSORTIERUNG DER TABELLEN #############################
--- OBEN  (ALT):  alphabetisch nach Tabellen-Namen 
--- UNTEN (NEU):  thematische Gliederung (wie in der Dokumentation, besserer Abgleich)
+-- #### Oberhalb dieser Marke stehende Tabellen wurden im "AAA Basisschema" in der verwendeten 
+-- #### Dokumentation nicht gefunden.
+-- #### Sie wurden von PostNAS aus den vorliegenden NAS-Daten generiert.
 
 
 --*** ############################################################
@@ -1556,7 +837,8 @@ ALTER TABLE ap_ppo DROP CONSTRAINT enforce_geotype_wkb_geometry;
 CREATE INDEX ap_ppo_geom_idx ON ap_ppo USING gist (wkb_geometry);
 
 -- Verbindungstabellen indizieren
-CREATE INDEX ap_ppo_gml ON ap_ppo USING btree (gml_id);
+CREATE INDEX ap_ppo_gml 
+          ON ap_ppo     USING btree (gml_id);
 
 COMMENT ON TABLE  ap_ppo        IS 'PPO: Punktförmiges Präsentationsobjekt';
 COMMENT ON COLUMN ap_ppo.gml_id IS 'Identifikator, global eindeutig';
@@ -1736,7 +1018,8 @@ CREATE INDEX ax_flurstueck_geom_idx   ON ax_flurstueck USING gist (wkb_geometry)
 
 -- Verbindungstabellen indizieren
   -- f. Suche Buchwerk aus Template
-  CREATE INDEX id_ax_flurstueck_gml   ON ax_flurstueck  USING btree (gml_id);
+  CREATE UNIQUE INDEX id_ax_flurstueck_gml
+            ON ax_flurstueck  USING btree (gml_id);
 
 COMMENT ON TABLE  ax_flurstueck        IS 'F l u r s t u e c k';
 COMMENT ON COLUMN ax_flurstueck.gml_id IS 'Identifikator, global eindeutig';
@@ -1762,7 +1045,11 @@ CREATE TABLE ax_besondereflurstuecksgrenze (
 
 SELECT AddGeometryColumn('ax_besondereflurstuecksgrenze','wkb_geometry','25832','LINESTRING',2);
 
-CREATE INDEX ax_besondereflurstuecksgrenze_geom_idx ON ax_besondereflurstuecksgrenze USING gist (wkb_geometry);
+CREATE INDEX ax_besondereflurstuecksgrenze_geom_idx 
+          ON ax_besondereflurstuecksgrenze USING gist (wkb_geometry);
+          
+CREATE UNIQUE INDEX ax_besondereflurstuecksgrenze_gml 
+                 ON ax_besondereflurstuecksgrenze USING btree (gml_id);
 
 COMMENT ON TABLE  ax_besondereflurstuecksgrenze        IS 'B e s o n d e r e   F l u r s t u e c k s g r e n z e';
 COMMENT ON COLUMN ax_besondereflurstuecksgrenze.gml_id IS 'Identifikator, global eindeutig';
@@ -1794,6 +1081,11 @@ CREATE TABLE ax_grenzpunkt (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_grenzpunkt', 'dummy', 2, 25832, 'POINT');
+
+
+-- DROP INDEX ax_grenzpunkt_gml;
+CREATE UNIQUE INDEX ax_grenzpunkt_gml 
+                 ON ax_grenzpunkt USING btree (gml_id);
 
 COMMENT ON TABLE  ax_grenzpunkt        IS 'G r e n z p u n k t';
 COMMENT ON COLUMN ax_grenzpunkt.gml_id IS 'Identifikator, global eindeutig';
@@ -1917,7 +1209,6 @@ COMMENT ON COLUMN ax_lagebezeichnungmitpseudonummer.gml_id IS 'Identifikator, gl
 
 
 --AX_Lagebezeichnung	Auswahldatentyp
-
 --AX_Lage Geändert (Revisionsnummer: 1750)
 
 
@@ -1944,6 +1235,10 @@ CREATE TABLE ax_aufnahmepunkt (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_aufnahmepunkt', 'dummy', 2, 25832, 'POINT');
+
+-- DROP INDEX ax_aufnahmepunkt_gml;
+CREATE UNIQUE INDEX ax_aufnahmepunkt_gml 
+                 ON ax_aufnahmepunkt USING btree (gml_id);
 
 COMMENT ON TABLE  ax_aufnahmepunkt        IS 'A u f n a h m e p u n k t';
 COMMENT ON COLUMN ax_aufnahmepunkt.gml_id IS 'Identifikator, global eindeutig';
@@ -1973,6 +1268,10 @@ CREATE TABLE ax_sonstigervermessungspunkt (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_sonstigervermessungspunkt', 'dummy', 2, 25832, 'POINT');
+
+-- DROP INDEX ax_sonstigervermessungspunkt_gml;
+CREATE UNIQUE INDEX ax_sonstigervermessungspunkt_gml 
+                 ON ax_sonstigervermessungspunkt USING btree (gml_id);
 
 COMMENT ON TABLE  ax_sonstigervermessungspunkt        IS 's o n s t i g e r   V e r m e s s u n g s p u n k t';
 COMMENT ON COLUMN ax_sonstigervermessungspunkt.gml_id IS 'Identifikator, global eindeutig';
@@ -2128,25 +1427,194 @@ COMMENT ON COLUMN ax_punktortta.gml_id IS 'Identifikator, global eindeutig';
 --** Objektartengruppe:Personen- und Bestandsdaten
 --   ===================================================================
 
---AX_Person
+
+-- 21001 P e r s o n
+-- ----------------------------------------------
+-- Buchwerk. Keine Geometrie
+CREATE TABLE ax_person (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	nachnameoderfirma	character varying(100), --(97),
+	anrede			integer,        -- 'Anrede' ist die Anrede der Person. Diese Attributart ist optional, da Körperschaften und juristischen Person auch ohne Anrede angeschrieben werden können.
+	-- Bezeichner	Wert
+	--       Frau	1000
+	--       Herr	2000
+	--      Firma	3000
+	vorname			character varying(40),  --(31),
+	geburtsname		character varying(50),  --(36),
+	geburtsdatum		character varying(10),  -- Datumsformat?
+	namensbestandteil	character varying(20),
+	akademischergrad	character varying(16),  -- 'Akademischer Grad' ist der akademische Grad der Person (z.B. Dipl.-Ing., Dr., Prof. Dr.)
+	art			character varying(40),  -- (37)
+	uri			character varying(28),
+	CONSTRAINT ax_person_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_person', 'dummy', 2, 25832, 'POINT');
+
+-- Verbindungstabellen indizieren
+  CREATE INDEX id_ax_person_gml   ON ax_person  USING btree (gml_id);
+
+COMMENT ON TABLE  ax_person        IS 'NREO "Person" ist eine natürliche oder juristische Person und kann z.B. in den Rollen Eigentümer, Erwerber, Verwalter oder Vertreter in Katasterangelegenheiten geführt werden.';
+COMMENT ON COLUMN ax_person.gml_id IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_person.namensbestandteil IS 'enthält z.B. Titel wie "Baron"';
+
+-- Relationen:
+-- hat:		Die 'Person' hat 'Anschrift'.
+-- weist auf:	Durch die Relation 'Person' weist auf 'Namensnummer' wird ausgedrückt, dass die Person als Eigentümer,
+--		Erbbauberechtigter oder künftiger Erwerber unter der Namensnummer eines Buchungsblattes eingetragen ist.
+
 
 --AX_Personengruppe
+-- ** Tabelle bisher noch nicht generiert
 
---AX_Anschrift
 
---AX_Namensnummer
+-- A n s c h r i f t
+-- ----------------------------------------------
+-- Buchwerk, keine Geometrie.
+-- Konverter versucht Tabelle noch einmal anzulegen, wenn kein (Dummy-) Eintrag in Metatabelle 'geometry_columns'.
+CREATE TABLE ax_anschrift (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	ort_post		character varying(30),
+	postleitzahlpostzustellung	integer,
+	strasse			character varying(40),    -- (28)
+	hausnummer		character varying(9),
+	bestimmungsland		character varying(30),    -- (3)
+	--art			character(37),
+	CONSTRAINT ax_anschrift_pk PRIMARY KEY (ogc_fid)
+);
+-- Dummy-Eintrag in Metatabelle
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_anschrift', 'dummy', 2, 25832, 'POINT');
 
---AX_Buchungsblatt
+-- Index für alkis_beziehungen
+CREATE INDEX ax_anschrift_gml ON ax_anschrift USING btree (gml_id);
 
---AX_Buchungsstelle
+COMMENT ON TABLE  ax_anschrift        IS 'A n s c h r i f t';
+COMMENT ON COLUMN ax_anschrift.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- N a m e n s n u m m e r
+-- ----------------------------------------------
+-- Buchwerk. Keine Geometrie
+CREATE TABLE ax_namensnummer (
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character varying(28),
+	beginnt				character(20),
+	advstandardmodell		character varying(8),
+	anlass				integer,
+	laufendenummernachdin1421	character(16),      -- 0000.00.00.00.00
+	zaehler				double precision,   -- Anteil ..
+	nenner				double precision,   --    .. als Bruch 
+	eigentuemerart			integer,
+	nummer				character(6),       -- leer bei NRW GID 5.1 / Inhalt bei RLP GID 6
+	artderrechtsgemeinschaft	integer,            -- Schlüssel
+	beschriebderrechtsgemeinschaft	character varying(1000),  -- (977)
+	CONSTRAINT ax_namensnummer_pk PRIMARY KEY (ogc_fid)
+);
+
+-- Filter   istbestandteilvon <> '' or benennt <> '' or bestehtausrechtsverhaeltnissenzu <> ''
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_namensnummer', 'dummy', 2, 25832, 'POINT');
+
+-- Verbindungstabellen indizieren
+  CREATE INDEX ax_namensnummer_gml ON ax_namensnummer USING btree (gml_id);
+
+
+COMMENT ON TABLE  ax_namensnummer        IS 'NREO "Namensnummer" ist die laufende Nummer der Eintragung, unter welcher der Eigentümer oder Erbbauberechtigte im Buchungsblatt geführt wird. Rechtsgemeinschaften werden auch unter AX_Namensnummer geführt.';
+COMMENT ON COLUMN ax_namensnummer.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- B u c h u n g s b l a t t
+-- -------------------------
+CREATE TABLE ax_buchungsblatt (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	buchungsblattkennzeichen	character(13), -- integer
+	land			integer,
+	bezirk			integer,
+	buchungsblattnummermitbuchstabenerweiterung	character(7),
+	blattart		integer,
+	art			character varying(15),
+	-- "name" character(13),  -- immer leer?
+	CONSTRAINT ax_buchungsblatt_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_buchungsblatt', 'dummy', 2, 25832, 'POINT');
+
+-- Index für alkis_beziehungen
+CREATE INDEX ax_buchungsblatt_gml ON ax_buchungsblatt USING btree (gml_id);
+
+COMMENT ON TABLE  ax_buchungsblatt        IS 'NREO "Buchungsblatt" enthält die Buchungen (Buchungsstellen und Namensnummern) des Grundbuchs und des Liegenschhaftskatasters (bei buchungsfreien Grundstücken).';
+COMMENT ON COLUMN ax_buchungsblatt.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- B u c h u n g s s t e l l e
+-- -----------------------------
+CREATE TABLE ax_buchungsstelle (
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character varying(28),
+	beginnt				character(20),
+	advstandardmodell		character varying(8),
+	anlass				integer,
+	buchungsart			integer,
+	laufendenummer			integer,
+	beschreibungdesumfangsderbuchung	character(1),
+	--art				character(37),
+	--uri				character(12),
+	zaehler				double precision,
+	nenner				integer,
+	nummerimaufteilungsplan		character varying(40),   -- (32)
+	beschreibungdessondereigentums	character varying(400),  -- (291)
+	CONSTRAINT ax_buchungsstelle_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_buchungsstelle', 'dummy', 2, 25832, 'POINT');
+
+
+--Index für alkis_beziehungen
+  CREATE INDEX id_ax_buchungsstelle_gml ON ax_buchungsstelle USING btree (gml_id);
+
+COMMENT ON TABLE  ax_buchungsstelle        IS 'NREO "Buchungsstelle" ist die unter einer laufenden Nummer im Verzeichnis des Buchungsblattes eingetragene Buchung.';
+COMMENT ON COLUMN ax_buchungsstelle.gml_id IS 'Identifikator, global eindeutig';
+
 
 --AX_Anteil
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_DQOhneDatenerhebung
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_LI_Lineage_OhneDatenerhebung
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_LI_ProcessStep_OhneDatenerhebung
+-- ** Tabelle bisher noch nicht generiert
 
 
 --*** ############################################################
@@ -2158,16 +1626,157 @@ COMMENT ON COLUMN ax_punktortta.gml_id IS 'Identifikator, global eindeutig';
 
 --AX_Gebaeude
 
---AX_Bauteil
+-- G e b a e u d e
+-- ---------------
+CREATE TABLE ax_gebaeude (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	gebaeudefunktion	integer,
+	description		integer,
+	"name"			character varying(25),
+	lagezurerdoberflaeche	integer,
+	art			character varying(40),  -- (37)
+	bauweise		integer,
+	anzahlderoberirdischengeschosse	integer,
+	grundflaeche		integer,
+	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
+	individualname		character varying(7),
+	zustand			integer,
+	CONSTRAINT ax_gebaeude_pk PRIMARY KEY (ogc_fid)
+);
 
---AX_BesondereGebaeudelinie
+SELECT AddGeometryColumn('ax_gebaeude','wkb_geometry','25832','MULTIPOLYGON',2);
 
---AX_Firstlinie
+-- POLYGON und MULTIPOLYGON
+ALTER TABLE ax_gebaeude DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
---AX_BesondererGebaeudepunkt
+CREATE INDEX ax_gebaeude_geom_idx ON ax_gebaeude USING gist (wkb_geometry);
+
+CREATE INDEX id_ax_gebaeude_gml               ON ax_gebaeude  USING btree  (gml_id);
+
+COMMENT ON TABLE  ax_gebaeude        IS 'G e b a e u d e';
+COMMENT ON COLUMN ax_gebaeude.gml_id IS 'Identifikator, global eindeutig';
+
+-- Wie oft kommt welcher Typ von Gebäude-Geometrie vor?
+--
+--  CREATE VIEW gebauede_geometrie_arten AS
+--    SELECT geometrytype(wkb_geometry) AS geotyp,
+--           COUNT(ogc_fid)             AS anzahl
+--      FROM ax_gebaeude
+--  GROUP BY geometrytype(wkb_geometry);
+-- Ergebnis: nur 3 mal MULTIPOLYGON in einer Gemeinde, Rest POLYGON
+
+-- Welche sind das?
+--  CREATE VIEW gebauede_geometrie_multipolygone AS
+--    SELECT ogc_fid, 
+--           astext(wkb_geometry) AS geometrie
+--      FROM ax_gebaeude
+--     WHERE geometrytype(wkb_geometry) = 'MULTIPOLYGON';
+
+-- GeometryFromText('MULTIPOLYGON((( AUSSEN ), ( INNEN1 ), ( INNEN2 )))', srid)
+-- GeometryFromText('MULTIPOLYGON((( AUSSEN1 )),(( AUSSEN2)))', srid)
+
+
+-- B a u t e i l
+-- -------------
+CREATE TABLE ax_bauteil (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying[],
+	anlass			integer,
+	bauart			integer,
+	lagezurerdoberflaeche	integer,
+	CONSTRAINT ax_bauteil_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_bauteil','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_bauteil_geom_idx ON ax_bauteil USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_bauteil        IS 'B a u t e i l';
+COMMENT ON COLUMN ax_bauteil.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- B e s o n d e r e   G e b a e u d e l i n i e
+-- ----------------------------------------------
+CREATE TABLE ax_besonderegebaeudelinie (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	beschaffenheit		integer,
+	anlass			integer,
+	CONSTRAINT ax_besonderegebaeudelinie_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_besonderegebaeudelinie','wkb_geometry','25832','LINESTRING',2);
+
+CREATE INDEX ax_besonderegebaeudelinie_geom_idx ON ax_besonderegebaeudelinie USING gist (wkb_geometry);
+
+COMMENT ON TABLE ax_besonderegebaeudelinie IS 'B e s o n d e r e   G e b a e u d e l i n i e';
+COMMENT ON COLUMN ax_besonderegebaeudelinie.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- F i r s t l i n i e
+-- -----------------------------------------------------
+CREATE TABLE ax_firstlinie (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(8),
+	anlass			integer,
+	art			character varying(40),
+	uri			character varying(28),
+	CONSTRAINT ax_firstlinie_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_firstlinie','wkb_geometry','25832','LINESTRING',2);
+
+CREATE INDEX ax_firstlinie_geom_idx ON ax_firstlinie USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_firstlinie        IS 'F i r s t l i n i e';
+COMMENT ON COLUMN ax_firstlinie.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- B e s o n d e r e r   G e b a e u d e p u n k t
+-- -----------------------------------------------
+CREATE TABLE ax_besonderergebaeudepunkt (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	land			integer,
+	stelle			integer,
+	punktkennung		character varying(15), -- integer,
+	art			character varying(40), --(37)
+	"name"			character varying[],
+	CONSTRAINT ax_besonderergebaeudepunkt_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_besonderergebaeudepunkt', 'dummy', 2, 25832, 'POINT');
+
+-- DROP INDEX ax_besonderergebaeudepunkt_gml;  
+CREATE UNIQUE INDEX ax_besonderergebaeudepunkt_gml 
+                 ON ax_besonderergebaeudepunkt USING btree (gml_id);
+
+COMMENT ON TABLE  ax_besonderergebaeudepunkt        IS 'B e s o n d e r e r   G e b a e u d e p u n k t';
+COMMENT ON COLUMN ax_besonderergebaeudepunkt.gml_id IS 'Identifikator, global eindeutig';
+
 
 --AX_Nutzung_Gebaeude
-
+-- ** Tabelle bisher noch nicht generiert
 
 
 --*** ############################################################
@@ -2175,10 +1784,8 @@ COMMENT ON COLUMN ax_punktortta.gml_id IS 'Identifikator, global eindeutig';
 --*** ############################################################
 
 -- Gemeinsame Attribute:
-
---  DLU datumDerLetztenUeberpruefung DateTime
-
---  DAQ qualitaetsangaben
+--   DLU datumDerLetztenUeberpruefung DateTime
+--   DAQ qualitaetsangaben
 
 
 --** Objektartengruppe: Siedlung (in Objektbereich:Tatsächliche Nutzung)
@@ -3667,81 +3274,583 @@ COMMENT ON COLUMN ax_besondererhoehenpunkt.gml_id IS 'Identifikator, global eind
 --** Objektartengruppe: Öffentlich-rechtliche und sonstige Festlegungen
 --   ===================================================================
 
---AX_KlassifizierungNachStrassenrecht
 
---AX_KlassifizierungNachWasserrecht
+-- K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t
+-- -------------------------------------------------------------------
+CREATE TABLE ax_klassifizierungnachstrassenrecht (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	qadvstandardmodell	character varying(9),
+	anlass			integer,
+	artderfestlegung	integer,
+	bezeichnung		character varying(20),
+	CONSTRAINT ax_klassifizierungnachstrassenrecht_pk PRIMARY KEY (ogc_fid)
+);
 
---AX_BauRaumOderBodenordnungsrecht
+SELECT AddGeometryColumn('ax_klassifizierungnachstrassenrecht','wkb_geometry','25832','POLYGON',2);
 
---AX_SonstigesRecht
+CREATE INDEX ax_klassifizierungnachstrassenrecht_geom_idx  ON ax_klassifizierungnachstrassenrecht  USING gist  (wkb_geometry);
+
+COMMENT ON TABLE  ax_klassifizierungnachstrassenrecht        IS 'K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t';
+COMMENT ON COLUMN ax_klassifizierungnachstrassenrecht.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t
+-- ---------------------------------------------------------------
+CREATE TABLE ax_klassifizierungnachwasserrecht (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	artderfestlegung	integer,
+	CONSTRAINT ax_klassifizierungnachwasserrecht_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_klassifizierungnachwasserrecht','wkb_geometry','25832','POLYGON',2);
+
+CREATE INDEX ax_klassifizierungnachwasserrecht_geom_idx
+  ON ax_klassifizierungnachwasserrecht USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_klassifizierungnachwasserrecht        IS 'K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t';
+COMMENT ON COLUMN ax_klassifizierungnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- B a u - ,   R a u m -   o d e r   B o d e n o r d n u n g s r e c h t
+-- ---------------------------------------------------------------------
+-- 'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen 
+-- mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften.
+CREATE TABLE ax_bauraumoderbodenordnungsrecht (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	art			character varying(40), -- (15)
+	"name"			character varying(15),
+	artderfestlegung	integer,
+	land			integer,
+	stelle			character varying(7), 
+	bezeichnung		character varying(24), 
+	CONSTRAINT ax_bauraumoderbodenordnungsrecht_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_bauraumoderbodenordnungsrecht','wkb_geometry','25832','MULTIPOLYGON',2);
+
+-- verschiedene Goemetrie-Typen
+ALTER TABLE ax_bauraumoderbodenordnungsrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+CREATE INDEX ax_bauraumoderbodenordnungsrecht_geom_idx ON ax_bauraumoderbodenordnungsrecht USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_bauraumoderbodenordnungsrecht             IS 'REO: Bau-, Raum- oder Bodenordnungsrecht';
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.gml_id      IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.artderfestlegung IS 'ADF';
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht."name"      IS 'NAM, Eigenname von "Bau-, Raum- oder Bodenordnungsrecht"';
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.bezeichnung IS 'BEZ, Amtlich festgelegte Verschlüsselung von "Bau-, Raum- oder Bodenordnungsrecht"';
+
+
+-- S o n s t i g e s   R e c h t
+-- -----------------------------
+CREATE TABLE ax_sonstigesrecht (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	artderfestlegung	integer,
+	land			integer,
+	stelle			character varying(5),
+	bezeichnung		character varying(20),
+	characterstring		integer,
+	art			character varying(40),  --(15)
+	"name"			character varying(20), 
+	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
+	datetime		character(20),
+	CONSTRAINT ax_sonstigesrecht_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_sonstigesrecht','wkb_geometry','25832','POLYGON',2);
+
+ALTER TABLE ax_sonstigesrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+CREATE INDEX ax_sonstigesrecht_geom_idx  ON ax_sonstigesrecht USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_sonstigesrecht        IS 'S o n s t i g e s   R e c h t';
+COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
 
 
 --** Objektartengruppe: Bodenschätzung, Bewertung
 --   ===================================================================
 
---AX_Bodenschaetzung
 
---AX_MusterLandesmusterUndVergleichsstueck
+-- B o d e n s c h a e t z u n g
+-- ----------------------------------------------
+CREATE TABLE ax_bodenschaetzung (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	art			character varying(40), -- (15)
+	"name"			character varying(33),
+	kulturart				integer,
+	bodenart				integer,
+	zustandsstufeoderbodenstufe		integer,
+	entstehungsartoderklimastufewasserverhaeltnisse	integer,
+	bodenzahlodergruenlandgrundzahl		integer,
+	ackerzahlodergruenlandzahl		integer,
+	sonstigeangaben				integer,
+	jahreszahl				integer,
+	CONSTRAINT ax_bodenschaetzung_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry','25832','MULTIPOLYGON',2);
+
+-- POLYGON und MULTIPOLYGON
+ALTER TABLE ONLY ax_bodenschaetzung DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+CREATE INDEX ax_bodenschaetzung_geom_idx ON ax_bodenschaetzung USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_bodenschaetzung        IS 'B o d e n s c h a e t z u n g';
+COMMENT ON COLUMN ax_bodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- M u s t e r -,  L a n d e s m u s t e r -   u n d   V e r g l e i c h s s t u e c k
+-- -----------------------------------------------------------------------------------
+CREATE TABLE ax_musterlandesmusterundvergleichsstueck (
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character varying(28),
+	beginnt				character(20), 
+	advstandardmodell		character varying(8),
+	anlass				integer,
+	merkmal				integer,
+	nummer				integer,
+	kulturart			integer,
+	bodenart			integer,
+	zustandsstufeoderbodenstufe	integer,
+	entstehungsartoderklimastufewasserverhaeltnisse	integer,
+	bodenzahlodergruenlandgrundzahl	integer,
+	ackerzahlodergruenlandzahl	integer,
+	art				character varying(40),  -- (15)
+	"name"				character varying(27),
+	CONSTRAINT ax_musterlandesmusterundvergleichsstueck_pk PRIMARY KEY (ogc_fid)
+);
+
+
+SELECT AddGeometryColumn('ax_musterlandesmusterundvergleichsstueck','wkb_geometry','25832','POLYGON',2);
+
+-- POLYGON  und POINT
+ALTER TABLE ax_musterlandesmusterundvergleichsstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+CREATE INDEX ax_musterlandesmusterundvergleichsstueck_geom_idx
+  ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_musterlandesmusterundvergleichsstueck        IS 'Muster-, Landesmuster- und Vergleichsstueck';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.gml_id IS 'Identifikator, global eindeutig';
+
 
 --** Objektartengruppe: Kataloge
 --   ===================================================================
 
---AX_Bundesland
 
---AX_Regierungsbezirk
+-- B u n d e s l a n d
+-- ----------------------------------------------
+CREATE TABLE ax_bundesland (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(30), --(22)
+	land			integer,
+	CONSTRAINT ax_bundesland_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_bundesland', 'dummy', 2, 25832, 'POINT');
+
+COMMENT ON TABLE  ax_bundesland        IS 'B u n d e s l a n d';
+COMMENT ON COLUMN ax_bundesland.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- R e g i e r u n g s b e z i r k
+-- ----------------------------------------------
+CREATE TABLE ax_regierungsbezirk (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(20),
+	land			integer,
+	regierungsbezirk	integer,
+	CONSTRAINT ax_regierungsbezirk_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_regierungsbezirk', 'dummy', 2, 25832, 'POINT');
+
+-- Verbindungstabellen indizieren
+  CREATE INDEX ax_regierungsbezirk_gml ON ax_regierungsbezirk USING btree (gml_id);
+
+
+COMMENT ON TABLE  ax_regierungsbezirk        IS 'R e g i e r u n g s b e z i r k';
+COMMENT ON COLUMN ax_regierungsbezirk.gml_id IS 'Identifikator, global eindeutig';
+
 
 --AX_KreisRegion Geändert (Revisionsnummer: 1658)
 
---AX_Gemeinde
+-- K r e i s   /   R e g i o n
+-- ---------------------------
+CREATE TABLE ax_kreisregion (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(20),
+	land			integer,
+	regierungsbezirk	integer,
+	kreis			integer,
+	CONSTRAINT ax_kreisregion_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_kreisregion', 'dummy', 2, 25832, 'POINT');
+
+COMMENT ON TABLE  ax_kreisregion        IS 'K r e i s  /  R e g i o n';
+COMMENT ON COLUMN ax_kreisregion.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- G e m e i n d e
+-- ----------------------------------------------
+CREATE TABLE ax_gemeinde (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(25),
+	land			integer,
+	regierungsbezirk	integer,
+	kreis			integer,
+	gemeinde		integer,
+	CONSTRAINT ax_gemeinde_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_gemeinde', 'dummy', 2, 25832, 'POINT');
+
+-- Index für alkis_beziehungen
+CREATE INDEX ax_gemeinde_gml ON ax_gemeinde USING btree (gml_id);
+
+COMMENT ON TABLE  ax_gemeinde        IS 'G e m e i n d e';
+COMMENT ON COLUMN ax_gemeinde.gml_id IS 'Identifikator, global eindeutig';
+
 
 --AX_Gemeindeteil
+-- ** Tabelle bisher noch nicht generiert
 
---AX_Gemarkung
 
---AX_GemarkungsteilFlur
+-- G e m a r k u n g
+-- ----------------------------------------------
+-- NREO, nur Schluesseltabelle: Geometrie entbehrlich
+CREATE TABLE ax_gemarkung (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(23),
+	land			integer,
+	gemarkungsnummer	integer,  -- Key
+	"istamtsbezirkvon|ax_dienststelle_schluessel|land" integer,
+	stelle			integer,
+	CONSTRAINT ax_gemarkung_pk PRIMARY KEY (ogc_fid)
+);
 
---AX_Buchungsblattbezirk
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_gemarkung', 'dummy', 2, 25832, 'POINT');
 
---AX_Dienststelle
+-- Index für alkis_beziehungen
+--CREATE INDEX ax_gemarkung_gml ON ax_gemarkung USING btree (gml_id);
 
---AX_LagebezeichnungKatalogeintrag
+-- Such-Index, Verweis aus ax_Flurstueck
+CREATE INDEX ax_gemarkung_nr  ON ax_gemarkung USING btree (land, gemarkungsnummer);
+
+
+COMMENT ON TABLE  ax_gemarkung        IS 'G e m a r k u n g';
+COMMENT ON COLUMN ax_gemarkung.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- G e m a r k u n g s t e i l   /   F l u r
+-- ----------------------------------------------
+-- Schluesseltabelle: Geometrie entbehrlich
+CREATE TABLE ax_gemarkungsteilflur (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(7), -- integer,
+	land			integer,
+	gemarkung		integer,
+	gemarkungsteilflur	integer,
+	CONSTRAINT ax_gemarkungsteilflur_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_gemarkungsteilflur', 'dummy', 2, 25832, 'POINT');
+
+-- Index für alkis_beziehungen
+CREATE INDEX ax_gemarkungsteilflur_gml ON ax_gemarkungsteilflur USING btree (gml_id);
+
+
+COMMENT ON TABLE  ax_gemarkungsteilflur        IS 'G e m a r k u n g s t e i l   /   F l u r';
+COMMENT ON COLUMN ax_gemarkungsteilflur.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- B u c h u n g s b l a t t - B e z i r k
+-- ----------------------------------------------
+CREATE TABLE ax_buchungsblattbezirk (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	bezeichnung		character varying(26),
+	land			integer,
+	bezirk			integer,
+	"gehoertzu|ax_dienststelle_schluessel|land" integer,
+	stelle			character varying(4),
+	CONSTRAINT ax_buchungsblattbezirk_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_buchungsblattbezirk', 'dummy', 2, 25832, 'POINT');
+
+-- Such-Index auf Land + Bezirk 
+-- Der Verweis von ax_buchungsblatt hat keine alkis_beziehung.
+CREATE INDEX ax_buchungsblattbez_key ON ax_buchungsblattbezirk USING btree (land, bezirk);
+
+COMMENT ON TABLE  ax_buchungsblattbezirk        IS 'Buchungsblatt- B e z i r k';
+COMMENT ON COLUMN ax_buchungsblattbezirk.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- D i e n s t s t e l l e
+-- ----------------------------------------------
+-- NREO, nur Schluesseltabelle: Geometrie entbehrlich
+CREATE TABLE ax_dienststelle (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(8),
+	anlass			integer,
+	schluesselgesamt	character varying(7),
+	bezeichnung		character varying(120), -- 102
+	land			integer,
+	stelle			character varying(5),
+	stellenart		integer,
+	-- hat character	varying,
+	CONSTRAINT ax_dienststelle_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_dienststelle', 'dummy', 2, 25832, 'POINT');
+
+-- Index für alkis_beziehungen
+CREATE INDEX ax_dienststelle_gml ON ax_dienststelle USING btree (gml_id);
+
+COMMENT ON TABLE  ax_dienststelle        IS 'D i e n s t s t e l l e';
+COMMENT ON COLUMN ax_dienststelle.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- L a g e b e z e i c h n u n g s - K a t a l o g e i n t r a g
+-- --------------------------------------------------------------
+CREATE TABLE ax_lagebezeichnungkatalogeintrag (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	character varying(13),
+	bezeichnung		character varying(28),
+	land			integer,
+	regierungsbezirk	integer,
+	kreis			integer,
+	gemeinde		integer,
+	lage			character varying(5),
+	CONSTRAINT ax_lagebezeichnungkatalogeintrag_pk PRIMARY KEY (ogc_fid)
+);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_lagebezeichnungkatalogeintrag', 'dummy', 2, 25832, 'POINT');
+
+-- NRW: Nummerierung Strassenschluessel innerhalb einer Gemeinde
+-- Die Kombination Gemeinde und Straßenschlüssel ist also ein eindeutiges Suchkriterium.
+CREATE INDEX ax_lagebezeichnungkatalogeintrag_lage ON ax_lagebezeichnungkatalogeintrag USING btree (gemeinde, lage);
+
+-- Suchindex (Verwendung in Navigations-Programm)
+CREATE INDEX ax_lagebezeichnungkatalogeintrag_gesa ON ax_lagebezeichnungkatalogeintrag USING btree (schluesselgesamt);
+CREATE INDEX ax_lagebezeichnungkatalogeintrag_bez  ON ax_lagebezeichnungkatalogeintrag USING btree (bezeichnung);
+
+COMMENT ON TABLE  ax_lagebezeichnungkatalogeintrag              IS 'Straßentabelle';
+COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.gml_id       IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.lage         IS 'Straßenschlüssel';
+COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.bezeichnung  IS 'Straßenname';
+
 
 --AX_Gemeindekennzeichen
+-- ** Tabelle bisher noch nicht generiert
 
---AX_Katalogeintrag	
+--AX_Katalogeintrag
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_Buchungsblattbezirk_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_Dienststelle_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_Bundesland_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_Gemarkung_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_GemarkungsteilFlur_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_Regierungsbezirk_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_Kreis_Schluessel
+-- ** Tabelle bisher noch nicht generiert
 
 --AX_VerschluesselteLagebezeichnung
+-- ** Tabelle bisher noch nicht generiert
 
 
 --** Objektartengruppe: Geographische Gebietseinheiten
 --   ===================================================================
 
 --AX_Landschaft
+-- ** Tabelle bisher noch nicht generiert
 
---AX_KleinraeumigerLandschaftsteil
 
---AX_Wohnplatz
+-- k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l
+-- -----------------------------------------------------------
+CREATE TABLE ax_kleinraeumigerlandschaftsteil (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying[],
+	anlass			integer,
+	landschaftstyp		integer,
+	name			character varying(20)
+);
+
+SELECT AddGeometryColumn('ax_kleinraeumigerlandschaftsteil','wkb_geometry','25832','POINT',2);
+
+ALTER TABLE ONLY ax_kleinraeumigerlandschaftsteil
+	ADD CONSTRAINT ax_kleinraeumigerlandschaftsteil_pk PRIMARY KEY (ogc_fid);
+
+CREATE INDEX ax_kleinraeumigerlandschaftsteil_geom_idx ON ax_kleinraeumigerlandschaftsteil USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_kleinraeumigerlandschaftsteil        IS 'k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l';
+COMMENT ON COLUMN ax_kleinraeumigerlandschaftsteil.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- W o h n p l a t z
+-- -----------------------------------------------------------
+CREATE TABLE ax_wohnplatz (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character varying(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	"name"			character varying(20),
+	CONSTRAINT ax_wohnplatz_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_wohnplatz','wkb_geometry','25832','POINT',2);
+
+CREATE INDEX ax_wohnplatz_geom_idx ON ax_wohnplatz USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_wohnplatz        IS 'W o h n p l a t z';
+COMMENT ON COLUMN ax_wohnplatz.gml_id IS 'Identifikator, global eindeutig';
 
 
 --** Objektartengruppe: Administrative Gebietseinheiten
 --   ===================================================================
 
---AX_KommunalesGebiet
+
+-- K o m m u n a l e s   G e b i e t
+-- ----------------------------------------------
+CREATE TABLE ax_kommunalesgebiet (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	integer,
+	land			integer,
+	regierungsbezirk	integer,
+	kreis			integer,
+	gemeinde		integer,
+	CONSTRAINT ax_kommunalesgebiet_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_kommunalesgebiet','wkb_geometry','25832','MULTIPOLYGON',2);
+
+-- verschiedene Geometrietypen?
+ALTER TABLE ax_kommunalesgebiet DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+CREATE INDEX ax_kommunalesgebiet_geom_idx ON ax_kommunalesgebiet USING gist (wkb_geometry);
+
+COMMENT ON TABLE  ax_kommunalesgebiet        IS 'K o m m u n a l e s   G e b i e t';
+COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig';
+
+
 --AX_Gebiet
+-- ** Tabelle bisher noch nicht generiert
+
 
 --*** ############################################################
 --*** Objektbereich: Nutzerprofile
@@ -3782,6 +3891,12 @@ COMMENT ON COLUMN ax_besondererhoehenpunkt.gml_id IS 'Identifikator, global eind
 -- DigitalesGelaendemodell5    = DGM5
 -- DigitalesGelaendemodell25   = DGM25
 -- Digitales Gelaendemodell50  = DGM50
+
+
+-- wenn schon, dann auch alle Tabellen mit Kommanteren versehen:
+
+COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL)';
+COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 
 --
 --          THE  (happy)  END
