@@ -13,6 +13,7 @@
 	26.01.2011  Space in leere td
 
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	07.02.2011 
 	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
 		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
 */
@@ -104,7 +105,7 @@ echo "\n<table class='outer'>\n<tr>\n<td>";
 			if  ($shaowkey) {
 				echo "<span class='key'>".$gmkgnr."</span><br>";
 			}
-			echo $gemkname."</td>";
+			echo $gemkname."&nbsp;</td>";
 			echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
 			echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>";
 		echo "\n\t</tr>";
@@ -172,9 +173,6 @@ $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
 	//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
 
 $sqlg.="ORDER BY schnittflae DESC;";
- 
-// ax_gebaeude  (zeigtAuf) ax_LagebezeichnungMitHausnummer    (Hauptgebäude)
-// ax_gebaeude  (hat)      ax_LagebezeichnungMitPseudonummer  (Nebengebäude)
 
 $v = array($gmlid);
 $resg = pg_prepare("", $sqlg);
@@ -184,7 +182,6 @@ if (!$resg) {
 	echo "\n<p class='err'>Keine Geb&auml;ude ermittelt.<br>\nSQL=<br></p>\n";
 	echo "\n<p class='err'>".$sqlg."</p>\n";
 }
-
 $gebnr=0;
 echo "\n<hr>\n<table class='geb'>";
 	// Header
@@ -258,12 +255,12 @@ echo "\n<hr>\n<table class='geb'>";
 					case "hat":			// *P*seudonummer
 						echo "\n\t\t<a title='Lagebezeichnung' href='alkislage.php?gkz=".$gkz."&amp;gmlid=".$gmllag;
 						if ($idanzeige) {echo "&amp;id=j";}
-						echo "&amp;ltyp=p'>lfd-Nr</a>";
+						echo "&amp;ltyp=p'>lfd-Nr <img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
 						break;
 					case "zeigtAuf":	// *M*it HausNr
 						echo "\n\t\t<a title='Lagebezeichnung' href='alkislage.php?gkz=".$gkz."&amp;gmlid=".$gmllag;
 						if ($idanzeige) {echo "&amp;id=j";}
-						echo "&amp;ltyp=m'>Haus-Nr</a>";
+						echo "&amp;ltyp=m'>Haus-Nr <img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
 						break;
 					default:
 						echo "<p>unbekannte Beziehungsart ".$bezieh."</p>";

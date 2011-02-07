@@ -14,6 +14,7 @@
 	05.01.2011  Korrektur der Fallunterscheidung "Funktion", auch "Vegetationsmerkmal", Title auf "Zustand".
 	26.01.2011  Space in leere td
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	07.02.2011  
 	ToDo:
 	- Entschlüsseln "Bahnkategorie" bei Behnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
@@ -98,7 +99,6 @@ if ($eig=="j") {
 	echo "\n<h2><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;ck</h2>\n";
 }
 echo "\n<table class='outer'>\n<tr>\n\t<td>"; // linke Seite
-
 	// darin Tabelle Kennzeichen
 	echo "\n\t<table class='kennzfs' title='Flurst&uuml;ckskennzeichen'>\n\t<tr>";
 		echo "\n\t\t<td class='head'>Gmkg</td>\n\t\t<td class='head'>Flur</td>\n\t\t<td class='head'>Flurst-Nr.</td>\n\t</tr>";
@@ -106,13 +106,11 @@ echo "\n<table class='outer'>\n<tr>\n\t<td>"; // linke Seite
 		if ($showkey) {
 			echo "<span class='key'>".$gmkgnr."</span><br>";
 		}
-		echo $gemkname."</td>";
+		echo $gemkname."&nbsp;</td>";
 		echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
 		echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>\n\t</tr>";
 	echo "\n\t</table>";
-
 echo "\n\t</td>\n\t<td>"; // rechte Seite
-
 	// FS-Daten 2 Spalten
 	echo "\n\t<table class='fsd'>";
 		echo "\n\t<tr>\n\t\t<td>Entstehung</td>";
@@ -122,7 +120,6 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite
 	echo "\n\t</table>";
 	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
-
 //	echo "\n<tr>\n\t<td>Finanzamt</td>\n\t<td>".$finanzamt." ".$finame  . "</td>\n</tr>";
 // Ende Seitenkopf
 
@@ -508,7 +505,7 @@ while($rows = pg_fetch_array($ress)) {
 				}
 					echo "\n\t<tr>\n\t\t<td class='head'>Bezirk</td>";
 						echo "\n\t\t<td class='head'>".$blattartg."</td>";
-						echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
+						echo "\n\t\t<td class='head'>Lfd-Nr.</td>";
 						echo "\n\t\t<td class='head'>Buchungsart</td>";
 					echo "\n\t</tr>";
 					echo "\n\t<tr>";
@@ -516,8 +513,7 @@ while($rows = pg_fetch_array($ress)) {
 							if ($showkey) {
 								echo "<span class='key'>".$rowg["bezirk"]."</span><br>";
 							}
-							echo $beznam;
-						echo "</td>";
+						echo $beznam."&nbsp;</td>";
 
 						echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowg["blatt"]."</span></td>";
 
@@ -527,9 +523,7 @@ while($rows = pg_fetch_array($ress)) {
 							if ($showkey) {
 								echo "<span class='key'>".$rows["buchungsart"]."</span><br>";
 							}
-							echo $rows["bart"];
-						echo "</td>";
-
+						echo $rows["bart"]."</td>";
 					echo "\n\t</tr>";
 				echo "\n\t</table>";
 
@@ -618,14 +612,9 @@ while($rows = pg_fetch_array($ress)) {
 	while($rowan = pg_fetch_array($resan)) {
 		$beznam=$rowan["bezeichnung"];
 		$blattkeyan=$rowan["blattart"]; // Schluessel von Blattart
-		$blattartan=blattart($blattkeyan);
-
-		//echo "\n<p class='err'>SQL=<br>".$sql."</p>\n";
-
-		echo "\n<hr>\n<table class='outer'>";
+		$blattartan=blattart($blattkeyan);		echo "\n<hr>\n<table class='outer'>";
 		echo "\n<tr>"; // 1 row only
 			echo "\n<td>"; // outer linke Spalte
-
 				// Rahmen mit Kennzeichen GB
 				if ($blattkeyan == 1000) {
 					echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
@@ -638,7 +627,6 @@ while($rows = pg_fetch_array($ress)) {
 						echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
 						echo "\n\t\t<td class='head'>Buchungsart</td>";
 					echo "\n\t</tr>";
-
 					echo "\n\t<tr>";
 						echo "\n\t\t<td title='Grundbuchbezirk'>";
 						if ($showkey) {
@@ -656,7 +644,6 @@ while($rows = pg_fetch_array($ress)) {
 							}
 							echo $rowan["bart"];
 						echo "</td>";
-
 					echo "\n\t</tr>";
 				echo "\n\t</table>";
 				if ($rowan["zaehler"] <> "") {
@@ -686,15 +673,13 @@ while($rows = pg_fetch_array($ress)) {
 		if ($blattkeyan != 1000) {
 			echo "\n<p>Blattart: ".$blattartan." (".$blattkeyan.").<br>\n"; 
 		}
-
-		// +++ Weitere Felder ausgeben ?? BeschreibungDesUmfangsDerBuchung
+		// +++ Weitere Felder ausgeben? BeschreibungDesUmfangsDerBuchung
 		if ($rowan["nrpl"] != "") {
 			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rowan["nrpl"]."</span> im Aufteilungsplan.</p>";
 		}
 		if ($rowan["sond"] != "") {
 			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rowan["sond"]."</p>";
 		}
-
 		if ($eig=="j") {
 			$n = eigentuemer($con, $gkz, $idanzeige, $rowan["g_gml"], false, $showkey); // ohne Adresse
 			// Anzahl $n kontrollieren? Warnen?

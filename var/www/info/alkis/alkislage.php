@@ -9,6 +9,8 @@
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	07.02.2011  JOIN ax_gemeinde auch ueber regierungsbezirk
+	ToDo: Entschluesseln Kreis usw.
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -69,7 +71,7 @@ if ($keys == "j") {
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // Lagebezeichnung
-$sql ="SELECT s.bezeichnung AS snam, g.bezeichnung AS gnam, l.land, l.regierungsbezirk, l.kreis, l.gemeinde, l.lage, ";
+$sql ="SELECT s.bezeichnung AS snam, k.bezeichnung AS knam, g.bezeichnung AS gnam, l.land, l.regierungsbezirk, l.kreis, l.gemeinde, l.lage, ";
 switch ($ltyp) {
 	case "m": // "Mit HsNr"
 		$sql.="l.hausnummer ";
@@ -82,26 +84,23 @@ switch ($ltyp) {
 	break;
 }
 $sql.="FROM ".$tnam." l ";
-
-// Gemeinde entschluesseln
-$sql.="LEFT JOIN  ax_gemeinde g ON l.kreis=g.kreis AND l.gemeinde=g.gemeinde ";
-
-// Strasse entschluesseln
+// Gemeinde, Kreis, Strasse entschluesseln
+$sql.="LEFT JOIN ax_gemeinde g ON l.land=g.land AND l.regierungsbezirk=g.regierungsbezirk AND l.kreis=g.kreis AND l.gemeinde=g.gemeinde ";
+$sql.="LEFT JOIN ax_kreisregion k ON l.land=k.land AND l.regierungsbezirk=k.regierungsbezirk AND l.kreis=k.kreis ";
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ";
 // Besonderheit: unterschiedliche Feldformate und Fuellungen!!!
-
 switch ($ltyp) {
 	case "o": //"Ohne HsNr"
 		// hier beide .lage als Char(5)
 		//  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
 		//  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
-		$sql.="ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=trim(leading '0' from s.lage) ";
+		$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=trim(leading '0' from s.lage) ";
 	break;
 	default: // "Mit HsNr" + "mit PseudoNr"
 		// ax_LagebezeichnungKatalogeintrag.lage   ist char,
 		// ax_LagebezeichnungMitHausnummer.lage    ist integer,
 		// ax_lagebezeichnungMitPseudonummer.lage  ist integer,
-		$sql.="ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
+		$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
 	break;
 }
 $sql.="WHERE l.gml_id= $1;";
@@ -116,15 +115,14 @@ if ($row = pg_fetch_array($res)) {
 	$land =$row["land"];
 	$regbez=$row["regierungsbezirk"];
 	$kreis=$row["kreis"];
+	$knam=$row["knam"];
 	$gem  =$row["gemeinde"];
 	$gnam =$row["gnam"];
 	$lage =$row["lage"]; // Strassenschluessel
 	$snam =$row["snam"]; //Strassennamen
 	$unver=$row["unverschluesselt"]; // Gewanne
 	$kennz=$land."-".$regbez."-".$kreis."-".$gem."-".$lage."-";
-
 	switch ($ltyp) {
-
 		case "m": // "Mit HsNr"
 			$hsnr=$row["hausnummer"];
 			$kennz.=$hsnr;
@@ -132,27 +130,22 @@ if ($row = pg_fetch_array($res)) {
 			// Balken
 			echo "<p class='lage'>ALKIS Lagebezeichnung mit Hausnummer ".$kennz."&nbsp;</p>\n"; // Balken
 		break;
-
 		case "p": // "mit PseudoNr"
 			$pseu=$row["pseudonummer"];
 			$lfd=$row["laufendenummer"];
 			$kennz.=$pseu."-".$lfd;
 			$untertitel="Nebengebäude mit laufender Nummer (Lagebezeichnung mit Pseudonummer)";
-			// Balken
-		//	echo "<p class='lage'>ALKIS Lagebezeichnung mit Pseudonummer ".$kennz."&nbsp;</p>\n"; // Balken
 			echo "<p class='lage'>ALKIS Lagebezeichnung Nebengebäude ".$kennz."&nbsp;</p>\n"; // Balken
 		break;
-
 		case "o": //"Ohne HsNr"
 			if ($lage == "") {
 				$kennz=" - ".$unver;
 			} else {
 				$kennz.=$unver;			}			$untertitel="Stra&szlig;e ohne Hausnummer und/oder Gewanne (unverschl&uuml;sselte Lage)";
-			// Balken
 			echo "<p class='lage'>ALKIS Lagebezeichnung Ohne Hausnummer ".$kennz."&nbsp;</p>\n"; // Balken
 		break;
 	}
-} else {
+} else {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
 }
 
@@ -160,8 +153,7 @@ echo "\n<h2><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Lage
 
 echo "<p>Typ: ".$untertitel."</p>";
 
-echo "\n<table class='outer'>\n<tr>\n\t<td>";
-	// Tabelle Kennzeichen
+echo "\n<table class='outer'>\n<tr>\n\t<td>"; 	// Tabelle Kennzeichen
 	// ToDo: !! kleiner, wenn ltyp=0 und die Schluesselfelder leer sind
 	echo "\n\t<table class='kennzla' title='Lage'>";
 		echo "\n\t<tr>";
@@ -186,17 +178,21 @@ echo "\n<table class='outer'>\n<tr>\n\t<td>";
 		echo "\n\t<tr>";
 			echo "\n\t\t<td title='Bundesland'>".$land."</td>";
 			echo "\n\t\t<td title='Regierungsbezirk'>".$regbez."</td>";
-			echo "\n\t\t<td title='Kreis'>".$kreis."</td>";
+			echo "\n\t\t<td title='Kreis'>";
+				if ($showkey) {
+						echo "<span class='key'>".$kreis."</span><br>";
+				}
+			echo $knam."&nbsp;</td>";
 			echo "\n\t\t<td title='Gemeinde'>";
-			if ($showkey) {
-				echo "<span class='key'>".$gem."</span><br>";
-			}
-			echo $gnam."</td>";
+				if ($showkey) {
+					echo "<span class='key'>".$gem."</span><br>";
+				}
+			echo $gnam."&nbsp;</td>";
 			echo "\n\t\t<td title='Stra&szlig;e'>";
-			if ($showkey) {
-				echo "<span class='key'>".$lage."</span><br>";
-			}
-			echo $snam."</td>";
+				if ($showkey) {
+					echo "<span class='key'>".$lage."</span><br>";
+				}
+			echo $snam."&nbsp;</td>";
 			switch ($ltyp) {
 				case "m":
 					echo "\n\t\t<td title='Hausnummer und Zusatz'><span class='wichtig'>".$hsnr."</span></td>";
@@ -377,8 +373,7 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	$sql.="JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
 	$sql.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 	$sql.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
-	$sql.="WHERE v.beziehung_zu= $1 ";
-	$sql.="AND   v.beziehungsart= $2 ;";
+	$sql.="WHERE v.beziehung_zu= $1 AND v.beziehungsart= $2 ;";
 
 	$v = array($gmlid,$bezart);
 	$res = pg_prepare("", $sql);
