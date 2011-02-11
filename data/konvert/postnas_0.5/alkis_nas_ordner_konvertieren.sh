@@ -7,6 +7,7 @@
 ## Stand:
 ##  2010-01-06
 ##  2011-02-02  Umstellung auf gezippte NAS-Daten 
+##  2011-02-08  Programmaufruf mit vollem Pfad
 ## 
 function get_db_config(){
 
@@ -23,7 +24,7 @@ function get_db_config(){
 	read DBUSER
 
 	echo ""
-	echo "Datenbank-Passwort?  (wird nicht angezeigt)"
+	echo "Datenbank-Passwort?"
 	stty -echo
 		read DBPASS
 	stty echo
@@ -31,7 +32,7 @@ function get_db_config(){
 	## Ordner (Eingabedaten)
 	echo ""
 	echo "Ordner mit gezippten NAS-Daten (*.xml.zip)? (Absoluter Pfad)"
-	echo "  z.B.  /data/konvert/nas_daten/150/0001"
+	echo "  z.B.  /data/nas_daten/150/0001"
 	read ORDNER
 	# Inhalt des Ordners anzeigen
 	ls  ${ORDNER}
@@ -75,9 +76,11 @@ fi
 echo "** Konvertierung ALKIS **" > /data/konvert/postnas_0.5/log/postnas_err.prot
 echo "** Beginn Batch **"
 echo "   Kommando fuer Wiederholung:"
-echo "   ./alkis_konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD"
-##                     1        2        3        4        5
-./alkis_konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD
+##                              1        2        3        4        5
+echo "   /data/konvert/postnas_0.5/alkis_konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD"
+##
+##                                            1        2        3        4        5
+  /data/konvert/postnas_0.5/alkis_konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD
 result=$?
 if [ $result = 0 ]
 then

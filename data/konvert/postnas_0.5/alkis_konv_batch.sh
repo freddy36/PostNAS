@@ -95,8 +95,10 @@ layer=""
   echo " "
   cd ${ORDNER}
   rm ../temp/*.gfs
-  # for zipfile in ${ORDNER}/*.xml.zip ; do 
-  for zipfile in ${ORDNER}/*.zip ; do 
+  echo "Dateien in " ${ORDNER} " (ls) :"
+  ls
+# for zipfile in ${ORDNER}/*.xml.zip ; do 
+  for zipfile in *.zip               ; do 
     echo " "
     echo "*******"
     echo "* Archiv: " $zipfile

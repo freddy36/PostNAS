@@ -45,6 +45,7 @@
 --             - Objektartengruppe: Angaben zum Flurstück
 --             - Objektartengruppe: Angaben zur Lage
 
+--  2011-02-07 "gml_id" in fast allen Tabellen als UNIQUE INDEX
 
 -- Zur Datenstruktur siehe Dokument: 
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
@@ -53,18 +54,11 @@
 -- ToDo:
 -- *****
 
---  "gml_id" sollte in allen(?) Tabellen als eindeutig definiert werden.
---   Versehentlich doppelt konvertierte NAS-Dateien werden sonst "fehlerfrei" eingetragen.
-
---  CREATE UNIQUE INDEX ax_XXXX_gml 
---                   ON ax_XXXX USING btree (gml_id);
-
 --   - Abgleich mit GeoInfoDok 6.0
 --   - nicht benötigte (immer leere) Felder rausnehmen
 --   - Indizierung optimieren?
 --
--- Datenbank generiert aus NAS-Daten GeoInfoDok 5.1.1. "Lippe", und Musterdaten RLP (GID 6.0)
--- Anschliessend manuell ueberarbeitet.
+-- -----------------------------------------------
 --
 -- Bevor dies Script verarbeitet wird:
 --   Datenbank auf Basis 'template_postgis' anlegen.
@@ -72,7 +66,6 @@
 
 -- Nach diesem Script:
 --   Views eintragen mit 'alkis_sichten.sql'.
-
 
 -- Versionierung / Lebenszeitintervall:
 
@@ -344,7 +337,7 @@ CREATE TABLE ks_sonstigesbauwerk (
   sonstigesmodell character(6),
   anlass integer,
   bauwerksfunktion integer,
-  CONSTRAINT ks_sonstigesbauwerk_pk PRIMARY KEY (ogc_fid),
+  CONSTRAINT ks_sonstigesbauwerk_pk PRIMARY KEY (ogc_fid)
 );
 
 SELECT AddGeometryColumn('ks_sonstigesbauwerk','wkb_geometry','25832','POLYGON',2);
@@ -413,6 +406,10 @@ SELECT AddGeometryColumn('ax_anderefestlegungnachwasserrecht','wkb_geometry','25
 CREATE INDEX ax_anderefestlegungnachwasserrecht_geom_idx
   ON ax_anderefestlegungnachwasserrecht USING gist (wkb_geometry);
 
+-- DROP INDEX ax_anderefestlegungnachwasserrecht_gml;
+CREATE UNIQUE INDEX ax_anderefestlegungnachwasserrecht_gml 
+                 ON ax_anderefestlegungnachwasserrecht USING btree (gml_id);
+
 COMMENT ON TABLE  ax_anderefestlegungnachwasserrecht        IS 'Andere Festlegung nach  W a s s e r r e c h t';
 COMMENT ON COLUMN ax_anderefestlegungnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
 
@@ -433,6 +430,9 @@ CREATE TABLE ax_baublock (
 SELECT AddGeometryColumn('ax_baublock','wkb_geometry','25832','MULTIPOLYGON',2);
 
 CREATE INDEX ax_baublock_geom_idx ON ax_baublock USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_baublock_gml 
+                 ON ax_baublock USING btree (gml_id);
 
 COMMENT ON TABLE  ax_baublock        IS 'B a u b l o c k';
 COMMENT ON COLUMN ax_baublock.gml_id IS 'Identifikator, global eindeutig';
@@ -458,6 +458,9 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_besonderertopographischerpunkt', 'dummy', 2, 25832, 'POINT');
 
+CREATE UNIQUE INDEX ax_besonderertopographischerpunkt_gml 
+                 ON ax_besonderertopographischerpunkt USING btree (gml_id);
+
 COMMENT ON TABLE  ax_besonderertopographischerpunkt        IS 'B e s o n d e r e r   T o p o g r a f i s c h e r   P u n k t';
 COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, global eindeutig';
 
@@ -478,6 +481,9 @@ CREATE TABLE ax_bewertung (
 SELECT AddGeometryColumn('ax_bewertung','wkb_geometry','25832','POLYGON',2);
 
 CREATE INDEX ax_bewertung_geom_idx  ON ax_bewertung  USING gist  (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bewertung_gml 
+                 ON ax_bewertung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
@@ -505,6 +511,9 @@ ALTER TABLE ax_denkmalschutzrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 CREATE INDEX ax_denkmalschutzrecht_geom_idx  ON ax_denkmalschutzrecht  USING gist  (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_denkmalschutzrecht_gml 
+                 ON ax_denkmalschutzrecht USING btree (gml_id);
+
 COMMENT ON TABLE  ax_denkmalschutzrecht        IS 'D e n k m a l s c h u t z r e c h t';
 COMMENT ON COLUMN ax_denkmalschutzrecht.gml_id IS 'Identifikator, global eindeutig';
 
@@ -528,9 +537,11 @@ SELECT AddGeometryColumn('ax_gebaeudeausgestaltung','wkb_geometry','25832','LINE
 
 CREATE INDEX ax_gebaeudeausgestaltung_geom_idx ON ax_gebaeudeausgestaltung USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_gebaeudeausgestaltung_gml 
+                 ON ax_gebaeudeausgestaltung USING btree (gml_id);
+
 COMMENT ON TABLE  ax_gebaeudeausgestaltung        IS 'G e b a e u d e a u s g e s t a l t u n g';
 COMMENT ON COLUMN ax_gebaeudeausgestaltung.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 -- Georeferenzierte  G e b ä u d e a d r e s s e
@@ -541,7 +552,7 @@ CREATE TABLE ax_georeferenziertegebaeudeadresse (
 	identifier		character varying(28),
 	beginnt			character(20),		-- Inhalt z.B. "2008-06-10T15:19:17Z"
 							-- ISO:waere   "2008-06-10 15:19:17-00"
---	beginnt			timestamp,		-- Format wird nicht geladen, bleibt leer
+--	beginnt			timestamp,		-- timestamp-Format wird nicht geladen, bleibt leer
 	advstandardmodell	character varying(9),
 	anlass			integer,
 	qualitaetsangaben	integer,		-- zb: "1000" (= Massstab)
@@ -561,7 +572,6 @@ CREATE TABLE ax_georeferenziertegebaeudeadresse (
 	adressierungszusatz	character(1),		-- Hausnummernzusatz-Buchstabe
 	CONSTRAINT ax_georeferenziertegebaeudeadresse_pk PRIMARY KEY (ogc_fid)
 );
-
 -- Auchtung! Das Feld Gemeinde hier ist nur ein Teilschlüssel.
 
 SELECT AddGeometryColumn('ax_georeferenziertegebaeudeadresse','wkb_geometry','25832','POINT',2);
@@ -569,10 +579,12 @@ SELECT AddGeometryColumn('ax_georeferenziertegebaeudeadresse','wkb_geometry','25
 CREATE INDEX ax_georeferenziertegebaeudeadresse_geom_idx ON ax_georeferenziertegebaeudeadresse USING gist (wkb_geometry);
 
 -- Index für alkis_beziehungen
-CREATE INDEX ax_georeferenziertegebaeudeadresse_gml ON ax_georeferenziertegebaeudeadresse USING btree (gml_id);
+CREATE INDEX ax_georeferenziertegebaeudeadresse_gml 
+          ON ax_georeferenziertegebaeudeadresse USING btree (gml_id);
 
 -- Suchindex Adresse
-CREATE INDEX ax_georeferenziertegebaeudeadresse_adr ON ax_georeferenziertegebaeudeadresse 
+CREATE INDEX ax_georeferenziertegebaeudeadresse_adr 
+          ON ax_georeferenziertegebaeudeadresse 
   USING btree (strassenschluessel, hausnummer, adressierungszusatz);
 
 
@@ -601,7 +613,12 @@ CREATE TABLE ax_grablochderbodenschaetzung (
 
 SELECT AddGeometryColumn('ax_grablochderbodenschaetzung','wkb_geometry','25832','POINT',2);
 
-CREATE INDEX ax_grablochderbodenschaetzung_geom_idx  ON ax_grablochderbodenschaetzung  USING gist  (wkb_geometry);
+CREATE INDEX ax_grablochderbodenschaetzung_geom_idx  
+          ON ax_grablochderbodenschaetzung  USING gist  (wkb_geometry);
+
+-- DROP INDEX ax_grablochderbodenschaetzung_gml;
+CREATE UNIQUE INDEX ax_grablochderbodenschaetzung_gml 
+                 ON ax_grablochderbodenschaetzung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_grablochderbodenschaetzung        IS 'G r a b l o c h   d e r   B o d e n s c h a e t z u n g';
 COMMENT ON COLUMN ax_grablochderbodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
@@ -645,6 +662,9 @@ CREATE TABLE ax_historischesflurstueckalb (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_historischesflurstueckalb', 'dummy', 2, 25832, 'POINT');
+
+CREATE UNIQUE INDEX ax_historischesflurstueckalb_gml 
+                 ON ax_historischesflurstueckalb USING btree (gml_id);
 
 COMMENT ON TABLE  ax_historischesflurstueckalb        IS 'Historisches Flurstück ALB';
 COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global eindeutig';
@@ -695,6 +715,9 @@ ALTER TABLE ax_historischesflurstueck DROP CONSTRAINT enforce_geotype_wkb_geomet
 
 CREATE INDEX ax_historischesflurstueck_geom_idx ON ax_historischesflurstueck USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_historischesflurstueck_gml 
+                 ON ax_historischesflurstueck USING btree (gml_id);
+
 COMMENT ON TABLE  ax_historischesflurstueck        IS 'Historisches Flurstück, ALKIS, MIT Geometrie';
 COMMENT ON COLUMN ax_historischesflurstueck.gml_id IS 'Identifikator, global eindeutig';
 
@@ -717,9 +740,11 @@ SELECT AddGeometryColumn('ax_naturumweltoderbodenschutzrecht','wkb_geometry','25
 -- auch MULTIPOLYGON
 ALTER TABLE ax_naturumweltoderbodenschutzrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-
 CREATE INDEX ax_naturumweltoderbodenschutzrecht_geom_idx
-  ON ax_naturumweltoderbodenschutzrecht USING gist (wkb_geometry);
+          ON ax_naturumweltoderbodenschutzrecht USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_naturumweltoderbodenschutzrecht_gml 
+                 ON ax_naturumweltoderbodenschutzrecht USING btree (gml_id);
 
 COMMENT ON TABLE  ax_naturumweltoderbodenschutzrecht        IS 'N  a t u r -,  U m w e l t -   o d e r   B o d e n s c h u t z r e c h t';
 COMMENT ON COLUMN ax_naturumweltoderbodenschutzrecht.gml_id IS 'Identifikator, global eindeutig';
@@ -744,6 +769,9 @@ CREATE TABLE ax_schutzgebietnachwasserrecht (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_schutzgebietnachwasserrecht', 'dummy', 2, 25832, 'POINT');
+
+CREATE UNIQUE INDEX ax_schutzgebietnachwasserrecht_gml 
+                 ON ax_schutzgebietnachwasserrecht USING btree (gml_id);
 
 COMMENT ON TABLE  ax_schutzgebietnachwasserrecht        IS 'S c h u t z g e b i e t   n a c h   W a s s s e r r e c h t';
 COMMENT ON COLUMN ax_schutzgebietnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
@@ -770,6 +798,9 @@ ALTER TABLE ax_schutzzone DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 CREATE INDEX ax_schutzzone_geom_idx ON ax_schutzzone USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_schutzzone_gml 
+                 ON ax_schutzzone USING btree (gml_id);
+
 COMMENT ON TABLE  ax_schutzzone        IS 'S c h u t z z o n e';
 COMMENT ON COLUMN ax_schutzzone.gml_id IS 'Identifikator, global eindeutig';
 
@@ -792,6 +823,9 @@ CREATE TABLE ax_topographischelinie (
 SELECT AddGeometryColumn('ax_topographischelinie','wkb_geometry','25832','LINESTRING',2);
 
 CREATE INDEX ax_topographischelinie_geom_idx ON ax_topographischelinie USING gist(wkb_geometry);
+
+CREATE UNIQUE INDEX ax_topographischelinie_gml 
+                 ON ax_topographischelinie USING btree (gml_id);
 
 COMMENT ON TABLE  ax_topographischelinie        IS 'T o p o g r a p h i s c h e   L i n i e';
 COMMENT ON COLUMN ax_topographischelinie.gml_id IS 'Identifikator, global eindeutig';
@@ -861,6 +895,10 @@ CREATE TABLE ap_lpo (
 SELECT AddGeometryColumn('ap_lpo','wkb_geometry','25832','LINESTRING',2);
 
 CREATE INDEX ap_lpo_geom_idx ON ap_lpo USING gist (wkb_geometry);
+
+--DROP INDEX ap_lpo_gml;
+CREATE UNIQUE INDEX ap_lpo_gml 
+                 ON ap_lpo USING btree (gml_id);
 
 COMMENT ON TABLE  ap_lpo        IS 'LPO: Linienförmiges Präsentationsobjekt';
 COMMENT ON COLUMN ap_lpo.gml_id IS 'Identifikator, global eindeutig';
@@ -963,6 +1001,10 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ap_darstellung', 'dummy', 2, 25832, 'POINT');
 
+--DROP INDEX ap_darstellung_gml;
+CREATE UNIQUE INDEX ap_darstellung_gml 
+                 ON ap_darstellung USING btree (gml_id);
+
 COMMENT ON TABLE  ap_darstellung        IS 'A P  D a r s t e l l u n g';
 COMMENT ON COLUMN ap_darstellung.gml_id IS 'Identifikator, global eindeutig';
 
@@ -1017,9 +1059,8 @@ ALTER TABLE ax_flurstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
 CREATE INDEX ax_flurstueck_geom_idx   ON ax_flurstueck USING gist (wkb_geometry);
 
 -- Verbindungstabellen indizieren
-  -- f. Suche Buchwerk aus Template
-  CREATE UNIQUE INDEX id_ax_flurstueck_gml
-            ON ax_flurstueck  USING btree (gml_id);
+CREATE UNIQUE INDEX ax_flurstueck_gml
+                 ON ax_flurstueck  USING btree (gml_id);
 
 COMMENT ON TABLE  ax_flurstueck        IS 'F l u r s t u e c k';
 COMMENT ON COLUMN ax_flurstueck.gml_id IS 'Identifikator, global eindeutig';
@@ -1082,7 +1123,6 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_grenzpunkt', 'dummy', 2, 25832, 'POINT');
 
-
 -- DROP INDEX ax_grenzpunkt_gml;
 CREATE UNIQUE INDEX ax_grenzpunkt_gml 
                  ON ax_grenzpunkt USING btree (gml_id);
@@ -1096,7 +1136,6 @@ COMMENT ON COLUMN ax_grenzpunkt.gml_id IS 'Identifikator, global eindeutig';
 
 --AX_Flurstuecksnummer
 -- ** Tabelle bisher noch nicht generiert
-
 
 --AX_SonstigeEigenschaften_Flurstueck
 -- ** Tabelle bisher noch nicht generiert
@@ -1129,7 +1168,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_lagebezeichnungohnehausnummer', 'dummy', 2, 25832, 'POINT');
 
 -- Verbindungstabellen indizieren
-CREATE INDEX ax_lagebezeichnungohnehausnummer_gml ON ax_lagebezeichnungohnehausnummer USING btree (gml_id);
+CREATE UNIQUE INDEX ax_lagebezeichnungohnehausnummer_gml 
+                 ON ax_lagebezeichnungohnehausnummer USING btree (gml_id);
 
 -- Such-Index (z.B. fuer Navigations-Programm)
 CREATE INDEX ax_lagebezeichnungohnehausnummer_key ON ax_lagebezeichnungohnehausnummer USING btree (land, regierungsbezirk, kreis, gemeinde,lage);
@@ -1168,10 +1208,12 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_lagebezeichnungmithausnummer', 'dummy', 2, 25832, 'POINT');
 
 -- Verbindungstabellen indizieren
-CREATE INDEX ax_lagebezeichnungmithausnummer_gml ON ax_lagebezeichnungmithausnummer USING btree (gml_id);
+CREATE UNIQUE INDEX ax_lagebezeichnungmithausnummer_gml 
+                 ON ax_lagebezeichnungmithausnummer USING btree (gml_id);
 
 -- Adressen-Suche nach Strasse
-CREATE INDEX ax_lagebezeichnungmithausnummer_lage ON ax_lagebezeichnungmithausnummer USING btree (gemeinde, lage);
+CREATE INDEX ax_lagebezeichnungmithausnummer_lage 
+          ON ax_lagebezeichnungmithausnummer USING btree (gemeinde, lage);
 
 COMMENT ON TABLE  ax_lagebezeichnungmithausnummer        IS 'L a g e b e z e i c h n u n g   m i t   H a u s n u m m e r';
 COMMENT ON COLUMN ax_lagebezeichnungmithausnummer.gml_id IS 'Identifikator, global eindeutig';
@@ -1202,7 +1244,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_lagebezeichnungmitpseudonummer', 'dummy', 2, 25832, 'POINT');
 
 -- Verbindungstabellen indizieren
-CREATE INDEX ax_lagebezeichnungmitpseudonummer_gml ON ax_lagebezeichnungmitpseudonummer USING btree (gml_id);
+CREATE UNIQUE INDEX ax_lagebezeichnungmitpseudonummer_gml 
+                 ON ax_lagebezeichnungmitpseudonummer USING btree (gml_id);
 
 COMMENT ON TABLE  ax_lagebezeichnungmitpseudonummer        IS 'L a g e b e z e i c h n u n g   m i t  P s e u d o n u m m e r';
 COMMENT ON COLUMN ax_lagebezeichnungmitpseudonummer.gml_id IS 'Identifikator, global eindeutig';
@@ -1311,6 +1354,10 @@ SELECT AddGeometryColumn('ax_punktortag','wkb_geometry','25832','POINT',2);
 
 CREATE INDEX ax_punktortag_geom_idx ON ax_punktortag USING gist (wkb_geometry);
 
+--DROP INDEX ax_punktortag_gml;
+CREATE UNIQUE INDEX ax_punktortag_gml 
+                 ON ax_punktortag USING btree (gml_id);
+
 COMMENT ON TABLE  ax_punktortag        IS 'P u n k t o r t   AG';
 COMMENT ON COLUMN ax_punktortag.gml_id IS 'Identifikator, global eindeutig';
 
@@ -1339,6 +1386,10 @@ CREATE TABLE ax_punktortau (
 SELECT AddGeometryColumn('ax_punktortau','wkb_geometry','25832','POINT',2);
 
 CREATE INDEX ax_punktortau_geom_idx ON ax_punktortau USING gist (wkb_geometry);
+
+--DROP INDEX ax_punktortau_gml;
+CREATE UNIQUE INDEX ax_punktortau_gml 
+                 ON ax_punktortau USING btree (gml_id);
 
 COMMENT ON TABLE  ax_punktortau        IS 'P u n k t o r t   A U';
 COMMENT ON COLUMN ax_punktortau.gml_id IS 'Identifikator, global eindeutig';
@@ -1369,6 +1420,10 @@ CREATE TABLE ax_punktortta (
 SELECT AddGeometryColumn('ax_punktortta','wkb_geometry','25832','POINT',2);
 
 CREATE INDEX ax_punktortta_geom_idx ON ax_punktortta USING gist (wkb_geometry);
+
+--DROP INDEX ax_punktortta_gml;
+CREATE UNIQUE INDEX ax_punktortta_gml 
+                 ON ax_punktortta USING btree (gml_id);
 
 COMMENT ON TABLE  ax_punktortta        IS 'P u n k t o r t   T A';
 COMMENT ON COLUMN ax_punktortta.gml_id IS 'Identifikator, global eindeutig';
@@ -1459,11 +1514,11 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_person', 'dummy', 2, 25832, 'POINT');
 
 -- Verbindungstabellen indizieren
-  CREATE INDEX id_ax_person_gml   ON ax_person  USING btree (gml_id);
+CREATE UNIQUE INDEX id_ax_person_gml   
+                 ON ax_person  USING btree (gml_id);
 
 COMMENT ON TABLE  ax_person        IS 'NREO "Person" ist eine natürliche oder juristische Person und kann z.B. in den Rollen Eigentümer, Erwerber, Verwalter oder Vertreter in Katasterangelegenheiten geführt werden.';
 COMMENT ON COLUMN ax_person.gml_id IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_person.namensbestandteil IS 'enthält z.B. Titel wie "Baron"';
 
 -- Relationen:
@@ -1501,7 +1556,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_anschrift', 'dummy', 2, 25832, 'POINT');
 
 -- Index für alkis_beziehungen
-CREATE INDEX ax_anschrift_gml ON ax_anschrift USING btree (gml_id);
+CREATE UNIQUE INDEX ax_anschrift_gml 
+                 ON ax_anschrift USING btree (gml_id);
 
 COMMENT ON TABLE  ax_anschrift        IS 'A n s c h r i f t';
 COMMENT ON COLUMN ax_anschrift.gml_id IS 'Identifikator, global eindeutig';
@@ -1534,8 +1590,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_namensnummer', 'dummy', 2, 25832, 'POINT');
 
 -- Verbindungstabellen indizieren
-  CREATE INDEX ax_namensnummer_gml ON ax_namensnummer USING btree (gml_id);
-
+CREATE UNIQUE INDEX ax_namensnummer_gml 
+                 ON ax_namensnummer USING btree (gml_id);
 
 COMMENT ON TABLE  ax_namensnummer        IS 'NREO "Namensnummer" ist die laufende Nummer der Eintragung, unter welcher der Eigentümer oder Erbbauberechtigte im Buchungsblatt geführt wird. Rechtsgemeinschaften werden auch unter AX_Namensnummer geführt.';
 COMMENT ON COLUMN ax_namensnummer.gml_id IS 'Identifikator, global eindeutig';
@@ -1596,9 +1652,9 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_buchungsstelle', 'dummy', 2, 25832, 'POINT');
 
-
 --Index für alkis_beziehungen
-  CREATE INDEX id_ax_buchungsstelle_gml ON ax_buchungsstelle USING btree (gml_id);
+CREATE UNIQUE INDEX ax_buchungsstelle_gml 
+                 ON ax_buchungsstelle USING btree (gml_id);
 
 COMMENT ON TABLE  ax_buchungsstelle        IS 'NREO "Buchungsstelle" ist die unter einer laufenden Nummer im Verzeichnis des Buchungsblattes eingetragene Buchung.';
 COMMENT ON COLUMN ax_buchungsstelle.gml_id IS 'Identifikator, global eindeutig';
@@ -1656,7 +1712,8 @@ ALTER TABLE ax_gebaeude DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 CREATE INDEX ax_gebaeude_geom_idx ON ax_gebaeude USING gist (wkb_geometry);
 
-CREATE INDEX id_ax_gebaeude_gml               ON ax_gebaeude  USING btree  (gml_id);
+CREATE UNIQUE INDEX ax_gebaeude_gml
+                 ON ax_gebaeude  USING btree  (gml_id);
 
 COMMENT ON TABLE  ax_gebaeude        IS 'G e b a e u d e';
 COMMENT ON COLUMN ax_gebaeude.gml_id IS 'Identifikator, global eindeutig';
@@ -1699,6 +1756,9 @@ SELECT AddGeometryColumn('ax_bauteil','wkb_geometry','25832','POLYGON',2);
 
 CREATE INDEX ax_bauteil_geom_idx ON ax_bauteil USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_bauteil_gml 
+                 ON ax_bauteil USING btree (gml_id);
+
 COMMENT ON TABLE  ax_bauteil        IS 'B a u t e i l';
 COMMENT ON COLUMN ax_bauteil.gml_id IS 'Identifikator, global eindeutig';
 
@@ -1719,6 +1779,9 @@ CREATE TABLE ax_besonderegebaeudelinie (
 SELECT AddGeometryColumn('ax_besonderegebaeudelinie','wkb_geometry','25832','LINESTRING',2);
 
 CREATE INDEX ax_besonderegebaeudelinie_geom_idx ON ax_besonderegebaeudelinie USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_besonderegebaeudelinie_gml 
+                 ON ax_besonderegebaeudelinie USING btree (gml_id);
 
 COMMENT ON TABLE ax_besonderegebaeudelinie IS 'B e s o n d e r e   G e b a e u d e l i n i e';
 COMMENT ON COLUMN ax_besonderegebaeudelinie.gml_id IS 'Identifikator, global eindeutig';
@@ -1741,6 +1804,9 @@ CREATE TABLE ax_firstlinie (
 SELECT AddGeometryColumn('ax_firstlinie','wkb_geometry','25832','LINESTRING',2);
 
 CREATE INDEX ax_firstlinie_geom_idx ON ax_firstlinie USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_firstlinie_gml 
+                 ON ax_firstlinie USING btree (gml_id);
 
 COMMENT ON TABLE  ax_firstlinie        IS 'F i r s t l i n i e';
 COMMENT ON COLUMN ax_firstlinie.gml_id IS 'Identifikator, global eindeutig';
@@ -1811,7 +1877,11 @@ CREATE TABLE ax_wohnbauflaeche (
 
 SELECT AddGeometryColumn('ax_wohnbauflaeche','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_wohnbauflaeche_geom_idx ON ax_wohnbauflaeche USING gist (wkb_geometry);
+CREATE INDEX ax_wohnbauflaeche_geom_idx 
+          ON ax_wohnbauflaeche USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_wohnbauflaeche_gml 
+                 ON ax_wohnbauflaeche USING btree (gml_id);
 
 COMMENT ON TABLE  ax_wohnbauflaeche                 IS 'W o h n b a u f l a e c h e  ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient.';
 COMMENT ON COLUMN ax_wohnbauflaeche.gml_id          IS 'Identifikator, global eindeutig';
@@ -1844,7 +1914,11 @@ SELECT AddGeometryColumn('ax_industrieundgewerbeflaeche','wkb_geometry','25832',
 -- POLYGON und POINT
 ALTER TABLE ax_industrieundgewerbeflaeche DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_industrieundgewerbeflaeche_geom_idx ON ax_industrieundgewerbeflaeche USING gist (wkb_geometry);
+CREATE INDEX ax_industrieundgewerbeflaeche_geom_idx 
+          ON ax_industrieundgewerbeflaeche USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_industrieundgewerbeflaeche_gml 
+                 ON ax_industrieundgewerbeflaeche USING btree (gml_id);
 
 COMMENT ON TABLE  ax_industrieundgewerbeflaeche            IS 'I n d u s t r i e -   u n d   G e w e r b e f l a e c h e';
 COMMENT ON COLUMN ax_industrieundgewerbeflaeche.gml_id     IS 'Identifikator, global eindeutig';
@@ -1875,6 +1949,9 @@ SELECT AddGeometryColumn('ax_halde','wkb_geometry','25832','POLYGON',2);
 
 CREATE INDEX ax_halde_geom_idx ON ax_halde USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_halde_gml 
+                 ON ax_halde USING btree (gml_id);
+
 COMMENT ON TABLE ax_halde             IS 'H a l d e';
 COMMENT ON COLUMN ax_halde.gml_id     IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_halde.name       IS 'NAM "Name" ist die einer "Halde" zugehörige Bezeichnung oder deren Eigenname.';
@@ -1901,7 +1978,11 @@ CREATE TABLE ax_bergbaubetrieb (
 
 SELECT AddGeometryColumn('ax_bergbaubetrieb','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_bergbaubetrieb_geom_idx  ON ax_bergbaubetrieb  USING gist  (wkb_geometry);
+CREATE INDEX ax_bergbaubetrieb_geom_idx  
+          ON ax_bergbaubetrieb  USING gist  (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bergbaubetrieb_gml 
+                 ON ax_bergbaubetrieb USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bergbaubetrieb             IS '"Bergbaubetrieb" ist eine Fläche, die für die Förderung des Abbaugutes unter Tage genutzt wird.';
 COMMENT ON COLUMN ax_bergbaubetrieb.gml_id      IS 'Identifikator, global eindeutig';
@@ -1930,9 +2011,11 @@ SELECT AddGeometryColumn('ax_tagebaugrubesteinbruch','wkb_geometry','25832','POL
 
 CREATE INDEX ax_tagebaugrubesteinbruch_geom_idx ON ax_tagebaugrubesteinbruch USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_tagebaugrubesteinbruchb_gml 
+                 ON ax_tagebaugrubesteinbruch USING btree (gml_id);
+
 COMMENT ON TABLE  ax_tagebaugrubesteinbruch          IS '"T a g e b a u ,  G r u b e ,  S t e i n b r u c h"  ist eine Fläche, auf der oberirdisch Bodenmaterial abgebaut wird. Rekultivierte Tagebaue, Gruben, Steinbrüche werden als Objekte entsprechend der vorhandenen Nutzung erfasst.';
 COMMENT ON COLUMN ax_tagebaugrubesteinbruch.gml_id   IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_tagebaugrubesteinbruch.name     IS 'NAM "Name" ist der Eigenname von "Tagebau, Grube, Steinbruch".';
 COMMENT ON COLUMN ax_tagebaugrubesteinbruch.abbaugut IS 'AGT "Abbaugut" gibt an, welches Material abgebaut wird.';
 COMMENT ON COLUMN ax_tagebaugrubesteinbruch.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Tagebau, Grube, Steinbruch".';
@@ -1956,11 +2039,14 @@ CREATE TABLE ax_flaechegemischternutzung (
 
 SELECT AddGeometryColumn('ax_flaechegemischternutzung','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_flaechegemischternutzung_geom_idx ON ax_flaechegemischternutzung USING gist (wkb_geometry);
+CREATE INDEX ax_flaechegemischternutzung_geom_idx 
+          ON ax_flaechegemischternutzung USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_flaechegemischternutzung_gml 
+                 ON ax_flaechegemischternutzung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_flaechegemischternutzung        IS '"Fläche gemischter Nutzung" ist eine bebaute Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche (Hofraumfläche, Hausgarten), auf der keine Art der baulichen Nutzung vorherrscht. Solche Flächen sind insbesondere ländlich-dörflich geprägte Flächen mit land- und forstwirtschaftlichen Betrieben, Wohngebäuden u.a. sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung.';
 COMMENT ON COLUMN ax_flaechegemischternutzung.gml_id IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_flaechegemischternutzung.artderbebauung IS 'BEB "Art der Bebauung" differenziert nach offener und geschlossener Bauweise aus topographischer Sicht und nicht nach gesetzlichen Vorgaben (z.B. BauGB).';
 COMMENT ON COLUMN ax_flaechegemischternutzung.funktion       IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung (Dominanzprinzip).';
 COMMENT ON COLUMN ax_flaechegemischternutzung.name           IS 'NAM "Name" ist der Eigenname von "Fläche gemischter Nutzung" insbesondere bei Objekten außerhalb von Ortslagen.';
@@ -1987,9 +2073,11 @@ SELECT AddGeometryColumn('ax_flaechebesondererfunktionalerpraegung','wkb_geometr
 
 CREATE INDEX ax_flaechebesondererfunktionalerpraegung_geom_idx ON ax_flaechebesondererfunktionalerpraegung USING gist (wkb_geometry);
 
+CREATE UNIQUE INDEX ax_flaechebesondererfunktionalerpraegung_gml 
+                 ON ax_flaechebesondererfunktionalerpraegung USING btree (gml_id);
+
 COMMENT ON TABLE  ax_flaechebesondererfunktionalerpraegung        IS '"Fläche besonderer funktionaler Prägung" ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind.';
 COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.gml_id IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.funktion       IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung von "Fläche besonderer funktionaler Prägung".';
 COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.artderbebauung IS 'BEB "Art der Bebauung" differenziert nach offener und geschlossener Bauweise aus topographischer Sicht und nicht nach gesetzlichen Vorgaben (z.B. BauGB).';
 COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.name           IS 'NAM "Name" ist der Eigenname von "Fläche besonderer funktionaler Prägung" insbesondere außerhalb von Ortslagen.';
@@ -2013,7 +2101,11 @@ CREATE TABLE ax_sportfreizeitunderholungsflaeche (
 
 SELECT AddGeometryColumn('ax_sportfreizeitunderholungsflaeche','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_sportfreizeitunderholungsflaeche_geom_idx ON ax_sportfreizeitunderholungsflaeche USING gist (wkb_geometry);
+CREATE INDEX ax_sportfreizeitunderholungsflaeche_geom_idx 
+          ON ax_sportfreizeitunderholungsflaeche USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_sportfreizeitunderholungsflaeche_gml 
+                 ON ax_sportfreizeitunderholungsflaeche USING btree (gml_id);
 
 COMMENT ON TABLE  ax_sportfreizeitunderholungsflaeche          IS '"Sport-, Freizeit- und Erhohlungsfläche" ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient.';
 COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.gml_id   IS 'Identifikator, global eindeutig';
@@ -2039,7 +2131,11 @@ CREATE TABLE ax_friedhof (
 
 SELECT AddGeometryColumn('ax_friedhof','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_friedhof_geom_idx ON ax_friedhof USING gist (wkb_geometry);
+CREATE INDEX ax_friedhof_geom_idx 
+          ON ax_friedhof USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_friedhof_gml 
+                 ON ax_friedhof USING btree (gml_id);
 
 COMMENT ON TABLE  ax_friedhof           IS '"F r i e d h o f"  ist eine Fläche, auf der Tote bestattet sind.';
 COMMENT ON COLUMN ax_friedhof.gml_id    IS 'Identifikator, global eindeutig';
@@ -2070,7 +2166,11 @@ CREATE TABLE ax_strassenverkehr (
 
 SELECT AddGeometryColumn('ax_strassenverkehr','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_strassenverkehr_geom_idx ON ax_strassenverkehr USING gist (wkb_geometry);
+CREATE INDEX ax_strassenverkehr_geom_idx 
+          ON ax_strassenverkehr USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_strassenverkehr_gml 
+                 ON ax_strassenverkehr USING btree (gml_id);
 
 COMMENT ON TABLE  ax_strassenverkehr           IS '"S t r a s s e n v e r k e h r" umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen.';
 COMMENT ON COLUMN ax_strassenverkehr.gml_id    IS 'Identifikator, global eindeutig';
@@ -2099,7 +2199,11 @@ CREATE TABLE ax_weg (
 
 SELECT AddGeometryColumn('ax_weg','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_weg_geom_idx ON ax_weg USING gist (wkb_geometry);
+CREATE INDEX ax_weg_geom_idx 
+          ON ax_weg USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_weg_gml 
+                 ON ax_weg USING btree (gml_id);
 
 COMMENT ON TABLE  ax_weg              IS '"W e g" umfasst alle Flächen, die zum Befahren und/oder Begehen vorgesehen sind. Zum "Weg" gehören auch Seitenstreifen und Gräben zur Wegentwässerung.';
 COMMENT ON COLUMN ax_weg.gml_id       IS 'Identifikator, global eindeutig';
@@ -2126,7 +2230,11 @@ CREATE TABLE ax_platz (
 
 SELECT AddGeometryColumn('ax_platz','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_platz_geom_idx ON ax_platz USING gist (wkb_geometry);
+CREATE INDEX ax_platz_geom_idx 
+          ON ax_platz USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_platz_gml 
+                 ON ax_platz USING btree (gml_id);
 
 COMMENT ON TABLE  ax_platz           IS 'P l a t z   ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen).';
 COMMENT ON COLUMN ax_platz.gml_id    IS 'Identifikator, global eindeutig';
@@ -2155,7 +2263,11 @@ CREATE TABLE ax_bahnverkehr (
 
 SELECT AddGeometryColumn('ax_bahnverkehr','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_bahnverkehr_geom_idx ON ax_bahnverkehr USING gist (wkb_geometry);
+CREATE INDEX ax_bahnverkehr_geom_idx 
+          ON ax_bahnverkehr USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bahnverkehr_gml 
+                 ON ax_bahnverkehr USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bahnverkehr        IS '"B a h n v e r k e h r"  umfasst alle für den Schienenverkehr erforderlichen Flächen.';
 -- Flächen von Bahnverkehr sind
@@ -2192,11 +2304,14 @@ CREATE TABLE ax_flugverkehr (
 
 SELECT AddGeometryColumn('ax_flugverkehr','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_flugverkehr_geom_idx  ON ax_flugverkehr  USING gist  (wkb_geometry);
+CREATE INDEX ax_flugverkehr_geom_idx
+          ON ax_flugverkehr  USING gist  (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_flugverkehr_gml 
+                 ON ax_flugverkehr USING btree (gml_id);
 
 COMMENT ON TABLE  ax_flugverkehr             IS '"F l u g v e r k e h r"  umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Flugverkehr dient.';
 COMMENT ON COLUMN ax_flugverkehr.gml_id      IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_flugverkehr.funktion    IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung (Dominanzprinzip).';
 COMMENT ON COLUMN ax_flugverkehr.art         IS 'ART "Art" ist Einstufung der Flugverkehrsfläche durch das Luftfahrtbundesamt.';
 COMMENT ON COLUMN ax_flugverkehr.name        IS 'NAM "Name" ist der Eigenname von "Flugverkehr".';
@@ -2223,11 +2338,13 @@ CREATE TABLE ax_schiffsverkehr (
 SELECT AddGeometryColumn('ax_schiffsverkehr','wkb_geometry','25832','POLYGON',2);
 
 CREATE INDEX ax_schiffsverkehr_geom_idx
-  ON ax_schiffsverkehr USING gist (wkb_geometry);
+          ON ax_schiffsverkehr USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_schiffsverkehr_gml 
+                 ON ax_schiffsverkehr USING btree (gml_id);
 
 COMMENT ON TABLE  ax_schiffsverkehr          IS '"S c h i f f s v e r k e h r"  umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient.';
 COMMENT ON COLUMN ax_schiffsverkehr.gml_id   IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_schiffsverkehr.funktion IS 'FKT "Funktion" ist die zum Zeitpunkt der Erhebung vorherrschende Nutzung von "Schiffsverkehr".';
 COMMENT ON COLUMN ax_schiffsverkehr.name     IS 'NAM "Name" ist der Eigenname von "Schiffsverkehr".';
 COMMENT ON COLUMN ax_schiffsverkehr.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Schiffsverkehr".';
@@ -2253,7 +2370,11 @@ CREATE TABLE ax_landwirtschaft (
 
 SELECT AddGeometryColumn('ax_landwirtschaft','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_landwirtschaft_geom_idx ON ax_landwirtschaft USING gist (wkb_geometry);
+CREATE INDEX ax_landwirtschaft_geom_idx 
+          ON ax_landwirtschaft USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_landwirtschaft_gml 
+                 ON ax_landwirtschaft USING btree (gml_id);
 
 COMMENT ON TABLE  ax_landwirtschaft                    IS '"L a n d w i r t s c h a f t"  ist eine Fläche für den Anbau von Feldfrüchten sowie eine Fläche, die beweidet und gemäht werden kann, einschließlich der mit besonderen Pflanzen angebauten Fläche. Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als "Landwirtschaft" bzw. "Ackerland" zu erfassen';
 COMMENT ON COLUMN ax_landwirtschaft.gml_id             IS 'Identifikator, global eindeutig';
@@ -2278,7 +2399,11 @@ CREATE TABLE ax_wald (
 
 SELECT AddGeometryColumn('ax_wald','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_wald_geom_idx ON ax_wald USING gist (wkb_geometry);
+CREATE INDEX ax_wald_geom_idx 
+          ON ax_wald USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_wald_gml 
+                 ON ax_wald USING btree (gml_id);
 
 COMMENT ON TABLE  ax_wald             IS '"W a l d" ist eine Fläche, die mit Forstpflanzen (Waldbäume und Waldsträucher) bestockt ist.';
 COMMENT ON COLUMN ax_wald.gml_id      IS 'Identifikator, global eindeutig';
@@ -2304,7 +2429,11 @@ CREATE TABLE ax_gehoelz (
 
 SELECT AddGeometryColumn('ax_gehoelz','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_gehoelz_geom_idx ON ax_gehoelz USING gist (wkb_geometry);
+CREATE INDEX ax_gehoelz_geom_idx 
+          ON ax_gehoelz USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_gehoelz_gml 
+                 ON ax_gehoelz USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gehoelz        IS '"G e h o e l z" ist eine Fläche, die mit einzelnen Bäumen, Baumgruppen, Büschen, Hecken und Sträuchern bestockt ist.';
 COMMENT ON COLUMN ax_gehoelz.gml_id IS 'Identifikator, global eindeutig';
@@ -2329,7 +2458,11 @@ CREATE TABLE ax_heide (
 
 SELECT AddGeometryColumn('ax_heide','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_heide_geom_idx ON ax_heide USING gist (wkb_geometry);
+CREATE INDEX ax_heide_geom_idx 
+          ON ax_heide USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_heide_gml 
+                 ON ax_heide USING btree (gml_id);
 
 COMMENT ON TABLE  ax_heide        IS '"H e i d e"  ist eine meist sandige Fläche mit typischen Sträuchern, Gräsern und geringwertigem Baumbestand.';
 COMMENT ON COLUMN ax_heide.gml_id IS 'Identifikator, global eindeutig';
@@ -2351,7 +2484,11 @@ CREATE TABLE ax_moor (
 
 SELECT AddGeometryColumn('ax_moor','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_moor_geom_idx  ON ax_moor  USING gist (wkb_geometry);
+CREATE INDEX ax_moor_geom_idx
+          ON ax_moor  USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_moor_gml 
+                 ON ax_moor USING btree (gml_id);
 
 COMMENT ON TABLE  ax_moor        IS '"M o o r"  ist eine unkultivierte Fläche, deren obere Schicht aus vertorften oder zersetzten Pflanzenresten besteht.';
 -- Torfstich bzw. Torfabbaufläche wird der Objektart 41005 'Tagebau, Grube, Steinbruch' mit AGT 'Torf' zugeordnet.
@@ -2374,7 +2511,11 @@ CREATE TABLE ax_sumpf (
 
 SELECT AddGeometryColumn('ax_sumpf','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_sumpf_geom_idx ON ax_sumpf USING gist (wkb_geometry);
+CREATE INDEX ax_sumpf_geom_idx
+          ON ax_sumpf USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_sumpf_gml 
+                 ON ax_sumpf USING btree (gml_id);
 
 COMMENT ON TABLE  ax_sumpf        IS '"S u m p f" ist ein wassergesättigtes, zeitweise unter Wasser stehendes Gelände. Nach Regenfällen kurzzeitig nasse Stellen im Boden werden nicht als "Sumpf" erfasst.';
 COMMENT ON COLUMN ax_sumpf.gml_id IS 'Identifikator, global eindeutig';
@@ -2398,7 +2539,11 @@ CREATE TABLE ax_unlandvegetationsloseflaeche (
 
 SELECT AddGeometryColumn('ax_unlandvegetationsloseflaeche','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_unlandvegetationsloseflaeche_geom_idx ON ax_unlandvegetationsloseflaeche USING gist (wkb_geometry);
+CREATE INDEX ax_unlandvegetationsloseflaeche_geom_idx 
+          ON ax_unlandvegetationsloseflaeche USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_unlandvegetationsloseflaeche_gml 
+                 ON ax_unlandvegetationsloseflaeche USING btree (gml_id);
 
 COMMENT ON TABLE  ax_unlandvegetationsloseflaeche        IS '"Unland/Vegetationslose Fläche" ist eine Fläche, die dauerhaft landwirtschaftlich nicht genutzt wird, wie z.B. nicht aus dem Geländerelief herausragende Felspartien, Sand- oder Eisflächen, Uferstreifen längs von Gewässern und Sukzessionsflächen.';
 COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.gml_id IS 'Identifikator, global eindeutig';
@@ -2438,7 +2583,11 @@ CREATE TABLE ax_fliessgewaesser (
 
 SELECT AddGeometryColumn('ax_fliessgewaesser','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_fliessgewaesser_geom_idx ON ax_fliessgewaesser USING gist (wkb_geometry);
+CREATE INDEX ax_fliessgewaesser_geom_idx 
+          ON ax_fliessgewaesser USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_fliessgewaesser_gml 
+                 ON ax_fliessgewaesser USING btree (gml_id);
 
 COMMENT ON TABLE  ax_fliessgewaesser          IS '"F l i e s s g e w a e s s e r" ist ein geometrisch begrenztes, oberirdisches, auf dem Festland fließendes Gewässer, das die Wassermengen sammelt, die als Niederschläge auf die Erdoberfläche fallen oder in Quellen austreten, und in ein anderes Gewässer, ein Meer oder in einen See transportiert';
 COMMENT ON COLUMN ax_fliessgewaesser.gml_id   IS 'Identifikator, global eindeutig';
@@ -2464,7 +2613,11 @@ CREATE TABLE ax_hafenbecken (
 
 SELECT AddGeometryColumn('ax_hafenbecken','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_hafenbecken_geom_idx  ON ax_hafenbecken  USING gist  (wkb_geometry);
+CREATE INDEX ax_hafenbecken_geom_idx
+          ON ax_hafenbecken  USING gist  (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_hafenbecken_gml 
+                 ON ax_hafenbecken USING btree (gml_id);
 
 COMMENT ON TABLE  ax_hafenbecken        IS '"H a f e n b e c k e n"  ist ein natürlicher oder künstlich angelegter oder abgetrennter Teil eines Gewässers, in dem Schiffe be- und entladen werden.';
 COMMENT ON COLUMN ax_hafenbecken.gml_id IS 'Identifikator, global eindeutig';
@@ -2494,7 +2647,11 @@ CREATE TABLE ax_stehendesgewaesser (
 
 SELECT AddGeometryColumn('ax_stehendesgewaesser','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_stehendesgewaesser_geom_idx ON ax_stehendesgewaesser USING gist (wkb_geometry);
+CREATE INDEX ax_stehendesgewaesser_geom_idx
+          ON ax_stehendesgewaesser USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_stehendesgewaesser_gml 
+                 ON ax_stehendesgewaesser USING btree (gml_id);
 
 COMMENT ON TABLE  ax_stehendesgewaesser           IS 's t e h e n d e s   G e w a e s s e r  ist eine natürliche oder künstliche mit Wasser gefüllte, allseitig umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit "Meer".';
 COMMENT ON COLUMN ax_stehendesgewaesser.gml_id    IS 'Identifikator, global eindeutig';
@@ -2522,7 +2679,11 @@ CREATE TABLE ax_meer (
 
 SELECT AddGeometryColumn('ax_meer','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_meer_geom_idx ON ax_meer USING gist (wkb_geometry);
+CREATE INDEX ax_meer_geom_idx
+          ON ax_meer USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_meer_gml 
+                 ON ax_meer USING btree (gml_id);
 
 COMMENT ON TABLE  ax_meer              IS '"M e e r" ist die das Festland umgebende Wasserfläche.';
 COMMENT ON COLUMN ax_meer.gml_id       IS 'Identifikator, global eindeutig';
@@ -2572,7 +2733,11 @@ CREATE TABLE ax_turm (
 
 SELECT AddGeometryColumn('ax_turm','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_turm_geom_idx ON ax_turm USING gist (wkb_geometry);
+CREATE INDEX ax_turm_geom_idx
+          ON ax_turm USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_turm_gml 
+                 ON ax_turm USING btree (gml_id);
 
 COMMENT ON TABLE  ax_turm        IS 'T u r m';
 COMMENT ON COLUMN ax_turm.gml_id IS 'Identifikator, global eindeutig';
@@ -2596,7 +2761,11 @@ SELECT AddGeometryColumn('ax_bauwerkoderanlagefuerindustrieundgewerbe','wkb_geom
 -- POLYGON und POINT
 ALTER TABLE ax_bauwerkoderanlagefuerindustrieundgewerbe DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_bauwerkoderanlagefuerindustrieundgewerbe_geom_idx ON ax_bauwerkoderanlagefuerindustrieundgewerbe USING gist (wkb_geometry);
+CREATE INDEX ax_bauwerkoderanlagefuerindustrieundgewerbe_geom_idx 
+          ON ax_bauwerkoderanlagefuerindustrieundgewerbe USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bauwerkoderanlagefuerindustrieundgewerbe_gml 
+                 ON ax_bauwerkoderanlagefuerindustrieundgewerbe USING btree (gml_id);
 
 COMMENT ON TABLE ax_bauwerkoderanlagefuerindustrieundgewerbe         IS 'Bauwerk oder Anlage fuer Industrie und Gewerbe';
 COMMENT ON COLUMN ax_bauwerkoderanlagefuerindustrieundgewerbe.gml_id IS 'Identifikator, global eindeutig';
@@ -2618,7 +2787,11 @@ CREATE TABLE ax_vorratsbehaelterspeicherbauwerk (
 
 SELECT AddGeometryColumn('ax_vorratsbehaelterspeicherbauwerk','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_vorratsbehaelterspeicherbauwerk_geom_idx ON ax_vorratsbehaelterspeicherbauwerk USING gist (wkb_geometry);
+CREATE INDEX ax_vorratsbehaelterspeicherbauwerk_geom_idx 
+          ON ax_vorratsbehaelterspeicherbauwerk USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_vorratsbehaelterspeicherbauwerk_gml 
+                 ON ax_vorratsbehaelterspeicherbauwerk USING btree (gml_id);
 
 COMMENT ON TABLE  ax_vorratsbehaelterspeicherbauwerk        IS 'V o r r a t s b e h a e l t e r  /  S p e i c h e r b a u w e r k';
 COMMENT ON COLUMN ax_vorratsbehaelterspeicherbauwerk.gml_id IS 'Identifikator, global eindeutig';
@@ -2642,7 +2815,11 @@ CREATE TABLE ax_transportanlage (
 
 SELECT AddGeometryColumn('ax_transportanlage','wkb_geometry','25832','LINESTRING',2);
 
-CREATE INDEX ax_transportanlage_geom_idx ON ax_transportanlage USING gist (wkb_geometry);
+CREATE INDEX ax_transportanlage_geom_idx 
+          ON ax_transportanlage USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_transportanlage_gml 
+                 ON ax_transportanlage USING btree (gml_id);
 
 COMMENT ON TABLE  ax_transportanlage        IS 'T r a n s p o r t a n l a g e';
 COMMENT ON COLUMN ax_transportanlage.gml_id IS 'Identifikator, global eindeutig';
@@ -2664,7 +2841,11 @@ CREATE TABLE ax_leitung (
 
 SELECT AddGeometryColumn('ax_leitung','wkb_geometry','25832','LINESTRING',2);
 
-CREATE INDEX ax_leitung_geom_idx ON ax_leitung USING gist (wkb_geometry);
+CREATE INDEX ax_leitung_geom_idx
+          ON ax_leitung USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_leitung_gml 
+                 ON ax_leitung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_leitung        IS 'L e i t u n g';
 COMMENT ON COLUMN ax_leitung.gml_id IS 'Identifikator, global eindeutig';
@@ -2689,7 +2870,11 @@ SELECT AddGeometryColumn('ax_bauwerkoderanlagefuersportfreizeitunderholung','wkb
 --POLYGON  oder POINT
 ALTER TABLE ax_bauwerkoderanlagefuersportfreizeitunderholung DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_bauwerkoderanlagefuersportfreizeitunderholung_geom_idx ON ax_bauwerkoderanlagefuersportfreizeitunderholung USING gist (wkb_geometry);
+CREATE INDEX ax_bauwerkoderanlagefuersportfreizeitunderholung_geom_idx 
+          ON ax_bauwerkoderanlagefuersportfreizeitunderholung USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bauwerkoderanlagefuersportfreizeitunderholung_gml 
+                 ON ax_bauwerkoderanlagefuersportfreizeitunderholung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bauwerkoderanlagefuersportfreizeitunderholung        IS 'Bauwerk oder Anlage fuer Sport, Freizeit und Erholung';
 COMMENT ON COLUMN ax_bauwerkoderanlagefuersportfreizeitunderholung.gml_id IS 'Identifikator, global eindeutig';
@@ -2715,7 +2900,11 @@ SELECT AddGeometryColumn('ax_historischesbauwerkoderhistorischeeinrichtung','wkb
 ALTER TABLE  ax_historischesbauwerkoderhistorischeeinrichtung
 	DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_historischesbauwerkoderhistorischeeinrichtung_geom_idx ON ax_historischesbauwerkoderhistorischeeinrichtung USING gist (wkb_geometry);
+CREATE INDEX ax_historischesbauwerkoderhistorischeeinrichtung_geom_idx 
+          ON ax_historischesbauwerkoderhistorischeeinrichtung USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_historischesbauwerkoderhistorischeeinrichtung_gml 
+                 ON ax_historischesbauwerkoderhistorischeeinrichtung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_historischesbauwerkoderhistorischeeinrichtung        IS 'Historisches Bauwerk oder historische Einrichtung';
 COMMENT ON COLUMN ax_historischesbauwerkoderhistorischeeinrichtung.gml_id IS 'Identifikator, global eindeutig';
@@ -2739,7 +2928,11 @@ CREATE TABLE ax_heilquellegasquelle (
 
 SELECT AddGeometryColumn('ax_heilquellegasquelle','wkb_geometry','25832','POINT',2);
 
-CREATE INDEX ax_heilquellegasquelle_geom_idx ON ax_heilquellegasquelle USING gist (wkb_geometry);
+CREATE INDEX ax_heilquellegasquelle_geom_idx 
+          ON ax_heilquellegasquelle USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_heilquellegasquelle_gml 
+                 ON ax_heilquellegasquelle USING btree (gml_id);
 
 COMMENT ON TABLE  ax_heilquellegasquelle        IS 'H e i l q u e l l e  /  G a s q u e l l e';
 COMMENT ON COLUMN ax_heilquellegasquelle.gml_id IS 'Identifikator, global eindeutig';
@@ -2766,7 +2959,11 @@ SELECT AddGeometryColumn('ax_sonstigesbauwerkodersonstigeeinrichtung','wkb_geome
 -- POLYGON  und LINESTRING
 ALTER TABLE ax_sonstigesbauwerkodersonstigeeinrichtung DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_sonstigesbauwerkodersonstigeeinrichtung_geom_idx ON ax_sonstigesbauwerkodersonstigeeinrichtung USING gist (wkb_geometry);
+CREATE INDEX ax_sonstigesbauwerkodersonstigeeinrichtung_geom_idx 
+          ON ax_sonstigesbauwerkodersonstigeeinrichtung USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_sonstigesbauwerkodersonstigeeinrichtung_gml 
+                 ON ax_sonstigesbauwerkodersonstigeeinrichtung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_sonstigesbauwerkodersonstigeeinrichtung        IS 'sonstiges Bauwerk oder sonstige Einrichtung';
 COMMENT ON COLUMN ax_sonstigesbauwerkodersonstigeeinrichtung.gml_id IS 'Identifikator, global eindeutig';
@@ -2789,7 +2986,10 @@ CREATE TABLE ax_einrichtunginoeffentlichenbereichen (
 SELECT AddGeometryColumn('ax_einrichtunginoeffentlichenbereichen','wkb_geometry','25832','POINT',2);
 
 CREATE INDEX ax_einrichtunginoeffentlichenbereichen_geom_idx
-  ON ax_einrichtunginoeffentlichenbereichen USING gist (wkb_geometry);
+          ON ax_einrichtunginoeffentlichenbereichen USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_einrichtunginoeffentlichenbereichen_gml 
+                 ON ax_einrichtunginoeffentlichenbereichen USING btree (gml_id);
 
 COMMENT ON TABLE  ax_einrichtunginoeffentlichenbereichen        IS 'E i n r i c h t u n g   i n   O e f f e n t l i c h e n   B e r e i c h e n';
 COMMENT ON COLUMN ax_einrichtunginoeffentlichenbereichen.gml_id IS 'Identifikator, global eindeutig';
@@ -2814,6 +3014,9 @@ CREATE TABLE ax_besondererbauwerkspunkt (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_besondererbauwerkspunkt', 'dummy', 2, 25832, 'POINT');
+
+CREATE UNIQUE INDEX ax_besondererbauwerkspunkt_gml 
+                 ON ax_besondererbauwerkspunkt USING btree (gml_id);
 
 COMMENT ON TABLE  ax_besondererbauwerkspunkt        IS 'B e s o n d e r e r   B a u w e r k s p u n k t';
 COMMENT ON COLUMN ax_besondererbauwerkspunkt.gml_id IS 'Identifikator, global eindeutig';
@@ -2844,7 +3047,11 @@ SELECT AddGeometryColumn('ax_bauwerkimverkehrsbereich','wkb_geometry','25832','M
 -- POLYGON und LINESTRING
 ALTER TABLE ax_bauwerkimverkehrsbereich DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_bauwerkimverkehrsbereich_geom_idx ON ax_bauwerkimverkehrsbereich USING gist (wkb_geometry);
+CREATE INDEX ax_bauwerkimverkehrsbereich_geom_idx 
+          ON ax_bauwerkimverkehrsbereich USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bauwerkimverkehrsbereich_gml 
+                 ON ax_bauwerkimverkehrsbereich USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bauwerkimverkehrsbereich        IS 'B a u w e r k   i m  V e r k e h s b e r e i c h';
 COMMENT ON COLUMN ax_bauwerkimverkehrsbereich.gml_id IS 'Identifikator, global eindeutig';
@@ -2870,7 +3077,11 @@ ALTER TABLE ax_strassenverkehrsanlage DROP CONSTRAINT enforce_geotype_wkb_geomet
 ALTER TABLE ONLY ax_strassenverkehrsanlage
 	ADD CONSTRAINT ax_strassenverkehrsanlage_pk PRIMARY KEY (ogc_fid);
 
-CREATE INDEX ax_strassenverkehrsanlage_geom_idx ON ax_strassenverkehrsanlage USING gist (wkb_geometry);
+CREATE INDEX ax_strassenverkehrsanlage_geom_idx 
+          ON ax_strassenverkehrsanlage USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_strassenverkehrsanlage_gml 
+                 ON ax_strassenverkehrsanlage USING btree (gml_id);
 
 COMMENT ON TABLE  ax_strassenverkehrsanlage        IS 'S t r a s s e n v e r k e h r s a n l a g e';
 COMMENT ON COLUMN ax_strassenverkehrsanlage.gml_id IS 'Identifikator, global eindeutig';
@@ -2895,7 +3106,11 @@ SELECT AddGeometryColumn('ax_wegpfadsteig','wkb_geometry','25832','LINESTRING',2
 -- LINESTRING und POLYGON
 ALTER TABLE ax_wegpfadsteig DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_wegpfadsteig_geom_idx ON ax_wegpfadsteig USING gist (wkb_geometry);
+CREATE INDEX ax_wegpfadsteig_geom_idx 
+          ON ax_wegpfadsteig USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_wegpfadsteig_gml 
+                 ON ax_wegpfadsteig USING btree (gml_id);
 
 COMMENT ON TABLE  ax_wegpfadsteig        IS 'W e g  /  P f a d  /  S t e i g';
 COMMENT ON COLUMN ax_wegpfadsteig.gml_id IS 'Identifikator, global eindeutig';
@@ -2917,7 +3132,11 @@ CREATE TABLE ax_bahnverkehrsanlage (
 
 SELECT AddGeometryColumn('ax_bahnverkehrsanlage','wkb_geometry','25832','POINT',2);
 
-CREATE INDEX ax_bahnverkehrsanlage_geom_idx  ON ax_bahnverkehrsanlage USING gist (wkb_geometry);
+CREATE INDEX ax_bahnverkehrsanlage_geom_idx
+          ON ax_bahnverkehrsanlage USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bahnverkehrsanlage_gml 
+                 ON ax_bahnverkehrsanlage USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bahnverkehrsanlage        IS 'B a h n v e r k e h r s a n l a g e';
 COMMENT ON COLUMN ax_bahnverkehrsanlage.gml_id IS 'Identifikator, global eindeutig';
@@ -2946,7 +3165,11 @@ SELECT AddGeometryColumn('ax_gleis','wkb_geometry','25832','LINESTRING',2);
 -- auch POLYGON
 ALTER TABLE ax_gleis DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_gleis_geom_idx ON ax_gleis USING gist (wkb_geometry);
+CREATE INDEX ax_gleis_geom_idx 
+          ON ax_gleis USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_gleis_gml 
+                 ON ax_gleis USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gleis        IS 'G l e i s';
 COMMENT ON COLUMN ax_gleis.gml_id IS 'Identifikator, global eindeutig';
@@ -2971,7 +3194,11 @@ CREATE TABLE ax_flugverkehrsanlage (
 
 SELECT AddGeometryColumn('ax_flugverkehrsanlage','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_flugverkehrsanlage_geom_idx ON ax_flugverkehrsanlage USING gist (wkb_geometry);
+CREATE INDEX ax_flugverkehrsanlage_geom_idx
+          ON ax_flugverkehrsanlage USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_flugverkehrsanlage_gml 
+                 ON ax_flugverkehrsanlage USING btree (gml_id);
 
 COMMENT ON TABLE  ax_flugverkehrsanlage             IS 'F l u g v e r k e h r s a n l a g e';
 COMMENT ON COLUMN ax_flugverkehrsanlage.gml_id      IS 'Identifikator, global eindeutig';
@@ -2999,7 +3226,11 @@ SELECT AddGeometryColumn('ax_bauwerkimgewaesserbereich','wkb_geometry','25832','
 -- Es wird (auch) LINESTRING / POINT geliefert!
 ALTER TABLE ax_bauwerkimgewaesserbereich DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_bauwerkimgewaesserbereich_geom_idx ON ax_bauwerkimgewaesserbereich USING gist (wkb_geometry);
+CREATE INDEX ax_bauwerkimgewaesserbereich_geom_idx 
+          ON ax_bauwerkimgewaesserbereich USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bauwerkimgewaesserbereich_gml 
+                 ON ax_bauwerkimgewaesserbereich USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bauwerkimgewaesserbereich        IS 'B a u w e r k   i m   G e w a e s s e r b e r e i c h';
 COMMENT ON COLUMN ax_bauwerkimgewaesserbereich.gml_id IS 'Identifikator, global eindeutig';
@@ -3026,7 +3257,11 @@ SELECT AddGeometryColumn('ax_vegetationsmerkmal','wkb_geometry','25832','POLYGON
 -- verschiedene Geometrietypen
 ALTER TABLE ONLY ax_vegetationsmerkmal DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_vegetationsmerkmal_geom_idx ON ax_vegetationsmerkmal USING gist (wkb_geometry);
+CREATE INDEX ax_vegetationsmerkmal_geom_idx
+          ON ax_vegetationsmerkmal USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_vegetationsmerkmal_gml 
+                 ON ax_vegetationsmerkmal USING btree (gml_id);
 
 COMMENT ON TABLE  ax_vegetationsmerkmal        IS 'V e g a t a t i o n s m e r k m a l';
 COMMENT ON COLUMN ax_vegetationsmerkmal.gml_id IS 'Identifikator, global eindeutig';
@@ -3050,7 +3285,11 @@ CREATE TABLE ax_gewaessermerkmal (
 
 SELECT AddGeometryColumn('ax_gewaessermerkmal','wkb_geometry','25832','POINT',2);
 
-CREATE INDEX ax_gewaessermerkmal_geom_idx ON ax_gewaessermerkmal USING gist (wkb_geometry);
+CREATE INDEX ax_gewaessermerkmal_geom_idx
+          ON ax_gewaessermerkmal USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_gewaessermerkmal_gml 
+                 ON ax_gewaessermerkmal USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gewaessermerkmal        IS 'G e w a e s s e r m e r k m a l';
 COMMENT ON COLUMN ax_gewaessermerkmal.gml_id IS 'Identifikator, global eindeutig';
@@ -3074,7 +3313,11 @@ SELECT AddGeometryColumn('ax_untergeordnetesgewaesser','wkb_geometry','25832','L
 -- LINESTRING und POLYGON
 ALTER TABLE ax_untergeordnetesgewaesser DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_untergeordnetesgewaesser_geom_idx ON ax_untergeordnetesgewaesser USING gist (wkb_geometry);
+CREATE INDEX ax_untergeordnetesgewaesser_geom_idx 
+          ON ax_untergeordnetesgewaesser USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_untergeordnetesgewaesser_gml 
+                 ON ax_untergeordnetesgewaesser USING btree (gml_id);
 
 COMMENT ON TABLE  ax_untergeordnetesgewaesser        IS 'u n t e r g e o r d n e t e s   G e w a e s s e r';
 COMMENT ON COLUMN ax_untergeordnetesgewaesser.gml_id IS 'Identifikator, global eindeutig';
@@ -3118,6 +3361,9 @@ VALUES ('', 'public', 'ax_boeschungkliff', 'dummy', 2, 25832, 'POINT');
 ALTER TABLE ONLY ax_boeschungkliff
 	ADD CONSTRAINT ax_boeschungkliff_pk PRIMARY KEY (ogc_fid);
 
+CREATE UNIQUE INDEX ax_boeschungkliff_gml 
+                 ON ax_boeschungkliff USING btree (gml_id);
+
 COMMENT ON TABLE  ax_boeschungkliff        IS 'B o e s c h u n g s k l i f f';
 COMMENT ON COLUMN ax_boeschungkliff.gml_id IS 'Identifikator, global eindeutig';
 
@@ -3137,7 +3383,11 @@ CREATE TABLE ax_boeschungsflaeche (
 
 SELECT AddGeometryColumn('ax_boeschungsflaeche','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_boeschungsflaeche_geom_idx ON ax_boeschungsflaeche USING gist (wkb_geometry);
+CREATE INDEX ax_boeschungsflaeche_geom_idx 
+          ON ax_boeschungsflaeche USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_boeschungsflaeche_gml 
+                 ON ax_boeschungsflaeche USING btree (gml_id);
 
 COMMENT ON TABLE  ax_boeschungsflaeche        IS 'B o e s c h u n g s f l a e c h e';
 COMMENT ON COLUMN ax_boeschungsflaeche.gml_id IS 'Identifikator, global eindeutig';
@@ -3160,7 +3410,11 @@ SELECT AddGeometryColumn('ax_dammwalldeich','wkb_geometry','25832','LINESTRING',
 -- LINESTRING oder POLYGON
 ALTER TABLE ax_dammwalldeich DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_dammwalldeich_geom_idx ON ax_dammwalldeich USING gist (wkb_geometry);
+CREATE INDEX ax_dammwalldeich_geom_idx 
+          ON ax_dammwalldeich USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_dammwalldeich_gml 
+                 ON ax_dammwalldeich USING btree (gml_id);
 
 COMMENT ON TABLE  ax_dammwalldeich        IS 'D a m m  /  W a l l  /  D e i c h';
 COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
@@ -3185,7 +3439,11 @@ CREATE TABLE ax_felsenfelsblockfelsnadel (
 
 SELECT AddGeometryColumn('ax_felsenfelsblockfelsnadel','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_felsenfelsblockfelsnadel_geom_idx ON ax_felsenfelsblockfelsnadel USING gist (wkb_geometry);
+CREATE INDEX ax_felsenfelsblockfelsnadel_geom_idx 
+          ON ax_felsenfelsblockfelsnadel USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_felsenfelsblockfelsnadel_gml 
+                 ON ax_felsenfelsblockfelsnadel USING btree (gml_id);
 
 COMMENT ON TABLE  ax_felsenfelsblockfelsnadel        IS 'F e l s e n ,  F e l s b l o c k ,   F e l s n a d e l';
 COMMENT ON COLUMN ax_felsenfelsblockfelsnadel.gml_id IS 'Identifikator, global eindeutig';
@@ -3230,7 +3488,11 @@ CREATE TABLE ax_gelaendekante (
 
 SELECT AddGeometryColumn('ax_gelaendekante','wkb_geometry','25832','LINESTRING',2);
 
-CREATE INDEX ax_gelaendekante_geom_idx ON ax_gelaendekante USING gist (wkb_geometry);
+CREATE INDEX ax_gelaendekante_geom_idx 
+          ON ax_gelaendekante USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_gelaendekante_gml 
+                 ON ax_gelaendekante USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gelaendekante        IS 'G e l a e n d e k a n t e';
 COMMENT ON COLUMN ax_gelaendekante.gml_id IS 'Identifikator, global eindeutig';
@@ -3257,7 +3519,11 @@ CREATE TABLE ax_besondererhoehenpunkt (
 
 SELECT AddGeometryColumn('ax_besondererhoehenpunkt','wkb_geometry','25832','POINT',2);
 
-CREATE INDEX ax_besondererhoehenpunkt_geom_idx ON ax_besondererhoehenpunkt USING gist (wkb_geometry);
+CREATE INDEX ax_besondererhoehenpunkt_geom_idx
+          ON ax_besondererhoehenpunkt USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_besondererhoehenpunkt_gml 
+                 ON ax_besondererhoehenpunkt USING btree (gml_id);
 
 COMMENT ON TABLE  ax_besondererhoehenpunkt        IS 'B e s o n d e r e r   H ö h e n - P u n k t';
 COMMENT ON COLUMN ax_besondererhoehenpunkt.gml_id IS 'Identifikator, global eindeutig';
@@ -3291,7 +3557,11 @@ CREATE TABLE ax_klassifizierungnachstrassenrecht (
 
 SELECT AddGeometryColumn('ax_klassifizierungnachstrassenrecht','wkb_geometry','25832','POLYGON',2);
 
-CREATE INDEX ax_klassifizierungnachstrassenrecht_geom_idx  ON ax_klassifizierungnachstrassenrecht  USING gist  (wkb_geometry);
+CREATE INDEX ax_klassifizierungnachstrassenrecht_geom_idx
+          ON ax_klassifizierungnachstrassenrecht  USING gist  (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_klassifizierungnachstrassenrecht_gml 
+                 ON ax_klassifizierungnachstrassenrecht USING btree (gml_id);
 
 COMMENT ON TABLE  ax_klassifizierungnachstrassenrecht        IS 'K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t';
 COMMENT ON COLUMN ax_klassifizierungnachstrassenrecht.gml_id IS 'Identifikator, global eindeutig';
@@ -3313,7 +3583,7 @@ CREATE TABLE ax_klassifizierungnachwasserrecht (
 SELECT AddGeometryColumn('ax_klassifizierungnachwasserrecht','wkb_geometry','25832','POLYGON',2);
 
 CREATE INDEX ax_klassifizierungnachwasserrecht_geom_idx
-  ON ax_klassifizierungnachwasserrecht USING gist (wkb_geometry);
+          ON ax_klassifizierungnachwasserrecht USING gist (wkb_geometry);
 
 COMMENT ON TABLE  ax_klassifizierungnachwasserrecht        IS 'K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t';
 COMMENT ON COLUMN ax_klassifizierungnachwasserrecht.gml_id IS 'Identifikator, global eindeutig';
@@ -3344,7 +3614,11 @@ SELECT AddGeometryColumn('ax_bauraumoderbodenordnungsrecht','wkb_geometry','2583
 -- verschiedene Goemetrie-Typen
 ALTER TABLE ax_bauraumoderbodenordnungsrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_bauraumoderbodenordnungsrecht_geom_idx ON ax_bauraumoderbodenordnungsrecht USING gist (wkb_geometry);
+CREATE INDEX ax_bauraumoderbodenordnungsrecht_geom_idx
+          ON ax_bauraumoderbodenordnungsrecht USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bauraumoderbodenordnungsrecht_gml 
+                 ON ax_bauraumoderbodenordnungsrecht USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bauraumoderbodenordnungsrecht             IS 'REO: Bau-, Raum- oder Bodenordnungsrecht';
 COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.gml_id      IS 'Identifikator, global eindeutig';
@@ -3378,7 +3652,11 @@ SELECT AddGeometryColumn('ax_sonstigesrecht','wkb_geometry','25832','POLYGON',2)
 
 ALTER TABLE ax_sonstigesrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_sonstigesrecht_geom_idx  ON ax_sonstigesrecht USING gist (wkb_geometry);
+CREATE INDEX ax_sonstigesrecht_geom_idx
+          ON ax_sonstigesrecht USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_sonstigesrecht_gml 
+                 ON ax_sonstigesrecht USING btree (gml_id);
 
 COMMENT ON TABLE  ax_sonstigesrecht        IS 'S o n s t i g e s   R e c h t';
 COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
@@ -3415,7 +3693,11 @@ SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry','25832','MULTIPOLYG
 -- POLYGON und MULTIPOLYGON
 ALTER TABLE ONLY ax_bodenschaetzung DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_bodenschaetzung_geom_idx ON ax_bodenschaetzung USING gist (wkb_geometry);
+CREATE INDEX ax_bodenschaetzung_geom_idx
+          ON ax_bodenschaetzung USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_bodenschaetzung_gml 
+                 ON ax_bodenschaetzung USING btree (gml_id);
 
 COMMENT ON TABLE  ax_bodenschaetzung        IS 'B o d e n s c h a e t z u n g';
 COMMENT ON COLUMN ax_bodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
@@ -3450,7 +3732,10 @@ SELECT AddGeometryColumn('ax_musterlandesmusterundvergleichsstueck','wkb_geometr
 ALTER TABLE ax_musterlandesmusterundvergleichsstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 CREATE INDEX ax_musterlandesmusterundvergleichsstueck_geom_idx
-  ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
+          ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_musterlandesmusterundvergleichsstueck_gml 
+                 ON ax_musterlandesmusterundvergleichsstueck USING btree (gml_id);
 
 COMMENT ON TABLE  ax_musterlandesmusterundvergleichsstueck        IS 'Muster-, Landesmuster- und Vergleichsstueck';
 COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.gml_id IS 'Identifikator, global eindeutig';
@@ -3479,6 +3764,9 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_bundesland', 'dummy', 2, 25832, 'POINT');
 
+CREATE UNIQUE INDEX ax_bundesland_gml 
+                 ON ax_bundesland USING btree (gml_id);
+
 COMMENT ON TABLE  ax_bundesland        IS 'B u n d e s l a n d';
 COMMENT ON COLUMN ax_bundesland.gml_id IS 'Identifikator, global eindeutig';
 
@@ -3504,8 +3792,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_regierungsbezirk', 'dummy', 2, 25832, 'POINT');
 
 -- Verbindungstabellen indizieren
-  CREATE INDEX ax_regierungsbezirk_gml ON ax_regierungsbezirk USING btree (gml_id);
-
+CREATE UNIQUE INDEX ax_regierungsbezirk_gml 
+                 ON ax_regierungsbezirk USING btree (gml_id);
 
 COMMENT ON TABLE  ax_regierungsbezirk        IS 'R e g i e r u n g s b e z i r k';
 COMMENT ON COLUMN ax_regierungsbezirk.gml_id IS 'Identifikator, global eindeutig';
@@ -3534,6 +3822,9 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_kreisregion', 'dummy', 2, 25832, 'POINT');
 
+CREATE UNIQUE INDEX ax_kreisregion_gml 
+                 ON ax_kreisregion USING btree (gml_id);
+
 COMMENT ON TABLE  ax_kreisregion        IS 'K r e i s  /  R e g i o n';
 COMMENT ON COLUMN ax_kreisregion.gml_id IS 'Identifikator, global eindeutig';
 
@@ -3561,7 +3852,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_gemeinde', 'dummy', 2, 25832, 'POINT');
 
 -- Index für alkis_beziehungen
-CREATE INDEX ax_gemeinde_gml ON ax_gemeinde USING btree (gml_id);
+CREATE UNIQUE INDEX ax_gemeinde_gml 
+                 ON ax_gemeinde USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gemeinde        IS 'G e m e i n d e';
 COMMENT ON COLUMN ax_gemeinde.gml_id IS 'Identifikator, global eindeutig';
@@ -3595,11 +3887,12 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_gemarkung', 'dummy', 2, 25832, 'POINT');
 
 -- Index für alkis_beziehungen
---CREATE INDEX ax_gemarkung_gml ON ax_gemarkung USING btree (gml_id);
+CREATE UNIQUE INDEX ax_gemarkung_gml 
+                 ON ax_gemarkung USING btree (gml_id);
 
 -- Such-Index, Verweis aus ax_Flurstueck
-CREATE INDEX ax_gemarkung_nr  ON ax_gemarkung USING btree (land, gemarkungsnummer);
-
+CREATE INDEX ax_gemarkung_nr  
+          ON ax_gemarkung USING btree (land, gemarkungsnummer);
 
 COMMENT ON TABLE  ax_gemarkung        IS 'G e m a r k u n g';
 COMMENT ON COLUMN ax_gemarkung.gml_id IS 'Identifikator, global eindeutig';
@@ -3628,8 +3921,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_gemarkungsteilflur', 'dummy', 2, 25832, 'POINT');
 
 -- Index für alkis_beziehungen
-CREATE INDEX ax_gemarkungsteilflur_gml ON ax_gemarkungsteilflur USING btree (gml_id);
-
+CREATE UNIQUE INDEX ax_gemarkungsteilflur_gml 
+                 ON ax_gemarkungsteilflur USING btree (gml_id);
 
 COMMENT ON TABLE  ax_gemarkungsteilflur        IS 'G e m a r k u n g s t e i l   /   F l u r';
 COMMENT ON COLUMN ax_gemarkungsteilflur.gml_id IS 'Identifikator, global eindeutig';
@@ -3657,9 +3950,13 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_buchungsblattbezirk', 'dummy', 2, 25832, 'POINT');
 
+CREATE UNIQUE INDEX ax_buchungsblattbezirk_gml 
+                 ON ax_buchungsblattbezirk USING btree (gml_id);
+
 -- Such-Index auf Land + Bezirk 
 -- Der Verweis von ax_buchungsblatt hat keine alkis_beziehung.
-CREATE INDEX ax_buchungsblattbez_key ON ax_buchungsblattbezirk USING btree (land, bezirk);
+CREATE INDEX ax_buchungsblattbez_key 
+          ON ax_buchungsblattbezirk USING btree (land, bezirk);
 
 COMMENT ON TABLE  ax_buchungsblattbezirk        IS 'Buchungsblatt- B e z i r k';
 COMMENT ON COLUMN ax_buchungsblattbezirk.gml_id IS 'Identifikator, global eindeutig';
@@ -3690,7 +3987,8 @@ INSERT INTO geometry_columns
 VALUES ('', 'public', 'ax_dienststelle', 'dummy', 2, 25832, 'POINT');
 
 -- Index für alkis_beziehungen
-CREATE INDEX ax_dienststelle_gml ON ax_dienststelle USING btree (gml_id);
+CREATE UNIQUE INDEX ax_dienststelle_gml 
+                 ON ax_dienststelle USING btree (gml_id);
 
 COMMENT ON TABLE  ax_dienststelle        IS 'D i e n s t s t e l l e';
 COMMENT ON COLUMN ax_dienststelle.gml_id IS 'Identifikator, global eindeutig';
@@ -3719,17 +4017,23 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_lagebezeichnungkatalogeintrag', 'dummy', 2, 25832, 'POINT');
 
+CREATE UNIQUE INDEX ax_lagebezeichnungkatalogeintrag_gml 
+                 ON ax_lagebezeichnungkatalogeintrag USING btree (gml_id);
+
 -- NRW: Nummerierung Strassenschluessel innerhalb einer Gemeinde
 -- Die Kombination Gemeinde und Straßenschlüssel ist also ein eindeutiges Suchkriterium.
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_lage ON ax_lagebezeichnungkatalogeintrag USING btree (gemeinde, lage);
+CREATE INDEX ax_lagebezeichnungkatalogeintrag_lage 
+          ON ax_lagebezeichnungkatalogeintrag USING btree (gemeinde, lage);
 
 -- Suchindex (Verwendung in Navigations-Programm)
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_gesa ON ax_lagebezeichnungkatalogeintrag USING btree (schluesselgesamt);
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_bez  ON ax_lagebezeichnungkatalogeintrag USING btree (bezeichnung);
+CREATE INDEX ax_lagebezeichnungkatalogeintrag_gesa 
+          ON ax_lagebezeichnungkatalogeintrag USING btree (schluesselgesamt);
+
+CREATE INDEX ax_lagebezeichnungkatalogeintrag_bez
+          ON ax_lagebezeichnungkatalogeintrag USING btree (bezeichnung);
 
 COMMENT ON TABLE  ax_lagebezeichnungkatalogeintrag              IS 'Straßentabelle';
 COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.gml_id       IS 'Identifikator, global eindeutig';
-
 COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.lage         IS 'Straßenschlüssel';
 COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.bezeichnung  IS 'Straßenname';
 
@@ -3790,7 +4094,11 @@ SELECT AddGeometryColumn('ax_kleinraeumigerlandschaftsteil','wkb_geometry','2583
 ALTER TABLE ONLY ax_kleinraeumigerlandschaftsteil
 	ADD CONSTRAINT ax_kleinraeumigerlandschaftsteil_pk PRIMARY KEY (ogc_fid);
 
-CREATE INDEX ax_kleinraeumigerlandschaftsteil_geom_idx ON ax_kleinraeumigerlandschaftsteil USING gist (wkb_geometry);
+CREATE INDEX ax_kleinraeumigerlandschaftsteil_geom_idx 
+          ON ax_kleinraeumigerlandschaftsteil USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_kleinraeumigerlandschaftsteil_gml 
+                 ON ax_kleinraeumigerlandschaftsteil USING btree (gml_id);
 
 COMMENT ON TABLE  ax_kleinraeumigerlandschaftsteil        IS 'k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l';
 COMMENT ON COLUMN ax_kleinraeumigerlandschaftsteil.gml_id IS 'Identifikator, global eindeutig';
@@ -3811,7 +4119,11 @@ CREATE TABLE ax_wohnplatz (
 
 SELECT AddGeometryColumn('ax_wohnplatz','wkb_geometry','25832','POINT',2);
 
-CREATE INDEX ax_wohnplatz_geom_idx ON ax_wohnplatz USING gist (wkb_geometry);
+CREATE INDEX ax_wohnplatz_geom_idx 
+          ON ax_wohnplatz USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_wohnplatz_gml 
+                 ON ax_wohnplatz USING btree (gml_id);
 
 COMMENT ON TABLE  ax_wohnplatz        IS 'W o h n p l a t z';
 COMMENT ON COLUMN ax_wohnplatz.gml_id IS 'Identifikator, global eindeutig';
@@ -3842,7 +4154,11 @@ SELECT AddGeometryColumn('ax_kommunalesgebiet','wkb_geometry','25832','MULTIPOLY
 -- verschiedene Geometrietypen?
 ALTER TABLE ax_kommunalesgebiet DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
-CREATE INDEX ax_kommunalesgebiet_geom_idx ON ax_kommunalesgebiet USING gist (wkb_geometry);
+CREATE INDEX ax_kommunalesgebiet_geom_idx 
+          ON ax_kommunalesgebiet USING gist (wkb_geometry);
+
+CREATE UNIQUE INDEX ax_kommunalesgebiet_gml 
+                 ON ax_kommunalesgebiet USING btree (gml_id);
 
 COMMENT ON TABLE  ax_kommunalesgebiet        IS 'K o m m u n a l e s   G e b i e t';
 COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig';
