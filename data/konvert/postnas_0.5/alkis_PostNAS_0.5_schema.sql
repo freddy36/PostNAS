@@ -284,7 +284,7 @@ CREATE TABLE ax_benutzergruppenba (
   intervall character(14),
   CONSTRAINT ax_benutzergruppenba_pk PRIMARY KEY (ogc_fid)
 );
-ALTER TABLE ax_benutzergruppenba OWNER TO b600352;
+
 
 
 -- ax_
