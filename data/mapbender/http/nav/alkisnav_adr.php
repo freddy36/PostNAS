@@ -1,5 +1,7 @@
 <?php
-// Version vom 13.01.2011
+/* Version vom 24.03.2011 
+	bei HsNr auch Gemeinde in Where
+	Anzeige Gemeinde wenn nicht in Filter */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
@@ -19,9 +21,8 @@ $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank
 <body>
 <?php
 
-
 function suchStrName() {
-	// Straﬂen nach Name(-nsanfang)
+	// Strassen nach Name(-nsanfang)
 	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $debug;
 	$linelimit=120;  // -> in die Conf?
 	preg_match("/^(\D+)(\d*)(\D*)/",$street,$matches); # 4 matches name/nr/zusatz echo "match: ".$matches[1].",".$matches[2].",".$matches[3];
@@ -39,13 +40,13 @@ function suchStrName() {
  	if($gemeinde > 0) { // Filter Gemeinde?
 		$sql.="AND k.gemeinde=".$gemeinde." ";
 	}
-	$sql.="ORDER BY k.bezeichnung, k.lage LIMIT $2 ;"; 	$v=array($match,$linelimit);
+	$sql.="ORDER BY k.bezeichnung, g.bezeichnung, k.lage LIMIT $2 ;"; 	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {return "\n<p class='err'>Fehler bei Name</p>";}
 	$cnt = 0;	while($row = pg_fetch_array($res)) {
 		$sname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");		
-		$gkey=$row["schluesselgesamt"];
+		$gkey=$row["schluesselgesamt"]; // Land-Kreis-Gem-Strasse
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		$skey=$row["lage"];
 		echo "\n\t<div class='stl' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
@@ -54,7 +55,7 @@ function suchStrName() {
 			} else { // Klassifizierung?
 				echo $sname; // nicht brauchbar fuer ax_lagebezeichnungmithausnummer.lage (Integer)
 			}
-			if (! isset($gemeinde)) {echo " in ".$gemname;}
+			if ($gemeinde == "") {echo " in ".$gemname;}
 		echo "</div>";
 		$cnt++;
 	}
@@ -69,7 +70,7 @@ function suchStrName() {
 }
 
 function suchStrKey() {
-	// Straﬂen nach Strassen-Schluessel
+	// Strassen nach Strassen-Schluessel
 	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $debug;
 	$linelimit=50;
 	if(preg_match("/\*/",$street)) {
@@ -96,9 +97,9 @@ function suchStrKey() {
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		$skey=$row["lage"];
 		echo "\n\t<div class='stl' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
-			echo $skey." <a class='st' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;str_schl=".$gkey."'>".$sname;
+			echo $skey." <a class='st' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;str_schl=".$gkey."' title='".$gemname."'>".$sname;
 			echo "</a>";
-			if (! isset($gemeinde)) {echo " in ".$gemname;}
+			if ($gemeinde == "") {echo " in ".$gemname;}
 		echo "</div>";
 		$cnt++;
 	}
@@ -114,12 +115,15 @@ function suchStrKey() {
 	return;
 }
 
-function suchHausZurStr(){
-	// Haeuser zu einer Straﬂe
+function suchHausZurStr($showParent){
+	// Haeuser zu einer Strasse
 	global $con, $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $debug;
 	// Strasse zum Strassenschluessel
-	$sql ="SELECT k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
-	$sql.="FROM ax_lagebezeichnungkatalogeintrag AS k WHERE schluesselgesamt = $1 LIMIT 1"; 
+	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
+	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
+	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
+	$sql.="WHERE k.schluesselgesamt = $1 LIMIT 1"; 
+ 
  	$v=array($str_schl);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -128,42 +132,48 @@ function suchHausZurStr(){
 		$regb =$row["regierungsbezirk"];
 		$kreis=$row["kreis"];
 		$gemnd=$row["gemeinde"];
+		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		$nr=ltrim($row["lage"], "0");
-		// eine Koordinate zur Strasse besorgen
-		// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
-		$sqlko ="SELECT ";		
-		$sqlko.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-		$sqlko.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";
-		$sqlko.="FROM ax_lagebezeichnungohnehausnummer o ";
-		$sqlko.="JOIN alkis_beziehungen v ON o.gml_id=v.beziehung_zu "; 
-		$sqlko.="JOIN ax_flurstueck f ON v.beziehung_von=f.gml_id ";
-		$sqlko.="WHERE o.land= $1 AND o.regierungsbezirk= $2 AND o.kreis= $3 AND o.gemeinde= $4 AND o.lage= $5 ";	
-		$sqlko.="AND v.beziehungsart='zeigtAuf' LIMIT 1;";  // die erstbeste beliebige Koordinate
-		$v=array($land,$regb,$kreis,$gemnd,$nr);
-		$resko=pg_prepare("", $sqlko);
-		$resko=pg_execute("", $v);
-		if ($resko) {
-			$rowko=pg_fetch_array($resko); 
-			$x=$rowko["x"];
-			$y=$rowko["y"];
-		} else {		
-			echo "\n<p class='err'>Fehler bei Koordinate zur Stra&szlig;e</p>";
+
+		if ($showParent) {
+			// eine Koordinate zur Strasse besorgen
+			// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
+			$sqlko ="SELECT ";		
+			$sqlko.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+			$sqlko.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";
+			$sqlko.="FROM ax_lagebezeichnungohnehausnummer o ";
+			$sqlko.="JOIN alkis_beziehungen v ON o.gml_id=v.beziehung_zu "; 
+			$sqlko.="JOIN ax_flurstueck f ON v.beziehung_von=f.gml_id ";
+			$sqlko.="WHERE o.land= $1 AND o.regierungsbezirk= $2 AND o.kreis= $3 AND o.gemeinde= $4 AND o.lage= $5 ";	
+			$sqlko.="AND v.beziehungsart='zeigtAuf' LIMIT 1;";  // die erstbeste beliebige Koordinate
+			$v=array($land,$regb,$kreis,$gemnd,$nr);
+			$resko=pg_prepare("", $sqlko);
+			$resko=pg_execute("", $v);
+			if ($resko) {
+				$rowko=pg_fetch_array($resko); 
+				$x=$rowko["x"];
+				$y=$rowko["y"];
+			} else {		
+				echo "\n<p class='err'>Fehler bei Koordinate zur Stra&szlig;e</p>";
+			}
+			$sqlko.="";
+
+			echo "\n<div class='stu'>";		
+			if ($x > 0) { // Koord. bekommen?
+				echo "\n\t<a title='Positionieren 1:".$scalestr."' href='"; // mit Link
+					echo "javascript:parent.parent.hideHighlight();";
+					echo "\n\t\tparent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalestr.");";
+					echo "\n\t\tdocument.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;str_schl=".$str_schl."\"' ";
+					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
+					echo "\n\t\tonmouseout='parent.parent.hideHighlight()'";
+				echo ">\n\t\t".$sname." (".$nr.")\n\t</a>";
+			} else { // keine Koord. dazu gefunden
+				echo $sname." (".$nr.")"; // nur Anzeige, ohne Link
+			}
+			if ($gemeinde == "") {echo " in ".$gemname;}
+			echo "\n</div>";
 		}
-		$sqlko.="";
-		echo "\n<div class='stu'>";		
-		if ($x > 0) { // Koord. bekommen?
-			echo "\n\t<a title='Positionieren 1:".$scalestr."' href='"; // mit Link
-				echo "javascript:parent.parent.hideHighlight();";
-				echo "\n\t\tparent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalestr.");";
-				echo "\n\t\tdocument.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;str_schl=".$str_schl."\"' ";
-				echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
-				echo "\n\t\tonmouseout='parent.parent.hideHighlight()'";
-			echo ">\n\t\t".$sname." (".$nr.")\n\t</a>";
-		} else { // keine Koord. dazu gefunden
-			echo $sname." (".$nr.")"; // nur Anzeige, ohne Link
-		}
-		echo "\n</div>\n<hr>";
-		
+		echo "\n<hr>";
 		// Haeuser zum Strassenschluessel
 		$sql ="SELECT replace (h.hausnummer, ' ','') AS hsnr, ";
 		$sql.="x(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS x, ";
@@ -171,10 +181,10 @@ function suchHausZurStr(){
 		$sql.="FROM ax_lagebezeichnungmithausnummer h ";
 		$sql.="JOIN alkis_beziehungen v ON h.gml_id=v.beziehung_zu ";
 		$sql.="JOIN ax_gebaeude g ON v.beziehung_von=g.gml_id ";
-		$sql.="WHERE h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.lage= $4 "; // integer
+		$sql.="WHERE h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 "; // integer
 		$sql.="AND v.beziehungsart='zeigtAuf' ";
 		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
- 		$v=array($land,$regb,$kreis,$nr);
+ 		$v=array($land,$regb,$kreis,$gemnd,$nr);
 		$resh=pg_prepare("", $sql);
 		$resh=pg_execute("", $v);
 		$cnt=0;
@@ -204,7 +214,7 @@ function suchHausZurStr(){
 		echo "\n</table>";
 		echo "\n<p class='hilfe'>".$cnt." Hausnummern</p>";
 	} else {
-		echo "\n<p class='err'>Kein Haus.</p>";
+		echo "\n<p class='err'>Keine Stra&szlig;e.</p>";
 	}
 	return;
 }
@@ -213,30 +223,28 @@ function suchHausZurStr(){
 // ===========
 if(isset($epsg)) {
 	if ($debug >= 2) {echo "\n<p>aktueller EPSG='".$epsg."'</p>";} // aus MB
-	If (substr($epsg, 0, 5) == "EPSG:") {$epsg=substr($epsg, 5);}
+	if (substr($epsg, 0, 5) == "EPSG:") {$epsg=substr($epsg, 5);}
 } else {
 	if ($debug >= 2) {echo "\n<p class='err'>kein EPSG gesetzt</p>";}	
 	$epsg=$gui_epsg; // aus Conf
 }
-
 if ($debug >= 2) {
 	if(isset($gemeinde)) {echo "<p>Filter Gemeinde = ".$gemeinde."</p>";
 	} else {echo "\n<p>Kein Filter Gemeinde</p>";}
 }
-
-if(isset($street)) { // Eingabe in Form	if (is_numeric(trim($street, "*"))) { // Zahl mit Wildcard
+if (isset($str_schl)) { // aus Link
+	if ($debug >= 2) {echo "\n<p>Link Strassenschluesel '".$str_schl."'</p>";}
+	suchHausZurStr(true);
+} elseif(isset($street)) { // Eingabe in Form	if (trim($street, "*,0..9") == "") { // Zahl mit Wildcard
 		if ($debug >= 2) {echo "\n<p>Suche Key='".$street."'</p>";}
 		suchStrKey(); // Suche nach Schluessel
 	} else {
 		if ($debug >= 2) {echo "\n<p>Suche Name='".$street."'</p>";}
 		suchStrName(); // Suche nach Name
 	}
-}
-if(isset($str_schl)){ // Eindeutiges Ergebnis oder Link
-	if ($debug >= 2) {echo "\n<p>Suche Haus zu ='".$str_schl."'</p>";}
-	suchHausZurStr();
-} else {
-	if ($debug >= 2) {echo "\n<p>Keine Suche Haus</p>";}
+	if(isset($str_schl)) { // Eindeutiges Ergebnis
+		if ($debug >= 2) {echo "\n<p>weitere Suche Haus zu ='".$str_schl."'</p>";}
+		suchHausZurStr(false);	}
 }
 ?>
 
