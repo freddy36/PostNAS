@@ -1,7 +1,9 @@
 <?php
-/* Version vom 24.03.2011 
-	bei HsNr auch Gemeinde in Where
-	Anzeige Gemeinde wenn nicht in Filter */
+/* Version vom 
+	24.03.2011: bei HsNr auch Gemeinde in Where, Anzeige Gemeinde je nach Filter 
+	25.03.2011: parameter &gemeinde= auch als Liste moeglich
+	z.B. Wasserverband zustaendig fuer: &gemeinde=12,20,24,28,32
+*/
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
@@ -23,7 +25,7 @@ $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank
 
 function suchStrName() {
 	// Strassen nach Name(-nsanfang)
-	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $debug;
+	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $gfilter, $debug;
 	$linelimit=120;  // -> in die Conf?
 	preg_match("/^(\D+)(\d*)(\D*)/",$street,$matches); # 4 matches name/nr/zusatz echo "match: ".$matches[1].",".$matches[2].",".$matches[3];
 	$matches[1] = preg_replace("/strasse/i","str", $matches[1]);
@@ -37,9 +39,22 @@ function suchStrName() {
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.bezeichnung ILIKE $1 ";
- 	if($gemeinde > 0) { // Filter Gemeinde?
-		$sql.="AND k.gemeinde=".$gemeinde." ";
+ 
+// 	if($gemeinde > 0) { // Filter Gemeinde?
+//		$sql.="AND k.gemeinde=".$gemeinde." ";
+//	}
+
+	switch ($gfilter) {
+		case 1: // Einzelwert
+			$sql.="AND k.gemeinde=".$gemeinde." ";
+			break;
+		case 2: // Liste
+			$sql.="AND k.gemeinde in (".$gemeinde.") ";
+			break;
+		default: // kein Filter
+			break;
 	}
+
 	$sql.="ORDER BY k.bezeichnung, g.bezeichnung, k.lage LIMIT $2 ;"; 	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -55,7 +70,19 @@ function suchStrName() {
 			} else { // Klassifizierung?
 				echo $sname; // nicht brauchbar fuer ax_lagebezeichnungmithausnummer.lage (Integer)
 			}
-			if ($gemeinde == "") {echo " in ".$gemname;}
+			//if ($gemeinde == "") {echo " in ".$gemname;}
+			
+			switch ($gfilter) {
+				case 0: // Kein Filter
+					echo " in ".$gemname;
+					break;
+				case 2: // Liste
+					echo " in ".$gemname;
+					break;
+				default: // Einzelwert
+					break;
+			}			
+			
 		echo "</div>";
 		$cnt++;
 	}
@@ -71,7 +98,7 @@ function suchStrName() {
 
 function suchStrKey() {
 	// Strassen nach Strassen-Schluessel
-	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $debug;
+	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $gfilter, $debug;
 	$linelimit=50;
 	if(preg_match("/\*/",$street)) {
 		$match=trim(preg_replace("/\*/i","%",$street));
@@ -84,9 +111,22 @@ function suchStrKey() {
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.lage LIKE $1 ";
-	if($gemeinde > 0) { // Filter Gemeinde?
-		$sql.="AND k.gemeinde=".$gemeinde." ";
+
+//	if($gemeinde > 0) { // Filter Gemeinde?
+//		$sql.="AND k.gemeinde=".$gemeinde." ";
+//	}
+
+	switch ($gfilter) {
+		case 1: // Einzelwert
+			$sql.="AND k.gemeinde=".$gemeinde." ";
+			break;
+		case 2: // Liste
+			$sql.="AND k.gemeinde in (".$gemeinde.") ";
+			break;
+		default: // kein Filter
+			break;
 	}
+
 	$sql.="ORDER BY k.lage, k.bezeichnung LIMIT $2 ;"; 	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -99,7 +139,20 @@ function suchStrKey() {
 		echo "\n\t<div class='stl' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
 			echo $skey." <a class='st' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;str_schl=".$gkey."' title='".$gemname."'>".$sname;
 			echo "</a>";
-			if ($gemeinde == "") {echo " in ".$gemname;}
+
+//			if ($gemeinde == "") {echo " in ".$gemname;}
+
+			switch ($gfilter) {
+				case 0: // Kein Filter
+					echo " in ".$gemname;
+					break;
+				case 2: // Liste
+					echo " in ".$gemname;
+					break;
+				default: // Einzelwert
+					break;
+			}
+
 		echo "</div>";
 		$cnt++;
 	}
@@ -117,7 +170,7 @@ function suchStrKey() {
 
 function suchHausZurStr($showParent){
 	// Haeuser zu einer Strasse
-	global $con, $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $debug;
+	global $con, $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $gfilter, $debug;
 	// Strasse zum Strassenschluessel
 	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
@@ -170,7 +223,20 @@ function suchHausZurStr($showParent){
 			} else { // keine Koord. dazu gefunden
 				echo $sname." (".$nr.")"; // nur Anzeige, ohne Link
 			}
-			if ($gemeinde == "") {echo " in ".$gemname;}
+
+//			if ($gemeinde == "") {echo " in ".$gemname;}
+			
+			switch ($gfilter) {
+				case 0: // Kein Filter
+					echo " in ".$gemname;
+					break;
+				case 2: // Liste
+					echo " in ".$gemname;
+					break;
+				default: // Einzelwert
+					break;
+			}			
+			
 			echo "\n</div>";
 		}
 		echo "\n<hr>";
@@ -229,8 +295,14 @@ if(isset($epsg)) {
 	$epsg=$gui_epsg; // aus Conf
 }
 if ($debug >= 2) {
-	if(isset($gemeinde)) {echo "<p>Filter Gemeinde = ".$gemeinde."</p>";
-	} else {echo "\n<p>Kein Filter Gemeinde</p>";}
+	echo "<p>Filter Gemeinde = ".$gemeinde."</p>";
+}
+if ($gemeinde == "") {
+	$gfilter = 0; // ungefiltert
+} elseif(strpos($gemeinde, ",") === false) {
+	$gfilter = 1; // Einzelwert
+} else {
+	$gfilter = 2; // Liste
 }
 if (isset($str_schl)) { // aus Link
 	if ($debug >= 2) {echo "\n<p>Link Strassenschluesel '".$str_schl."'</p>";}

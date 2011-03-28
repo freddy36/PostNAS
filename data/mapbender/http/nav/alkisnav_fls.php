@@ -1,5 +1,8 @@
 <?php
-// Version vom 13.01.2011 
+/* Version vom
+	13.01.2011
+	25.03.2011 Filter als Gemeinde-Liste
+*/
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname);
@@ -61,7 +64,7 @@ function ZerlegungFsKennz($fskennz) {
 
 function SuchGmkgName() {
 // Gemarkung suchen nach Name(-nsanfang)
-	global $con, $gkz, $gemeinde, $debug, $fskennz;
+	global $con, $gkz, $gemeinde, $debug, $fskennz, $gfilter;
 	$linelimit=120;
 	if(preg_match("/\*/",$fskennz)){
 		$match = trim(preg_replace("/\*/i","%", strtoupper($fskennz)));
@@ -71,7 +74,22 @@ function SuchGmkgName() {
 	$sql ="SELECT v.gemeindename, g.gemarkungsnummer, g.bezeichnung ";
 	$sql.="FROM ax_gemarkung g JOIN gemeinde_gemarkung v ON g.gemarkungsnummer=v.gemarkung ";
    $sql.="WHERE bezeichnung ILIKE $1 ";
-	if($gemeinde > 0) {$sql.=" AND v.gemeinde=".$gemeinde;} // wie prepared?
+
+//	if($gemeinde > 0) {
+//		$sql.=" AND v.gemeinde=".$gemeinde;
+//	} // wie prepared?
+
+	switch ($gfilter) {
+		case 1: // Einzelwert
+			$sql.="AND v.gemeinde=".$gemeinde." ";
+			break;
+		case 2: // Liste
+			$sql.="AND v.gemeinde in (".$gemeinde.") ";
+			break;
+		default: // kein Filter
+			break;
+	}
+
 	$sql.=" ORDER BY g.bezeichnung LIMIT $2 ;";
 	$v=array($match, $linelimit);
 	$res=pg_prepare("", $sql);
@@ -89,7 +107,19 @@ function SuchGmkgName() {
 			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'>";
 			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$gnr."'>";		
 			echo  " ".$gnam."</a> (".$gnr.")";
-			if ($gemeinde == 0) {echo " ".$stadt;} // Kreisweit
+
+//			if ($gemeinde == 0) {echo " ".$stadt;} // Kreisweit
+			switch ($gfilter) {
+				case 0: // Kein Filter
+					echo " ".$stadt;
+					break;
+				case 2: // Liste
+					echo " ".$stadt;
+					break;
+				default: // Einzelwert
+					break;
+			}
+
 		echo "\n</div>";
 		$cnt++;
 	}
@@ -276,8 +306,14 @@ if(isset($epsg)) {
 	$epsg=$gui_epsg; // aus Conf
 }
 if ($debug >= 2) {
-	if(isset($gemeinde)) {echo "<p>Filter Gemeinde = ".$gemeinde."</p>";
-	} else {echo "<p>Kein Filter Gemeinde</p>";}
+	echo "<p>Filter Gemeinde = ".$gemeinde."</p>";
+}
+if ($gemeinde == "") {
+	$gfilter = 0; // ungefiltert
+} elseif(strpos($gemeinde, ",") === false) {
+	$gfilter = 1; // Einzelwert
+} else {
+	$gfilter = 2; // Liste
 }
 
 // Eingabe interpretieren
