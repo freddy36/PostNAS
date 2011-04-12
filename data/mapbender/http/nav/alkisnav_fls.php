@@ -2,6 +2,7 @@
 /* Version vom
 	13.01.2011
 	25.03.2011 Filter als Gemeinde-Liste
+	12.04.2011 epsg in Link, transform nur wenn notwendig
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
@@ -34,14 +35,14 @@ function ZerlegungFsKennz($fskennz) {
 	$zflur=trim($arr[1]);
 	$zfsnr=trim($arr[2]);
 	if ($zgemkg == "") {
-		return 1; // alle Gmkg listen
+		return 0; // Gemeinden oder Gemarkungen listen
 	} elseif ( ! is_ne_zahl($zgemkg)) {
 		return 1; // Such Name
 	} elseif ($zflur == "") {
 		return 2; // G-Nr
 	} elseif ( ! is_ne_zahl($zflur)) {
 		echo "<p class='err>Die Flurnummer '".$zflur."' ist nicht numerisch</p>";
-		return 0;
+		return 9;
 	} elseif ($zfsnr == "") {		
 		return 3; // Flur				
 	} else {
@@ -50,21 +51,107 @@ function ZerlegungFsKennz($fskennz) {
 		$znenner=trim($zn[1]);				
 		if ( ! is_ne_zahl($zzaehler)) {
 			echo "<p class='err>Flurstücksnummer '".$zzaehler."' ist nicht numerisch</p>";
-			return 0;
+			return 9;
 		} elseif ($znenner == "") {
 			return 4;
 		} elseif (is_ne_zahl($znenner)) {
 			return 5;								
 		} else {
 			echo "<p class='err>Flurstücks-Nenner '".$znenner."' ist nicht numerisch</p>";
-			return 0;
+			return 9;
 		}
 	}
 }
 
+function ListGemeinden() {
+	// bei Leereingabe die Gemeinden anlisten
+	global $con, $gkz, $gemeinde, $epsg, $debug, $gfilter;
+	$linelimit=50;
+	$sql ="SELECT DISTINCT g.gemeinde AS key, g.bezeichnung FROM ax_gemeinde g ";
+	$sql.="JOIN gemeinde_gemarkung v ON g.regierungsbezirk=v.regierungsbezirk AND g.kreis=v.kreis AND g.gemeinde=v.gemeinde ";
+	// "ax_gemeinde" enthält mehrfache Gemeinde-Schluessel (Filtern regierungsbezirk, kreis)	
+	// "gemeinde_gemarkung" enthaelt nur gefüllte Gemarkungen aber Gemeinde mehrfach
+	switch ($gfilter) {
+		case 1: // Einzelwert
+			$sql.="WHERE g.gemeinde=".$gemeinde." ";
+			break;
+		case 2: // Liste
+			$sql.="WHERE g.gemeinde in (".$gemeinde.") ";
+			break;
+		default: // kein Filter
+			break;
+	}
+	$sql.=" ORDER BY g.bezeichnung LIMIT $1 ;";
+	$res=pg_prepare("", $sql);
+	$res=pg_execute("", array($linelimit));
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei Gemeinde</p>";
+		if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
+		return 0;
+	}
+	$cnt = 0;
+	while($row = pg_fetch_array($res)) {
+		$stadt=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
+		$bez=urlencode($row["bezeichnung"]);  // Uebergeben an ListGmkgInGemeinde
+		$gnr=$row["key"];		echo "\n<div class='gm' title='Gemeinde'>";
+			echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";
+			echo " Gem. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gm=".$gnr."&amp;bez=".$bez."'>";		
+			echo  " ".$stadt."</a> (".$gnr.")";
+		echo "\n</div>";
+		$cnt++;
+	}
+	if($cnt == 0){ 
+		echo "\n<p class='err'>Keine Gemeinde.</p>";
+	} elseif($cnt >= $linelimit) {
+		echo "\n<p title='Bitte eindeutiger qualifizieren'>... und weitere</p>";
+	} elseif($cnt == 1) { // Eindeutig!
+		return $gnr; 
+	}
+	return 0;
+}
+
+function ListGmkgInGemeinde($gkey) {
+// Die (gefuellten) Gemarkungen zu einem Gemeinde-Key (aus Link) listen
+	global $con, $gkz, $gemeinde, $epsg, $debug, $gfilter, $bez;
+	$linelimit=70;
+	$sql ="SELECT g.gemarkungsnummer, g.bezeichnung ";
+	$sql.="FROM ax_gemarkung g JOIN gemeinde_gemarkung v ON g.gemarkungsnummer=v.gemarkung ";
+   $sql.="WHERE v.gemeinde= $1 ORDER BY g.bezeichnung LIMIT $2 ;";
+	$res=pg_prepare("", $sql);
+	$res=pg_execute("", array($gkey, $linelimit));
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei Gemarkungen</p>";
+		if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
+		return 0;
+	}
+	// Hierarchie Dokumentieren, Gemeinde-Name?
+	echo "\n<div class='gm' title='Gemeinde'>";
+		echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";	
+		echo  " Gem. ".$bez." (".$gkey.")"; // .urldecode($bez). ??
+	echo "\n</div>";
+	$cnt = 0;
+	while($row = pg_fetch_array($res)) {
+		$gnam=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
+		$gnr=$row["gemarkungsnummer"];		echo "\n<div class='gk' title='Gemarkung'>";
+			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
+			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gnr."'>";		
+			echo  " ".$gnam."</a> (".$gnr.")";
+		echo "\n</div>";
+		$cnt++;
+	}
+	if($cnt == 0){ 
+		echo "\n<p class='err'>Keine Gemarkung.</p>";
+	} elseif($cnt >= $linelimit) {
+		echo "\n<p title='Bitte eindeutiger qualifizieren'>... und weitere</p>";
+	} elseif($cnt == 1) { // Eindeutig!
+		return $gnr; 
+	}
+	return 0;
+}
+
 function SuchGmkgName() {
 // Gemarkung suchen nach Name(-nsanfang)
-	global $con, $gkz, $gemeinde, $debug, $fskennz, $gfilter;
+	global $con, $gkz, $gemeinde, $epsg, $debug, $fskennz, $gfilter;
 	$linelimit=120;
 	if(preg_match("/\*/",$fskennz)){
 		$match = trim(preg_replace("/\*/i","%", strtoupper($fskennz)));
@@ -74,11 +161,6 @@ function SuchGmkgName() {
 	$sql ="SELECT v.gemeindename, g.gemarkungsnummer, g.bezeichnung ";
 	$sql.="FROM ax_gemarkung g JOIN gemeinde_gemarkung v ON g.gemarkungsnummer=v.gemarkung ";
    $sql.="WHERE bezeichnung ILIKE $1 ";
-
-//	if($gemeinde > 0) {
-//		$sql.=" AND v.gemeinde=".$gemeinde;
-//	} // wie prepared?
-
 	switch ($gfilter) {
 		case 1: // Einzelwert
 			$sql.="AND v.gemeinde=".$gemeinde." ";
@@ -89,7 +171,6 @@ function SuchGmkgName() {
 		default: // kein Filter
 			break;
 	}
-
 	$sql.=" ORDER BY g.bezeichnung LIMIT $2 ;";
 	$v=array($match, $linelimit);
 	$res=pg_prepare("", $sql);
@@ -104,11 +185,9 @@ function SuchGmkgName() {
 		$gnam=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 		$gnr=$row["gemarkungsnummer"];
 		$stadt=$row["gemeindename"];		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'>";
-			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$gnr."'>";		
+			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
+			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gnr."'>";		
 			echo  " ".$gnam."</a> (".$gnr.")";
-
-//			if ($gemeinde == 0) {echo " ".$stadt;} // Kreisweit
 			switch ($gfilter) {
 				case 0: // Kein Filter
 					echo " ".$stadt;
@@ -119,7 +198,6 @@ function SuchGmkgName() {
 				default: // Einzelwert
 					break;
 			}
-
 		echo "\n</div>";
 		$cnt++;
 	}
@@ -135,7 +213,7 @@ function SuchGmkgName() {
 
 function EineGemarkung($AuchGemkZeile) {
 	// Kennzeichen bestehend nur aus Gemarkung-Schlüssel wurde eingegeben
-	global $con, $gkz, $gemeinde, $debug, $zgemkg;
+	global $con, $gkz, $gemeinde, $epsg, $debug, $zgemkg;
 	$linelimit=120; // max. Fluren je Gemarkung
 	if ($AuchGemkZeile) {
 		$sql ="SELECT bezeichnung FROM ax_gemarkung g WHERE g.gemarkungsnummer= $1 ;"; // WHERE f.land= ?
@@ -150,15 +228,15 @@ function EineGemarkung($AuchGemkZeile) {
 		}
 		if ($zgmk == 0) {
 			echo "\n<div class='gk' title='Gemarkung'>";
-				echo "\n\t\t<p class='err'><img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'>";
+				echo "\n\t\t<p class='err'><img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
 					echo  " Gemarkung ".$zgemkg." ist unbekannt.</p>";
 			echo "\n</div>";
 			return;
 		}
-		// > 1 auch möglich ???
+		// > 1 auch möglich?
 		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'> ";
-			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."'>";		
+			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'> ";
+			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."'>";		
 			echo $gmkg."</a>  (".$zgemkg.")"; // in Gemeinde?
 		echo "\n</div>";
 	}
@@ -173,7 +251,7 @@ function EineGemarkung($AuchGemkZeile) {
 		$flur=$row["flur"];
 		echo "\n<div class='fl' title='Flur'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
-			echo "Flur<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."-".$flur."'>&nbsp;".$flur."&nbsp;</a>";
+			echo "Flur<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$flur."'>&nbsp;".$flur."&nbsp;</a>";
 		echo "\n</div>";
 		$zfl++;
 	}
@@ -187,7 +265,7 @@ function EineGemarkung($AuchGemkZeile) {
 
 function EineFlur() {
 	// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben
-	global $con, $gkz, $gemeinde, $debug, $scalefs, $epsg, $auskpath, $zgemkg, $zflur;
+	global $con, $gkz, $gemeinde, $epsg, $debug, $scalefs, $auskpath, $zgemkg, $zflur;
 	$linelimit=600; // Wie groß kann eine Flur sein?
 	$sql ="SELECT bezeichnung FROM ax_gemarkung g WHERE g.gemarkungsnummer= $1 ;";
 	$v=array($zgemkg);
@@ -201,23 +279,31 @@ function EineFlur() {
 	}
 	if ($zgmk == 0) {
 		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<p class='err'><img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'>";
+			echo "\n\t\t<p class='err'><img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
 				echo  " Gemarkung ".$zgemkg." ist unbekannt.</p>";
 		echo "\n</div>";
 		return;
 	}
 	echo "\n<div class='gk' title='Gemarkung'>";
-		echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemkg'> ";
-		echo "Gemarkung <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."'> ".$gmkg." (".$zgemkg.")</a>";
+		echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
+		echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."'> ".$gmkg." (".$zgemkg.")</a>";
 	echo "\n</div>";
 	echo "\n<div class='fl' title='Flur'>";
 		echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
-		echo "Flur <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;fskennz=".$zgemkg."-".$zflur."'> ".$zflur."</a>";
+		echo "Flur <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$zflur."'> ".$zflur."</a>";
 	echo "\n</div>";
 
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
-	$sql.="x(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-	$sql.="y(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS y ";
+	//	$sql.="x(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+	//	$sql.="y(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS y ";
+	if($epsg == "25832") { // Transform nicht notwendig
+		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
+		$sql.="y(st_Centroid(f.wkb_geometry)) AS y ";
+	}
+	else {  
+		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
+	}
    $sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 ";
 	$sql.="ORDER BY f.zaehler, f.nenner LIMIT $3 ;"; // WHERE f.land= ?
 	$v=array($zgemkg, $zflur, $linelimit);
@@ -258,8 +344,17 @@ function EinFlurstueck() {
 	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $zgemkg, $zflur, $zzaehler, $znenner;
 
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
-	$sql.="x(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-	$sql.="y(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";
+	//	$sql.="x(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+	//	$sql.="y(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";
+	if($epsg == "25832") { // Transform nicht notwendig
+		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
+		$sql.="y(st_Centroid(f.wkb_geometry)) AS y, ";
+	}
+	else {  
+		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
+	}
+
 	$sql.="g.gemarkungsnummer, g.bezeichnung ";
    $sql.="FROM ax_flurstueck f JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND f.zaehler= $3 ";
@@ -300,9 +395,9 @@ function EinFlurstueck() {
 // ===========
 if(isset($epsg)) {
 	if ($debug >= 2) {echo "<p>aktueller EPSG='".$epsg."'</p>";	} // aus MB
-	if (substr($epsg, 0, 5) == "EPSG:") {$epsg=substr($epsg, 5);}
+	$epsg = str_replace("EPSG:", "" , $_REQUEST["epsg"]);	
 } else {
-	if ($debug >= 2) {echo "<p class='err'>kein EPSG gesetzt</p>";}	
+	if ($debug >= 1) {echo "<p class='err'>kein EPSG gesetzt</p>";}	
 	$epsg=$gui_epsg; // aus Conf
 }
 if ($debug >= 2) {
@@ -316,35 +411,50 @@ if ($gemeinde == "") {
 	$gfilter = 2; // Liste
 }
 
-// Eingabe interpretieren
-switch (ZerlegungFsKennz($fskennz)) {
-case 0:
-	echo "<p class='err'>Bitte ein Flurst&uuml;ckskennzeichen eingegeben, Format 'gggg-fff-zzzz/nnn</p>";
-	break;
-case 1:
-	if ($debug >= 2) {echo "<p>Gemarkungsname ".$zgemkg."</p>";}
-	$gnr=SuchGmkgName();
+if(isset($gm)) { // Self-Link aus Gemeinde-Liste 
+	$gnr=ListGmkgInGemeinde($gm); // Gemarkungen zu dieser Gemeinde listen
 	if ($gnr > 0) {
 		$zgemkg=$gnr;
 		EineGemarkung(false);
 	};	
-	break;
-case 2:
-	if ($debug >= 2) {echo "<p>Gemarkungsnummer ".$zgemkg."</p>";}	
-	EineGemarkung(true);
-	break;
-case 3:
-	if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur."</p>";}
-	EineFlur();
-	break;
-case 4:
-	if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."</p>";}
-	EinFlurstueck();
-	break;
-case 5:
-	if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."/".$znenner."</p>";}
-	EinFlurstueck();
-	break;
+} else {
+	// Die Formular-Eingabe interpretieren (kann auch ein Link sein)
+	switch (ZerlegungFsKennz($fskennz)) {
+	case 0: // leere Eingabe
+		if ($gfilter == 1) { // Die GUI ist bereits auf eine Gemeinde gefiltert
+			SuchGmkgName(); // Gemarkungen listen
+		} else {
+			ListGemeinden(); // alle Gemeinden Listen
+		}
+		break;
+	case 1:
+		if ($debug >= 2) {echo "<p>Gemarkungsname ".$zgemkg."</p>";}
+		$gnr=SuchGmkgName();
+		if ($gnr > 0) {
+			$zgemkg=$gnr;
+			EineGemarkung(false);
+		};	
+		break;
+	case 2:
+		if ($debug >= 2) {echo "<p>Gemarkungsnummer ".$zgemkg."</p>";}	
+		EineGemarkung(true);
+		break;
+	case 3:
+		if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur."</p>";}
+		EineFlur();
+		break;
+	case 4:
+		if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."</p>";}
+		EinFlurstueck();
+		break;
+	case 5:
+		if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."/".$znenner."</p>";}
+		EinFlurstueck();
+		break;
+	case 9:
+		echo "<p class='err'>Bitte ein Flurst&uuml;ckskennzeichen eingegeben, Format 'gggg-fff-zzzz/nnn</p>";
+		break;
+	}
 }
 ?>
 

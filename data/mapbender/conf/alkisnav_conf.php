@@ -21,6 +21,12 @@ $scalehs=500;
 # default-Koordinatensystem der GUI
 $gui_epsg=31467;
 
+# Filter:
+# Liste der relevanten Amtsgerichts-Nummern aus ax_dienststelle.stelle
+# Form: WHERE IN ()
+# Bei leerer Eingabe in Tab 'Grundb.'
+$ag_liste = "'2491','2408'";
+
 # Entwicklungsumgebung
 $debug=0; // 0=Produktion, 1=mit Fehlermeldungen, 2=mit Informationen, 3=mit SQL
 ?>

@@ -18,12 +18,20 @@
 		var arr = parms[1].split("=", 2)
 		var gem = "0";
 		if(arr[0] == "gemeinde") {gem = arr[1];}
-		// aktueller EPSG-Code der GUI  ++ funktioniert noch nicht ++
-		var ind = parent.parent.parent.getMapObjIndexByName("mapframe1");
-		epsg = parent.parent.parent.mb_mapObj[ind].epsg;
+		// aktueller EPSG-Code
+		function sendGuiEpsg () {
+			var ind = parent.parent.getMapObjIndexByName("mapframe1");
+			var epsg = parent.parent.mb_mapObj[ind].getSRS();
+			document.forms[0].epsg.value = epsg;
+		}
+		function validate(){
+			sendGuiEpsg();
+			document.forms[0].gkz.value = gkz;
+			document.forms[0].gemeinde.value = gem;
+		}
 	</script>
 </head>
-<body>
+<body onload="javascript:validate();">
 
 <div id='tabs'>
 <ul>
@@ -37,13 +45,11 @@
 </div>
 
 <form class='nav' name='GrdGazetteerFrame' onsubmit='return validate()' target='GrdResultFrame' action='alkisnav_grd.php'>
-<script type="text/javascript" language="JavaScript">
-		document.writeln("<input name='gkz' type='hidden' value='" + gkz + "'>");
-		document.writeln("<input name='gemeinde' type='hidden' value='" + gem + "'>");
-		document.writeln("<input name='epsg' type='hidden' value='" + epsg + "'>");
-</script>
-<input class='textfield' name='gbkennz' type='text' size='22' title='Grunbuchkennzeichen'>
-<input class='sbutton' type='submit' value='ok'>
+	<input name='gkz' type='hidden'>
+	<input name='gemeinde' type='hidden'>
+	<input name='epsg' type='hidden'>
+	<input class='textfield' name='gbkennz' type='text' size='22' title='Grunbuchkennzeichen'>
+	<input class='sbutton' type='submit' value='ok'>
 </form>
 
 <iframe name="GrdResultFrame" src="blank_grd.html" class='ResultFrame'></iframe>

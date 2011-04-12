@@ -1,5 +1,8 @@
 <?php
-// Version vom 13.01.2011 
+/* Version vom 
+	13.01.2011 
+	11.04.2011 epsg in Link, transform nur wenn notwendig
+*/
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
@@ -25,7 +28,7 @@ function getEigByName() {
 // 1 =============================
 // Eigentuemer nach Name(-nsanfang)
 // ===============================
-	global $gkz, $gemeinde, $con, $name, $person, $gb;
+	global $gkz, $gemeinde, $epsg, $con, $name, $person, $gb;
 	$linelimit=120;
 	if(preg_match("/\*/",$name)){
 		$match = trim(preg_replace("/\*/i","%", strtoupper($name)));
@@ -49,7 +52,7 @@ function getEigByName() {
 		$vnam=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
 		$gml=$row["gml_id"];		// +++ Icon mit Link auf Person-Auskunft, über gml_id	
 		// Zur Zeit siehe unten: erst nach Auswahl einer einzelnen Person
-		echo "\n<a class='nam' title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";		$cnt++;
+		echo "\n<a class='nam' title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";		$cnt++;
 	}
 	if($cnt == 0){ 
 		echo "\n<p class='err'>Keine Person.</p>";
@@ -65,12 +68,12 @@ function getGBbyPerson() {
 // 2 =================================
 // Grundbücher zur gewählten Person
 // ===================================
-	global $gkz, $gemeinde, $con, $name, $person, $gb, $auskpath;
+	global $gkz, $gemeinde, $epsg, $con, $name, $person, $gb, $auskpath;
 	$linelimit=120;
 	if(isset($name)) { // Familiensuche
 		echo "\n<div class='back' title='Andere Personen mit diesem Nachnamen'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer_2.ico' width='16' height='16' alt='FAM'> ";
-			echo "\n<a class='back' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;name=".$name."'>\"".$name."\"</a>";
+			echo "\n<a class='back' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;name=".$name."'>\"".$name."\"</a>";
 		echo "\n</div>\n<br>";	
 	}
 	$sql="SELECT p.nachnameoderfirma, p.vorname, p.geburtsdatum, p.namensbestandteil, ";
@@ -128,7 +131,7 @@ function getGBbyPerson() {
 			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='GB'>";
 			echo "\n\t</a> ";		
-			echo "\n\t".$beznam."<a title='Grundbuch' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gb=".$gml."&amp;person=".$person."'> Blatt ".$nr."&nbsp;</a>";
+			echo "\n\t".$beznam."<a title='Grundbuch' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gb=".$gml."&amp;person=".$person."'> Blatt ".$nr."&nbsp;</a>";
 		echo "\n</div>";
 		$cnt++;
 	}
@@ -152,7 +155,7 @@ function getFSbyGB($backlink) {
 	if($backlink) {	
 		echo "\n\t<div class='back' title='zur&uuml;ck zur Person'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'> ";
-			echo "\n\t<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;person=".$person."'>";
+			echo "\n\t<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$person."'>";
 			echo "zur&uuml;ck</a><br>";		
 		echo "</div>";
 		echo "<div class='gb'>";
@@ -164,8 +167,13 @@ function getFSbyGB($backlink) {
 
 	// Blatt <vbg/istBestandteilVon<  Buchungsstelle <vfb/istGebucht< Flurstck.
 	$sql ="SELECT s.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
-	$sql.="x(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-	$sql.="y(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";
+	if($epsg == "25832") { // Transform nicht notwendig
+		$sql.="x(st_centroid(f.wkb_geometry)) AS x, ";
+		$sql.="y(st_centroid(f.wkb_geometry)) AS y, ";
+	} else {  
+		$sql.="x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+		$sql.="y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
+	}
 	$sql.="g.gemarkungsnummer, g.bezeichnung ";
    $sql.="FROM alkis_beziehungen vbg ";
 	$sql.="JOIN ax_buchungsstelle s ON vbg.beziehung_von = s.gml_id "; 
@@ -231,9 +239,9 @@ function getFSbyGB($backlink) {
 // 3. gb     = gml_id des Grundbuches -> Suche nach Flurstücken
 if(isset($epsg)) {
 	if ($debug >= 2) {echo "<p>aktueller EPSG='".$epsg."'</p>";} // aus MB
-	if (substr($epsg, 0, 5) == "EPSG:") {$epsg=substr($epsg, 5);}
+	$epsg = str_replace("EPSG:", "" , $_REQUEST["epsg"]);	
 } else {
-	if ($debug >= 2) {echo "<p class='err'>kein EPSG gesetzt</p>";}	
+	if ($debug >= 1) {echo "<p class='err'>kein EPSG gesetzt</p>";}	
 	$epsg=$gui_epsg; // aus Conf
 }
 if ($debug >= 2) {echo "<p>Filter Gemeinde = ".$gemeinde."</p>";}
@@ -254,7 +262,7 @@ if(isset($gb)) { // gml_id
 } elseif ($debug >= 2) {
 	echo "\n<p>Parameter?</p>"; // Programmfehler
 }
-?>
+?>
 
 </body>
 </html>

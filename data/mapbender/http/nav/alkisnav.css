@@ -1,5 +1,5 @@
 /* Style fuer ALKIS-Navigation 
-	Version 2011-01-13
+	Version 2011-04-11
 */
 body,p,a,.textfield,.sbutton	{font-family: Verdana, Arial, Helvetica, sans-serif;}
 body		{font-size: 11px; color: #000000; margin: 0px;}
@@ -16,11 +16,14 @@ a:hover, a:active	{color: red;}
 div			{margin: 0px; padding: 0px;}
 div.back 	{font-size: 10px; color: gray; border-bottom: 1px dotted gray;}
 div.nam		{color: maroon;} /* Name */
-div.gk		{color: black;  margin-left:  0px; margin-top: 6px;} /* Gemarkung o. GB-Bezirk*/
-div.fl		{color: olive;  margin-left:  9px; margin-top: 4px;} /* Flur */
-div.gb		{color: green;  margin-left:  6px;} /* Grundbuch */
-div.gs		{color: olive;  margin-left: 12px; margin-top: 2px;} /* Grundstueck, BVNR */
-div.fs		{color: navy;   margin-left: 18px; margin-top: 0px;} /* Flurstueck */
+div.ga		{color: fuchsia;	margin-left:  0px; margin-top: 6px;} /* GB-Amtsgericht */
+div.gm		{color: green;		margin-left:  0px; margin-top: 6px;} /* Gemeinde */
+div.gk		{color: black;		margin-left:  5px; margin-top: 6px;} /* Gemarkung o. GB-Bezirk*/
+div.fl		{color: olive;		margin-left: 12px; margin-top: 4px;} /* Flur */
+div.gb		{color: green;		margin-left: 10px; margin-top: 3px;} /* Grundbuch */
+div.gs		{color: olive;		margin-left: 15px; margin-top: 2px;} /* Grundstueck, BVNR */
+div.fs		{color: navy;		margin-left: 20px; margin-top: 0px;} /* Flurstueck */
+
 div.stu		{color: maroon; font-size: 13px;} /* Strasse - Ueberschrift */
 div.stl		{color: maroon; font-size: 11px; margin-top: 3px;} /* Strasse - Liste*/
 td.hsnr		{font-size: 11px; text-align: center; padding-left: 4px; padding-right: 4px;} /* Hausnummer */
