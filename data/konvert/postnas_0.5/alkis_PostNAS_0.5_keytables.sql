@@ -528,6 +528,31 @@ INSERT INTO ax_gebaeude_zustand (wert, bezeichner, kennung, objektart) VALUES (4
 
 
 
+--- ax_li_source_punktort
+-- Einträge nur teilweise übernommen siehe 
+-- http://www.adv-online.de/icc/extdeu/binarywriterservlet?imgUid=d8970864-6db2-9801-e1f3-351ec0023010&uBasVariant=11111111-1111-1111-1111-111111111111#_40331DBC0379
+CREATE TABLE ax_li_source_punktort (
+    wert integer NOT NULL,
+    bezeichner character varying,
+    kennung integer,
+    objektart character varyingsource_punktort
+);
+
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (1000, 'Aus Katastervermessung ermittelt', 14010, '');
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (1900, 'Aus sonstiger Vermessung ermittelt', 14010, '');
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (4200, 'Aus Katasterkarten digitalisiert', 14010, '');
+
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (4300, 'Aus sonstigen Unterlagen digitalisiert', 14010, '');
+
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (5000, 'Aus Nivellement', 14010, '');
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (5500, 'Höhe aus Laserscannermessung', 14010, '');
+
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (6000, 'Undulation', 14010, '');
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (7000, 'Aus trigonometrischer Messung', 14010, '');
+
+
+INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (9998, 'Nach Quellenlage nicht zu spezifizieren', 14010, '');
+
 
 -- B e r e c h t i g u n g e n
 -- ---------------------------
