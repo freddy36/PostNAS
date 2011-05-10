@@ -1,4 +1,4 @@
-
+﻿
 -- ALKIS-Datenbank aus dem Konverter PostNAS 0.5
 
 -- Z u s a e t z l i c h e   S c h l u e s s e l t a b e l l e n
@@ -469,7 +469,7 @@ INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2700,'Grenzfeststellungsverfahren nach Hamb. Wassergesetz',71008,'ax_bauraumoderbodenordnungsrecht');
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2800,'Verkehrsflächenbereinigung',71008,'ax_bauraumoderbodenordnungsrecht');
 
--- Bauteil Bauart
+-- Bauteil Bauar
 
 CREATE TABLE ax_bauart_bauteil (
     wert integer NOT NULL,
@@ -502,7 +502,8 @@ INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (272
 INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (9999, 'Sonstiges', 31002, 'ax_bauteil');
 
 
--- Gebaeude Zusatnd
+-- Gebaeude Zustand
+Drop Table ax_gebaeude_zustand;
 CREATE TABLE ax_gebaeude_zustand (
     wert integer NOT NULL,
     bezeichner character varying,
@@ -535,7 +536,7 @@ CREATE TABLE ax_li_source_punktort (
     wert integer NOT NULL,
     bezeichner character varying,
     kennung integer,
-    objektart character varyingsource_punktort
+    objektart character varying
 );
 
 INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (1000, 'Aus Katastervermessung ermittelt', 14010, '');
