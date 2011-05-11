@@ -46,6 +46,7 @@
 --             - Objektartengruppe: Angaben zur Lage
 
 --  2011-02-07 "gml_id" in fast allen Tabellen als UNIQUE INDEX
+-- --AE 2011-05-11 lage einheitlich in character varying(5), geändert siehe https://trac.wheregroup.com/PostNAS/ticket/9  http://trac.osgeo.org/gdal/changeset/22336
 
 -- Zur Datenstruktur siehe Dokument: 
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
@@ -1193,7 +1194,7 @@ CREATE TABLE ax_lagebezeichnungmithausnummer (
 	regierungsbezirk	integer,
 	kreis			integer,
 	gemeinde		integer,
-	lage			integer,  -- Strassenschluessel
+	lage			character varying(5), --AE 2011-05-11 siehe http://trac.osgeo.org/gdal/changeset/22336 -- integer,  -- Strassenschluessel
 	-- Hier immer numerisch (Straßenschlüssel), also integer.
 	-- Fremdschlüssel 'ax_lagebezeichnungkatalogeintrag' kann aber auch nicht numerische Zeichen
 	-- enthalten (z.B. Sonderfall Bahnstrecke)
@@ -1233,7 +1234,7 @@ CREATE TABLE ax_lagebezeichnungmitpseudonummer (
 	regierungsbezirk	integer,
 	kreis			integer,
 	gemeinde		integer,
-	lage			integer,
+	lage			character varying(5),  -- Änderung zu Ticket 9 AE 2011-05-11--integer,
 	pseudonummer		character varying(5),
 	laufendenummer		character varying(2), -- leer, Zahl, "P2"
 	CONSTRAINT ax_lagebezeichnungmitpseudonummer_pk PRIMARY KEY (ogc_fid)
