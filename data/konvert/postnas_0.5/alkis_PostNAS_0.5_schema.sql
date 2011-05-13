@@ -1081,7 +1081,7 @@ CREATE TABLE ax_besondereflurstuecksgrenze (
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
-	artderflurstuecksgrenze	integer,
+	artderflurstuecksgrenze	integer[],
 	CONSTRAINT ax_besondereflurstuecksgrenze_pk PRIMARY KEY (ogc_fid)
 );
 
