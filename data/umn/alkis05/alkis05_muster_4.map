@@ -1921,18 +1921,19 @@ LAYER
 	MAXSCALEDENOM 2500 #10000
 	SYMBOLSCALEDENOM 250 #1000
 	#CLASSITEM "artderflurstuecksgrenze" # Faelle: <null>, 3000
-	CLASS
-		NAME "Besondere Flurstücksgrenze"
 		STYLE
-			SYMBOL 0
+			WIDTH 4
+			MINWIDTH 4
+			MAXWIDTH 8
 			COLOR 254 254 254
 		END
 		STYLE
 			SYMBOL 'sn2006'
 			COLOR 0 0 0
-			SIZE 3.97 #0.992
+			WIDTH 4
+			MINWIDTH 4
+			MAXWIDTH 8
 		END
-	END
 END
 
 # Ausgestaltung FS (DATA: Views in DB anlegen fuer Beziehungen)
