@@ -554,18 +554,39 @@ INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES 
 
 INSERT INTO ax_li_source_punktort (wert, bezeichner, kennung, objektart) VALUES (9998, 'Nach Quellenlage nicht zu spezifizieren', 14010, '');
 
+--
+-- 
+-- 
+CREATE TABLE AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (
+    wert integer NOT NULL,
+    bezeichner character varying,
+    kennung integer,
+    objektart character varying
+);
 
--- B e r e c h t i g u n g e n
--- ---------------------------
+CREATE TABLE AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (
+    wert integer NOT NULL,
+    bezeichner character varying,
+    kennung integer,
+    objektart character varying
+);
 
--- Interne Version:
-GRANT SELECT ON TABLE ax_gebaeude_bauweise          TO ms5;
-GRANT SELECT ON TABLE ax_gebaeude_funktion          TO ms5;
-GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart TO ms5;
-
--- Auskunft in WWW-Version:
-GRANT SELECT ON TABLE ax_gebaeude_bauweise          TO alkisbuch;
-GRANT SELECT ON TABLE ax_gebaeude_funktion          TO alkisbuch;
-GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart TO alkisbuch;
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Strittige Grenze',	1000,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Nicht festgestellte Grenze',	2001,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Verwaltungsstreitverfahren (Grenze)',	2002,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Mittellinie in Gewässern',	2003,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Flurstücksgrenze nicht feststellbar',2004,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Topographische Grenzeinrichtung',	2010,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Topographische Gewaesserbegrenzung',	2100,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze der Region',	2500,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze der Flur',	3000,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze der Gemarkung',	7003,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze der Bundesrepublik Deutschland',	7101,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze des Bundeslandes',	7102,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze des Regierungsbezirks',	7103,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze des Landkreises',	7104,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze der Gemeinde',	7106,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze des Gemeindeteils',	7107,11002,'ax_besondereflurstuecksgrenze');
+INSERT INTO AX_BesondereFlurstuecksgrenze_ArtDerFlurstuecksgrenze (bezeichner, wert, kennung, objektart) VALUES ('Grenze der Verwaltungsgemeinschaft',	7108,11002,'ax_besondereflurstuecksgrenze');
 
 -- ENDE --
