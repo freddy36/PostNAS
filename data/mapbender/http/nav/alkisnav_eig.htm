@@ -10,13 +10,13 @@
 	<link rel="stylesheet" type="text/css" href="alkisnav.css">
 	<script type="text/javascript" language="JavaScript">		// Parameter fuer Mandant aus url lesen
 		// &gkz=150&gemeinde=40&test=ja
-		var parms = location.search.split("&");    // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"		
+		var parms = location.search.split("&");    // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"
 		var arr = parms[0].split("=", 2); // 0: "?gkz"  1: "150"
 		var gkz = "000";
 		if(arr[0] == "?gkz") {gkz = arr[1];}
 		var arr = parms[1].split("=", 2)
 		var gem = "0";
-		if(arr[0] == "gemeinde") {gem = arr[1];}		// aktueller EPSG-Code
+		if(arr[0] == "gemeinde") {gem = arr[1];}		// aktueller EPSG-Code (Version 2.7)
 		function sendGuiEpsg () {
 			var ind = parent.parent.getMapObjIndexByName("mapframe1");
 			var epsg = parent.parent.mb_mapObj[ind].getSRS();

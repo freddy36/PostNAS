@@ -3,6 +3,7 @@
 	13.01.2011
 	25.03.2011 Filter als Gemeinde-Liste
 	12.04.2011 epsg in Link, transform nur wenn notwendig
+	12.05.2011 Syntaxfehler in SQL
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
@@ -352,7 +353,7 @@ function EinFlurstueck() {
 	}
 	else {  
 		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
+		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
 	}
 
 	$sql.="g.gemarkungsnummer, g.bezeichnung ";

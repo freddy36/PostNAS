@@ -11,7 +11,7 @@
 	<script type="text/javascript" language="JavaScript">
 		// Parameter fuer Mandant aus url lesen
 		// &gkz=150&gemeinde=40&test=ja
-		var parms = location.search.split("&"); // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"		
+		var parms = location.search.split("&"); // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"
 		var arr = parms[0].split("=", 2); // 0: "?gkz"  1: "150"
 		var gkz = "000";
 		if(arr[0] == "?gkz") {gkz = arr[1];}

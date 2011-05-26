@@ -17,7 +17,7 @@
 		}
 		// Parameter fuer Mandant aus url lesen
 		// &gkz=150&gemeinde=40&test=ja
-		var parms = location.search.split("&");    // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"		
+		var parms = location.search.split("&");   // 0: "?gkz=150" 1: "gemeinde=40" 2: "test=ja"
 		var arr = parms[0].split("=", 2); // 0: "?gkz"  1: "150"
 		var gkz = "000";
 		if(arr[0] == "?gkz") {gkz = arr[1];}
@@ -30,7 +30,7 @@
 <body>
 
 <script type="text/javascript" language="JavaScript">
-	document.writeln("<!-- gkz=" + gkz + " gemeinde=" + gem + "-->");	
+	document.writeln("<!-- gkz=" + gkz + " gemeinde=" + gem + "-->");
 	// Rahmen mit Form und ResultFrame
 	document.writeln("<iframe frameborder='0' name='OuterFrame' src='alkisnav_eig.htm?gkz=" + gkz + "&gemeinde=" + gem + "' class='OuterFrame' scrolling='auto'></iframe>");
 </script>
