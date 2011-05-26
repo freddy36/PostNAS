@@ -3,7 +3,7 @@
 --       A  L   K   I   S       
 -- *****************************
 --
--- Datenbankstruktur PostNAS 0.5  (GDAL 1.8)
+-- Datenbankstruktur PostNAS 0.6  (GDAL aus aktuellem Trunc)
 --
 -- Stand 
 --  2009-04-02 
@@ -51,6 +51,17 @@
 --             Neue Tabelle: 'ax_historischesflurstueckohneraumbezug',
 --             Tabelle 'ax_historischesflurstueck': Felder vergroessert
 --             Nicht benutzte Tabellen auskommentiert (aus einem 'alles ausgeben'-NBA)
+
+--  2011-05-11 AE: "lage" einheitlich in character varying(5), 
+--             geändert siehe https://trac.wheregroup.com/PostNAS/ticket/9  
+--                            http://trac.osgeo.org/gdal/changeset/22336
+
+--  VERSIONS-NUMMER:
+
+--  Dies Schema kann nicht mehr mit der installierbaren gdal-Version 1.8 verwendet werden.
+--  Derzeit muss ogr2ogr (gdal) aus den Quellen compiliert werden, die o.g. Patch enthalten.
+--  Weiterführung dieses Zweiges als PostNAS 0.6 ?
+
 
 -- Zur Datenstruktur siehe Dokument: 
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
@@ -1196,12 +1207,17 @@ CREATE TABLE ax_lagebezeichnungmithausnummer (
 	regierungsbezirk	integer,
 	kreis			integer,
 	gemeinde		integer,
-	lage			integer,  -- Strassenschluessel
+
+--	lage			integer,  -- Strassenschluessel (Alt: PostNAS 0.5)
 	-- Hier immer numerisch (Straßenschlüssel), also integer.
 	-- Fremdschlüssel 'ax_lagebezeichnungkatalogeintrag' kann aber auch nicht numerische Zeichen
 	-- enthalten (z.B. Sonderfall Bahnstrecke)
 	-- Dies Char-Feld wird von PostNAS 0.5 *ohne* fuehrende Nullen gefuellt.
 	-- Der ForeignKey "ax_lagebezeichnungkatalogeintrag.lage" jedoch *mit* fuehrenden Nullen.
+
+	lage			character varying(5), -- Strassenschluessel --AE 2011-05-11
+	-- siehe http://trac.osgeo.org/gdal/changeset/22336
+
 	hausnummer		character varying(6),  --  Nummern (blank) Zusatz
 	CONSTRAINT ax_lagebezeichnungmithausnummer_pk PRIMARY KEY (ogc_fid)
 );
@@ -1236,7 +1252,11 @@ CREATE TABLE ax_lagebezeichnungmitpseudonummer (
 	regierungsbezirk	integer,
 	kreis			integer,
 	gemeinde		integer,
-	lage			integer,
+
+
+--	lage			integer,  -- Strassenschluessel (Alt: PostNAS 0.5)
+	lage			character varying(5), -- Strassenschluessel -- Änderung zu Ticket 9 AE 2011-05-11
+
 	pseudonummer		character varying(5),
 	laufendenummer		character varying(2), -- leer, Zahl, "P2"
 	CONSTRAINT ax_lagebezeichnungmitpseudonummer_pk PRIMARY KEY (ogc_fid)
