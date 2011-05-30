@@ -55,6 +55,7 @@
 --  2011-05-11 AE: "lage" einheitlich in character varying(5), 
 --             geändert siehe https://trac.wheregroup.com/PostNAS/ticket/9  
 --                            http://trac.osgeo.org/gdal/changeset/22336
+--  2011-05-30  AE: constraints enforce_geotype_wkb_geometry für ax_klassifizierungnachwasserrecht, ax_klassifizierungnachstrassenrecht um MULTIPOLYGON erweitert
 
 --  VERSIONS-NUMMER:
 
@@ -3614,6 +3615,12 @@ CREATE TABLE ax_klassifizierungnachstrassenrecht (
 
 SELECT AddGeometryColumn('ax_klassifizierungnachstrassenrecht','wkb_geometry','25832','POLYGON',2);
 
+ALTER TABLE ax_klassifizierungnachstrassenrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_klassifizierungnachstrassenrecht
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text OR wkb_geometry IS NULL);
+
+
 CREATE INDEX ax_klassifizierungnachstrassenrecht_geom_idx
           ON ax_klassifizierungnachstrassenrecht  USING gist  (wkb_geometry);
 
@@ -3638,6 +3645,12 @@ CREATE TABLE ax_klassifizierungnachwasserrecht (
 );
 
 SELECT AddGeometryColumn('ax_klassifizierungnachwasserrecht','wkb_geometry','25832','POLYGON',2);
+
+ALTER TABLE ax_klassifizierungnachwasserrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_klassifizierungnachwasserrecht
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text OR wkb_geometry IS NULL);
+
 
 CREATE INDEX ax_klassifizierungnachwasserrecht_geom_idx
           ON ax_klassifizierungnachwasserrecht USING gist (wkb_geometry);
