@@ -8,11 +8,7 @@ CREATE TABLE "delete"
   typename character(33),
   featureid character(32),
   CONSTRAINT delete_pk PRIMARY KEY (ogc_fid)
-)
-WITH (
-  OIDS=TRUE
 );
-ALTER TABLE "delete" OWNER TO postgres;
 
 DROP FUNCTION deletefeature(text, text);
 CREATE FUNCTION deleteFeature(typename text, featureid text) RETURNS text 
@@ -35,17 +31,11 @@ AS $$
  END; 
 $$ LANGUAGE plpgsql; 
 
-
-INSERT INTO AA_Antragsgebiet (gml_id) VALUES ('DENW44AL0000okRc');
-
-INSERT INTO delete (typename, featureid) VALUES ('AA_Antragsgebiet','DENW44AL0000okRc20110428T135110Z');
-
-Select deleteFeature('AA_Antragsgebiet','DENW44AL0000okRc20110428T135110Z');
-
-INSERT INTO AA_Antragsgebiet (gml_id) VALUES ('DENW44AL0000okRc');
-
-Select * from AA_Antragsgebiet
-
-Select substring('DENW44AL0000okRc20110428T135110Z' from 1 for 16)
+-- example
+--INSERT INTO AA_Antragsgebiet (gml_id) VALUES ('DENW44AL0000okRc');
+--INSERT INTO delete (typename, featureid) VALUES ('AA_Antragsgebiet','DENW44AL0000okRc20110428T135110Z');
+--Select deleteFeature('AA_Antragsgebiet','DENW44AL0000okRc20110428T135110Z');
+--INSERT INTO AA_Antragsgebiet (gml_id) VALUES ('DENW44AL0000okRc');
+--Select * from AA_Antragsgebiet
 
 Select deleteFeature(typename,featureid) from delete;
