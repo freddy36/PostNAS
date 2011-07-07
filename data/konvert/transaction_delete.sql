@@ -5,7 +5,7 @@
 CREATE TABLE "delete"
 (
   ogc_fid serial NOT NULL,
-  typename character(33),
+  typename character(255),
   featureid character(32),
   CONSTRAINT delete_pk PRIMARY KEY (ogc_fid)
 );
