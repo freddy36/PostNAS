@@ -10,6 +10,7 @@
 	01.10.2010  htmlentities $otyp
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -64,7 +65,7 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 		while($row = pg_fetch_array($res)) {
 			echo "\n<tr>\n\t<td>".$otyp."</td>";
 			echo "\n\t<td class='bez'>".$row["beziehungsart"]."</td>";
-			echo "\n\t<td>\n\t\t<a href='".$self."gkz=".$gkz."&amp;gmlid=".$row["beziehung_zu"]."'>".$row["beziehung_zu"]."</a>";
+			echo "\n\t<td>\n\t\t<a href='".$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;gmlid=".$row["beziehung_zu"]."'>".$row["beziehung_zu"]."</a>";
 			echo "\n\t</td>\n</tr>";
 			$i++;
 		}
@@ -83,7 +84,7 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 		$i=0;
 		while($row = pg_fetch_array($res)) {
 			echo "\n<tr>\n\t<td>";
-			echo "\n\t\t<a href='".$self."gkz=".$gkz."&amp;gmlid=".$row["beziehung_von"]."'>".$row["beziehung_von"]."</a>";
+			echo "\n\t\t<a href='".$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;gmlid=".$row["beziehung_von"]."'>".$row["beziehung_von"]."</a>";
 			echo "\n\t</td>";
 			echo "\n\t<td class='bez'>".$row["beziehungsart"]."</td>";
 			echo "\n\t<td>".$otyp."</td>\n</tr>";

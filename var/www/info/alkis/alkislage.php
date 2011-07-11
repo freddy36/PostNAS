@@ -10,6 +10,7 @@
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	07.02.2011  JOIN ax_gemeinde auch ueber regierungsbezirk
+	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 	ToDo: Entschluesseln Kreis usw.
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
@@ -295,7 +296,7 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 	echo "\n\n<a name='lage'></a><h3><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Lage</h3>\n";
 	echo "\n<p>andere Lagebezeichnungen zur gleichen Hausnummer.</p>";
 	$whereclaus="WHERE land= $1 AND regierungsbezirk= $2 AND kreis= $3 AND gemeinde= $4 AND lage= $5 ";
-	$url=$self."gkz=".$gkz."&amp;id=".$id."&amp;gmlid="; // Basis
+	$url=$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;id=".$id."&amp;gmlid="; // Basis
 
 	switch ($ltyp) {
 		case "m": // aktuell Hausnummer gefunden

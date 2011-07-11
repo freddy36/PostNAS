@@ -14,9 +14,9 @@
 	05.01.2011  Korrektur der Fallunterscheidung "Funktion", auch "Vegetationsmerkmal", Title auf "Zustand".
 	26.01.2011  Space in leere td
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	07.02.2011  
+	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 	ToDo:
-	- Entschlüsseln "Bahnkategorie" bei Behnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
+	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
@@ -432,7 +432,7 @@ echo "\n<table class='outer'>";
 		echo "\n\t</td>";
 		echo "\n\t<td>";
 			echo "\n\t\t<p class='nwlink noprint'>";
-				echo "\n\t\t\t<a href='".$self."gkz=".$gkz."&amp;gmlid=".$gmlid;
+				echo "\n\t\t\t<a href='".$_SERVER['PHP_SELF']. "?gkz=".$gkz."&amp;gmlid=".$gmlid;
 				if ($idanzeige) { echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
 				// Umschalter: FS-Nachw ruft sich selbst mit geaend. Param. auf. Posit. auf Marke #gb
