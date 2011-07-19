@@ -56,6 +56,7 @@
 --             geändert siehe https://trac.wheregroup.com/PostNAS/ticket/9  
 --                            http://trac.osgeo.org/gdal/changeset/22336
 --  2011-05-30  AE: constraints enforce_geotype_wkb_geometry für ax_klassifizierungnachwasserrecht, ax_klassifizierungnachstrassenrecht um MULTIPOLYGON erweitert
+-- 2011-07-19 neue Funktion deleteFeature(typename text, featureid text), wird nach Import des Layers delete aufgerufen
 
 --  VERSIONS-NUMMER:
 
@@ -4283,6 +4284,32 @@ COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig
 
 COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL)';
 COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
+
+
+--
+-- Funktion to run after import of the delete-Layer
+--
+CREATE FUNCTION deleteFeature(typename text, featureid text) RETURNS text 
+AS $$ 
+ DECLARE 
+  query text;
+  res text; 
+ BEGIN 
+     query := 'DELETE FROM ' || $1 || ' WHERE gml_id = ''' || $2 || '''';
+     EXECUTE query;
+     query := 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || $2 || ''' OR beziehung_zu = ''' || $2 || '''';
+     EXECUTE query;
+
+     IF FOUND THEN 
+	RAISE NOTICE 'query successfull % ', query; 
+	res := 1;
+     ELSE 
+        RAISE NOTICE 'query no object found % ', query; 
+        res := 0;
+     END IF; 
+  RETURN res; 
+ END; 
+$$ LANGUAGE plpgsql; 
 
 --
 --          THE  (happy)  END
