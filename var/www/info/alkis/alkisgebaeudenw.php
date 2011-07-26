@@ -3,17 +3,9 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
 	Version:
-	15.09.2010  Function "buchungsart" durch JOIN ersetzt
-	21.09.2010  vergessenen Parameter &style und Kommentar entfernt
-	01.10.2010  Geschoss-Anzahl
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	25.01.2011  F.J.: Strassennamen zur Hausnummer
-					https://trac.wheregroup.com/PostNAS/ticket/6
-	26.01.2011  Space in leere td
-
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	07.02.2011 
+	07.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden	
+	
 	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
 		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
 */
@@ -102,7 +94,7 @@ echo "\n<table class='outer'>\n<tr>\n<td>";
 		echo "\n\t</tr>";
 		echo "\n\t<tr>";
 			echo "\n\t\t<td title='Gemarkung'>";
-			if  ($shaowkey) {
+			if  ($showkey) {
 				echo "<span class='key'>".$gmkgnr."</span><br>";
 			}
 			echo $gemkname."&nbsp;</td>";
@@ -153,8 +145,11 @@ $sqlg.="LEFT JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von ";
 $sqlg.="LEFT JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id ";
 // Straßen-Name
 $sqlg.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sqlg.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
-
+if ($dbvers=="05") {
+	$sqlg.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+} else { // ab PostNAS 06.
+	$sqlg.="AND l.lage=s.lage ";
+}
 // Alternativ zur Hauptgebaeude-Hausnummer auch die Nebengebaeude-Pseudo-Nummern suchen?
 // $sqlg.="LEFT JOIN ax_lagebezeichnungmitpseudonummer p ON ... ";
 // oder in Loop: Wenn HsNr leer ist, eine kurze Abfrage auf Nebengebäude-Nr.

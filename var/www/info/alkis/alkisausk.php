@@ -17,6 +17,7 @@
 	25.01.2011  F. Jäger: Adressen (Lage mit HsNr) zum FS anzeigen	
 					https://trac.wheregroup.com/PostNAS/ticket/6
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -139,7 +140,11 @@ echo "\n\t</p>\n</td>";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+if ($dbvers=="05") {
+	$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+} else { // ab PostNAS 0.6
+	$sql.="AND l.lage = s.lage ";
+}
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";

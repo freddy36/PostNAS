@@ -4,10 +4,11 @@
 	25.03.2011 Filter als Gemeinde-Liste
 	12.04.2011 epsg in Link, transform nur wenn notwendig
 	12.05.2011 Syntaxfehler in SQL
+	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 */
 import_request_variables("PG");
-include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
-$con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname);
+include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
+$con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">

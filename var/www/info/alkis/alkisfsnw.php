@@ -5,21 +5,16 @@
 	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
 	Version:
-	30.09.2010  noprint
-	09.11.2010  Nutzung, ehem. php-Functions hier integriert
-	10.11.2010  Felder nutzung.zustand und nutzung.name
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	04.01.2011  Frank Jäger: verkuerzte Nutzungsart-Zeilen mit Icon. Tabelle Gebiet/Lage/Nutzung 4spaltig.
-	05.01.2011  Korrektur der Fallunterscheidung "Funktion", auch "Vegetationsmerkmal", Title auf "Zustand".
-	26.01.2011  Space in leere td
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
+	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
+	26.07.2011  debug	
+	
 	ToDo:
+	- Nach Umstellung auf PostNAS 0.6 die Sonderbehandlung Version 0.5 entfernen 
 	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
-ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
+//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
 require_once("alkis_conf_location.php");
@@ -63,6 +58,7 @@ if ($keys == "j") {
 }
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
+if ($debug > 1) {echo "<p class='err'>DB=".$dbname.", user=".$dbuser."</p>";}
 
 // F L U R S T U E C K
 $sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, f.zeitpunktderentstehung, ";
@@ -88,7 +84,7 @@ if ($row = pg_fetch_array($res)) {
 	$flae=number_format($row["amtlicheflaeche"],0,",",".") . " m&#178;";
 } else {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
-	//echo "<p class='err'>SQL=".$sql."</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = ".$gmlid."</p>";}
 }
 // Balken
 if ($eig=="j") {
@@ -184,22 +180,16 @@ $sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
 $sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+if ($dbvers=="05") { // 25.07.11
+	$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+} else { // ab PostNAS 0.6
+	$sql.="AND l.lage = s.lage ";
+}
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
-
 // Theoretisch JOIN notwendig über den kompletten Schlüssel bestehend aus land+regierungsbezirk+kreis+gemeinde+lage
 // bei einem Sekundärbestand für eine Gemeinde oder einen Kreis reicht dies hier:
-
-//$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-// Problem: ax_lagebezeichnungkatalogeintrag.lage  ist char,
-//          ax_lagebezeichnungmithausnummer.lage   ist integer,
-
-// cast() scheitert weil auch nicht numerische Inhalte
-//$sql.="JOIN  ax_lagebezeichnungkatalogeintrag s ON l.gemeinde=s.gemeinde AND l.lage=cast(s.lage AS integer) ";
-
-// http://www.postgresql.org/docs/8.3/static/functions-formatting.html
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -221,7 +211,9 @@ while($row = pg_fetch_array($res)) {
 		}
 		echo $sname."&nbsp;".$row["hausnummer"]."</td>";
 		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
+			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"];
+			if ($showkey) {echo "&amp;showkey=j";}
+			echo "'>Lage ";
 			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
 		echo "\n\t\t</p>\n\t</td>";
 	echo "\n</tr>";
@@ -236,12 +228,11 @@ $sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=v.beziehung_zu ";
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-//	$sql.="AND l.lage=s.lage ";
-// hier beide .lage als Char(5)
-//  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
-//  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
-$sql.="AND l.lage::text=trim(leading '0' from s.lage) ";
-//	$sql.="AND cast(l.lage AS integer)=cast(s.lage AS integer) "; // Fehlversuch, auch nicht-numerische Inhalte
+if ($dbvers=="05") {
+	$sql.="AND l.lage::text=trim(leading '0' from s.lage) ";
+} else { // ab PostNAS 0.6
+	$sql.="AND l.lage = s.lage ";
+}
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
 $v = array($gmlid);
@@ -260,8 +251,9 @@ while($row = pg_fetch_array($res)) {
 			echo "\n\t<td></td>";
 			echo "\n\t<td class='lr'>".$gewann."</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml."'>";
-				echo "\n\t\t\tLage <img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''></a>";
+				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml;
+				if ($showkey) {echo "&amp;showkey=j";}				
+				echo "'>\n\t\t\tLage <img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''></a>";
 			echo "\n\t\t</p>\n\t</td>";
 		echo "\n</tr>";
 	}
@@ -276,8 +268,9 @@ while($row = pg_fetch_array($res)) {
 			}
 			echo $row["bezeichnung"]."</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml."'>";
-				echo "\n\t\t\tLage <img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''>\n\t\t\t</a>";
+				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml;
+				if ($showkey) {echo "&amp;showkey=j";}				
+				echo "'>\n\t\t\tLage <img src='ico/Lage_an_Strasse.ico' width='16' height='16' alt=''>\n\t\t\t</a>";
 			echo "\n\t\t</p>\n\t</td>";
 		echo "\n</tr>";
 	}
@@ -413,8 +406,7 @@ echo "\n<tr>";
 	echo "\n\t<td>&nbsp;</td>\n\t<td>";
 		echo "\n\t\t<p class='nwlink noprint'>"; // Gebaeude-Verschneidung
 			echo "\n\t\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
-			if ($idanzeige) {echo "&amp;id=j";}
-			if ($showkey)   {echo "&amp;id=j";}
+			if ($idanzeige) {echo "&amp;id=j";}			if ($showkey) {echo "&amp;showkey=j";}
 			echo "' title='Geb&auml;udenachweis'>Geb&auml;ude <img src='ico/Haus.ico' width='16' height='16' alt=''></a>";
 		echo "\n\t\t</p>";
 	echo "\n\t</td>";

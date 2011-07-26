@@ -11,14 +11,14 @@
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	07.02.2011  JOIN ax_gemeinde auch ueber regierungsbezirk
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
+	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 	ToDo: Entschluesseln Kreis usw.
 */
-ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
+//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {
-	// Bindung an Mapbender-Authentifizierung
+if ($auth == "mapbender") { // Bindung an Mapbender-Authentifizierung
 	require_once($mapbender);
 }
 include("alkisfkt.php");
@@ -89,20 +89,26 @@ $sql.="FROM ".$tnam." l ";
 $sql.="LEFT JOIN ax_gemeinde g ON l.land=g.land AND l.regierungsbezirk=g.regierungsbezirk AND l.kreis=g.kreis AND l.gemeinde=g.gemeinde ";
 $sql.="LEFT JOIN ax_kreisregion k ON l.land=k.land AND l.regierungsbezirk=k.regierungsbezirk AND l.kreis=k.kreis ";
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ";
-// Besonderheit: unterschiedliche Feldformate und Fuellungen!!!
-switch ($ltyp) {
-	case "o": //"Ohne HsNr"
-		// hier beide .lage als Char(5)
-		//  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
-		//  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
-		$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=trim(leading '0' from s.lage) ";
-	break;
-	default: // "Mit HsNr" + "mit PseudoNr"
-		// ax_LagebezeichnungKatalogeintrag.lage   ist char,
-		// ax_LagebezeichnungMitHausnummer.lage    ist integer,
-		// ax_lagebezeichnungMitPseudonummer.lage  ist integer,
-		$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
-	break;
+
+if ($dbvers == "05") { // bis PostNAS 0.5
+	// Besonderheit: unterschiedliche Feldformate und Fuellungen!!!
+	// +++ Nach vollstaendiger Umstellung diesen Programmteil entfernen 
+	switch ($ltyp) {
+		case "o": //"Ohne HsNr"
+			// hier beide .lage als Char(5)
+			//  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
+			//  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
+			$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=trim(leading '0' from s.lage) ";
+		break;
+		default: // "Mit HsNr" + "mit PseudoNr"
+			// ax_LagebezeichnungKatalogeintrag.lage   ist char,
+			// ax_LagebezeichnungMitHausnummer.lage    ist integer,
+			// ax_lagebezeichnungMitPseudonummer.lage  ist integer,
+			$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
+		break;
+	}
+} else { // ab PostNAS 0.6 char(5) mit fuehr.Nullen
+	$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 }
 $sql.="WHERE l.gml_id= $1;";
 

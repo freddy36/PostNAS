@@ -10,14 +10,8 @@
 	Dies ist eine Variante von alkisausk.ph 
 	 welches als vollstaendige Seite aufgerufen wird.
 
-	Version:
-	11.10.2010  Umbau alkisausk zu inlay-Version
-	12.10.2010  korrekturen
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	25.01.2011  F. Jäger: Adressen (Lage mit HsNr) zum FS anzeigen	
-					https://trac.wheregroup.com/PostNAS/ticket/6
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	Version:	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 
 	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
 */
@@ -110,7 +104,11 @@ echo "\n\t</p>\n</td>";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+if ($dbvers=="05") {
+	$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
+} else { // ab PostNAS 0.6
+	$sql.="AND l.lage=s.lage ";
+}
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";

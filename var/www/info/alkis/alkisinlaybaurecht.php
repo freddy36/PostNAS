@@ -2,11 +2,9 @@
 /*	alkisinlaybaurecht.php - Inlay fuer Template: Baurecht
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
-	Version:	21.09.2010  Neu
-	22.09.2010  Feintuning, sql-Limit
-	11.10.2010  simplify Geometrie: Schwellwert Verschneidung Flaeche>0 anpassen
-	14.12.2010  Pfad zur Conf
+	Version:
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	26.07.2011  debug	
 */
 ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
@@ -35,6 +33,7 @@ if ($auth == "mapbender") {
 $gmlid=urldecode($_REQUEST["gmlid"]);
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
+if ($debug > 1) {echo "<p class='err'>DB=".$dbname.", user=".$dbuser."</p>";}
 
 // wie View "baurecht"
 $sql ="SELECT r.ogc_fid,  r.artderfestlegung as adfkey, r.name, r.stelle, r.bezeichnung AS rechtbez, ";
@@ -43,16 +42,15 @@ $sql.="round(st_area(r.wkb_geometry)::numeric,0) AS flae ";
 $sql.="FROM ax_bauraumoderbodenordnungsrecht r ";
 $sql.="LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung = a.wert ";
 $sql.="LEFT JOIN ax_dienststelle d ON r.land = d.land AND r.stelle = d.stelle ";
-$sql.="WHERE r.gml_id= $1;";
+$sql.="WHERE r.gml_id= $1 ;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
 
 if (!$res) {
-	echo "\n<p class='err'>Fehler bei Baurecht:<br>";
-	echo "\n<br>SQL=<br>\n".$sql;
-	echo "\n</p>\n";
+	echo "\n<p class='err'>Fehler bei Baurecht.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = ".$gmlid."</p>\n";}
 }
 echo "\n<h2><img src='ico/Gericht.ico' width='16' height='16' alt=''> Bau-, Raum- oder Bodenordnungsrecht</h2>\n";
 

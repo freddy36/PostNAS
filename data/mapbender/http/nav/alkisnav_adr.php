@@ -4,11 +4,15 @@
 	25.03.2011: parameter &gemeinde= auch als Liste moeglich
 	z.B. Wasserverband zustaendig fuer: &gemeinde=12,20,24,28,32
 	11.04.2011 epsg in Link, transform nur wenn notwendig
+	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
+
+	ToDo: Mouse-Over in Straßenliste soll Position zeigen,
+		dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
-$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
-$con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname);
+$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
+$con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$$dbname.$dbvers.$gkz);
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -172,13 +176,16 @@ function suchHausZurStr($showParent){
 		$kreis=$row["kreis"];
 		$gemnd=$row["gemeinde"];
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
-		$nr=ltrim($row["lage"], "0");
+		if ($dbvers=="05") { // 2011-07-25
+			$nr=ltrim($row["lage"], "0");
+		} else { // >= PostNAS 0.6
+			$nr=$row["lage"];
+		}
 
 		if ($showParent) {
 			// eine Koordinate zur Strasse besorgen
 			// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
 			$sqlko ="SELECT ";		
-
 			if($epsg == "25832") { // Transform nicht notwendig
 				$sqlko.="x(st_Centroid(f.wkb_geometry)) AS x, ";
 				$sqlko.="y(st_Centroid(f.wkb_geometry)) AS y ";

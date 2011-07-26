@@ -2,11 +2,12 @@
 /* Version vom 
 	13.01.2011 
 	11.04.2011 epsg in Link, transform nur wenn notwendig
+	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
-$con_string = "host=".$host." port=".$port." dbname=".$dbname.$gkz." user=".$user." password=".$password;
-$con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindung zur Datenbank</p>".$dbname);
+$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
+$con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindung zur Datenbank</p>".$dbname.$dbvers.$gkz);
 // ToDo: Buchung zwischen Blatt und Flst?
 ?>
 
