@@ -10,6 +10,10 @@ CREATE TABLE alkis_beziehungen (
     beziehungsart character varying,
     beziehung_zu character varying
 );
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle - siehe ALKIS
+INSERT INTO geometry_columns
+   (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'alkis_beziehungen', 'dummy', 2, 25832, 'POINT');
 
 
 --
@@ -1725,6 +1729,10 @@ CREATE TABLE ax_kanal (
     schifffahrtskategorie integer
 );
 
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle - siehe ALKIS
+INSERT INTO geometry_columns
+   (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_kanal', 'dummy', 2, 25832, 'POINT');
 
 --
 -- TOC entry 2793 (class 1259 OID 69840)
@@ -2039,6 +2047,10 @@ CREATE TABLE ax_netzknoten (
     bezeichnung integer
 );
 
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle - siehe ALKIS
+INSERT INTO geometry_columns
+   (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_netzknoten', 'dummy', 2, 25832, 'POINT');
 
 --
 -- TOC entry 2729 (class 1259 OID 30542)
@@ -2580,6 +2592,12 @@ CREATE TABLE ax_strasse (
     fahrbahntrennung integer
 );
 
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle - siehe ALKIS
+INSERT INTO geometry_columns
+   (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_strasse', 'dummy', 2, 25832, 'POINT');
+
+
 
 --
 -- TOC entry 2727 (class 1259 OID 30531)
@@ -3075,6 +3093,10 @@ CREATE TABLE ax_wasserlauf (
     gewaesserkennzahl double precision
 );
 
+-- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle - siehe ALKIS
+INSERT INTO geometry_columns
+   (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_wasserlauf', 'dummy', 2, 25832, 'POINT');
 
 --
 -- TOC entry 2755 (class 1259 OID 30985)
