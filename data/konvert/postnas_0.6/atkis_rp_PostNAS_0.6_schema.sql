@@ -5391,3 +5391,83 @@ INSERT INTO geometry_columns VALUES ('', 'public', 'ax_bergbaubetrieb', 'wkb_geo
 -- PostgreSQL database dump complete
 --
 
+
+--create indexes for identifier
+CREATE INDEX ax_abschnitt_idx ON ax_abschnitt(gml_id);
+CREATE INDEX ax_ast_idx ON ax_ast(gml_id);
+CREATE INDEX ax_bahnstrecke_idx ON ax_bahnstrecke(gml_id);
+CREATE INDEX ax_bahnverkehr_idx ON ax_bahnverkehr(gml_id);
+CREATE INDEX ax_bahnverkehrsanlage_idx ON ax_bahnverkehrsanlage(gml_id);
+CREATE INDEX ax_bauwerkimgewaesserbereich_idx ON ax_bauwerkimgewaesserbereich(gml_id);
+CREATE INDEX ax_bauwerkimverkehrsbereich_idx ON ax_bauwerkimverkehrsbereich(gml_id);
+CREATE INDEX ax_bauwerkoderanlagefuerindustrieundgewerbe_idx ON ax_bauwerkoderanlagefuerindustrieundgewerbe(gml_id);
+CREATE INDEX ax_bauwerkoderanlagefuersportfreizeitunderholung_idx ON ax_bauwerkoderanlagefuersportfreizeitunderholung(gml_id);
+CREATE INDEX ax_bergbaubetrieb_idx ON ax_bergbaubetrieb(gml_id);
+CREATE INDEX ax_dammwalldeich_idx ON ax_dammwalldeich(gml_id);
+CREATE INDEX ax_denkmalschutzrecht_idx ON ax_denkmalschutzrecht(gml_id);
+CREATE INDEX ax_einrichtungenfuerdenschiffsverkehr_idx ON ax_einrichtungenfuerdenschiffsverkehr(gml_id);
+CREATE INDEX ax_fahrbahnachse_idx ON ax_fahrbahnachse(gml_id);
+CREATE INDEX ax_fahrwegachse_idx ON ax_fahrwegachse(gml_id);
+CREATE INDEX ax_felsenfelsblockfelsnadel_idx ON ax_felsenfelsblockfelsnadel(gml_id);
+CREATE INDEX ax_flaechebesondererfunktionalerpraegung_idx ON ax_flaechebesondererfunktionalerpraegung(gml_id);
+CREATE INDEX ax_flaechegemischternutzung_idx ON ax_flaechegemischternutzung(gml_id);
+CREATE INDEX ax_flaechezurzeitunbestimmbar_idx ON ax_flaechezurzeitunbestimmbar(gml_id);
+CREATE INDEX ax_fliessgewaesser_idx ON ax_fliessgewaesser(gml_id);
+CREATE INDEX ax_flugverkehr_idx ON ax_flugverkehr(gml_id);
+CREATE INDEX ax_flugverkehrsanlage_idx ON ax_flugverkehrsanlage(gml_id);
+CREATE INDEX ax_friedhof_idx ON ax_friedhof(gml_id);
+CREATE INDEX ax_gebaeude_idx ON ax_gebaeude(gml_id);
+CREATE INDEX ax_gebietsgrenze_idx ON ax_gebietsgrenze(gml_id);
+CREATE INDEX ax_gehoelz_idx ON ax_gehoelz(gml_id);
+CREATE INDEX ax_gewaesserachse_idx ON ax_gewaesserachse(gml_id);
+CREATE INDEX ax_gewaessermerkmal_idx ON ax_gewaessermerkmal(gml_id);
+CREATE INDEX ax_gewaesserstationierungsachse_idx ON ax_gewaesserstationierungsachse(gml_id);
+CREATE INDEX ax_hafen_idx ON ax_hafen(gml_id);
+CREATE INDEX ax_hafenbecken_idx ON ax_hafenbecken(gml_id);
+CREATE INDEX ax_halde_idx ON ax_halde(gml_id);
+CREATE INDEX ax_heide_idx ON ax_heide(gml_id);
+CREATE INDEX ax_historischesbauwerkoderhistorischeeinrichtung_idx ON ax_historischesbauwerkoderhistorischeeinrichtung(gml_id);
+CREATE INDEX ax_hoehleneingang_idx ON ax_hoehleneingang(gml_id);
+CREATE INDEX ax_industrieundgewerbeflaeche_idx ON ax_industrieundgewerbeflaeche(gml_id);
+CREATE INDEX ax_insel_idx ON ax_insel(gml_id);
+CREATE INDEX ax_kanal_idx ON ax_kanal(gml_id);
+CREATE INDEX ax_kommunalesgebiet_idx ON ax_kommunalesgebiet(gml_id);
+CREATE INDEX ax_kondominium_idx ON ax_kondominium(gml_id);
+CREATE INDEX ax_landwirtschaft_idx ON ax_landwirtschaft(gml_id);
+CREATE INDEX ax_leitung_idx ON ax_leitung(gml_id);
+CREATE INDEX ax_moor_idx ON ax_moor(gml_id);
+CREATE INDEX ax_naturumweltoderbodenschutzrecht_idx ON ax_naturumweltoderbodenschutzrecht(gml_id);
+CREATE INDEX ax_netzknoten_idx ON ax_netzknoten(gml_id);
+CREATE INDEX ax_nullpunkt_idx ON ax_nullpunkt(gml_id);
+CREATE INDEX ax_ortslage_idx ON ax_ortslage(gml_id);
+CREATE INDEX ax_platz_idx ON ax_platz(gml_id);
+CREATE INDEX ax_schifffahrtsliniefaehrverkehr_idx ON ax_schifffahrtsliniefaehrverkehr(gml_id);
+CREATE INDEX ax_schiffsverkehr_idx ON ax_schiffsverkehr(gml_id);
+CREATE INDEX ax_schleuse_idx ON ax_schleuse(gml_id);
+CREATE INDEX ax_seilbahnschwebebahn_idx ON ax_seilbahnschwebebahn(gml_id);
+CREATE INDEX ax_sonstigesbauwerkodersonstigeeinrichtung_idx ON ax_sonstigesbauwerkodersonstigeeinrichtung(gml_id);
+CREATE INDEX ax_sonstigesrecht_idx ON ax_sonstigesrecht(gml_id);
+CREATE INDEX ax_sportfreizeitunderholungsflaeche_idx ON ax_sportfreizeitunderholungsflaeche(gml_id);
+CREATE INDEX ax_stehendesgewaesser_idx ON ax_stehendesgewaesser(gml_id);
+CREATE INDEX ax_strasse_idx ON ax_strasse(gml_id);
+CREATE INDEX ax_strassenachse_idx ON ax_strassenachse(gml_id);
+CREATE INDEX ax_strassenverkehr_idx ON ax_strassenverkehr(gml_id);
+CREATE INDEX ax_strassenverkehrsanlage_idx ON ax_strassenverkehrsanlage(gml_id);
+CREATE INDEX ax_sumpf_idx ON ax_sumpf(gml_id);
+CREATE INDEX ax_tagebaugrubesteinbruch_idx ON ax_tagebaugrubesteinbruch(gml_id);
+CREATE INDEX ax_transportanlage_idx ON ax_transportanlage(gml_id);
+CREATE INDEX ax_turm_idx ON ax_turm(gml_id);
+CREATE INDEX ax_unlandvegetationsloseflaeche_idx ON ax_unlandvegetationsloseflaeche(gml_id);
+CREATE INDEX ax_vegetationsmerkmal_idx ON ax_vegetationsmerkmal(gml_id);
+CREATE INDEX ax_wald_idx ON ax_wald(gml_id);
+CREATE INDEX ax_wasserlauf_idx ON ax_wasserlauf(gml_id);
+CREATE INDEX ax_wasserspiegelhoehe_idx ON ax_wasserspiegelhoehe(gml_id);
+CREATE INDEX ax_wegpfadsteig_idx ON ax_wegpfadsteig(gml_id);
+CREATE INDEX ax_wohnbauflaeche_idx ON ax_wohnbauflaeche(gml_id);
+CREATE INDEX ax_wohnplatz_idx ON ax_wohnplatz(gml_id);
+
+CREATE INDEX alkis_beziehungen_von_idx ON alkis_beziehungen (beziehung_von);
+
+CREATE INDEX alkis_beziehungen_zu_idx ON alkis_beziehungen (beziehung_zu);
+
+
