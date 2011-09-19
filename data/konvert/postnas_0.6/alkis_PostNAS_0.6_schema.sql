@@ -27,23 +27,18 @@
 --  2010-11-17 Such-Index (fuer Navigation) auf LagebezeichnungOhneHausnummer und LagebezeichnungKatalogEintrag
 
 --  2011-02-02 Neue Tabellen:
---             "ax_historischesflurstueck", "ax_baublock", "ax_besondererhoehenpunkt",
---             "ax_einrichtunginoeffentlichenbereichen", "ax_flugverkehrsanlage", "ax_gebaeudeausgestaltung",
---             "ax_gelaendekante", "ax_heilquellegasquelle"
-
+--               "ax_historischesflurstueck", "ax_baublock", "ax_besondererhoehenpunkt",
+--               "ax_einrichtunginoeffentlichenbereichen", "ax_flugverkehrsanlage", "ax_gebaeudeausgestaltung",
+--               "ax_gelaendekante", "ax_heilquellegasquelle"
 --             ".. DROP CONSTRAINT enforce_geotype_wkb_geometry" fuer mehrere 
---             Tabellen mit mit "gemischter" Geometrie (aus Konvertierung NW18).
-
---             Neue Gruppe von Tabellen mit Prefix "aa_"
---             (Moeglicherweise nicht benoetigt)
-
+--               Tabellen mit mit "gemischter" Geometrie (aus Konvertierung NW18).
 --             Umsortierung: statt alphabetische Reihenfolge nun Sortierung nach *Objektartengruppen* laut GeoInfoDok
---             z.B.:
---             - Objektartengruppe: AAA_Praesentationsobjekte
---             - Objektartengruppe: Bauwerke und Einrichtungen in Siedlungsflächen
---             - Objektartengruppe: Bauwerke, Anlagen und Einrichtungen für den Verkehr
---             - Objektartengruppe: Angaben zum Flurstück
---             - Objektartengruppe: Angaben zur Lage
+--              z.B.:
+--               - Objektartengruppe: AAA_Praesentationsobjekte
+--               - Objektartengruppe: Bauwerke und Einrichtungen in Siedlungsflächen
+--               - Objektartengruppe: Bauwerke, Anlagen und Einrichtungen für den Verkehr
+--               - Objektartengruppe: Angaben zum Flurstück
+--               - Objektartengruppe: Angaben zur Lage
 
 --  2011-02-07 "gml_id" in fast allen Tabellen als UNIQUE INDEX
 
@@ -55,16 +50,37 @@
 --  2011-05-11 AE: "lage" einheitlich in character varying(5), 
 --             geändert siehe https://trac.wheregroup.com/PostNAS/ticket/9  
 --                            http://trac.osgeo.org/gdal/changeset/22336
---  2011-05-30  AE: constraints enforce_geotype_wkb_geometry für ax_klassifizierungnachwasserrecht, ax_klassifizierungnachstrassenrecht um MULTIPOLYGON erweitert
--- 2011-07-19 neue Funktion deleteFeature(typename text, featureid text), wird nach Import des Layers delete aufgerufen
--- 2011-08-04 Indizierung der gml_id (fuer NBA Verfahren)
--- 2011-08-04  Tabelle delete zhinzugefügt mit Dummy Geometrie für Tabelle delete
+--
+--  2011-05-30 AE: constraints enforce_geotype_wkb_geometry für ax_klassifizierungnachwasserrecht, 
+--             ax_klassifizierungnachstrassenrecht um MULTIPOLYGON erweitert
+--
+--  2011-07-19 AE: Neue Funktion deleteFeature(typename text, featureid text), 
+--             wird nach Import des Layers delete aufgerufen
+--
+--  2011-08-04 AE: Indizierung der gml_id (fuer NBA Verfahren)
+--
+--  2011-08-04 AE: Tabelle delete hinzugefügt mit Dummy Geometrie für Tabelle delete
+
+--  2011-09-18 AE: ax_besondereflurstuecksgrenze.ArtDerFlurstuecksgrenze als Array integer[]
+
+--  2011-09-19 FJ: Indizierung (im Block am Dateiende) wieder entfernt.
+--               Ein Index auf "gml_id" ist bereits in jeder Tabellendefinition enthalten.
+--             Die "constraint enforce_geotype_wkb_geometry" für folgende Tabellen 
+--               um MULTIPOLYGON erweitert statt wie bisher die constraint ganz zu löschen:
+--             - ax_denkmalschutzrecht
+--             - ax_musterlandesmusterundvergleichsstueck
+--             - ax_gebaeude
+--             - ax_historischesflurstueck
+--             - ax_naturumweltoderbodenschutzrecht
+--             - ax_schutzzone
+--             - ax_vorratsbehaelterspeicherbauwerk
+
 
 --  VERSIONS-NUMMER:
 
 --  Dies Schema kann nicht mehr mit der installierbaren gdal-Version 1.8 verwendet werden.
 --  Derzeit muss ogr2ogr (gdal) aus den Quellen compiliert werden, die o.g. Patch enthalten.
---  Weiterführung dieses Zweiges als PostNAS 0.6 ?
+--  Weiterführung dieses Zweiges als PostNAS 0.6
 
 
 -- Zur Datenstruktur siehe Dokument: 
@@ -117,7 +133,7 @@
 --  --  Krassowski        lat/lon  UTM                                 GK
 
 
--- COMMENT ON DATABASE *** IS 'ALKIS - PostNAS 0.5';
+-- COMMENT ON DATABASE *** IS 'ALKIS - PostNAS 0.6';
 
 -- ===========================================================
 --  A L K I S  -  L a y e r  -  in alphabetischer Reihenfolge
@@ -525,8 +541,14 @@ CREATE TABLE ax_denkmalschutzrecht (
 
 SELECT AddGeometryColumn('ax_denkmalschutzrecht','wkb_geometry','25832','POLYGON',2);
 
--- auch MULTIPOLYGON
-ALTER TABLE ax_denkmalschutzrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_denkmalschutzrecht 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_denkmalschutzrecht
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_denkmalschutzrecht_geom_idx  ON ax_denkmalschutzrecht  USING gist  (wkb_geometry);
 
@@ -728,8 +750,14 @@ CREATE TABLE ax_historischesflurstueck (
 
 SELECT AddGeometryColumn('ax_historischesflurstueck','wkb_geometry','25832','POLYGON',2);
 
--- POLYGON oder MULTIPOLYGON
-ALTER TABLE ax_historischesflurstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_historischesflurstueck 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_historischesflurstueck
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_historischesflurstueck_geom_idx ON ax_historischesflurstueck USING gist (wkb_geometry);
 
@@ -755,8 +783,14 @@ CREATE TABLE ax_naturumweltoderbodenschutzrecht (
 
 SELECT AddGeometryColumn('ax_naturumweltoderbodenschutzrecht','wkb_geometry','25832','POLYGON',2);
 
--- auch MULTIPOLYGON
-ALTER TABLE ax_naturumweltoderbodenschutzrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_naturumweltoderbodenschutzrecht 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_naturumweltoderbodenschutzrecht
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_naturumweltoderbodenschutzrecht_geom_idx
           ON ax_naturumweltoderbodenschutzrecht USING gist (wkb_geometry);
@@ -811,8 +845,14 @@ CREATE TABLE ax_schutzzone (
 
 SELECT AddGeometryColumn('ax_schutzzone','wkb_geometry','25832','POLYGON',2);
 
--- auch MULTIPOLYGON
-ALTER TABLE ax_schutzzone DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_schutzzone 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_schutzzone
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_schutzzone_geom_idx ON ax_schutzzone USING gist (wkb_geometry);
 
@@ -1098,7 +1138,7 @@ CREATE TABLE ax_besondereflurstuecksgrenze (
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
-	artderflurstuecksgrenze	integer[],
+	artderflurstuecksgrenze	integer[],  -- geaendert. 18.09.2011
 	CONSTRAINT ax_besondereflurstuecksgrenze_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1768,8 +1808,14 @@ CREATE TABLE ax_gebaeude (
 
 SELECT AddGeometryColumn('ax_gebaeude','wkb_geometry','25832','MULTIPOLYGON',2);
 
--- POLYGON und MULTIPOLYGON
-ALTER TABLE ax_gebaeude DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_gebaeude 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_gebaeude
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_gebaeude_geom_idx ON ax_gebaeude USING gist (wkb_geometry);
 
@@ -2848,6 +2894,15 @@ CREATE TABLE ax_vorratsbehaelterspeicherbauwerk (
 
 SELECT AddGeometryColumn('ax_vorratsbehaelterspeicherbauwerk','wkb_geometry','25832','POLYGON',2);
 
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_vorratsbehaelterspeicherbauwerk 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_vorratsbehaelterspeicherbauwerk
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
+
 CREATE INDEX ax_vorratsbehaelterspeicherbauwerk_geom_idx 
           ON ax_vorratsbehaelterspeicherbauwerk USING gist (wkb_geometry);
 
@@ -3618,10 +3673,14 @@ CREATE TABLE ax_klassifizierungnachstrassenrecht (
 
 SELECT AddGeometryColumn('ax_klassifizierungnachstrassenrecht','wkb_geometry','25832','POLYGON',2);
 
-ALTER TABLE ax_klassifizierungnachstrassenrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_klassifizierungnachstrassenrecht 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 ALTER TABLE ax_klassifizierungnachstrassenrecht
-  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text OR wkb_geometry IS NULL);
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 
 CREATE INDEX ax_klassifizierungnachstrassenrecht_geom_idx
@@ -3649,11 +3708,14 @@ CREATE TABLE ax_klassifizierungnachwasserrecht (
 
 SELECT AddGeometryColumn('ax_klassifizierungnachwasserrecht','wkb_geometry','25832','POLYGON',2);
 
-ALTER TABLE ax_klassifizierungnachwasserrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_klassifizierungnachwasserrecht 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 ALTER TABLE ax_klassifizierungnachwasserrecht
-  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text OR wkb_geometry IS NULL);
-
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_klassifizierungnachwasserrecht_geom_idx
           ON ax_klassifizierungnachwasserrecht USING gist (wkb_geometry);
@@ -3685,7 +3747,8 @@ CREATE TABLE ax_bauraumoderbodenordnungsrecht (
 SELECT AddGeometryColumn('ax_bauraumoderbodenordnungsrecht','wkb_geometry','25832','MULTIPOLYGON',2);
 
 -- verschiedene Goemetrie-Typen
-ALTER TABLE ax_bauraumoderbodenordnungsrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+ALTER TABLE ax_bauraumoderbodenordnungsrecht 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 CREATE INDEX ax_bauraumoderbodenordnungsrecht_geom_idx
           ON ax_bauraumoderbodenordnungsrecht USING gist (wkb_geometry);
@@ -3723,7 +3786,8 @@ CREATE TABLE ax_sonstigesrecht (
 
 SELECT AddGeometryColumn('ax_sonstigesrecht','wkb_geometry','25832','POLYGON',2);
 
-ALTER TABLE ax_sonstigesrecht DROP CONSTRAINT enforce_geotype_wkb_geometry;
+ALTER TABLE ax_sonstigesrecht 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
 CREATE INDEX ax_sonstigesrecht_geom_idx
           ON ax_sonstigesrecht USING gist (wkb_geometry);
@@ -3761,10 +3825,16 @@ CREATE TABLE ax_bodenschaetzung (
 	CONSTRAINT ax_bodenschaetzung_pk PRIMARY KEY (ogc_fid)
 );
 
-SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry','25832','POLYGON',2);
 
--- POLYGON und MULTIPOLYGON
-ALTER TABLE ONLY ax_bodenschaetzung DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+ALTER TABLE ax_bodenschaetzung 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_bodenschaetzung
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_bodenschaetzung_geom_idx
           ON ax_bodenschaetzung USING gist (wkb_geometry);
@@ -3801,8 +3871,15 @@ CREATE TABLE ax_musterlandesmusterundvergleichsstueck (
 
 SELECT AddGeometryColumn('ax_musterlandesmusterundvergleichsstueck','wkb_geometry','25832','POLYGON',2);
 
--- POLYGON  und POINT
-ALTER TABLE ax_musterlandesmusterundvergleichsstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
+-- auf MULTIPOLYGON erweitern
+-- es kommt auch POINT vor !?
+ALTER TABLE ax_musterlandesmusterundvergleichsstueck 
+  DROP CONSTRAINT enforce_geotype_wkb_geometry;
+
+ALTER TABLE ax_musterlandesmusterundvergleichsstueck
+  ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
+                                                  OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+                                                  OR wkb_geometry IS NULL);
 
 CREATE INDEX ax_musterlandesmusterundvergleichsstueck_geom_idx
           ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
@@ -4326,127 +4403,10 @@ AS $$
  END; 
 $$ LANGUAGE plpgsql; 
 
---
+
 -- Indizierung
---
-CREATE INDEX aa_aktivitaet_idx ON aa_aktivitaet(gml_id);
-CREATE INDEX aa_antrag_idx ON aa_antrag(gml_id);
-CREATE INDEX aa_antragsgebiet_idx ON aa_antragsgebiet(gml_id);
-CREATE INDEX aa_meilenstein_idx ON aa_meilenstein(gml_id);
-CREATE INDEX aa_projektsteuerung_idx ON aa_projektsteuerung(gml_id);
-CREATE INDEX aa_vorgang_idx ON aa_vorgang(gml_id);
-CREATE INDEX ap_darstellung_idx ON ap_darstellung(gml_id);
-CREATE INDEX ap_lpo_idx ON ap_lpo(gml_id);
-CREATE INDEX ap_lto_idx ON ap_lto(gml_id);
-CREATE INDEX ap_ppo_idx ON ap_ppo(gml_id);
-CREATE INDEX ap_pto_idx ON ap_pto(gml_id);
-CREATE INDEX ax_anderefestlegungnachwasserrecht_idx ON ax_anderefestlegungnachwasserrecht(gml_id);
-CREATE INDEX ax_anschrift_idx ON ax_anschrift(gml_id);
-CREATE INDEX ax_aufnahmepunkt_idx ON ax_aufnahmepunkt(gml_id);
-CREATE INDEX ax_bahnverkehr_idx ON ax_bahnverkehr(gml_id);
-CREATE INDEX ax_bahnverkehrsanlage_idx ON ax_bahnverkehrsanlage(gml_id);
-CREATE INDEX ax_baublock_idx ON ax_baublock(gml_id);
-CREATE INDEX ax_bauraumoderbodenordnungsrecht_idx ON ax_bauraumoderbodenordnungsrecht(gml_id);
-CREATE INDEX ax_bauteil_idx ON ax_bauteil(gml_id);
-CREATE INDEX ax_bauwerkimgewaesserbereich_idx ON ax_bauwerkimgewaesserbereich(gml_id);
-CREATE INDEX ax_bauwerkimverkehrsbereich_idx ON ax_bauwerkimverkehrsbereich(gml_id);
-CREATE INDEX ax_bauwerkoderanlagefuerindustrieundgewerbe_idx ON ax_bauwerkoderanlagefuerindustrieundgewerbe(gml_id);
-CREATE INDEX ax_bauwerkoderanlagefuersportfreizeitunderholung_idx ON ax_bauwerkoderanlagefuersportfreizeitunderholung(gml_id);
-CREATE INDEX ax_bergbaubetrieb_idx ON ax_bergbaubetrieb(gml_id);
-CREATE INDEX ax_besondereflurstuecksgrenze_idx ON ax_besondereflurstuecksgrenze(gml_id);
-CREATE INDEX ax_besonderegebaeudelinie_idx ON ax_besonderegebaeudelinie(gml_id);
-CREATE INDEX ax_besondererbauwerkspunkt_idx ON ax_besondererbauwerkspunkt(gml_id);
-CREATE INDEX ax_besonderergebaeudepunkt_idx ON ax_besonderergebaeudepunkt(gml_id);
-CREATE INDEX ax_besondererhoehenpunkt_idx ON ax_besondererhoehenpunkt(gml_id);
-CREATE INDEX ax_besonderertopographischerpunkt_idx ON ax_besonderertopographischerpunkt(gml_id);
-CREATE INDEX ax_bewertung_idx ON ax_bewertung(gml_id);
-CREATE INDEX ax_bodenschaetzung_idx ON ax_bodenschaetzung(gml_id);
-CREATE INDEX ax_boeschungkliff_idx ON ax_boeschungkliff(gml_id);
-CREATE INDEX ax_boeschungsflaeche_idx ON ax_boeschungsflaeche(gml_id);
-CREATE INDEX ax_buchungsblatt_idx ON ax_buchungsblatt(gml_id);
-CREATE INDEX ax_buchungsblattbezirk_idx ON ax_buchungsblattbezirk(gml_id);
-CREATE INDEX ax_buchungsstelle_idx ON ax_buchungsstelle(gml_id);
-CREATE INDEX ax_bundesland_idx ON ax_bundesland(gml_id);
-CREATE INDEX ax_dammwalldeich_idx ON ax_dammwalldeich(gml_id);
-CREATE INDEX ax_denkmalschutzrecht_idx ON ax_denkmalschutzrecht(gml_id);
-CREATE INDEX ax_dienststelle_idx ON ax_dienststelle(gml_id);
-CREATE INDEX ax_einrichtunginoeffentlichenbereichen_idx ON ax_einrichtunginoeffentlichenbereichen(gml_id);
-CREATE INDEX ax_felsenfelsblockfelsnadel_idx ON ax_felsenfelsblockfelsnadel(gml_id);
-CREATE INDEX ax_firstlinie_idx ON ax_firstlinie(gml_id);
-CREATE INDEX ax_flaechebesondererfunktionalerpraegung_idx ON ax_flaechebesondererfunktionalerpraegung(gml_id);
-CREATE INDEX ax_flaechegemischternutzung_idx ON ax_flaechegemischternutzung(gml_id);
-CREATE INDEX ax_fliessgewaesser_idx ON ax_fliessgewaesser(gml_id);
-CREATE INDEX ax_flugverkehr_idx ON ax_flugverkehr(gml_id);
-CREATE INDEX ax_flugverkehrsanlage_idx ON ax_flugverkehrsanlage(gml_id);
-CREATE INDEX ax_flurstueck_idx ON ax_flurstueck(gml_id);
-CREATE INDEX ax_friedhof_idx ON ax_friedhof(gml_id);
-CREATE INDEX ax_gebaeude_idx ON ax_gebaeude(gml_id);
-CREATE INDEX ax_gebaeudeausgestaltung_idx ON ax_gebaeudeausgestaltung(gml_id);
-CREATE INDEX ax_gehoelz_idx ON ax_gehoelz(gml_id);
-CREATE INDEX ax_gelaendekante_idx ON ax_gelaendekante(gml_id);
-CREATE INDEX ax_gemarkung_idx ON ax_gemarkung(gml_id);
-CREATE INDEX ax_gemarkungsteilflur_idx ON ax_gemarkungsteilflur(gml_id);
-CREATE INDEX ax_gemeinde_idx ON ax_gemeinde(gml_id);
-CREATE INDEX ax_georeferenziertegebaeudeadresse_idx ON ax_georeferenziertegebaeudeadresse(gml_id);
-CREATE INDEX ax_gewaessermerkmal_idx ON ax_gewaessermerkmal(gml_id);
-CREATE INDEX ax_gleis_idx ON ax_gleis(gml_id);
-CREATE INDEX ax_grablochderbodenschaetzung_idx ON ax_grablochderbodenschaetzung(gml_id);
-CREATE INDEX ax_grenzpunkt_idx ON ax_grenzpunkt(gml_id);
-CREATE INDEX ax_hafenbecken_idx ON ax_hafenbecken(gml_id);
-CREATE INDEX ax_halde_idx ON ax_halde(gml_id);
-CREATE INDEX ax_heide_idx ON ax_heide(gml_id);
-CREATE INDEX ax_heilquellegasquelle_idx ON ax_heilquellegasquelle(gml_id);
-CREATE INDEX ax_historischesbauwerkoderhistorischeeinrichtung_idx ON ax_historischesbauwerkoderhistorischeeinrichtung(gml_id);
-CREATE INDEX ax_historischesflurstueck_idx ON ax_historischesflurstueck(gml_id);
-CREATE INDEX ax_historischesflurstueckalb_idx ON ax_historischesflurstueckalb(gml_id);
-CREATE INDEX ax_industrieundgewerbeflaeche_idx ON ax_industrieundgewerbeflaeche(gml_id);
-CREATE INDEX ax_klassifizierungnachstrassenrecht_idx ON ax_klassifizierungnachstrassenrecht(gml_id);
-CREATE INDEX ax_klassifizierungnachwasserrecht_idx ON ax_klassifizierungnachwasserrecht(gml_id);
-CREATE INDEX ax_kleinraeumigerlandschaftsteil_idx ON ax_kleinraeumigerlandschaftsteil(gml_id);
-CREATE INDEX ax_kommunalesgebiet_idx ON ax_kommunalesgebiet(gml_id);
-CREATE INDEX ax_kreisregion_idx ON ax_kreisregion(gml_id);
-CREATE INDEX ax_lagebezeichnungkatalogeintrag_idx ON ax_lagebezeichnungkatalogeintrag(gml_id);
-CREATE INDEX ax_lagebezeichnungmithausnummer_idx ON ax_lagebezeichnungmithausnummer(gml_id);
-CREATE INDEX ax_lagebezeichnungmitpseudonummer_idx ON ax_lagebezeichnungmitpseudonummer(gml_id);
-CREATE INDEX ax_lagebezeichnungohnehausnummer_idx ON ax_lagebezeichnungohnehausnummer(gml_id);
-CREATE INDEX ax_landwirtschaft_idx ON ax_landwirtschaft(gml_id);
-CREATE INDEX ax_leitung_idx ON ax_leitung(gml_id);
-CREATE INDEX ax_meer_idx ON ax_meer(gml_id);
-CREATE INDEX ax_moor_idx ON ax_moor(gml_id);
-CREATE INDEX ax_musterlandesmusterundvergleichsstueck_idx ON ax_musterlandesmusterundvergleichsstueck(gml_id);
-CREATE INDEX ax_namensnummer_idx ON ax_namensnummer(gml_id);
-CREATE INDEX ax_naturumweltoderbodenschutzrecht_idx ON ax_naturumweltoderbodenschutzrecht(gml_id);
-CREATE INDEX ax_person_idx ON ax_person(gml_id);
-CREATE INDEX ax_platz_idx ON ax_platz(gml_id);
-CREATE INDEX ax_punktortag_idx ON ax_punktortag(gml_id);
-CREATE INDEX ax_punktortau_idx ON ax_punktortau(gml_id);
-CREATE INDEX ax_punktortta_idx ON ax_punktortta(gml_id);
-CREATE INDEX ax_regierungsbezirk_idx ON ax_regierungsbezirk(gml_id);
-CREATE INDEX ax_schiffsverkehr_idx ON ax_schiffsverkehr(gml_id);
-CREATE INDEX ax_schutzgebietnachwasserrecht_idx ON ax_schutzgebietnachwasserrecht(gml_id);
-CREATE INDEX ax_schutzzone_idx ON ax_schutzzone(gml_id);
-CREATE INDEX ax_sonstigervermessungspunkt_idx ON ax_sonstigervermessungspunkt(gml_id);
-CREATE INDEX ax_sonstigesbauwerkodersonstigeeinrichtung_idx ON ax_sonstigesbauwerkodersonstigeeinrichtung(gml_id);
-CREATE INDEX ax_sonstigesrecht_idx ON ax_sonstigesrecht(gml_id);
-CREATE INDEX ax_sportfreizeitunderholungsflaeche_idx ON ax_sportfreizeitunderholungsflaeche(gml_id);
-CREATE INDEX ax_stehendesgewaesser_idx ON ax_stehendesgewaesser(gml_id);
-CREATE INDEX ax_strassenverkehr_idx ON ax_strassenverkehr(gml_id);
-CREATE INDEX ax_strassenverkehrsanlage_idx ON ax_strassenverkehrsanlage(gml_id);
-CREATE INDEX ax_sumpf_idx ON ax_sumpf(gml_id);
-CREATE INDEX ax_tagebaugrubesteinbruch_idx ON ax_tagebaugrubesteinbruch(gml_id);
-CREATE INDEX ax_topographischelinie_idx ON ax_topographischelinie(gml_id);
-CREATE INDEX ax_transportanlage_idx ON ax_transportanlage(gml_id);
-CREATE INDEX ax_turm_idx ON ax_turm(gml_id);
-CREATE INDEX ax_unlandvegetationsloseflaeche_idx ON ax_unlandvegetationsloseflaeche(gml_id);
-CREATE INDEX ax_untergeordnetesgewaesser_idx ON ax_untergeordnetesgewaesser(gml_id);
-CREATE INDEX ax_vegetationsmerkmal_idx ON ax_vegetationsmerkmal(gml_id);
-CREATE INDEX ax_vorratsbehaelterspeicherbauwerk_idx ON ax_vorratsbehaelterspeicherbauwerk(gml_id);
-CREATE INDEX ax_wald_idx ON ax_wald(gml_id);
-CREATE INDEX ax_weg_idx ON ax_weg(gml_id);
-CREATE INDEX ax_wegpfadsteig_idx ON ax_wegpfadsteig(gml_id);
-CREATE INDEX ax_wohnbauflaeche_idx ON ax_wohnbauflaeche(gml_id);
-CREATE INDEX ax_wohnplatz_idx ON ax_wohnplatz(gml_id);
-CREATE INDEX ks_sonstigesbauwerk_idx ON ks_sonstigesbauwerk(gml_id);
+-- F.J.: Den Abschnitt entfernt am 19.09.2011
+-- Die Tabellen sind bereits mit einem UNIQUE INDEX auf "gml_id" versehen:
 
 --
 --          THE  (happy)  END
