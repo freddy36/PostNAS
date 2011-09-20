@@ -1229,6 +1229,7 @@ CREATE TABLE ax_gewaesserachse (
     advstandardmodell character varying[],
     art character(16),
     name character(11),
+    unverschluesselt character(200),
     istteilvon character varying,
     breitedesgewaessers integer,
     fliessrichtung character(5),
@@ -2542,6 +2543,8 @@ CREATE TABLE ax_stehendesgewaesser (
     advstandardmodell character varying[],
     art character(16),
     name character(11),
+    name_ character(200),
+    unverschluesselt character(200),
     CONSTRAINT enforce_dims_wkb_geometry CHECK ((st_ndims(wkb_geometry) = 2)),
     CONSTRAINT enforce_geotype_wkb_geometry CHECK (((geometrytype(wkb_geometry) = 'POLYGON'::text) OR (wkb_geometry IS NULL))),
     CONSTRAINT enforce_srid_wkb_geometry CHECK ((st_srid(wkb_geometry) = 25832))
@@ -3090,6 +3093,7 @@ CREATE TABLE ax_wasserlauf (
     art character(16),
     name character(11),
     name_ character(200), --20
+    unverschluesselt character(200), --null
     gewaesserkennzahl double precision
 );
 
