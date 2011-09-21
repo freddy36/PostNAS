@@ -28,6 +28,8 @@
 ##       Wahrscheinlich nicht, wie heisst dann die *.gfs?
 ##
 ##  ##  2011-07-25 PostNAS 06, Umbenennung
+##  ##  2011-09-20 Verarbeiten der delete-Eintraege bei Aktualisierung.
+##                 Siehe http://trac.wheregroup.com/PostNAS/wiki/SchrittfuerSchritt
 ##
 ## Konverter:   /opt/gdal-1.9/bin/ = GDAL 1.9 / PostNAS 0.6
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -86,6 +88,10 @@ else
 fi
 layer=""
 # leer = alle Layer
+#
+# DB-Connection
+con="-p 5432 -d ${DBNAME} "
+#
   echo "Datenbank-Name . . = ${DBNAME}"
   echo "Ordner NAS-Daten . = ${ORDNER}"
   echo "Datenbank-User . . = ${DBUSER}"
@@ -95,28 +101,63 @@ layer=""
   rm ../temp/*.gfs
   echo "Dateien in " ${ORDNER} " (ls) :"
   ls
+  # Alte delete-Eintraege (vorangegangener Abbruch?) loeschen, oder abarbeiten?
+  echo 'TRUNCATE table "delete";' | psql $con -U ${DBUSER}
+  #
 # for zipfile in ${ORDNER}/*.xml.zip ; do 
   for zipfile in *.zip               ; do 
     echo " "
-    echo "*******"
+    echo "*********"
     echo "* Archiv: " $zipfile
     rm ../temp/*.xml
     unzip ${zipfile}  -d ../temp
+ 
+    # Es sollte eigentlich immer geneu ein XML-File in jedem ZIP-File stecken,
+    # aber es geht auch anders.
     for nasdatei in ../temp/*.xml ; do 
       echo "* Datei:  " $nasdatei
       # Zwischenueberschrift im Fehlerprotokoll
       echo "* Datei: " $nasdatei >> $errprot
       # Groesse und Datum anzeigen
       #ls -l ${nasdatei}
-      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-        PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
-        -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
-      # Abbruch bei Fehler?
-      nasresult=$?
-      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+      if [ $UPD = "e" ]
+      then
+        # E R S T L A D E N
+        /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+           PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+           -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
+        # Abbruch bei Fehler?
+        nasresult=$?
+        echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+      else
+        # A K T U A L I S I E R U N G
+        echo "- 1. Nur delete-Layer auswerten" 
+        /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+           PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+           -a_srs EPSG:25832  ${nasdatei}  delete  2>> $errprot
+        nasresult=$?
+        echo "* Resultat: " $nasresult " fuer delete aus " ${nasdatei}
+        #
+        # Durch die Funktion 'deleteFeature' in der Datenbank die delete-Objekte abarbeiten
+        echo "- 1a. delete-Layer abarbeiten:"
+        psql $con -U ${DBUSER}  < /data/konvert/postnas_0.6/delete.sql
+        #
+        echo "- 2. alle Layer auswerten"
+        /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+          PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+          -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
+        nasresult=$?
+        echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+        #
+        echo "- 2a. delete-Layer nochmals leoeschen:"
+        echo 'TRUNCATE table "delete";' | psql $con -U ${DBUSER}
+      fi
     done
+    # Ende Zipfile
+    echo "*********"
   done
   rm ../temp/*.xml
+  echo " "
   echo "** Ende Konvertierung Ordner ${ORDNER}"
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei " $errprot
 ##
