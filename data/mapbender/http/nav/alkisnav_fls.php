@@ -5,6 +5,7 @@
 	12.04.2011 epsg in Link, transform nur wenn notwendig
 	12.05.2011 Syntaxfehler in SQL
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
+	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
@@ -325,8 +326,8 @@ function EineFlur() {
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 			echo "\n\t</a> ";			
 			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-				echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
-				echo "parent.parent.hideHighlight();' ";
+					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
+					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()'>&nbsp;".$fskenn."&nbsp;</a>";
 		echo "\n</div>";
@@ -380,8 +381,8 @@ function EinFlurstueck() {
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 			echo "\n\t</a> ";		
 			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-				echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
-				echo "parent.parent.hideHighlight();' ";
+					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
+					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()'>";
 			echo $gmkg." ".$flur."-".$fskenn."</a>";

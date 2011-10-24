@@ -4,6 +4,7 @@
 	12.04.2011 epsg in Link, transform nur wenn notwendig, 
 	neue Suchstrategie bei Leer-Eingabe (Liste Amtsgerichte), Icon GB-Bez.
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
+	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
@@ -427,21 +428,16 @@ function EinGrundstueck($showParent) {
 	}
 	// +++ Ermitteln anderer Buchungsstellen mit Rechten an dieser
 	// +++ Ermitteln anderer Buchungsstellen wo diese Rechte hat
-
 	// +++ Filter "Gemeinde" berücksichtigt!! Wenn gesetzt.
 
 	// Buchungsstelle -> Flurstueck
 	$sql ="SELECT t.gemeinde, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
-
-	//	$sql.="x(st_transform (st_centroid(f.wkb_geometry),".$epsg.")) AS x, ";
-	//	$sql.="y(st_transform (st_centroid(f.wkb_geometry),".$epsg.")) AS y ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
 		$sql.="y(st_Centroid(f.wkb_geometry)) AS y ";
-	}
-	else {  
-		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
+	} else {  
+		$sql.="x(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS x, ";
+		$sql.="y(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS y ";			
 	}
 	$sql.="FROM ax_gemarkung g ";
 	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
@@ -477,8 +473,7 @@ function EinGrundstueck($showParent) {
 					echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 				echo "\n\t</a> ";
 				echo "\n\t".$gmkg." <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
-					echo "parent.parent.hideHighlight();' ";
+						echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";						echo "parent.parent.showHighlight(".$x.",".$y.")' ";
 					echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 					echo "onmouseout='parent.parent.hideHighlight()'>&nbsp;";
 				echo $flur."-".$fskenn."&nbsp;</a>";

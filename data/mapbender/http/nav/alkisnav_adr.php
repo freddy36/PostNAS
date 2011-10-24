@@ -5,6 +5,7 @@
 	z.B. Wasserverband zustaendig fuer: &gemeinde=12,20,24,28,32
 	11.04.2011 epsg in Link, transform nur wenn notwendig
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
+	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 
 	ToDo: Mouse-Over in Straßenliste soll Position zeigen,
 		dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
@@ -212,11 +213,10 @@ function suchHausZurStr($showParent){
 
 			echo "\n<div class='stu'>";		
 			if ($x > 0) { // Koord. bekommen?
-				echo "\n\t<a title='Positionieren 1:".$scalestr."' href='"; // mit Link
-					echo "javascript:parent.parent.hideHighlight();";
-					echo "\n\t\tparent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalestr.");";
-					echo "\n\t\tdocument.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$str_schl."\"' ";
-					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
+				echo "\n\t<a title='Positionieren 1:".$scalestr."' href='javascript:"; // mit Link
+						echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalestr."); ";
+						echo "parent.parent.showHighlight(".$x.",".$y."); ";
+						echo "document.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$str_schl."\"' ";					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
 					echo "\n\t\tonmouseout='parent.parent.hideHighlight()'";
 				echo ">\n\t\t".$sname." (".$nr.")\n\t</a>";
 			} else { // keine Koord. dazu gefunden
@@ -267,7 +267,7 @@ function suchHausZurStr($showParent){
 			echo "\n\t<td class='hsnr'>";
 				echo "<a href='";
 					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalehs."); ";
-					echo "parent.parent.hideHighlight();' ";
+					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()";
 				echo "'>".$nr."</a>";
