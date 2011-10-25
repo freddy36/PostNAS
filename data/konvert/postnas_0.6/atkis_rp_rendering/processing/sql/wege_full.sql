@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS map_wege_g0;
 --
 SELECT
-(ST_Dump(ST_LineMerge(ST_Collect(ST_SimplifyPreserveTopology(ax_fahrwegachse.wkb_geometry, 2.5))))).geom AS wkb_geometry, 
+(ST_Dump(ST_LineMerge(ST_Collect(ax_fahrwegachse.wkb_geometry)))).geom AS wkb_geometry, 
 NULL::text AS widmung
 INTO map_wege_g0
 FROM ax_fahrwegachse;
