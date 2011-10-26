@@ -1779,7 +1779,7 @@ CREATE TABLE ax_kommunalesgebiet (
     kreis integer,
     gemeinde integer,
     CONSTRAINT enforce_dims_wkb_geometry CHECK ((st_ndims(wkb_geometry) = 2)),
-    CONSTRAINT enforce_geotype_wkb_geometry CHECK (((geometrytype(wkb_geometry) = 'POLYGON'::text) OR (wkb_geometry IS NULL))),
+    --CONSTRAINT enforce_geotype_wkb_geometry CHECK (((geometrytype(wkb_geometry) = 'POLYGON'::text) OR (wkb_geometry IS NULL))),
     CONSTRAINT enforce_srid_wkb_geometry CHECK ((st_srid(wkb_geometry) = 25832))
 );
 
@@ -5323,7 +5323,7 @@ INSERT INTO geometry_columns VALUES ('', 'public', 'ax_fahrwegachse', 'wkb_geome
 INSERT INTO geometry_columns VALUES ('', 'public', 'ax_gebietsgrenze', 'wkb_geometry', 2, 25832, 'LINESTRING');
 INSERT INTO geometry_columns VALUES ('', 'public', 'ax_gewaesserachse', 'wkb_geometry', 2, 25832, 'LINESTRING');
 INSERT INTO geometry_columns VALUES ('', 'public', 'ax_historischesbauwerkoderhistorischeeinrichtung', 'wkb_geometry', 2, 25832, 'GEOMETRY');--LINESTRING
-INSERT INTO geometry_columns VALUES ('', 'public', 'ax_kommunalesgebiet', 'wkb_geometry', 2, 25832, 'POLYGON');
+INSERT INTO geometry_columns VALUES ('', 'public', 'ax_kommunalesgebiet', 'wkb_geometry', 2, 25832, 'GEOMETRY');--POLYGON
 INSERT INTO geometry_columns VALUES ('', 'public', 'ax_landwirtschaft', 'wkb_geometry', 2, 25832, 'POLYGON');
 INSERT INTO geometry_columns VALUES ('', 'public', 'ax_naturumweltoderbodenschutzrecht', 'wkb_geometry', 2, 25832, 'GEOMETRY');--POLYGON
 INSERT INTO geometry_columns VALUES ('', 'public', 'ax_wald', 'wkb_geometry', 2, 25832, 'POLYGON');
