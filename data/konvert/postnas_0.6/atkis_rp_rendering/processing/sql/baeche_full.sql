@@ -1,9 +1,14 @@
+DROP TABLE IF EXISTS ax_gewaesserachse_merged;
+--
+SELECT ax_gewaesserachse.wkb_geometry, ax_wasserlauf.name_ as widmung into ax_gewaesserachse_merged from ax_wasserlauf INNER JOIN alkis_beziehungen ON (alkis_beziehungen.beziehung_zu = ax_wasserlauf.gml_id) INNER JOIN ax_gewaesserachse ON 
+(ax_gewaesserachse.gml_id=alkis_beziehungen.beziehung_von);
+--
 DROP TABLE IF EXISTS map_baeche_g0;
 --
 SELECT (ST_Dump(ST_Linemerge(ST_Collect(ST_SimplifyPreserveTopology( wkb_geometry, 2.5 ))))).geom AS wkb_geometry,
-NULL::text AS widmung
+widmung
 INTO map_baeche_g0 
-FROM ax_gewaesserachse;
+FROM ax_gewaesserachse_merged GROUP BY ax_gewaesserachse_merged.widmung;
 --
 DROP SEQUENCE IF EXISTS map_baeche_g0_gid_seq;
 CREATE SEQUENCE map_baeche_g0_gid_seq;

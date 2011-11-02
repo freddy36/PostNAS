@@ -4,12 +4,12 @@ DROP SEQUENCE IF EXISTS map_stehendesgewaesser_g0_gid_seq;
 
 SELECT 
 wkb_geometry,
-NULL::text AS widmung
+widmung
 INTO map_stehendesgewaesser_g0 
 
 FROM (
-	SELECT (ST_Dump( ST_Union( ax_stehendesgewaesser.wkb_geometry ))).geom AS wkb_geometry
-	FROM ax_stehendesgewaesser
+	SELECT (ST_Dump( ST_Union( ax_stehendesgewaesser.wkb_geometry ))).geom AS wkb_geometry, unverschluesselt as widmung 
+	FROM ax_stehendesgewaesser GROUP BY widmung 
 ) AS wrapper; 
 --
 CREATE INDEX map_stehendesgewaesser_g0_gidx ON map_stehendesgewaesser_g0 USING GIST ( wkb_geometry ); 
