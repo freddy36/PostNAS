@@ -353,7 +353,7 @@
 --		antragsnummer character(18),
 --		auftragsnummer character(18),
 --		"gebietskennung|ax_reservierungsauftrag_gebietskennung|gemarkung" integer,
--		gemarkungsnummer integer,
+--		gemarkungsnummer integer,
 --		"gebietskennung|ax_reservierungsauftrag_gebietskennung|flur|ax_g" integer,
 --		gemarkung integer,
 --		gemarkungsteilflur integer,
