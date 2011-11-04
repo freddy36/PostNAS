@@ -4,14 +4,11 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Kann die 3 Arten von Lagebezeichnung anzeigen und verbundene Objekte verlinken
 
-	Version:	15.09.2010  Function "buchungsart" durch JOIN ersetzt
-	01.10.2010  Flaeche umgruppiert
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	07.02.2011  JOIN ax_gemeinde auch ueber regierungsbezirk
+	Version:
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
+	26.07.2011  debug, SQL nur im Testmodeus ausgeben
+
 	ToDo: Entschluesseln Kreis usw.
 */
 //ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
@@ -115,8 +112,10 @@ $sql.="WHERE l.gml_id= $1;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-
-if (!$res) echo "\n<p class='err'>Fehler bei Lagebezeichnung\n<br>".$sql."</p>\n";
+if (!$res) {
+	echo "\n<p class='err'>Fehler bei Lagebezeichnung.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 
 if ($row = pg_fetch_array($res)) {
 	$land =$row["land"];
@@ -250,8 +249,10 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	$v = array($gmlid,$bezart);
 	$resf = pg_prepare("", $sql);
 	$resf = pg_execute("", $v);
-
-	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck<br><br>".$sql."</p>\n";}
+	if (!$resf) {
+		echo "<p class='err'>Fehler bei Flurst&uuml;ck.</p>\n";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}	
+	}
 
 	echo "\n<table class='fs'>";
 	echo "\n<tr>"; // Kopfzeile der Tabelle
@@ -315,8 +316,10 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 			$v = array($land,$regbez,$kreis,$gem,$lage,$lage,$hsnr);
 			$res = pg_prepare("", $sql);
 			$res = pg_execute("", $v);
-
-			if (!$res) echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
+			if (!$res) {
+				echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
+				if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+			}
 			while($row = pg_fetch_array($res)) {
 				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
 			}
@@ -341,12 +344,13 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 			echo "\n<p>weitere Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
 			$sql.=$whereclaus."AND pseudonummer= $6 AND laufendenummer <> $7 ORDER BY laufendenummer;";
-
 			$v = array($land,$regbez,$kreis,$gem,$lage,$pseu,$lfd);
 			$res = pg_prepare("", $sql);
 			$res = pg_execute("", $v);
-
-			if (!$res) echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.<br>".$sql."</p>\n";
+			if (!$res) {
+				echo "\n<p class='err'>Fehler bei Nebengeb&auml;ude.</p>\n";
+				if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}			
+			}
 			while($row = pg_fetch_array($res)) {
 				echo "\n\t<a href='".$url.$row["gml_id"]."&amp;ltyp=p'>lfd.-Nr ".$row["laufendenummer"]."</a>&nbsp;&nbsp;";
 			}
@@ -381,12 +385,13 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	$sql.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 	$sql.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
 	$sql.="WHERE v.beziehung_zu= $1 AND v.beziehungsart= $2 ;";
-
 	$v = array($gmlid,$bezart);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
-
-	if (!$res) echo "<p class='err'>Fehler bei Gebaeude.<br>".$sql."</p>\n";
+	if (!$res) {
+		echo "<p class='err'>Fehler bei Gebaeude.</p>\n";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	}
 	$i=0;
 	while($row = pg_fetch_array($res)) { // Only You!
 		echo "<p>";

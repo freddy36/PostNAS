@@ -4,7 +4,8 @@
 
 	Version:
 	07.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden	
+	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
+	26.07.2011  debug, SQL nur im Testmodus anzeigen
 	
 	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
 		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
@@ -57,13 +58,12 @@ $sqlf.="g.gemarkungsnummer, g.bezeichnung ";
 $sqlf.="FROM ax_flurstueck f ";
 $sqlf.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sqlf.="WHERE f.gml_id= $1;";
-
 $v = array($gmlid);
 $resf = pg_prepare("", $sqlf);
 $resf = pg_execute("", $v);
-
 if (!$resf) {
-	echo "\n<p class='err'>Fehler bei Flurst&uuml;cksdaten\n<br>".$sqlf."</p>\n";
+	echo "\n<p class='err'>Fehler bei Flurst&uuml;cksdaten.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqlf."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 
 if ($rowf = pg_fetch_array($resf)) {
@@ -166,16 +166,14 @@ $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
 // RLP: keine Relationen zu Nebengebaeuden:
 // auf Qualifizierung verzichten, sonst werden Nebengebäude nicht angezeigt
 	//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
-
 $sqlg.="ORDER BY schnittflae DESC;";
 
 $v = array($gmlid);
 $resg = pg_prepare("", $sqlg);
 $resg = pg_execute("", $v);
-
 if (!$resg) {
-	echo "\n<p class='err'>Keine Geb&auml;ude ermittelt.<br>\nSQL=<br></p>\n";
-	echo "\n<p class='err'>".$sqlg."</p>\n";
+	echo "\n<p class='err'>Keine Geb&auml;ude ermittelt.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqlg."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $gebnr=0;
 echo "\n<hr>\n<table class='geb'>";

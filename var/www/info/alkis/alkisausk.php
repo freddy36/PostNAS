@@ -3,21 +3,15 @@
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Dies Programm wird aus dem Mapserver-Template (FeatureInfo) aufgerufen.
-	Parameter:&gkz, &gml_id (optional &id)
+	Parameter: &gkz, &gml_id (optional &id)
 	Dies Programm gibt einen kurzen Ueberblick zum Flurstueck.
 	Eigentuemer ohne Adresse.
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
 	Siehe auch alkisinlayausk.php - eine Variante für den Einbau in einen iFrame
 
-	Version:
-	15.09.2010  Function "buchungsart" durch JOIN ersetzt
-	17.09.2010  Authentifizierung Konfigurierbar
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	25.01.2011  F. Jäger: Adressen (Lage mit HsNr) zum FS anzeigen	
-					https://trac.wheregroup.com/PostNAS/ticket/6
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
+	Version:	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
+	26.07.2011  debug, SQL nur im Testmodus ausgeben
+	02.11.2011  6.+7. Parameter fuer function eigentuemer()
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -71,8 +65,10 @@ $sql.="WHERE f.gml_id= $1;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-
-if (!$res) {echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";}
+if (!$res) {
+	echo "\n<p class='err'>Fehler bei Flurstuecksdaten.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 
 if ($row = pg_fetch_array($res)) {
 	$gemkname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
@@ -151,7 +147,10 @@ $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n".$sql."</p>";}
+if (!$res) {
+	echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer.</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
@@ -189,8 +188,11 @@ $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufe
 $v = array($gmlid);
 $resg = pg_prepare("", $sql);
 $resg = pg_execute("", $v);
+if (!$resg) {
+	echo "\n<p class='err'>Keine Buchungen.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 
-if (!$resg) echo "\n<p class='err'>Keine Buchungen.<br>\nSQL= ".$sql."</p>\n";
 $j=0; // Z.Blatt
 while($rowg = pg_fetch_array($resg)) {
 	$beznam=$rowg["bezeichnung"];
@@ -253,7 +255,7 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		$n = eigentuemer($con, $gkz, $idanzeige, $rowg["gml_id"], false); // hier ohne Adressen
+		$n = eigentuemer($con, $gkz, $idanzeige, $rowg["gml_id"], false, $showkey, $debug); // hier ohne Adressen
 
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";

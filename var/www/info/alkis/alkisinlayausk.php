@@ -12,6 +12,8 @@
 
 	Version:	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
+	26.07.2011  debug, SQL nur im Testmodus ausgeben
+	02.11.2011  6.+7. Parameter fuer function eigentuemer()
 
 	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
 */
@@ -55,8 +57,10 @@ $sql.="WHERE f.gml_id= $1;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-
-if (!$res) {echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";}
+if (!$res) {
+	echo "\n<p class='err'>Fehler bei Flurstuecksdaten.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 
 if ($row = pg_fetch_array($res)) {
 	$gemkname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
@@ -115,7 +119,10 @@ $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n".$sql."</p>";}
+if (!$res) {
+	echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer.</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
@@ -153,8 +160,10 @@ $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufe
 $v = array($gmlid);
 $resg = pg_prepare("", $sql);
 $resg = pg_execute("", $v);
-
-if (!$resg) echo "\n<p class='err'>Keine Buchungen.<br>\nSQL= ".$sql."</p>\n";
+if (!$resg) {
+	echo "\n<p class='err'>Keine Buchungen.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 while($rowg = pg_fetch_array($resg)) {
 	$beznam=$rowg["bezeichnung"];
 	echo "\n<hr>\n<table class='outer'>";
@@ -205,7 +214,7 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		$n = eigentuemer($con, $gkz, false, $rowg["gml_id"], false); // hier ohne Adressen
+		$n = eigentuemer($con, $gkz, false, $rowg["gml_id"], false, $showkey, $debug); // hier ohne Adressen
 
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";

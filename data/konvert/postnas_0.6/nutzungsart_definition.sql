@@ -14,8 +14,8 @@
 
 -- Stand 
 --  2010-11-10  
-
---  2011-07-25 PostNAS 06, Umbenennung
+--  2011-07-25  PostNAS 06, Umbenennung
+--  2011-11-04  gml_id auf (32) erweitert, aber nach Test rückgängig gemacht
 
 
 SET client_encoding = 'UTF-8';
@@ -31,13 +31,13 @@ SET client_encoding = 'UTF-8';
 -- ------------------------------------------------------------
 
 CREATE TABLE nutzung_meta (
-  nutz_id           integer NOT NULL,
-  gruppe            character varying(30),
-  source_table      character varying(50),
-  title             character varying(50),
-  fldclass          character varying(30),
-  fldinfo           character varying(30),
-  CONSTRAINT nutzung_meta_pk PRIMARY KEY (nutz_id)
+	nutz_id           integer NOT NULL,
+	gruppe            character varying(30),
+	source_table      character varying(50),
+	title             character varying(50),
+	fldclass          character varying(30),
+	fldinfo           character varying(30),
+	CONSTRAINT nutzung_meta_pk PRIMARY KEY (nutz_id)
 );
 
 COMMENT ON TABLE  nutzung_meta                IS 'Gruppierung und Indizierung der zusammen gefassten Nutzungsarten in der Tabelle "nutzung".';
@@ -53,18 +53,19 @@ COMMENT ON COLUMN nutzung_meta.fldinfo        IS 'Name des Feldes aus "source_ta
 -- Sie sind dann mit einem gemeinsamen Geometrie-Index mit einer SQL-Abfrage auffindbar.
 -- Dies ist die Voraussetzung für eine performante Auskunft.
 
-CREATE TABLE nutzung
-( gml_id       character(16),
-  nutz_id      integer,
-  class        integer,
-  info         integer,
-  zustand      integer,
-  "name"       character varying(50),
-  bezeichnung  character varying(50),
-  CONSTRAINT nutzung_pk      PRIMARY KEY (gml_id),
-  CONSTRAINT nutzung_meta_id FOREIGN KEY (nutz_id)
-      REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE CASCADE
+CREATE TABLE nutzung (
+	gml_id		character(16),
+--	gml_id		character varying(32),
+	nutz_id		integer,
+	class		integer,
+	info		integer,
+	zustand		integer,
+	"name"		character varying(50),
+	bezeichnung	character varying(50),
+	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id),
+	CONSTRAINT	nutzung_meta_id FOREIGN KEY (nutz_id)
+		REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
+		ON UPDATE NO ACTION ON DELETE CASCADE
 )
 WITH (OIDS=FALSE);
 
@@ -92,14 +93,14 @@ COMMENT ON COLUMN nutzung.zustand     IS 'ZUS "Zustand" beschreibt, ob der Absch
 --  "alkis_nutzungsart_metadaten.sql"
 
 CREATE TABLE nutzung_class (
-  nutz_id       integer NOT NULL,
-  class         integer NOT NULL,
-  label         character varying(100),
-  blabla        character varying(1000),
-  CONSTRAINT nutzung_class_pk PRIMARY KEY (nutz_id, class),
-  CONSTRAINT nutzung_class_id FOREIGN KEY (nutz_id)
-      REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE CASCADE
+	nutz_id       integer NOT NULL,
+	class         integer NOT NULL,
+	label         character varying(100),
+	blabla        character varying(1000),
+	CONSTRAINT nutzung_class_pk PRIMARY KEY (nutz_id, class),
+	CONSTRAINT nutzung_class_id FOREIGN KEY (nutz_id)
+		REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
+		ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 COMMENT ON TABLE  nutzung_class            IS 'Schlüsseltabelle. Feinere Klassifizierung der zusammen gefassten Nutzungsarten.';

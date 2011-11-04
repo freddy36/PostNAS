@@ -30,6 +30,10 @@
 ##  ##  2011-07-25 PostNAS 06, Umbenennung
 ##  ##  2011-09-20 Verarbeiten der delete-Eintraege bei Aktualisierung.
 ##                 Siehe http://trac.wheregroup.com/PostNAS/wiki/SchrittfuerSchritt
+##  ##  2011-11-04 Verarbeitung OHNE Parameter 3 Datenbank-User und  4 DB-Passwort.
+##                 Berechtigung regeln über "/etc/postgresql/[version]/main/pg_hba.conf"
+##                 Dort Zeile: "local  [db]  [user]  ident sameuser"
+##       Alt:    # PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432"
 ##
 ## Konverter:   /opt/gdal-1.9/bin/ = GDAL 1.9 / PostNAS 0.6
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -42,8 +46,9 @@ echo "**************************************************"
 ORDNER=$1
 DBNAME=$2
 DBUSER=$3
-DBPASS=$4
-UPD=$5
+#DBPASS=$4
+#UPD=$5
+UPD=$4
 ##
 ## Fehlerprotokoll
 errprot='/data/konvert/postnas_0.6/log/postnas_err.prot'
@@ -62,21 +67,21 @@ then
 	exit 2
 fi
 ##
-if [ $DBUSER = "" ]
-then
-	echo "Parameter 3 'DB-User' ist leer"
-	exit 3
-fi
+# if [ $DBUSER = "" ]
+# then
+# 	echo "Parameter 3 'DB-User' ist leer"
+# 	exit 3
+# fi
 ##
-if [ $DBPASS = "" ]
-then
-	echo "Parameter 4 'DB-Passwort' ist leer"
-	#exit 4
-	echo "Datenbank-Passwort?  (wird nicht angezeigt)"
-	stty -echo
-	read DBPASS
-	stty echo
-fi
+# if [ $DBPASS = "" ]
+# then
+# 	echo "Parameter 4 'DB-Passwort' ist leer"
+# 	#exit 4
+# 	echo "Datenbank-Passwort?  (wird nicht angezeigt)"
+# 	stty -echo
+# 	read DBPASS
+# 	stty echo
+#fi
 ##
 if [ $UPD = "a" ]
 then
@@ -94,7 +99,7 @@ con="-p 5432 -d ${DBNAME} "
 #
   echo "Datenbank-Name . . = ${DBNAME}"
   echo "Ordner NAS-Daten . = ${ORDNER}"
-  echo "Datenbank-User . . = ${DBUSER}"
+# echo "Datenbank-User . . = ${DBUSER}"
   echo "Verarbeitungs-Modus= ${verarb}"
   echo " "
   cd ${ORDNER}
@@ -102,7 +107,8 @@ con="-p 5432 -d ${DBNAME} "
   echo "Dateien in " ${ORDNER} " (ls) :"
   ls
   # Alte delete-Eintraege (vorangegangener Abbruch?) loeschen, oder abarbeiten?
-  echo 'TRUNCATE table "delete";' | psql $con -U ${DBUSER}
+# echo 'TRUNCATE table "delete";' | psql $con  -U ${DBUSER}
+  echo 'TRUNCATE table "delete";' | psql $con 
   #
 # for zipfile in ${ORDNER}/*.xml.zip ; do 
   for zipfile in *.zip               ; do 
@@ -124,7 +130,7 @@ con="-p 5432 -d ${DBNAME} "
       then
         # E R S T L A D E N
         /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-           PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+           PG:"dbname=${DBNAME} host=localhost port=5432" \
            -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
         # Abbruch bei Fehler?
         nasresult=$?
@@ -133,24 +139,24 @@ con="-p 5432 -d ${DBNAME} "
         # A K T U A L I S I E R U N G
         echo "- 1. Nur delete-Layer auswerten" 
         /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-           PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+           PG:"dbname=${DBNAME} host=localhost port=5432" \
            -a_srs EPSG:25832  ${nasdatei}  delete  2>> $errprot
         nasresult=$?
         echo "* Resultat: " $nasresult " fuer delete aus " ${nasdatei}
         #
         # Durch die Funktion 'deleteFeature' in der Datenbank die delete-Objekte abarbeiten
         echo "- 1a. delete-Layer abarbeiten:"
-        psql $con -U ${DBUSER}  < /data/konvert/postnas_0.6/delete.sql
+        psql $con  < /data/konvert/postnas_0.6/delete.sql
         #
         echo "- 2. alle Layer auswerten"
         /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-          PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432" \
+          PG:"dbname=${DBNAME} host=localhost port=5432" \
           -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
         nasresult=$?
         echo "* Resultat: " $nasresult " fuer " ${nasdatei}
         #
         echo "- 2a. delete-Layer nochmals leoeschen:"
-        echo 'TRUNCATE table "delete";' | psql $con -U ${DBUSER}
+        echo 'TRUNCATE table "delete";' | psql $con 
       fi
     done
     # Ende Zipfile
@@ -162,8 +168,8 @@ con="-p 5432 -d ${DBNAME} "
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei " $errprot
 ##
   echo "** Optimierte Nutzungsarten neu Laden:"
-  psql -p 5432 -d ${DBNAME}  -U ${DBUSER}  < /data/konvert/postnas_0.6/nutzungsart_laden.sql
+  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/nutzungsart_laden.sql
 ##
   echo "** Optimierte Gemeindetabelle neu Laden:"
-  psql -p 5432 -d ${DBNAME}  -U ${DBUSER}  < /data/konvert/postnas_0.6/gemeinden_laden.sql
+  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/gemeinden_laden.sql
 ##

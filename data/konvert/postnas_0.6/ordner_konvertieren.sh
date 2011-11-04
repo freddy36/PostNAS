@@ -6,6 +6,7 @@
 ## -------------------------------------------------
 ## Stand:
 ##  2011-07-25  PostNAS 06, Umbenennung
+##  2011-11-04  Verarbeitung in konv_batch.sh OHNE Datenbank-Passwort
 ## 
 function get_db_config(){
 
@@ -21,11 +22,11 @@ function get_db_config(){
 	echo "Datenbank-User?"
 	read DBUSER
 
-	echo ""
-	echo "Datenbank-Passwort?"
-	stty -echo
-		read DBPASS
-	stty echo
+#	echo ""
+#	echo "Datenbank-Passwort?"
+#	stty -echo
+#		read DBPASS
+#	stty echo
 
 	## Ordner (Eingabedaten)
 	echo ""
@@ -73,10 +74,9 @@ fi
 # Protokolldatei ueberschreiben
 echo "** Konvertierung ALKIS **" > /data/konvert/postnas_0.6/log/postnas_err.prot
 echo "** Beginn Batch **"
-#echo "  Kommando fuer Wiederholung:"
-#echo "  /data/konvert/postnas_0.6/konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD  "
 ##                                                1        2        3        4        5
-         /data/konvert/postnas_0.6/konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD
+#        /data/konvert/postnas_0.6/konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD  ## ALT
+         /data/konvert/postnas_0.6/konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $UPD
 result=$?
 if [ $result = 0 ]
 then
@@ -86,6 +86,6 @@ else
 fi
 echo " "
 echo " Kommando fuer Wiederholung:"
-echo " /data/konvert/postnas_0.6/konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $DBPASS  $UPD  "
+echo " /data/konvert/postnas_0.6/konv_batch.sh  $ORDNER  $DBNAME  $DBUSER  $UPD "
 echo " "
 ###

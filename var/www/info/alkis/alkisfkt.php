@@ -9,6 +9,7 @@
 	09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	02.11.2011  Parameter debug in function eigentuemer
 */
 function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
 	// Einen Seitenfuss ausgeben.
@@ -199,7 +200,7 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	return $j;
 }
 
-function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
+function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey, $debug) {
 	// Tabelle mit Eigentuemerdaten zu einem Grundbuchblatt ausgeben
 	// Sp.1 = Namennummer, Sp. 2 = Name / Adresse, Sp. 3 = Link
 	// Parameter:
@@ -210,19 +211,24 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 	// Schleife 1: N a m e n s n u m m e r
 	// Beziehung: ax_namensnummer  >istBestandteilVon>  ax_buchungsblatt
 
-	$sql="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
-	$sql.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
-	$sql.="FROM ax_namensnummer n ";
-	$sql.="JOIN alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
-	$sql.="WHERE b.beziehung_zu= $1 "; // id blatt
-	$sql.="AND b.beziehungsart='istBestandteilVon' ";
-	$sql.="ORDER BY laufendenummernachdin1421;";
+	if ($debug > 1) {echo "<p class='err'>function eigentuemer, gml(Blatt)=".$gmlid.", mit Adresse='".$mitadresse."'</p>";}
+
+	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
+	$sqln.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
+	$sqln.="FROM ax_namensnummer n ";
+	$sqln.="JOIN alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
+	$sqln.="WHERE b.beziehung_zu= $1 "; // id blatt
+	$sqln.="AND b.beziehungsart='istBestandteilVon' ";
+	$sqln.="ORDER BY laufendenummernachdin1421;";
 
 	$v = array($gmlid);
-	$resn = pg_prepare("", $sql);
+	$resn = pg_prepare("", $sqln);
 	$resn = pg_execute("", $v);
 
-	if (!$resn) {echo "<p class='err'>Fehler bei Eigentuemer<br>SQL= ".$sql."<br></p>\n";}
+	if (!$resn) {
+		echo "<p class='err'>Fehler bei Eigent&uuml;mer</p>\n";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".$gmlid."'</p>";}
+	}
 
 	//echo "<p class='nwlink noprint'>weitere Auskunft:</p>"; // oben rechts von der Tabelle
 	echo "\n\n<table class='eig'>";
@@ -245,14 +251,9 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 				if ($rechtsg == 9999) { // sonstiges
 					echo "\n\t\t<p class='zus' title='Beschrieb der Rechtsgemeinschaft'>".htmlentities($rown["beschr"], ENT_QUOTES, "UTF-8")."</p>";
 				} else {
-					echo "\n\t\t<p class='zus' title='Art der Rechtsgemeinschaft'>".htmlentities(rechtsgemeinschaft($rown["adr"]), ENT_QUOTES, "UTF-8")."</p>";
-					// !! Feld /td und Zeile /tr nicht geschlossen
-					//	echo "\n\t</td>\n</tr>"; // !!! IMMER? oder nur wenn letzte Zeile?
-				}
+					echo "\n\t\t<p class='zus' title='Art der Rechtsgemeinschaft'>".htmlentities(rechtsgemeinschaft($rown["adr"]), ENT_QUOTES, "UTF-8")."</p>";				}
 			}
 			//if ($rown["anlass"] > 0 ) {echo "<p>Anlass=".$rown["anlass"]."</p>";} // TEST:
-
-			//echo "\n\t\t</td>\n\t\t<td></td>\n</tr>";
 
 			// Schleife Ebene 2: andere Namensnummern
 			// Beziehung   ax_namensnummer >bestehtAusRechtsverhaeltnissenZu>  ax_namensnummer 
@@ -267,26 +268,27 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 
 		// Schleife 2: P e r s o n  
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
-		$sql ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
-		$sql.="FROM ax_person p JOIN alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
-		$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='benennt';";
+		$sqlp ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
+		$sqlp.="FROM ax_person p JOIN alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
+		$sqlp.="WHERE v.beziehung_von= $1 AND v.beziehungsart='benennt';";
 
 		$v = array($gmlnn);
-		$rese = pg_prepare("", $sql);
-		$rese = pg_execute("", $v);
-		// +++ kein Ergebnis bei leeren Schluesseltabellen !?
+		$resp = pg_prepare("", $sqlp);
+		$resp = pg_execute("", $v);
 
-		if (!$rese) {echo "\n\t<p class='err'>Fehler bei Eigentuemer<br>SQL= ".$sql."<br></p>\n";}
-		$i=0; // Z.Eig.
-		//echo "\n<!-- vor Schleife 2 Person -->";
-		while($rowe = pg_fetch_array($rese)) {
+		if (!$resp) {
+			echo "\n\t<p class='err'>Fehler bei Person</p>\n";
+			if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqlp."<br>$1=gml= '".$gmlnn."'</p>";}
+		}
+
+		$i=0; // cnt Person		while($rowp = pg_fetch_array($resp)) {
 			$diePerson="";
-			if ($rowe["akademischergrad"] <> "") {$diePerson=$rowe["akademischergrad"]." ";}
-			$diePerson.=$rowe["nachnameoderfirma"];
-			if ($rowe["vorname"] <> "") {$diePerson.=", ".$rowe["vorname"];}
-			if ($rowe["namensbestandteil"] <> "") {$diePerson.=". ".$rowe["namensbestandteil"];}
-			if ($rowe["geburtsdatum"] <> "") {$diePerson.=", geb. ".$rowe["geburtsdatum"];}
-			if ($rowe["geburtsname"] <> "") {$diePerson.=", geb. ".$rowe["geburtsname"];}
+			if ($rowp["akademischergrad"] <> "") {$diePerson=$rowp["akademischergrad"]." ";}
+			$diePerson.=$rowp["nachnameoderfirma"];
+			if ($rowp["vorname"] <> "") {$diePerson.=", ".$rowp["vorname"];}
+			if ($rowp["namensbestandteil"] <> "") {$diePerson.=". ".$rowp["namensbestandteil"];}
+			if ($rowp["geburtsdatum"] <> "") {$diePerson.=", geb. ".$rowp["geburtsdatum"];}
+			if ($rowp["geburtsname"] <> "") {$diePerson.=", geb. ".$rowp["geburtsname"];}
 			$diePerson=htmlentities($diePerson, ENT_QUOTES, "UTF-8"); // Umlaute
 
 			// Spalte 1 enthält die Namensnummer, nur in Zeile 0
@@ -298,8 +300,8 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 			echo "\n\t\t<p class='geig' title='Eigent&uuml;merart ".$eiart."'>".$diePerson."</p>\n\t</td>";
 
 			// Spalte 3 = Link			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-				if ($idanzeige) {linkgml($gkz, $rowe["gml_id"], "Person"); echo "&nbsp";}
-				echo "\n\t\t<a href='alkisnamstruk.php?gkz=".$gkz."&amp;gmlid=".$rowe[0];
+				if ($idanzeige) {linkgml($gkz, $rowp["gml_id"], "Person"); echo "&nbsp";}
+				echo "\n\t\t<a href='alkisnamstruk.php?gkz=".$gkz."&amp;gmlid=".$rowp[0];
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
 				echo "' title='vollst&auml;ndiger Name und Adresse eines Eigent&uuml;mers'>".$eiart;
@@ -308,21 +310,22 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 
 			if ($mitadresse) {
 				// Schleife 3:  A d r e s s e  (OPTIONAL)
-				$sql ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-				$sql.="FROM ax_anschrift a ";
-				$sql.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-				$sql.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat';"; // ORDER?
+				$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
+				$sqla.="FROM ax_anschrift a ";
+				$sqla.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
+				$sqla.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat';"; // ORDER?
 
-				$v = array($rowe["gml_id"]);
-				$resa = pg_prepare("", $sql);
+				$gmlp=$rowp["gml_id"]; // Person
+				$v = array($gmlp);
+				$resa = pg_prepare("", $sqla);
 				$resa = pg_execute("", $v);
 
 				if (!$resa) {
-					echo "\n\t<p class='err'>Fehler bei Adressen.<br>\nSQL= ".$sql."</p>\n";
+					echo "\n\t<p class='err'>Fehler bei Adressen</p>\n";
+					if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqla."<br>$1=gml= '".$gmlp."'</p>";}
 				}
-				$j=0;
-				//echo "\n<!-- vor Schleife 3 Adresse -->";
-				while($rowa = pg_fetch_array($resa)) {
+
+				$j=0;				while($rowa = pg_fetch_array($resa)) {
 					$gmla=$rowa["gml_id"];
 					$plz=$rowa["plz"]; // integer
 					if($plz == 0) {
@@ -357,37 +360,44 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 					}
 					echo "</td>\n</tr>";
 					$j++;
-				}
-				//echo "\n<!-- nach Schleife 3 Adresse -->";
-			} // if
+				}			} // End if
 			// 'keine Adresse' kann vorkommen, z.B. "Deutsche Telekom AG"
-			$i++; // Z. Person
+			$i++; // cnt Person
 			// als eigene Tab-Zeile?
-			// 'Anteil' ist der Anteil der Berechtigten in Bruchteilen (Par. 47 GBO) 
-			// an einem gemeinschaftlichen Eigentum (Grundstück oder Recht).
+			// 'Anteil' ist der Anteil der Berechtigten in Bruchteilen (Par. 47 GBO) an einem gemeinschaftlichen Eigentum (Grundstück oder Recht).
 			if ($rown["zaehler"] != "") {
 				echo "\n<tr>\n\t<td>&nbsp;</td>"; // Sp. 1
 				echo "\n\t<td><p class='avh' title='Anteil'>".$rown["zaehler"]."/".$rown["nenner"]." Anteil</p></td>";
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
-		}
-		//echo "\n<!-- nach Schleife 2 Person -->";
-
-		if ($i == 0) { // keine Pers zur NamNum
-			echo "\n<!-- Rechtsgemeinscahft='".$rechtsg."' -->";
+		} // End Loop Person		if ($i == 0) { // keine Pers zur NamNum
+			if ($debug > 0) {
+				echo "<p class='err'>Keine Person zur Namensnummer ".$namnum."</p>";
+			}			
+			if ($debug > 2) {
+				echo "<p class='err'>SQL=<br>".$sqlp."<br>$1=gml(NamNum)= '".$gmlnn."'</p>";
+			}
+		//	echo "\n<!-- Rechtsgemeinschaft='".$rechtsg."' -->";
 			// Wann warnen?
-			//if ($rechtsg != 9999) {
-				// Art der Rechtsgemeinsachft, 0 Eigent. ist Normal bei Sondereigentum
-				//echo "\n<tr>\n<td>";
-				//linkgml($gkz, $rown["gml_id"], "Namensnummer");
-				//echo "</td>\n<td>\n\t\t<p class='err'>Kein Eigent&uuml;mer gefunden. (Rechtsgemeinschaft=".$rechtsg.")</p>";
-			//}
+		//	if ($rechtsg != 9999) {
+			// Art der Rechtsgemeinsachft, keine Eigent. ist Normal bei Sondereigentum
+			//echo "\n<tr>\n<td>";
+			//linkgml($gkz, $rown["gml_id"], "Namensnummer");
+			//echo "</td>\n<td>\n\t\t<p class='err'>Kein Eigent&uuml;mer gefunden. (Rechtsgemeinschaft=".$rechtsg.")</p>";
+		//	}
 			echo "</td>\n\t<td>&nbsp;</td>\n<tr>";
 		}
 		$n++; // cnt NamNum
 	} // End Loop NamNum
-	//echo "\n<!-- nach Schleife 1 Namensnummer -->";
 	echo "\n</table>\n";
+	if ($n == 0) {
+		if ($debug > 0) {
+			echo "<p class='err'>keine Namensnummern zum Blatt</p>";
+		}
+		if ($debug > 2) {
+			echo "<p class='err'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";
+		}
+	}	
 	return $n; 
 } // End Function eigentuemer
 
@@ -396,18 +406,10 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey) {
 // Entschluesslung ax_person.anrede
 function anrede($key) {
 	switch ($key) {
-		case 1000:
-			$wert = "Frau";
-			break;
-		case 2000:
-			$wert = "Herr";
-			break;
-		case 3000:
-			$wert = "Firma";
-			break;
-		default:
-			$wert = "";
-			break;
+		case 1000: $wert = "Frau"; break;
+		case 2000: $wert = "Herr"; break;
+		case 3000: $wert = "Firma"; break;
+		default:   $wert = ""; break;
 	}
 	return $wert;
 }
@@ -415,22 +417,11 @@ function anrede($key) {
 // Entschluesslung AX_Namensnummer.artDerRechtsgemeinschaft
 function rechtsgemeinschaft($key) {
 	switch ($key) {
-		case 1000:
-			$wert = "Erbengemeinschaft"; 
-			break;
-		case 2000:
-			$wert = "Gütergemeinschaft"; 
-			break;
-		case 3000:
-			$wert = "BGB-Gesellschaft"; 
-			break;
-		case 9999:
-			$wert = "Sonstiges"; 
-		// dann: beschriebDerRechtsgemeinschaft
-			break;
-		default:
-			$wert = "";
-			break;
+		case 1000: $wert = "Erbengemeinschaft"; break;
+		case 2000: $wert = "Gütergemeinschaft"; break;
+		case 3000: $wert = "BGB-Gesellschaft"; break;
+		case 9999: $wert = "Sonstiges"; break;	// dann: beschriebDerRechtsgemeinschaft
+		default:   $wert = ""; break;
 	}
 	return $wert;
 }
@@ -438,102 +429,50 @@ function rechtsgemeinschaft($key) {
 // Abweichend hier in singular fuer Link-Text
 function eigentuemerart($key) {
 	switch ($key) {
-		case 1000:
-			$wert = "Nat&uuml;rliche Person"; 
-			break;
-		case 2000:
-			$wert = "Juristische Person"; 
-			break;
-		case 3000:
-			$wert = "K&ouml;rperschaft"; 
-			break;
-		case "": // falls (noch) nicht gefuellt
-			$wert = "Person"; 
-			break;
-		default:
-			$wert = "** Unbekannte Eigent&uuml;merart '".$key."' **";;
-			break;
+		case 1000: $wert = "Nat&uuml;rliche Person"; break;
+		case 2000: $wert = "Juristische Person"; break;
+		case 3000: $wert = "K&ouml;rperschaft"; break;
+		case "":   $wert = "Person"; break; // falls (noch) nicht gefuellt
+		default:   $wert = "** Unbekannte Eigent&uuml;merart '".$key."' **"; break;
 	}
 	return $wert;
 }
 // Entschluesslung ax_buchungsblatt.blattart
 function blattart($key) {
 	switch ($key) {
-		case 1000:
-			$wert = "Grundbuchblatt"; 
-			// Ein Grundbuchblatt ist ein Buchungsblatt, das die Buchung im Grundbuch enthält.
-			break;
-		case 2000:
-			$wert = "Katasterblatt";
-			// Ein Katasterblatt ist ein Buchungsblatt, das die Buchung im Liegenschaftskataster enthält.
-			break;
-		case 3000:
-			$wert = "Pseudoblatt";
-			// Ein Pseudoblatt ist ein Buchungsblatt, das die Buchung, die bereits vor Eintrag im Grundbuch Rechtskraft erlangt hat, enthält 
-			// (z.B. Übernahme von Flurbereinigungsverfahren, Umlegungsverfahren).
-			break;
-		case 5000:
-			$wert = "Fiktives Blatt";
-			// Das fiktive Blatt enthält die aufgeteilten Grundstücke und Rechte als Ganzes. 
-			// Es bildet um die Miteigentumsanteile eine fachliche Klammer.
-			break;
-		default:
-			$wert = "** Unbekannter Wert '".$key."'";;
-			break;
+		case 1000: $wert = "Grundbuchblatt"; break;
+		// Ein Grundbuchblatt ist ein Buchungsblatt, das die Buchung im Grundbuch enthält.
+		case 2000: $wert = "Katasterblatt"; break;
+		// Ein Katasterblatt ist ein Buchungsblatt, das die Buchung im Liegenschaftskataster enthält.
+		case 3000: $wert = "Pseudoblatt"; break;
+		// Ein Pseudoblatt ist ein Buchungsblatt, das die Buchung, die bereits vor Eintrag im Grundbuch Rechtskraft erlangt hat, enthält 
+		// (z.B. Übernahme von Flurbereinigungsverfahren, Umlegungsverfahren).
+		case 5000: $wert = "Fiktives Blatt"; break;
+		// Das fiktive Blatt enthält die aufgeteilten Grundstücke und Rechte als Ganzes. 
+		// Es bildet um die Miteigentumsanteile eine fachliche Klammer.
+		default: $wert = "** Unbekannter Wert '".$key."'"; break;
 	}
 	return $wert;
 }
 // Entschluesslung ax_dienststelle.stellenart
 function dienststellenart($key) {
 	switch ($key) {
-		case 1000:
-			$wert = "Grundbuchamt";
-			break;
-		case 1100:
-			$wert = "Katasteramt"; 
-			break;
-		case 1200:
-			$wert = "Finanzamt"; 
-			break;
-		case 1300:
-			$wert = "Flurbereinigungsbeh&ouml;rde"; 
-			break;
-		case 1400:
-			$wert = "Forstamt"; 
-			break;
-		case 1500:
-			$wert = "Wasserwirtschaftsamt"; 
-			break;
-		case 1600:
-			$wert = "Straßenbauamt"; 
-			break;
-		case 1700:
-			$wert = "Gemeindeamt"; 
-			break;
-		case 1900:
-			$wert = "Kreis- oder Stadtverwaltung"; 
-			break;
-		case 2000:
-			$wert = "Wasser- und Bodenverband"; 
-			break;
-		case 2100:
-			$wert = "Umlegungsstelle"; 
-			break;
-		case 2200:
-			$wert = "Landesvermessungsverwaltung"; 
-			break;
-		case 2300:
-			$wert = "&Ouml;bVI"; 
-			break;
-		case 2400:
-			$wert = "Bundeseisenbahnverm&ouml;gen"; 
-			break;
-		case 2500:
-			$wert = "Landwirtschaftskammer"; 
-			break;
-		default:
-			$wert = "** Unbekannter Wert '".$key."'";
-			break;
+		case 1000: $wert = "Grundbuchamt"; break;
+		case 1100: $wert = "Katasteramt"; break;
+		case 1200: $wert = "Finanzamt"; break;
+		case 1300: $wert = "Flurbereinigungsbeh&ouml;rde"; break;
+		case 1400: $wert = "Forstamt"; break;
+		case 1500: $wert = "Wasserwirtschaftsamt"; break;
+		case 1600: $wert = "Straßenbauamt"; break;
+		case 1700: $wert = "Gemeindeamt"; break;
+		case 1900: $wert = "Kreis- oder Stadtverwaltung"; break;
+		case 2000: $wert = "Wasser- und Bodenverband"; break;
+		case 2100: $wert = "Umlegungsstelle"; break;
+		case 2200: $wert = "Landesvermessungsverwaltung"; break;
+		case 2300: $wert = "&Ouml;bVI"; break;
+		case 2400: $wert = "Bundeseisenbahnverm&ouml;gen"; break;
+		case 2500: $wert = "Landwirtschaftskammer"; break;
+		default: $wert = "** Unbekannter Wert '".$key."'"; break;
 	}
 	return $wert;
 }

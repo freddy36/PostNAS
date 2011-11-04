@@ -7,19 +7,21 @@
 	12.10.2010  class p.fsd: margin statt position-relative, dann keine Scrollbar
 	04.01.2011  Spalte td.fla im fsnw
 	26.01.2011  einheitlich td padding-top 6px
+	03.11.2011  FS-Historie
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
 	font-size: 10pt; color: #000033; margin-top: 2pt; margin-bottom: 2pt;}
 
 /* ** Banner im Kopf (Balken), Farbcode fuer Nachweis-Art ** */
-p.fsausk		{text-align: right; background: teal;	color: silver;} /* Uebersichts-Seite Flurstuecks-Auskunft */
-p.fskennz	{text-align: right; background: navy;	color: silver;} /* Flurstuecks-Nachweis */
-p.fsei		{text-align: right; background: olive;	color: silver;} /* Flurstuecks- und Eigentuemer-Nachweis */
-p.gbkennz	{text-align: right; background: green;	color: silver;} /* Bestandsnachweis */
-p.nakennz	{text-align: right; background: maroon; color: silver;} /* Personen- und Adressdaten */
-p.geb			{text-align: right; background: yellow; color: gray;}	/* Gebaeude zum FS */
-p.lage		{text-align: right; background: lime; color: gray;}	/* Gebaeude zum FS */
+p.fsausk		{text-align: right; background: teal;	color: silver;}	/* Uebersichts-Seite Flurstuecks-Auskunft */
+p.fskennz	{text-align: right; background: navy;	color: silver;}	/* Flurstuecks-Nachweis */
+p.fsei		{text-align: right; background: olive;	color: silver;}	/* Flurstuecks- und Eigentuemer-Nachweis */
+p.fshis		{text-align: right; background: gray;	color: white;}		/* Flurstuecks-Historie */
+p.gbkennz	{text-align: right; background: green;	color: silver;}	/* Bestandsnachweis */
+p.nakennz	{text-align: right; background: maroon; color: silver;}	/* Personen- und Adressdaten */
+p.geb			{text-align: right; background: yellow; color: gray;}		/* Gebaeude zum FS */
+p.lage		{text-align: right; background: lime; color: gray;}		/* Gebaeude zum FS */
 
 p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */p.fsd		{margin-left: 170px;}	/* Flst-Flaeche */
 p.gbl		{position: relative;	left:  60px;}	/* Nam: Buchungsstelle*/
@@ -44,20 +46,11 @@ a.gmlid		{text-decoration: none;	color: silver; font-style: italic; font-size: 7
 span.gmlid	{font-style: italic; font-size: 7pt; text-align: right;}
 
 /* komplette Adresse im Rahmen*/
-div.adr {border-left-width: 0px; 
-	border-right-width: 0px; 
-	border-bottom-width: 2px; 
-	border-top-width: 2px; 
-	width: 60%;
-	border-color: #a2d545;
-	border-style: solid; 
-	font-size: 12pt;
-	margin-bottom: 8px;
-	margin-top: 8px;
-	margin-left: 0.7in;	overflow: auto;
-	padding: 6px;
-	background: #e4f7dd;
-}
+div.adr {border-left-width: 0px; border-right-width: 0px; border-bottom-width: 2px; border-top-width: 2px; 
+	width: 60%; font-size: 12pt;
+	border-color: #a2d545; border-style: solid; 
+	margin-bottom: 8px; margin-top: 8px; margin-left: 0.7in;	overflow: auto; padding: 6px;
+	background: #e4f7dd;}
 
 span.key 		{color: gray; font-style: italic;} /* Schluesselwert vor Text, Wert zurueck nehmen */
 span.wichtig	{color: #BB0000; font-weight: bold;} /* Wert hervorheben */
@@ -70,6 +63,7 @@ table.bez	{font-size: 9pt; margin-bottom: 10px; margin-left: 3px;}
 
 /* Kennzeichen mit Rahmen, Rahmen-Farben wie 'Balken' */
 table.kennzfs	{border: 2px solid  navy;  padding: 3px; margin: 0px;}	/* Flurstueck */
+table.kennzfsh	{border: 2px dotted navy;  padding: 3px; margin: 0px;}	/* - historisch */
 table.kennzgb	{border: 2px solid  green; padding: 3px; margin: 0px;}	/* Grundbuch */
 table.kennzgbf	{border: 2px dotted green; padding: 3px; margin: 0px;}	/* - fiktiv */
 table.kennzla	{border: 2px solid  lime;  padding: 3px; margin: 0px;}	/* Lage */

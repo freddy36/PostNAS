@@ -11,14 +11,13 @@
 	14.12.2010  Pfad zur Conf
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
+	02.11.2011  h3
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {
-	// Bindung an Mapbender-Authentifizierung
-	require_once($mapbender);
+if ($auth == "mapbender") {	require_once($mapbender);
 }
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -39,25 +38,20 @@ $gmlid=isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
 $otyp=isset($_GET["otyp"]) ? $_GET["otyp"] : "Objekt";
 $otyp=htmlentities($otyp, ENT_QUOTES, "UTF-8");
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
-if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
-
-// Balken
-echo "\n<p class='bezieh'>Beziehungen ".$gmlid."</p>";
+echo "\n<p class='bezieh'>Beziehungen ".$gmlid."</p>"; // Balken
 
 echo "\n\n<h2><img src='ico/Beziehung.ico' width='16' height='16' alt=''> Beziehungen</h2>";
-if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
+if (!$con) {
+	echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 } else {
-	echo "\n<p>von ALKIS-".$otyp."</p>";
-	echo "<p>gml_id =</p>";
-	echo "\n\n<h3 title='Die gml_is ist global eindeutig'>".$gmlid."</h3>";
+	echo "\n\n<h3 title='Die gml_is ist global eindeutig'>ALKIS-".$otyp." mit gml_id = '".$gmlid."'</h3>";
 	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von= $1;";
-
 	$v = array($gmlid);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
 
 	echo "\n<table>";
-	if (!$res) { // vorab Anzahl der Saetze ermitteln?
+	if (!$res) {
 		echo "\n<tr>\n\t<td colspan=3><b>Keine</b> Beziehungen vom Objekt</td>\n</tr>";
 	} else {
 		echo "\n<tr>\n\t<td class='head' colspan=3><br>Beziehungen <b>vom</b> Objekt zu ..</td>\n</tr>";
@@ -69,11 +63,11 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 			echo "\n\t</td>\n</tr>";
 			$i++;
 		}
-		if ($i == 0) echo "<tr><td colspan=3>.. keine</td></tr>";
+		if ($i == 0) {
+			echo "<tr><td colspan=3>.. keine</td></tr>";
+		}
 	}
-	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";
-
-	$v = array($gmlid);
+	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";	$v = array($gmlid);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
 
@@ -90,7 +84,9 @@ if (!$con) {echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 			echo "\n\t<td>".$otyp."</td>\n</tr>";
 			$i++;
 		}
-		if ($i == 0) echo "\n<tr>\n\t<td colspan=3>.. keine</td>\n</tr>";
+		if ($i == 0) {
+			echo "\n<tr>\n\t<td colspan=3>.. keine</td>\n</tr>";
+		}
 	}
 	echo "\n</table>";
 }

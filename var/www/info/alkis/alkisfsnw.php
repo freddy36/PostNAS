@@ -7,7 +7,8 @@
 	Version:
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
-	26.07.2011  debug	
+	26.07.2011  debug, SQL nur im Test-Modus anzeigen.
+	02.11.2011  6.+7. Parameter fuer function eigentuemer()
 	
 	ToDo:
 	- Nach Umstellung auf PostNAS 0.6 die Sonderbehandlung Version 0.5 entfernen 
@@ -70,7 +71,10 @@ $sql.="WHERE f.gml_id= $1";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) echo "\n<p class='err'>Fehler bei Flurstuecksdaten\n<br>".$sql."</p>\n";
+if (!$res) {
+	echo "\n<p class='err'>Fehler bei Flurstuecksdaten</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 if ($row = pg_fetch_array($res)) {
 	$gemkname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 	$gmkgnr=$row["gemarkungsnummer"];
@@ -82,9 +86,11 @@ if ($row = pg_fetch_array($res)) {
 	$nenner=$row["nenner"];
 	if ($nenner > 0) {$flstnummer.="/".$nenner;} // BruchNr
 	$flae=number_format($row["amtlicheflaeche"],0,",",".") . " m&#178;";
+	$entsteh=$row["zeitpunktderentstehung"];
+	$name=$row["name"]; // Fortfuehrungsnummer
 } else {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
-	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = ".$gmlid."</p>";}
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 // Balken
 if ($eig=="j") {
@@ -110,9 +116,9 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite
 	// FS-Daten 2 Spalten
 	echo "\n\t<table class='fsd'>";
 		echo "\n\t<tr>\n\t\t<td>Entstehung</td>";
-		echo "\n\t\t<td>".$row["zeitpunktderentstehung"]."</td>\n\t</tr>";
+		echo "\n\t\t<td>".$entsteh."</td>\n\t</tr>";
 		echo "\n\t<tr>\n\t\t<td>letz. Fortf</td>";
-		echo "\n\t\t<td title='Jahrgang / Fortf&uuml;hrungsnummer - Fortf&uuml;hrungsart'>".$row["name"]."</td>\n\t</tr>";
+		echo "\n\t\t<td title='Jahrgang / Fortf&uuml;hrungsnummer - Fortf&uuml;hrungsart'>".$name."</td>\n\t</tr>";
 	echo "\n\t</table>";
 	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
@@ -134,7 +140,10 @@ $sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk= $1 AND kreis= 
 $v = array($bezirk,$kreis,$gemeinde);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) echo "<p class='err'>Fehler bei Gemeinde<br>".$sql."<br></p>";
+if (!$res) {
+	echo "\n<p class='err'>Fehler bei Gemeinde</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+}
 $row = pg_fetch_array($res);
 $gnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 echo "\n\t<td class='lr'>Gemeinde</td><td class='lr'>";
@@ -149,7 +158,10 @@ $sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND krei
 $v = array($bezirk,$kreis);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) echo "<p class='err'>Fehler bei Kreis<br>".$sql."<br></p>";
+if (!$res) {
+	echo "\n<p class='err'>Fehler bei Kreis</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+}
 $row = pg_fetch_array($res);
 $knam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 echo "<tr><td>&nbsp;</td><td>Kreis</td><td>";
@@ -159,9 +171,14 @@ if ($showkey) {
 echo $knam."</td><td>&nbsp;</td></tr>";
 
 // R e g - B e z
-$sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk='".$bezirk."' "; 
-$res=pg_query($con, $sql);
-if (!$res) echo "<p class='err'>Fehler bei Regierungsbezirk<br>".$sql."<br></p>";
+$sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk= $1 ";
+$v = array($bezirk);
+$res = pg_prepare("", $sql);
+$res = pg_execute("", $v);
+if (!$res) {
+	echo "<p class='err'>Fehler bei Regierungsbezirk</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+}
 $row = pg_fetch_array($res);
 $bnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 echo "<tr><td>&nbsp;</td><td>Regierungsbezirk</td><td>";
@@ -194,7 +211,10 @@ $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) {echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer<br>\n".$sql."</p>";}
+if (!$res) {
+	echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+}
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
@@ -238,7 +258,10 @@ $sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer<br>\n".$sql."</p>";
+if (!$res) {
+	echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+}
 $j=0;
 // Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!
 while($row = pg_fetch_array($res)) {
@@ -296,7 +319,10 @@ $sql.="ORDER BY schnittflae DESC;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
-if (!$res) {echo "<p class='err'>Fehler bei Suche tats. Nutzung<br>\n".$sql."</p>";}
+if (!$res) {
+	echo "<p class='err'>Fehler bei Suche tats. Nutzung</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$grupp = $row["gruppe"];  // Individuelles Icon?
@@ -454,7 +480,8 @@ $v = array($gmlid,'istGebucht');
 $ress = pg_prepare("", $sql);
 $ress = pg_execute("", $v);
 if (!$ress) {
-	echo "\n<p class='err'>Keine Buchungsstelle.<br>\nSQL= ".$sql."</p>\n";
+	echo "\n<p class='err'>Keine Buchungsstelle.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $bs=0; // Z.Buchungsstelle
 while($rows = pg_fetch_array($ress)) {
@@ -475,7 +502,8 @@ while($rows = pg_fetch_array($ress)) {
 	$resg = pg_prepare("", $sql);
 	$resg = pg_execute("", $v);
 	if (!$resg) {
-		echo "\n<p class='err'>Kein Buchungsblatt.<br>\nSQL= ".$sql."</p>\n";
+		echo "\n<p class='err'>Kein Buchungsblatt.</p>\n";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmls."'</p>";}
 	}
 	$bl=0; // Z.Blatt
 	while($rowg = pg_fetch_array($resg)) {
@@ -547,7 +575,7 @@ while($rows = pg_fetch_array($ress)) {
 		echo "\n</tr>";
 		echo "\n</table>";
 
-		// +++ Weitere Felder ausgeben ?? beschreibungdesumfangsderbuchung
+		// +++ Weitere Felder ausgeben? BeschreibungDesUmfangsDerBuchung
 		if ($rows["sond"] != "") {
 			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rows["sond"]."</p>";
 		}
@@ -558,7 +586,7 @@ while($rows = pg_fetch_array($ress)) {
 		// E I G E N T U E M E R, zum GB
 		// Person <-benennt< AX_Namensnummer  >istBestandteilVon-> AX_Buchungsblatt
 		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer
-			$n = eigentuemer($con, $gkz, $idanzeige, $gmlg, false); // hier aber ohne Adresse
+			$n = eigentuemer($con, $gkz, $idanzeige, $gmlg, false, $showkey, $debug); // hier aber ohne Adresse
  			if ($n == 0) {
 				if ($blattkeyg == 1000) {
 					echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
@@ -571,7 +599,7 @@ while($rows = pg_fetch_array($ress)) {
 		$bl++;
 	}
 	if ($bl == 0) {
-		echo "\n<p class='err'>Kein Buchungsblatt gefunden<br>\nSQL= ".$sql."</p>";
+		echo "\n<p class='err'>Kein Buchungsblatt gefunden.</p>";
 		echo "\n<p class='err'>Parameter: gml_id= ".$gmls.", Beziehung='istBestandteilVon'</p>";
 		linkgml($gkz, $gmls, "Buchungstelle");
 	}
@@ -592,13 +620,12 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="AND an.beziehungsart = 'an' ";
 	$sql.="AND v.beziehungsart = 'istBestandteilVon' ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
-
 	$v = array($gmls);
 	$resan = pg_prepare("", $sql);
 	$resan = pg_execute("", $v);
-
 	if (!$resan) {
-		echo "\n<p class='err'>Keine weiteren Buchungsstellen.<br>\nSQL=<br>".$sql."</p>\n";
+		echo "\n<p class='err'>Keine weiteren Buchungsstellen.</p>\n";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmls."'</p>";}
 	}
 	$an=0; // Stelle an Stelle
 	while($rowan = pg_fetch_array($resan)) {
@@ -672,8 +699,8 @@ while($rows = pg_fetch_array($ress)) {
 		if ($rowan["sond"] != "") {
 			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rowan["sond"]."</p>";
 		}
-		if ($eig=="j") {
-			$n = eigentuemer($con, $gkz, $idanzeige, $rowan["g_gml"], false, $showkey); // ohne Adresse
+		if ($eig == "j") {
+			$n = eigentuemer($con, $gkz, $idanzeige, $rowan["g_gml"], false, $showkey, $debug); // ohne Adresse
 			// Anzahl $n kontrollieren? Warnen?
 		}
 		$an++;

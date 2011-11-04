@@ -115,7 +115,7 @@ $res = pg_execute("", $v);
 
 if (!$res) {
 	echo "\n<p class='err'>Keine Flurst&uuml;cke ermittelt.<br>\nSQL=<br></p>\n";
-	echo "\n<p class='err'>".$sql."</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = ".$gmlid."</p>\n";}
 }
 
 echo "\n<table class='fs'>";

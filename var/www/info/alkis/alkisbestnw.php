@@ -4,18 +4,14 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
 
-	Version:
-	14.09.2010  Grundbuch unter Flurstueck, BVNR in Tabelle anzeigen und als Sprungmarke
-	15.09.2010  Function "buchungsart" durch JOIN ersetzt
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	26.01.2011  Space in leere td
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	07.02.2011  ggf. vereinfachte Kopfzeile "Flurstuecke" nach Vorpruefung "Rechte"	
+	Version:	07.02.2011  ggf. vereinfachte Kopfzeile "Flurstuecke" nach Vorpruefung "Rechte"
+	26.07.2011  debug, SQL nur im Testmodus anzeigen, Prepared Statements
+	02.11.2011  6. Parameter fuer function eigentuemer()
+
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
-ini_set('error_reporting', 'E_ALL');
+//ini_set('error_reporting', 'E_ALL');
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
 require_once("alkis_conf_location.php");
@@ -74,7 +70,8 @@ $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
 
 if (!$res) {
-	echo "<p class='err'>Fehler bei Grundbuchdaten<br>\n".$sql."</p>";
+	echo "<p class='err'>Fehler bei Grundbuchdaten.</p>";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 if ($row = pg_fetch_array($res)) {
 	$blattkey=$row["blattart"]; // Schluessel
@@ -115,7 +112,7 @@ if ($blattkey == 5000) { // fikt. Blatt
 } else { // E I G E N T U E M E R
 	echo "\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 	// MIT Adressen. Im offiziellen ALKIS-Buchnachweis hier ohne Adressen.
-	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true);
+	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true, $showkey, $debug);
 
 	if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 		echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
@@ -183,7 +180,10 @@ $v=array($gmlid);
 $res=pg_prepare("", $sql);
 $res=pg_execute("", $v);
 
-if (!$res) echo "<p class='err'>Fehler bei Buchung.</p>\n";
+if (!$res) {
+	echo "<p class='err'>Fehler bei Buchung.</p>\n";
+	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+}
 $i=0;
 while($row = pg_fetch_array($res)) {
 	$lfdnr  = $row["lfd"];
@@ -210,12 +210,15 @@ while($row = pg_fetch_array($res)) {
 		$sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, ";
 		$sql.="v.beziehungsart, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond, b.bezeichner AS bart ";		$sql.="FROM ax_buchungsstelle s ";
 		$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_zu "; 		$sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-		$sql.="WHERE v.beziehung_von='".$gml_bs."' "; // id buchungsstelle (fiktives Blatt)		$sql.="AND (v.beziehungsart='an' OR v.beziehungsart='zu') ";
+		$sql.="WHERE v.beziehung_von= $1 "; // id buchungsstelle (fiktives Blatt)		$sql.="AND (v.beziehungsart='an' OR v.beziehungsart='zu') ";
 		$sql.="ORDER BY s.laufendenummer;";
-
-		$resan=pg_query($con,$sql);
+		$v=array($gml_bs);
+		$resan=pg_prepare("", $sql);
+		$resan=pg_execute("", $v);
+		//$resan=pg_query($con,$sql);
 		if (!$resan) {
-			echo "<p class='err'>Fehler bei 'andere Buchungsstelle'<br>".$sql."</p>\n";
+			echo "<p class='err'>Fehler bei 'andere Buchungsstelle'.</p>\n";
+			if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
 		}
 		$a=0; // count: andere BS
 		$altbvnr=""; // Gruppenwechsel
@@ -230,12 +233,17 @@ while($row = pg_fetch_array($res)) {
 			$sql.="FROM ax_buchungsblatt  b ";
 			$sql.="JOIN alkis_beziehungen v ON b.gml_id=v.beziehung_zu ";
 			$sql.="LEFT JOIN ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk ";
-			$sql.="WHERE v.beziehung_von='".$gml_bsan."' ";
+			$sql.="WHERE v.beziehung_von= $1 ";
 			$sql.="AND v.beziehungsart='istBestandteilVon' ";
 			$sql.="ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
-
-			$fbres=pg_query($con,$sql);
-			if (!$fbres) {echo "<p class='err'>Fehler bei fiktivem Blatt<br>".$sql."</p>\n";}
+			$v=array($gml_bsan);
+			$fbres=pg_prepare("", $sql);
+			$fbres=pg_execute("", $v);
+			//$fbres=pg_query($con,$sql);
+			if (!$fbres) {
+				echo "<p class='err'>Fehler bei fiktivem Blatt.</p>\n";
+				if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}			
+			}
 			$b=0;
 			while($fbrow = pg_fetch_array($fbres)) { // genau 1
 				$fbgml   = $fbrow["gml_id"];
@@ -379,6 +387,7 @@ if ($i == 0) {
 	$resb = pg_execute("", $v);
 	if (!$resb) {
 		echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter:'<br>".$sql."</p>\n";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 	}
 	$b=0; // count: Blaetter
 	while($rowb = pg_fetch_array($resb)) {
