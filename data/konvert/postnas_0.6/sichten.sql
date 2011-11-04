@@ -27,6 +27,8 @@
 -- Die Flurstücksnummer fehlt dann im WMS.
 -- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
 
+-- 4.11.2011 Sichten für die Grenzen aus der Tabelle ax_besondereflurstuecksgrenze Astrid Emde
+
 
 -- Bruchnummerierung erzeugen
 
@@ -477,6 +479,32 @@ AS
          g.buchungsblattnummermitbuchstabenerweiterung,
          sh.laufendenummer 
 ;
+
+--
+-- Sichten für Grenzen aus ax_besondereflurstuecksgrenze
+--
+-- Select distinct artderflurstuecksgrenze from ax_besondereflurstuecksgrenze
+Create view grenze_flur_3000 as 
+Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
+where 3000 = ANY(artderflurstuecksgrenze);
+
+Create view grenze_gemarkung_7003 as 
+Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
+where 7003 = ANY(artderflurstuecksgrenze);
+
+
+Create view grenze_regierungsbezirk_7103 as 
+Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
+where 7103 = ANY(artderflurstuecksgrenze);
+
+Create view grenze_landkreisgrenze_7104 as 
+Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
+where 7104 = ANY(artderflurstuecksgrenze);
+
+
+Create view grenze_gemeinde_7106 as 
+Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
+where 7106 = ANY(artderflurstuecksgrenze);
 
 -- END --
 
