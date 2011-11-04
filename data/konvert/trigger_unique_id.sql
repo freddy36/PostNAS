@@ -1,7 +1,8 @@
 -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 -- 
 -- unique_id - Eindeutigkeit von "gml_id", "beginnt" und "endet" 
---             sicherstellen und Historie auf Basis der gml_id pflegen
+--             sicherstellen und Historie auf Basis der "gml_id" pflegen
+--           - allgemeiner Trigger für alle Tabellen außer "alkis_beziehungen"
 --
 -- Fr. Nov 4 2011 ralf dot suhr at itc-halle dot de
 --
