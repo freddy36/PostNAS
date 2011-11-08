@@ -6,6 +6,9 @@
 	12.05.2011 Syntaxfehler in SQL
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
+	07.11.2011 optional auch Historische FS suchen, Link auf Buchauskunft-Modul alkisfshis.php
+	ToDo:
+		Hist: die Nachfolger-Liste gleich in der DB nachschlagen,und aktuelle FS als solche anzeigen
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
@@ -253,7 +256,7 @@ function EineGemarkung($AuchGemkZeile) {
 	while($row = pg_fetch_array($res)) {	
 		$flur=$row["flur"];
 		echo "\n<div class='fl' title='Flur'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
+			echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'>&nbsp;";
 			echo "Flur<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$flur."'>&nbsp;".$flur."&nbsp;</a>";
 		echo "\n</div>";
 		$zfl++;
@@ -344,11 +347,9 @@ function EineFlur() {
 function EinFlurstueck() {
 	// Flurstückskennzeichen komplett bis zum Zaehler eingegeben
 	// Sonderfall: bei Bruchnummer, mehrere Nenner zum Zaehler
-	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $zgemkg, $zflur, $zzaehler, $znenner;
+	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $fskennz, $zgemkg, $zflur, $zzaehler, $znenner;
 
-	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
-	//	$sql.="x(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-	//	$sql.="y(st_transform (st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";
+	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
 		$sql.="y(st_Centroid(f.wkb_geometry)) AS y, ";
@@ -358,7 +359,7 @@ function EinFlurstueck() {
 		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
 	}
 
-	$sql.="g.gemarkungsnummer, g.bezeichnung ";
+	$sql.="g.bezeichnung ";
    $sql.="FROM ax_flurstueck f JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 	$sql.="WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND f.zaehler= $3 ";
 	If ($znenner != "") {$sql.="AND f.nenner=".$znenner." ";} // wie prepared?
@@ -389,7 +390,142 @@ function EinFlurstueck() {
 		echo "\n</div>";
 		$zfs++;
 	}
-	if($zfs == 0) {echo "\n<p class='err'>Kein Flurst&uuml;ck.</p>";}
+	if($zfs == 0) {
+		echo "\n<p class='err'>Kein aktuelles Flurst&uuml;ck.</p>";
+
+		// Soll in der Historie weiter gesucht werden?
+		echo "\n<div class='hi' title='Historie'>";
+			echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt='Historisches Flurst&uuml;ck'>&nbsp;";
+			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fskennz."&amp;hist=j'>in Historie suchen</a>";
+		echo "\n</div>";		
+	}
+	return;
+}
+
+function HistFlurstueck() {
+	// Ein HISTORISCHES Flurstückskennzeichen oder Nachfolger komplett eingegeben
+	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $land, $zgemkg, $zflur, $zzaehler, $znenner;
+
+//++++ TEST 300 :  2769-9-5/1
+
+	// Suche ueber das Flurstueckskennzeichen, gml meist unbekannt
+	$whcl.="WHERE flurstueckskennzeichen= $1 ";
+
+	$sql ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, null as nachf FROM ax_flurstueck ".$whcl;
+	$sql.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
+	$sql.="UNION SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
+
+	$fskzwhere =$land.$zgemkg; // Flurst-Kennz. f. Where
+	$fskzwhere.=str_pad($zflur, 3, "0", $STR_PAD_LEFT);
+	$fskzwhere.=str_pad($zzaehler, 5, "0", $STR_PAD_LEFT);
+	if ($znenner == "") {$fskzwhere.="______";}
+	else {$fskzwhere.=str_pad($znenner, 4, "0", $STR_PAD_LEFT)."__";}
+
+	$v=array($fskzwhere);
+	$res=pg_prepare("", $sql);
+	$res=pg_execute("", $v);
+	if (!$res) {echo "\n<p class='err'>Fehler bei hist. Flurst&uuml;ck.</p>";}
+	$zfs=0;
+	while($row = pg_fetch_array($res)) {
+		$ftyp=$row["ftyp"];
+		$fs_gml=$row["gml_id"];
+		$gknr=$row["gemarkungsnummer"];
+		$flur=$row["flurnummer"];
+		$fskenn=$row["zaehler"];
+		$nachf=$row["nachf"];
+		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
+
+		if ($ftyp == "a") { // aktuelles FS gefunden
+
+			// noch die Koordinate dazu besorgen
+			$sql ="SELECT ";
+			if($epsg == "25832") { // Transform nicht notwendig
+				$sql.="x(st_Centroid(wkb_geometry)) AS x, ";
+				$sql.="y(st_Centroid(wkb_geometry)) AS y ";
+			} else {  
+				$sql.="x(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS x, ";
+				$sql.="y(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS y ";			
+			}
+		   $sql.="FROM ax_flurstueck WHERE gml_id= $1 ";
+			$v=array($fs_gml);
+			$res=pg_prepare("", $sql);
+			$res=pg_execute("", $v);
+			if (!$res) {echo "\n<p class='err'>Fehler bei Koordinate.</p>";}
+			$zfs=0;
+			while($row = pg_fetch_array($res)) {	
+				$x=$row["x"];
+				$y=$row["y"];
+				$zfs++;
+			}
+			if ($zfs == 0) {echo "\n<p class='err'>Kein Treffer bei Koordinate.</p>";}
+			echo "\n<p>aktueller Nachfolger:</p>";	
+
+			// Zeile
+			echo "\n<div class='fs' title='Aktuelles Nachfolger-Flurst&uuml;ck'>";
+
+				// Icon -> Nachweis FS-Hist. in Buchauskunft
+				echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+					echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
+				echo "\n\t</a> ";	
+
+				// Kennzeichen -> Karte positionieren
+				echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
+						echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
+						echo "parent.parent.showHighlight(".$x.",".$y.");' ";
+					echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
+					echo "onmouseout='parent.parent.hideHighlight()'>";
+				echo $gmkg." ".$flur."-".$fskenn."</a>";
+
+			echo "\n</div>";
+
+		} else { // Historisches FS gefunden (h oder o)
+			echo "\n<p>Historisches Flurst&uuml;ck:</p>";
+
+			// Zeile
+			echo "\n<div class='hi' title='Historisches Flurst&uuml;ck'>";
+				echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+					echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt='Hist'>";
+				echo "\n\t</a> ";		
+				echo "\n\t ".$gknr."-".$flur."-".$fskenn."</a>";
+			echo "\n</div>";
+
+			// Nachfolger ermitteln
+			if ($nachf == "") {
+				echo "\n<p class='err'>keine Nachfolger</p>";	
+			} else {
+				echo "\n<p>Nachfolger-Flurst&uuml;cke:</p>";	
+				$stri=trim($nachf, "{}");
+				$arr = split(",",$stri);
+				foreach($arr AS $val){
+					$fst=rtrim($val,"_");	
+					$zer=substr ($fst, 2, 4)."-".ltrim(substr($fst, 6, 3), "0")."-".ltrim(substr($fst, 9, 5),"0");
+					$nenn=ltrim(substr($fst, 14), "0");
+					if ($nenn != "") {$zer.="/".$nenn;}
+
+// +++ besser: array in Where kennz in ( , , ) umwandeln
+// aktuelle FS gleich als solche anzeigen
+
+					// Zeile Nachfolger
+					echo "\n<div class='hn' title='Historie Nachfolger'>";
+
+						// Icon -> Nachweis					
+						echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;fskennz=".$val."'>";
+							echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt='Hist'>";
+						echo "\n\t</a> ";		
+
+						// Kennzeichen -> weiter in die Historie hinein
+						echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zer."&amp;hist=j'>".$zer."</a>";					
+
+					echo "\n</div><br>";
+				}
+			}
+		}
+		$zfs++;
+	}
+	if($zfs == 0) {
+		echo "\n<p class='err'>Kein historisches Flurst&uuml;ck.</p>";
+		if ($debug > 2) {echo "<p class='err'>".$sql."</p>";}
+	}
 	return;
 }
 
@@ -413,6 +549,7 @@ if ($gemeinde == "") {
 } else {
 	$gfilter = 2; // Liste
 }
+if ($hist == "j") { $phist = true;} else {$phist = false;}
 
 if(isset($gm)) { // Self-Link aus Gemeinde-Liste 
 	$gnr=ListGmkgInGemeinde($gm); // Gemarkungen zu dieser Gemeinde listen
@@ -429,7 +566,7 @@ if(isset($gm)) { // Self-Link aus Gemeinde-Liste
 		} else {
 			ListGemeinden(); // alle Gemeinden Listen
 		}
-		break;
+	break;
 	case 1:
 		if ($debug >= 2) {echo "<p>Gemarkungsname ".$zgemkg."</p>";}
 		$gnr=SuchGmkgName();
@@ -437,26 +574,26 @@ if(isset($gm)) { // Self-Link aus Gemeinde-Liste
 			$zgemkg=$gnr;
 			EineGemarkung(false);
 		};	
-		break;
+	break;
 	case 2:
 		if ($debug >= 2) {echo "<p>Gemarkungsnummer ".$zgemkg."</p>";}	
 		EineGemarkung(true);
-		break;
+	break;
 	case 3:
 		if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur."</p>";}
 		EineFlur();
-		break;
+	break;
 	case 4:
 		if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."</p>";}
-		EinFlurstueck();
-		break;
+		if ($phist)	{HistFlurstueck();} else {EinFlurstueck();}
+	break;
 	case 5:
 		if ($debug >= 2) {echo "<p>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."/".$znenner."</p>";}
-		EinFlurstueck();
-		break;
+		if ($phist) {HistFlurstueck();} else {EinFlurstueck();}		
+	break;
 	case 9:
 		echo "<p class='err'>Bitte ein Flurst&uuml;ckskennzeichen eingegeben, Format 'gggg-fff-zzzz/nnn</p>";
-		break;
+	break;
 	}
 }
 ?>

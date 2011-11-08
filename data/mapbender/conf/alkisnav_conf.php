@@ -1,7 +1,10 @@
 <?php
-# Einstellungen fuer Mapbender-Navigation mit ALKIS-Daten
-# ALKIS-PostGIS-Datenbank aus Konverter PostNAS 0.5/0.6
-# krz Mi.-Ra./Li. 2011-07-26
+/* Einstellungen fuer Mapbender-Navigation mit ALKIS-Daten
+	ALKIS-PostGIS-Datenbank aus Konverter PostNAS 0.5/0.6
+	krz Mi.-Ra./Li.
+	2011-07-26
+	2011-11-07 Land
+*/
 
 # DB-Connection
 $host="localhost";
@@ -11,8 +14,8 @@ $dbvers="06";		// 05 oder 06 (steuert Format von .lage)
 $user="***";
 $password="***";
 
-# Pfad zu den ALKIS-Auskunft-Programmen  TEST !!!
-$auskpath="../../../intern/test/";
+# Pfad zu den ALKIS-Auskunft-Programmen
+$auskpath="../../../info/alkis";
 
 # Massstab zum Positionieren auf Flurstueck, Strasse, Hausnummer
 # in MapProxy gecachte Masstaebe verwenden
@@ -22,6 +25,9 @@ $scalehs=500;
 
 # default-Koordinatensystem der GUI
 $gui_epsg=31467;
+
+# Landes-Kennung
+$land="05"; // NRW
 
 # Filter:
 # Liste der relevanten Amtsgerichts-Nummern aus ax_dienststelle.stelle
