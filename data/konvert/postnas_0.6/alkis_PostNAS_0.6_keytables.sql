@@ -473,4 +473,36 @@ INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner,kennung,objektart) VALUES (2800,'Verkehrsflächenbereinigung',71008,'ax_bauraumoderbodenordnungsrecht');
 
 
+-- Bauteil zu ax_bauart
+-- 17 Einträge
+-- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/adv_alkis_dokumentation_41/AAA_GeoInfoDok_6-0_20080411/ALKIS-OK_6_0.html#_3B2A042A0200-_3B2A042A0203
+---------------------------------
+CREATE TABLE ax_bauart_bauteil (
+    wert integer NOT NULL,
+    bezeichner character varying,
+    kennung integer,
+    objektart character varying
+);
+
+ALTER TABLE ONLY ax_bauart_bauteil
+    ADD CONSTRAINT pk_ax_bauart_bauteil_wert PRIMARY KEY (wert);
+	
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2000, 'Keller', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2100, 'Tiefgarage', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2300, 'Loggia', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2350, 'Wintergarten', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2400, 'Arkade', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2510, 'Auskragende Geschosse', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (9999, 'Sonstiges', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1100, 'Geringergeschossiger Gebäudeteil', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1200, 'Höhergeschossiger Gebäudeteil (nicht Hochhaus)', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1300, 'Hochhausgebäudeteil', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (1400, 'Abweichende Geschosshöhe', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2500, 'Auskragende/zurückspringende Geschosse', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2520, 'Zurückspringende Geschosse', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2620, 'Durchfahrt an überbauter Verkehrsstraße', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2710, 'Schornstein im Gebäude', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2720, 'Turm im Gebäude', 31002, 'ax_bauteil');
+INSERT INTO ax_bauart_bauteil (wert, bezeichner, kennung, objektart) VALUES (2610, 'Durchfahrt im Gebäude', 31002, 'ax_bauteil');
+
 -- ENDE --
