@@ -7,7 +7,7 @@
 	12.10.2010  class p.fsd: margin statt position-relative, dann keine Scrollbar
 	04.01.2011  Spalte td.fla im fsnw
 	26.01.2011  einheitlich td padding-top 6px
-	03.11.2011  FS-Historie
+	16.11.2011  FS-Historie
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -31,7 +31,8 @@ p.ant		{font-style: italic; position: relative;left: 12px;} /* Anteil am FS */
 p.geig	{color: navy;}		/* GB-Nachw. Eigentuemer Name */
 p.gadr	{color: maroon; margin-top: 1pt;}	/* GB-Nachw. Eigentuemer Adresse */
 p.nwlink, td.nwlink {font-size: 7pt; text-align: right; margin-top: 0pt;}	/* Link zum Nachweis GB, FS, ..*/
-p.err		{color: red;}								/* Fehler-Meldungen */
+p.err		{font-size: 11px; color: red;}		/* Fehler -> Anwender */
+p.dbg		{font-size: 10px; color: gray;}		/* Debug -> Entwickler */
 p.warn	{color: gray; font-style: italic;}	/* Warnung, Hinweis */
 p.ph		{color: gray;}								/* Platzhalter */
 

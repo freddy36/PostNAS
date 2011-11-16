@@ -7,6 +7,7 @@
 	Version:	07.02.2011  ggf. vereinfachte Kopfzeile "Flurstuecke" nach Vorpruefung "Rechte"
 	26.07.2011  debug, SQL nur im Testmodus anzeigen, Prepared Statements
 	02.11.2011  6. Parameter fuer function eigentuemer()
+	16.11.2011  neuer Style class='dbg'
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
@@ -71,7 +72,7 @@ $res = pg_execute("", $v);
 
 if (!$res) {
 	echo "<p class='err'>Fehler bei Grundbuchdaten.</p>";
-	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 if ($row = pg_fetch_array($res)) {
 	$blattkey=$row["blattart"]; // Schluessel
@@ -182,7 +183,7 @@ $res=pg_execute("", $v);
 
 if (!$res) {
 	echo "<p class='err'>Fehler bei Buchung.</p>\n";
-	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $i=0;
 while($row = pg_fetch_array($res)) {
@@ -218,7 +219,7 @@ while($row = pg_fetch_array($res)) {
 		//$resan=pg_query($con,$sql);
 		if (!$resan) {
 			echo "<p class='err'>Fehler bei 'andere Buchungsstelle'.</p>\n";
-			if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}
+			if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."</p>";}
 		}
 		$a=0; // count: andere BS
 		$altbvnr=""; // Gruppenwechsel
@@ -242,7 +243,7 @@ while($row = pg_fetch_array($res)) {
 			//$fbres=pg_query($con,$sql);
 			if (!$fbres) {
 				echo "<p class='err'>Fehler bei fiktivem Blatt.</p>\n";
-				if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."</p>";}			
+				if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."</p>";}			
 			}
 			$b=0;
 			while($fbrow = pg_fetch_array($fbres)) { // genau 1
@@ -387,7 +388,7 @@ if ($i == 0) {
 	$resb = pg_execute("", $v);
 	if (!$resb) {
 		echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter:'<br>".$sql."</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+		if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 	}
 	$b=0; // count: Blaetter
 	while($rowb = pg_fetch_array($resb)) {

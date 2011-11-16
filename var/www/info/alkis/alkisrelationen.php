@@ -12,6 +12,7 @@
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 	02.11.2011  h3
+	10.11.2011  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -65,6 +66,8 @@ if (!$con) {
 		}
 		if ($i == 0) {
 			echo "<tr><td colspan=3>.. keine</td></tr>";
+		} elseif ($i > 4) {
+			echo "\n<tr>\n\t<td colspan=3>".$i." Relationen</td>\n</tr>";
 		}
 	}
 	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";	$v = array($gmlid);
@@ -86,6 +89,8 @@ if (!$con) {
 		}
 		if ($i == 0) {
 			echo "\n<tr>\n\t<td colspan=3>.. keine</td>\n</tr>";
+		} elseif ($i > 4) {
+			echo "\n<tr>\n\t<td colspan=3>".$i." Relationen</td>\n</tr>";
 		}
 	}
 	echo "\n</table>";

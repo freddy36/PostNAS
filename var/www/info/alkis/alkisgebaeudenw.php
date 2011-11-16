@@ -120,6 +120,8 @@ echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".number_format($flstflaec
 echo "\n\n<h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ude</h3>";
 echo "\n<p>.. auf oder an dem Flurst&uuml;ck. Ermittelt durch Verschneidung der Geometrie.</p>";
 
+// +++ Zustand 3000 = geplantes Gebäude
+
 // G e b a e u d e
 $sqlg ="SELECT g.gml_id, g.name, g.description, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, ";
 $sqlg.="h.bauweise_beschreibung, u.bezeichner, v.beziehungsart, v.beziehung_zu, s.lage, s.bezeichnung, l.hausnummer, ";
