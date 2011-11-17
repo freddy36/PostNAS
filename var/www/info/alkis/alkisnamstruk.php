@@ -11,7 +11,8 @@
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	26.01.2011  Space in leere td
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	02.11.2011  $sqla, $sqlg, Meldungen mit $debug steuern 
+	02.11.2011  $sqla, $sqlg, Meldungen mit $debug steuern
+	17.11.2011  Parameter der Functions geändert
 
 	ToDo: 
 	Sortierung der Grundbücher zum Namen
@@ -252,7 +253,7 @@ if ($row = pg_fetch_array($res)) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey); ?>
+<?php footer($gmlid, $_SERVER['PHP_SELF']."?", ""); ?>
 
 </body>
 </html>

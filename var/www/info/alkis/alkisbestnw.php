@@ -8,6 +8,7 @@
 	26.07.2011  debug, SQL nur im Testmodus anzeigen, Prepared Statements
 	02.11.2011  6. Parameter fuer function eigentuemer()
 	16.11.2011  neuer Style class='dbg'
+	17.11.2011  Parameter der Functions geändert
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
@@ -112,9 +113,7 @@ if ($blattkey == 5000) { // fikt. Blatt
 	echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt.</p>\n";
 } else { // E I G E N T U E M E R
 	echo "\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
-	// MIT Adressen. Im offiziellen ALKIS-Buchnachweis hier ohne Adressen.
-	$n = eigentuemer($con, $gkz, $idanzeige, $gmlid, true, $showkey, $debug);
-
+	$n = eigentuemer($con, $gmlid, true, ""); // MIT Adressen.
 	if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 		echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
 		echo "\n<p>Bezirk: ".$row["bezirk"].", Blatt: ".$row["nr"].", Blattart ".$blattkey." (".$blattart.")</p>";
@@ -197,7 +196,7 @@ while($row = pg_fetch_array($res)) {
 	} else {
 		$anteil = $row["zaehler"]."/".$row["nenner"];
 	}
-	// F l u r s t u e c k s d a t e n  zur direkten Buchungsstelle   $j = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, true, $showkey); // return = Anzahl der FS
+	// F l u r s t u e c k s d a t e n  zur direkten Buchungsstelle   $j = bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, true); // return = Anzahl der FS
 	if ($j == 0) { //  k e i n e  Flurstuecke gefunden (Miteigentumsnteil usw.)		// Bei "normalen" Grundstuecken wurden Flurstuecksdaten gefunden und ausgegeben.
 		// Bei Miteigentumsanteil, Erbbaurecht usw. muss nach weiteren Buchungsstellen gesucht werden:
 		//  Buchungsstelle >an/zu> (andere)Buchungsstelle >istBestandTeilVon>  "FiktivesBlatt (ohne) Eigentuemer"
@@ -316,7 +315,8 @@ while($row = pg_fetch_array($res)) {
 
 			// F l u r s t u e c k s d a t e n  zur  a n d e r e n  Buchungsstelle
 			// Buchungsart wird nur in erster Zeile ausgegeben, hier leer
-		   $aj = bnw_fsdaten($con, $gkz, $idanzeige, $lfdnran, $gml_bsan, "", $anteil, false); // return = Anzahl der FS
+		   $aj = bnw_fsdaten($con, $lfdnran, $gml_bsan, "", $anteil, false); // return = Anzahl der FS
+		   		   
 			// +++ Gibt es ueberhaupt Sondereigentum beim fiktiven Blatt??			if ($rowan["nrap"] != "") {
 				echo "\n<tr>";
 					echo "\n\t<td class='sond' colspan=8>Nr. im Aufteilungsplan: ".$rowan["nrap"]."</td>";
@@ -473,7 +473,7 @@ if ($i == 0) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey); ?>
+<?php footer($gmlid, $_SERVER['PHP_SELF']."?", ""); ?>
 
 </body>
 </html>

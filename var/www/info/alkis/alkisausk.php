@@ -12,6 +12,7 @@
 	Version:	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 	26.07.2011  debug, SQL nur im Testmodus ausgeben
 	02.11.2011  6.+7. Parameter fuer function eigentuemer()
+	17.11.2011  Link FS-Historie, Parameter der Functions geändert
 */
 ini_set('error_reporting', 'E_ALL');
 session_start();
@@ -112,24 +113,36 @@ echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 
 // Flurstuecksnachweis (o. Eigent.)
 echo "\n\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=n";
-if ($idanzeige) { echo "&amp;id=j";}
-if ($showkey)   {echo "&amp;showkey=j";}
-echo "' title='Flurst&uuml;cksnachweis, alle Flurst&uuml;cksdaten'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a><br>";
+	if ($idanzeige) {echo "&amp;id=j";}
+	if ($showkey)   {echo "&amp;showkey=j";}
+	echo "' title='Flurst&uuml;cksnachweis, alle Flurst&uuml;cksdaten'>Flurst&uuml;ck ";
+	echo "<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
+echo "</a><br>";
 
 // FS- u. Eigent.-NW
 echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j";
-if ($idanzeige) echo "&amp;id=j";
-if ($showkey)   {echo "&amp;showkey=j";}
-echo "' title='Flurst&uuml;ck mit Eigent&uuml;mer'>Flurst&uuml;ck mit Eigent&uuml;mer</a> <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''><br>";
+	if ($idanzeige) {echo "&amp;id=j";}
+	if ($showkey)   {echo "&amp;showkey=j";}
+	echo "' title='Flurst&uuml;ck mit Eigent&uuml;mer'>Flurst&uuml;ck mit Eigent&uuml;mer ";
+	echo "<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
+echo "</a><br>";
+
+// FS-Historie
+echo "\n\t\t<a href='alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
+	if ($idanzeige) {echo "&amp;id=j";}
+	if ($showkey)   {echo "&amp;showkey=j";}
+	echo "' title='Vorg&auml;nger des Flurst&uuml;cks'>Historie ";
+	echo "<img src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt=''>";
+echo "</a><br>";
 
 // Gebaeude-NW
 echo "\n\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
-if ($idanzeige) {echo "&amp;id=j";}
-if ($showkey)   {echo "&amp;showkey=j";}
-echo "' title='Geb&auml;udenachweis'>Geb&auml;ude <img src='ico/Haus.ico' width='16' height='16' alt=''></a>";
+	if ($idanzeige) {echo "&amp;id=j";}
+	if ($showkey)   {echo "&amp;showkey=j";}
+	echo "' title='Geb&auml;udenachweis'>Geb&auml;ude ";
+	echo "<img src='ico/Haus.ico' width='16' height='16' alt=''>";
+echo "</a>";
 
-// FS-Historie (noch nicht in DB)
-//echo "&nbsp;|&nbsp;<a href='alkisfshist.php?gkz=".$gkz."&amp;flurstkennz=".$gmlid."' title='Vorg&auml;nger- und Nachfolger-Flurst&uuml;cke'>Historie</a>\n";
 echo "\n\t</p>\n</td>";
 // Lagebezeichnung Mit Hausnummer (Adresse)
 // Analog zu alkisfsnachw.php, Kommentare siehe dort$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
@@ -255,7 +268,7 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		$n = eigentuemer($con, $gkz, $idanzeige, $rowg["gml_id"], false, $showkey, $debug); // hier ohne Adressen
+		$n = eigentuemer($con, $rowg["gml_id"], false); // ohne Adressen
 
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
@@ -271,7 +284,7 @@ if ($j == 0) { // Entwicklungshilfe
 }
 echo "\n<hr>";
 
-footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey);
+footer($gmlid, $_SERVER['PHP_SELF']."?", "");
 
 ?>
 </body>

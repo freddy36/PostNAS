@@ -458,7 +458,7 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "&amp;ltyp=".$ltyp , $showkey); ?>
+<?php footer($gmlid, $_SERVER['PHP_SELF']."?", "&amp;ltyp=".$ltyp); ?>
 
 </body>
 </html>

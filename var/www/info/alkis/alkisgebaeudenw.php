@@ -292,7 +292,7 @@ echo "\n<hr>\n<table class='geb'>";
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "", $showkey); ?>
+<?php footer($gmlid, $_SERVER['PHP_SELF']."?", ""); ?>
 
 </body>
 </html>

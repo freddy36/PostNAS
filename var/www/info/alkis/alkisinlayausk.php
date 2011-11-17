@@ -14,6 +14,7 @@
 	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 	26.07.2011  debug, SQL nur im Testmodus ausgeben
 	02.11.2011  6.+7. Parameter fuer function eigentuemer()
+	17.11.2011  Link FS-Historie, Parameter der Functions geändert
 
 	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
 */
@@ -37,8 +38,12 @@ include("alkisfkt.php");
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Flurstueck.ico">
-	<title>ALKIS-Auskunft</title>
-	<base target="_blank">
+	<title>ALKIS-Auskunft</title>	<script type="text/javascript">
+	function imFenster(dieURL) {
+		var link = encodeURI(dieURL);
+		window.open(link,'','left=10,top=10,width=620,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+	}
+	</script>
 </head>
 <body>
 <?php
@@ -87,20 +92,24 @@ echo "\n<table class='outer'>\n<tr>\n<td>";
 echo "\n</td>\n<td>";
 echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 
-// Flurstuecksnachweis (o. Eigent.)
-echo "\n\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=n";
-echo "' title='Flurst&uuml;cksnachweis, alle Flurst&uuml;cksdaten'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a><br>";
+// Flurstuecksnachweis (mit Eigentümer)
+echo "\n\t<a href='javascript:imFenster(\"alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j\")' ";
+	echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck&nbsp;";
+	echo "<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
+echo "</a><br>";
 
-// FS- u. Eigent.-NW
-echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j";
-echo "' title='Flurst&uuml;ck mit Eigent&uuml;mer'>Flurst&uuml;ck mit Eigent&uuml;mer</a> <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''><br>";
+// FS-Historie
+echo "\n\t\t<a href='javascript:imFenster(\"alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$gmlid."\")' ";
+	echo "title='Vorg&auml;nger des Flurst&uuml;cks'>Historie&nbsp;";
+	echo "<img src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt=''>";
+echo "</a><br>";
 
-// Gebaeude-NW
-echo "\n\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
-echo "' title='Geb&auml;udenachweis'>Geb&auml;ude <img src='ico/Haus.ico' width='16' height='16' alt=''></a>";
+// Gebaeude-NW zum FS
+echo "\n\t\t<a href='javascript:imFenster(\"alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."\")' ";
+	echo "title='Geb&auml;udenachweis'>Geb&auml;ude&nbsp;";
+	echo "<img src='ico/Haus.ico' width='16' height='16' alt=''>";
+echo "</a>";
 
-// FS-Historie (noch nicht in DB)
-//echo "&nbsp;|&nbsp;<a href='alkisfshist.php?gkz=".$gkz."&amp;flurstkennz=".$gmlid."' title='Vorg&auml;nger- und Nachfolger-Flurst&uuml;cke'>Historie</a>\n";
 echo "\n\t</p>\n</td>";
 
 // Lagebezeichnung Mit Hausnummer (Adresse)
@@ -129,13 +138,14 @@ while($row = pg_fetch_array($res)) {
 	echo "\n<tr>\n\t";
 		echo "\n\t<td class='lr'>".$sname."&nbsp;".$row["hausnummer"]."</td>";
 		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
+			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' ";
+			echo "href='javascript:imFenster(\"alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."\")'>Lage ";
 			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
 		echo "\n\t\t</p>\n\t</td>";
 	echo "\n</tr>";
 	$j++;
 }
-echo "\n</tr>\n</table>\n";
+echo "\n</table>\n";
 
 // Flurstuecksflaeche
 echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
@@ -196,8 +206,8 @@ while($rowg = pg_fetch_array($resg)) {
 			echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 		}
 		echo "\n</td>\n<td>";		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
-			echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
-				echo "' title='Grundbuchnachweis'>";
+			echo "\n\t\t<a href='javascript:imFenster(\"alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0]."\")'";
+				echo "title='Grundbuchnachweis'>";
 				echo $blattart;
 				echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
 			echo "</a>";
@@ -214,7 +224,9 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		$n = eigentuemer($con, $gkz, false, $rowg["gml_id"], false, $showkey, $debug); // hier ohne Adressen
+		// ToDo: Link in Function auch umstellen auf (optional) "javascript:imFenster"
+		//       oder base_ / target="_blank"
+		$n = eigentuemer($con, $rowg["gml_id"], false, "imFenster"); // ohne Adressen
 
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";

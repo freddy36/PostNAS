@@ -4,6 +4,7 @@
 	11.04.2011 epsg in Link, transform nur wenn notwendig
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
+	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
@@ -21,6 +22,12 @@ $con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindun
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>ALKIS-Suche Eigent&uuml;mer</title>
 	<link rel="stylesheet" type="text/css" href="alkisnav.css">
+	<script type="text/javascript">
+		function imFenster(dieURL) {
+			var link = encodeURI(dieURL);
+			window.open(link,'','left=10,top=10,width=620,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+		}
+	</script>
 </head>
 <body>
 
@@ -91,7 +98,7 @@ function getGBbyPerson() {
 	// Daten der Person
 	echo "\n<div class='nam'>";
 		// Link zur Auskunft Person
-		echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$person."'>";
+		echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$person."\")'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'>";
 		echo "\n\t</a> ";
 		echo "\n\t<p class='nam'>";		
@@ -130,7 +137,7 @@ function getGBbyPerson() {
 		$gml=$row["gml_g"];
 		$beznam=$row["beznam"];
 		$nr=$row["nr"];		echo "\n<div class='gb'>";
-			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='GB'>";
 			echo "\n\t</a> ";		
 			echo "\n\t".$beznam."<a title='Grundbuch' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gb=".$gml."&amp;person=".$person."'> Blatt ".$nr."&nbsp;</a>";
@@ -161,7 +168,7 @@ function getFSbyGB($backlink) {
 			echo "zur&uuml;ck</a><br>";		
 		echo "</div>";
 		echo "<div class='gb'>";
-			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gb."'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gb."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='GB'>";
 			echo "\n\t</a> Grundbuch";
 		echo "</div>";	
@@ -211,7 +218,7 @@ function getFSbyGB($backlink) {
 		$x=$row["x"];
 		$y=$row["y"];
 		echo "\n<div class='fs'>";
-			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 			echo "\n\t</a> ";	
 			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";

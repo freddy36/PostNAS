@@ -4,20 +4,19 @@
 	Functions
 
 	Version:
-	07.09.2010  Schluessel anschaltbar
-	15.09.2010  Function "buchungsart" durch JOIN ersetzt
-	09.11.2010  Functions, die nur einmal aufgerufen wurden, sequentiell in FS-Nachw. integriert
 	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
 	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	02.11.2011  Parameter debug in function eigentuemer
+	17.11.2011  Variable ($debug, $idanzeige, $showkey) von Parameter nach global. Die heißen in allen Programmteilen gleich.
 */
-function footer($gkz, $gmlid, $idumschalter, $idanzeige, $link, $hilfeurl, $append, $showkey) {
+function footer($gmlid, $link, $append) {
 	// Einen Seitenfuss ausgeben.
 	// Den URL-Parameter "&id=j/n" und "&showkey=j/n" in allen Kombinationen umschalten lassen.
 	// Die Parameter &gkz= und &gmlid= kommen in allen Modulen einheitlich vor
 
 	// Der Parameter $append wird angehaengt wenn gefuellt
 	//  Anwendung: &eig=j bei FS-NW, &ltyp=m/p/o bei Lage
+	global $gkz, $idumschalter, $idanzeige, $showkey, $hilfeurl;
 
 	$customer=$_SESSION["mb_user_name"];
 	echo "\n<div class='confbereich noprint'>";
@@ -107,14 +106,14 @@ function kurz_namnr($lang) {
 	return $kurz;
 }
 
-function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus, $showkey) {
+function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 /*	Bestandsnachweis - Flurstuecksdaten
 	Die Tabellenzeilen mit den Flurstuecksdaten zu einer Buchungsstelle im Bestandsnachweis ausgeben.
 	Die Funktion wird je einmal aufgerufen für die Buchungen direkt auf dem GB (Normalfall).
 	Weiterere Aufrufe ggf. bei Erbbaurecht für die mit "an" verknuepften Buchungsstellen.
 	Table-Tag und Kopfzeile im aufrufenden Programm. 
 */
-
+	global $gkz, $idanzeige, $showkey;
 	// F L U R S T U E C K
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, ";
 	$sql.="f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
@@ -129,7 +128,7 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	$resf = pg_prepare("", $sql);
 	$resf = pg_execute("", $v);
 
-	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck<br><br>".$sql."</p>\n";}
+	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck</p>\n";}
 
 	if($bvnraus) { // nur bei direkten Buchungen die lfdNr ausgeben
 		$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
@@ -159,7 +158,6 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 				echo "\n\t<td>&nbsp;</td>";
 				echo "\n\t<td>&nbsp;</td>";
 			} else {
-
 				echo "\n\t<td>";
 					echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke
 					echo "<span class='wichtig'>".$bvnr."</span>";  // BVNR
@@ -200,7 +198,7 @@ function bnw_fsdaten($con, $gkz, $idanzeige, $lfdnr, $gml_bs, $ba, $anteil, $bvn
 	return $j;
 }
 
-function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey, $debug) {
+function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	// Tabelle mit Eigentuemerdaten zu einem Grundbuchblatt ausgeben
 	// Sp.1 = Namennummer, Sp. 2 = Name / Adresse, Sp. 3 = Link
 	// Parameter:
@@ -210,8 +208,16 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey, $deb
 
 	// Schleife 1: N a m e n s n u m m e r
 	// Beziehung: ax_namensnummer  >istBestandteilVon>  ax_buchungsblatt
+	global $debug, $gkz, $idanzeige, $showkey;
 
-	if ($debug > 1) {echo "<p class='err'>function eigentuemer, gml(Blatt)=".$gmlid.", mit Adresse='".$mitadresse."'</p>";}
+	// Link über Java-Class? (Ja in alkisinlayausk.php, sonst normal)
+	if ($lnkclass == "") {
+		$lnkvor = "";
+		$lnknach = "";
+	} else {
+		$lnkvor  = "javascript:".$lnkclass."(\"";
+		$lnknach = "\")";
+	} // Beispiel-Link href='javascript:imFenster(\"alkislage.php?gkz= ... ."\")'>xxx ";
 
 	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
 	$sqln.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
@@ -229,12 +235,9 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey, $deb
 		echo "<p class='err'>Fehler bei Eigent&uuml;mer</p>\n";
 		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".$gmlid."'</p>";}
 	}
-
-	//echo "<p class='nwlink noprint'>weitere Auskunft:</p>"; // oben rechts von der Tabelle
-	echo "\n\n<table class='eig'>";
+	echo "\n\n<table class='eig'>";
 	$n=0; // Z.NamNum.
 
-	//echo "\n\n<!-- vor Schleife 1 Namensnummer -->";
 	while($rown = pg_fetch_array($resn)) {
 		$gmlnn=$rown["gml_id"];
 		echo "\n<tr>";
@@ -301,10 +304,10 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey, $deb
 
 			// Spalte 3 = Link			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 				if ($idanzeige) {linkgml($gkz, $rowp["gml_id"], "Person"); echo "&nbsp";}
-				echo "\n\t\t<a href='alkisnamstruk.php?gkz=".$gkz."&amp;gmlid=".$rowp[0];
+				echo "\n\t\t<a href='".$lnkvor."alkisnamstruk.php?gkz=".$gkz."&amp;gmlid=".$rowp[0];
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
-				echo "' title='vollst&auml;ndiger Name und Adresse eines Eigent&uuml;mers'>".$eiart;
+				echo $lnknach."' title='vollst&auml;ndiger Name und Adresse eines Eigent&uuml;mers'>".$eiart;
 				echo " <img src='ico/Eigentuemer.ico' width='16' height='16' alt=''></a>\n\t\t</p>";
 			echo "\n\t</td>\n</tr>";
 
@@ -370,33 +373,22 @@ function eigentuemer($con, $gkz, $idanzeige, $gmlid, $mitadresse, $showkey, $deb
 				echo "\n\t<td><p class='avh' title='Anteil'>".$rown["zaehler"]."/".$rown["nenner"]." Anteil</p></td>";
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
-		} // End Loop Person		if ($i == 0) { // keine Pers zur NamNum
+		} // End Loop Person		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, dann kein Fehler
 			if ($debug > 0) {
-				echo "<p class='err'>Keine Person zur Namensnummer ".$namnum."</p>";
-			}			
-			if ($debug > 2) {
-				echo "<p class='err'>SQL=<br>".$sqlp."<br>$1=gml(NamNum)= '".$gmlnn."'</p>";
+				echo "\n<p class='dbg'>Rechtsgemeinschaft = '".$rechtsg."'</p>";
+				if ($rechtsg != 9999) {
+					echo "\n<p class='dbg'>Keine Person zur Namensnummer ".$namnum."</p>";
+				}
+				if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1=gml(NamNum)= '".$gmlnn."'</p>";}
 			}
-		//	echo "\n<!-- Rechtsgemeinschaft='".$rechtsg."' -->";
-			// Wann warnen?
-		//	if ($rechtsg != 9999) {
-			// Art der Rechtsgemeinsachft, keine Eigent. ist Normal bei Sondereigentum
-			//echo "\n<tr>\n<td>";
-			//linkgml($gkz, $rown["gml_id"], "Namensnummer");
-			//echo "</td>\n<td>\n\t\t<p class='err'>Kein Eigent&uuml;mer gefunden. (Rechtsgemeinschaft=".$rechtsg.")</p>";
-		//	}
 			echo "</td>\n\t<td>&nbsp;</td>\n<tr>";
 		}
 		$n++; // cnt NamNum
 	} // End Loop NamNum
 	echo "\n</table>\n";
 	if ($n == 0) {
-		if ($debug > 0) {
-			echo "<p class='err'>keine Namensnummern zum Blatt</p>";
-		}
-		if ($debug > 2) {
-			echo "<p class='err'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";
-		}
+		if ($debug > 0) {echo "<p class='err'>keine Namensnummern zum Blatt</p>";}
+		if ($debug > 2) {echo "<p class='err'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
 	}	
 	return $n; 
 } // End Function eigentuemer

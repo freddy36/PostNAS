@@ -4,22 +4,9 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Flurstücks-Historie fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
-	Version:	2011-11-03  Entwurf Prototyp
-	2011-11-16  Zum aktuellen FS die Vorgänger suchen
-
-	Sinnvoller Einstieg als Erweiterung der Navigation (Suche in Flur, (auch) nach Hist-FS).
-	Verknüpfung aus aktuellem FS zur Zeit mangels Verweis nicht möglich.
-	Oder kann man Sinvoll in einem Array-Feld suchen?
-
-	Um auch Vorgänger eines aktuellen Flurstücks zu finden, müssten die Array-Felder mit den Verweisen
-	als echte Verbindungstabellen aufgelöst werden (als Nachprozessierung zur Konvertierung in der DB).
-
-	Ein aktuelles FS hat keine Verweise auf Vorgänger.
-	Ein historischs FS (also MIT Raumbezug) hat keine Verweise auf Vorgänger.
-
-	+++ Eine Geometrische Vorgänger-Suche dazu realisieren? Oder besser Hist-Layer in Mapfile als Einstieg.
-	
-	+++ Zusätzlicher Parameter x/y (aus WMS-Feature-Info) als Geometrischer Einstieg für historische FS MIT Raumbezug
+	Version:	2011-11-03 Prototyp
+	2011-11-16 Zum aktuellen FS die Vorgänger suchen
+	2011-11-17 Parameter der Functions geändert
 */
 
 function fzerleg($fs) {
@@ -182,10 +169,6 @@ if ($parmtyp != "") { // einer der beiden erlaubten Fälle
 	$sqlu.="SELECT 'o' AS ftyp, ".$felder."nachfolgerflurstueckskennzeichen AS nach, vorgaengerflurstueckskennzeichen AS vor, name ";
 	$sqlu.="FROM ax_historischesflurstueckohneraumbezug o ".$whereclause;
 	
-	// "name" (FF-Nummer) ist uneinheitlich nach derzeitigem Schema.
-	// Hier später herein nehmen, wenn einheitlich als array in allen DBs und Tabellen definiert:
-	//   f.name character varying,   o.name character varying[]
-	
 	$resu = pg_prepare("", $sqlu);
 	$resu = pg_execute("", $v);
 	if ($rowu = pg_fetch_array($resu)) {
@@ -262,8 +245,6 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite	// FS-Daten 2 Spalten
 	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 
-if ($debug > 2) {echo "<p class='dbg'>FF= ".$name."</p>";}
-
 if ($ftyp == "a") { // Aktuell -> Historie
 	echo "\n<p class='nwlink noprint'>weitere Auskunft: ";
 		echo "<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=n";
@@ -332,7 +313,7 @@ if ($debug > 1) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "&amp;eig=".$eig, $showkey); ?>
+<?php footer($gmlid, $_SERVER['PHP_SELF']."?", "&amp;eig=".$eig); ?>
 
 </body>
 </html>

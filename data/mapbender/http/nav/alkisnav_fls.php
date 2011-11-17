@@ -13,6 +13,7 @@
 				neue Icons für Link mit Pfeil
 				Differenzierung mit/ohne Raumbezug bei Icons fuer Histor. FS
 				Gemarkung- und Flur-Zeile vor einzelnem Flurstück ausgeben
+	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
@@ -27,7 +28,13 @@ $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank
 	<meta http-equiv="expires" content="0">
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>ALKIS-Suche Flurst&uuml;ck</title>
-	<link rel="stylesheet" type="text/css" href="alkisnav.css">
+	<link rel="stylesheet" type="text/css" href="alkisnav.css"></link>
+	<script type="text/javascript">
+		function imFenster(dieURL) {
+			var link = encodeURI(dieURL);
+			window.open(link,'','left=10,top=10,width=620,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+		}
+	</script>
 </head>
 <body>
 
@@ -365,7 +372,7 @@ function EineFlur() {
 		$x=$row["x"];
 		$y=$row["y"];
 		echo "\n<div class='fs'>";
-			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 			echo "\n\t</a> ";			
 			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
@@ -425,7 +432,7 @@ function HistFlur() {
 		}  // h: Karte Pos.?
 		echo "\n<div class='hi' title='".$titl."'>"; // Zeile
 			// Icon -> Bauchauskunft
-			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist'>";
 			echo "\n\t</a> ";		
 			// Kennzeichen -> weiter in die Historie hinein
@@ -436,7 +443,7 @@ function HistFlur() {
 	if($zfs == 0) { 
 		echo "\n<p class='err'>Kein historisches Flurst&uuml;ck.</p>";
 		if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = ".$fskzwhere."</p>";}
-	} elseif($zfs >= $linelimit) {
+	} elseif ($zfs >= $linelimit) {
 		echo "\n<p>... und weitere</p>";
 	}
 	return;
@@ -476,7 +483,7 @@ function EinFlurstueck() {
 		$x=$row["x"];
 		$y=$row["y"];
 		echo "\n<div class='fs'>";
-			echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 			echo "\n\t</a> ";		
 			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
@@ -562,7 +569,7 @@ function HistFlurstueck() {
 			echo "\n<div class='fs' title='Aktuelles Nachfolger-Flurst&uuml;ck'>"; // Zeile
 
 				// Icon -> Nachweis FS-Hist. in Buchauskunft
-				echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+				echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 					echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 				echo "\n\t</a> ";	
 
@@ -588,7 +595,7 @@ function HistFlurstueck() {
 				$titl="Historisches Flurst&uuml;ck ohne Raumbezug";
 			}  // h: Karte Pos.?
 			echo "\n<div class='hi' title='".$titl."'>";
-				echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."'>";
+				echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 					echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist'>";
 				echo "\n\t</a> Historisches Flst. ".$fskenn."</a>";
 			echo "\n</div>";
@@ -643,7 +650,7 @@ function HistFlurstueck() {
 					}
 					$fs=$gknrn."-".$flurn."-".$fskennn;
 					echo "\n<div class='hn' title='Nachfolger: ".$titl."'>";			
-						echo "\n\t<a title='Nachweis' target='_blank' href='".$auskpath.$auskprog.".php?gkz=".$gkz."&amp;gmlid=".$na_gml."'>";
+						echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath.$auskprog.".php?gkz=".$gkz."&amp;gmlid=".$na_gml."\")'>";
 							echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='FS'>";
 						echo "\n\t</a> ";		
 						echo "Flst. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fs.$hisparm."'>".$fskennn."</a>";					

@@ -10,6 +10,7 @@
 	26.07.2011  debug, SQL nur im Test-Modus anzeigen.
 	02.11.2011  6.+7. Parameter fuer function eigentuemer()
 	16.11.2011  Neuer Style class='dbg', Link Historie
+	17.11.2011  Parameter der Functions geändert
 	
 	ToDo:
 	- Nach Umstellung auf PostNAS 0.6 die Sonderbehandlung Version 0.5 entfernen 
@@ -20,10 +21,7 @@
 session_start();
 $gkz=urldecode($_REQUEST["gkz"]);
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {
-	// Bindung an Mapbender-Authentifizierung
-	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -60,7 +58,7 @@ if ($keys == "j") {
 }
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
-if ($debug > 1) {echo "<p class='dbg'>DB=".$dbname.", user=".$dbuser."</p>";}
+//if ($debug > 1) {echo "<p class='dbg'>DB=".$dbname.", user=".$dbuser."</p>";}
 
 // F L U R S T U E C K
 $sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, f.zeitpunktderentstehung, ";
@@ -88,7 +86,8 @@ if ($row = pg_fetch_array($res)) {
 	if ($nenner > 0) {$flstnummer.="/".$nenner;} // BruchNr
 	$flae=number_format($row["amtlicheflaeche"],0,",",".") . " m&#178;";
 	$entsteh=$row["zeitpunktderentstehung"];
-	$name=$row["name"]; // Fortfuehrungsnummer
+	$name=$row["name"]; // Fortfuehrungsnummer(n)
+	$arrn = split(",", trim($name, "{}") ); // PHP-Array
 } else {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
@@ -117,9 +116,15 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite
 	// FS-Daten 2 Spalten
 	echo "\n\t<table class='fsd'>";
 		echo "\n\t<tr>\n\t\t<td>Entstehung</td>";
-		echo "\n\t\t<td>".$entsteh."</td>\n\t</tr>";
-		echo "\n\t<tr>\n\t\t<td>letz. Fortf</td>";
-		echo "\n\t\t<td title='Jahrgang / Fortf&uuml;hrungsnummer - Fortf&uuml;hrungsart'>".$name."</td>\n\t</tr>";
+		echo "\n\t\t<td>".$entsteh."</td>\n\t</tr>";		echo "\n\t<tr>";
+			echo "\n\t\t<td>letz. Fortf</td>";
+			echo "\n\t\t<td title='Jahrgang / Fortf&uuml;hrungsnummer - Fortf&uuml;hrungsart'>";
+				foreach($arrn AS $val) { // Zeile f. jedes Element des Array
+					echo trim($val, '"')."<br>";
+				}
+			echo "</td>";
+		echo "\n\t</tr>";
+
 	echo "\n\t</table>";	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 //	echo "\n<tr>\n\t<td>Finanzamt</td>\n\t<td>".$finanzamt." ".$finame  . "</td>\n</tr>";
@@ -151,7 +156,6 @@ if ($showkey) {
 	echo "<span class='key'>(".$gemeinde.")</span> ";
 }
 echo $gnam."</td><td>";
-
 	// Link zur Flurstücks-Historie (passt nicht ganz in die Zeile "Gemeinde", aber gut unter "weitere Auskunft")
 	echo "\n<p class='nwlink noprint'>";
 		echo "\n\t<a href='alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
@@ -161,12 +165,10 @@ echo $gnam."</td><td>";
 			echo "<img src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt=''>";
 		echo "</a>";
 	echo "\n</p>";
-
 echo "</td></tr>";
 
 // K r e i s
 $sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2"; 
-
 $v = array($bezirk,$kreis);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
@@ -376,7 +378,7 @@ while($row = pg_fetch_array($res)) {
 				}
 			} else { // ausfuehrlichere Anzeige
 				echo $title; // NUA-Tabelle
-				If ($class != "") { // NUA-Schlüssel
+				if ($class != "") { // NUA-Schlüssel
 					echo ", ".$fldclass.": "; // Feldname
 					if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
 					if ($label != "") { // Bedeutung dazu wurde erfasst
@@ -598,7 +600,7 @@ while($rows = pg_fetch_array($ress)) {
 		// E I G E N T U E M E R, zum GB
 		// Person <-benennt< AX_Namensnummer  >istBestandteilVon-> AX_Buchungsblatt
 		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer
-			$n = eigentuemer($con, $gkz, $idanzeige, $gmlg, false, $showkey, $debug); // hier aber ohne Adresse
+			$n = eigentuemer($con, $gmlg, false, ""); // ohne Adresse
  			if ($n == 0) {
 				if ($blattkeyg == 1000) {
 					echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
@@ -712,7 +714,7 @@ while($rows = pg_fetch_array($ress)) {
 			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rowan["sond"]."</p>";
 		}
 		if ($eig == "j") {
-			$n = eigentuemer($con, $gkz, $idanzeige, $rowan["g_gml"], false, $showkey, $debug); // ohne Adresse
+			$n = eigentuemer($con, $rowan["g_gml"], false, ""); // ohne Adresse
 			// Anzahl $n kontrollieren? Warnen?
 		}
 		$an++;
@@ -735,7 +737,7 @@ if ($bs == 0) {
 	</div>
 </form>
 
-<?php footer($gkz, $gmlid, $idumschalter, $idanzeige, $_SERVER['PHP_SELF']."?", $hilfeurl, "&amp;eig=".$eig, $showkey); ?>
+<?php footer($gmlid, $_SERVER['PHP_SELF']."?", "&amp;eig=".$eig); ?>
 
 </body>
 </html>
