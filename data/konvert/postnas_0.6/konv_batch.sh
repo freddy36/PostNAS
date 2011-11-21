@@ -1,31 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 ## -------------------------------------------------
 ## Konvertierung von ALKIS NAS-Format nach PosGIS  -
 ## NAS-Daten in einem Ordner konvertieren          -
 ## Batch-Teil, Aufruf mit geprueften Parametern    -
 ## -------------------------------------------------
 ## Stand: 
-##  2010-11-10  Tabellen "Optimierte Nutzungsarten" Laden
-##  2010-11-25  Tabelle  "Optimierte Gemeinden"     Laden
-##
 ##  2011-02-01  Umstellen auf die Verarbeitung gezippter NAS-Daten.
 ##       Es wird dabei folgende Ordner-Struktur erwartet:
 ##       /mandant/
 ##               /0001/*.xml.zip
 ##               /0002/*.xml.zip
-##             usw.
+##               usw.
 ##               /temp/
 ##       Also auf der gleichen Ebene wie die Datenordner muss ein Ordner /temp/ existieren.
 ##       Dort werden die NAS-Daten temporär ausgepackt.
-##       Relativ zum mitgegebenen Parameter ist das: ../temp/
+##       Relativ zum mitgegebenen Parameter ist das: '../temp/'
 ##
 ##       Achtung: Parallel laufende Konvertierungen zum gleichen Mandanten 
 ##                würden hier durcheinander geraten. Vermeiden!
-##
-##       Alternative:
-##       Könnte ogr2ogr auch pipe mit stdin verarbeiten?
-##       $  unzip -p  aktuelle.xml.zip  | ogr2ogr ....
-##       Wahrscheinlich nicht, wie heisst dann die *.gfs?
 ##
 ##  ##  2011-07-25 PostNAS 06, Umbenennung
 ##  ##  2011-09-20 Verarbeiten der delete-Eintraege bei Aktualisierung.
@@ -34,6 +26,8 @@
 ##                 Berechtigung regeln über "/etc/postgresql/[version]/main/pg_hba.conf"
 ##                 Dort Zeile: "local  [db]  [user]  ident sameuser"
 ##       Alt:    # PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432"
+##      2011-11-21 Korrektur: UPD=$3 nicht $4
+##                 Protokollierung nach Datenbanken getrennt
 ##
 ## Konverter:   /opt/gdal-1.9/bin/ = GDAL 1.9 / PostNAS 0.6
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -42,54 +36,36 @@
 echo "**************************************************"
 echo "**   K o n v e r t i e r u n g     PostNAS 0.6  **"
 echo "**************************************************"
-## Auswerten der Parameter:
+## Parameter:
 ORDNER=$1
 DBNAME=$2
-DBUSER=$3
-#DBPASS=$4
-#UPD=$5
-UPD=$4
-##
+UPD=$3
 ## Fehlerprotokoll
-errprot='/data/konvert/postnas_0.6/log/postnas_err.prot'
+errprot='/data/konvert/postnas_0.6/log/postnas_err_${DBNAME}.prot'
 ## ! Bei parallelen Konvertierungen sollte die Ausgabe in getrennte Logfiles ausgegeben werden.
-## ! Ggf. die Start-Zeit in den Namen einbauen?
-##
-if [ $ORDNER = "" ]
+if [ $ORDNER == "" ]
 then
 	echo "Parameter 1 'Ordner' ist leer"
 	exit 1
 fi
-##
-if [ $DBNAME = "" ]
+if [ $DBNAME == "" ]
 then
 	echo "Parameter 2 'Datenbank' ist leer"
 	exit 2
 fi
-##
-# if [ $DBUSER = "" ]
-# then
-# 	echo "Parameter 3 'DB-User' ist leer"
-# 	exit 3
-# fi
-##
-# if [ $DBPASS = "" ]
-# then
-# 	echo "Parameter 4 'DB-Passwort' ist leer"
-# 	#exit 4
-# 	echo "Datenbank-Passwort?  (wird nicht angezeigt)"
-# 	stty -echo
-# 	read DBPASS
-# 	stty echo
-#fi
-##
-if [ $UPD = "a" ]
+if [ $UPD == "a" ]
 then
 	verarb="NBA-Aktualisierung"
 	update=" -update "
 else
-	verarb="Erstladen"
-	update=""
+	if [ $UPD == "e" ]
+	then
+		verarb="Erstladen"
+		update=""
+	else
+		echo "Parameter 3 'Aktualisierung' ist weder e noch a"
+		exit 3
+	fi
 fi
 layer=""
 # leer = alle Layer
@@ -97,79 +73,73 @@ layer=""
 # DB-Connection
 con="-p 5432 -d ${DBNAME} "
 #
-  echo "Datenbank-Name . . = ${DBNAME}"
-  echo "Ordner NAS-Daten . = ${ORDNER}"
-# echo "Datenbank-User . . = ${DBUSER}"
-  echo "Verarbeitungs-Modus= ${verarb}"
+echo "Datenbank-Name . . = ${DBNAME}"
+echo "Ordner NAS-Daten . = ${ORDNER}"
+echo "Verarbeitungs-Modus= ${verarb}"
+echo " "
+cd ${ORDNER}
+rm ../temp/*.gfs
+echo "Dateien in " ${ORDNER} " (ls) :"
+ls
+# Alte delete-Eintraege (vorangegangener Abbruch?) loeschen, oder abarbeiten?
+echo 'TRUNCATE table "delete";' | psql $con 
+for zipfile in *.zip ; do 
   echo " "
-  cd ${ORDNER}
-  rm ../temp/*.gfs
-  echo "Dateien in " ${ORDNER} " (ls) :"
-  ls
-  # Alte delete-Eintraege (vorangegangener Abbruch?) loeschen, oder abarbeiten?
-# echo 'TRUNCATE table "delete";' | psql $con  -U ${DBUSER}
-  echo 'TRUNCATE table "delete";' | psql $con 
-  #
-# for zipfile in ${ORDNER}/*.xml.zip ; do 
-  for zipfile in *.zip               ; do 
-    echo " "
-    echo "*********"
-    echo "* Archiv: " $zipfile
-    rm ../temp/*.xml
-    unzip ${zipfile}  -d ../temp
- 
-    # Es sollte eigentlich immer geneu ein XML-File in jedem ZIP-File stecken,
-    # aber es geht auch anders.
-    for nasdatei in ../temp/*.xml ; do 
-      echo "* Datei:  " $nasdatei
-      # Zwischenueberschrift im Fehlerprotokoll
-      echo "* Datei: " $nasdatei >> $errprot
-      # Groesse und Datum anzeigen
-      #ls -l ${nasdatei}
-      if [ $UPD = "e" ]
-      then
-        # E R S T L A D E N
-        /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-           PG:"dbname=${DBNAME} host=localhost port=5432" \
-           -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
-        # Abbruch bei Fehler?
-        nasresult=$?
-        echo "* Resultat: " $nasresult " fuer " ${nasdatei}
-      else
-        # A K T U A L I S I E R U N G
-        echo "- 1. Nur delete-Layer auswerten" 
-        /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-           PG:"dbname=${DBNAME} host=localhost port=5432" \
-           -a_srs EPSG:25832  ${nasdatei}  delete  2>> $errprot
-        nasresult=$?
-        echo "* Resultat: " $nasresult " fuer delete aus " ${nasdatei}
-        #
-        # Durch die Funktion 'deleteFeature' in der Datenbank die delete-Objekte abarbeiten
-        echo "- 1a. delete-Layer abarbeiten:"
-        psql $con  < /data/konvert/postnas_0.6/delete.sql
-        #
-        echo "- 2. alle Layer auswerten"
-        /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-          PG:"dbname=${DBNAME} host=localhost port=5432" \
-          -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
-        nasresult=$?
-        echo "* Resultat: " $nasresult " fuer " ${nasdatei}
-        #
-        echo "- 2a. delete-Layer nochmals leoeschen:"
-        echo 'TRUNCATE table "delete";' | psql $con 
-      fi
-    done
-    # Ende Zipfile
-    echo "*********"
-  done
+  echo "*********"
+  echo "* Archiv: " $zipfile
   rm ../temp/*.xml
-  echo " "
-  echo "** Ende Konvertierung Ordner ${ORDNER}"
-  echo "Das Fehler-Protokoll wurde ausgegeben in die Datei " $errprot
+  unzip ${zipfile}  -d ../temp
+  # Es sollte eigentlich immer geneu ein XML-File in jedem ZIP-File stecken,
+  # aber es geht auch anders.
+  for nasdatei in ../temp/*.xml ; do 
+    echo "* Datei:  " $nasdatei
+    # Zwischenueberschrift im Fehlerprotokoll
+    echo "* Datei: " $nasdatei >> $errprot
+    if [ $UPD -eq "e" ]
+    then
+      # E R S T L A D E N
+      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+         PG:"dbname=${DBNAME} host=localhost port=5432" \
+         -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
+      # Abbruch bei Fehler?
+      nasresult=$?
+      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+    else
+      # A K T U A L I S I E R U N G
+      echo "- 1. Nur delete-Layer auswerten" 
+      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+         PG:"dbname=${DBNAME} host=localhost port=5432" \
+         -a_srs EPSG:25832  ${nasdatei}  delete  2>> $errprot
+      nasresult=$?
+      echo "* Resultat: " $nasresult " fuer delete aus " ${nasdatei}
+      #
+      # Durch die Funktion 'deleteFeature' in der Datenbank die delete-Objekte abarbeiten
+      echo "- 1a. delete-Layer abarbeiten:"
+      psql $con  < /data/konvert/postnas_0.6/delete.sql
+      #
+      echo "- 2. alle Layer auswerten"
+      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+        PG:"dbname=${DBNAME} host=localhost port=5432" \
+        -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
+      nasresult=$?
+      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+      #
+      echo "- 2a. delete-Layer nochmals leoeschen:"
+      echo 'TRUNCATE table "delete";' | psql $con 
+    fi
+  done
+  # Ende Zipfile
+  echo "*********"
+done
+rm ../temp/*.xml
+echo " "
+echo "** Ende Konvertierung Ordner ${ORDNER}"
 ##
-  echo "** Optimierte Nutzungsarten neu Laden:"
-  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/nutzungsart_laden.sql
+echo "** Optimierte Nutzungsarten neu Laden:"
+psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/nutzungsart_laden.sql
 ##
-  echo "** Optimierte Gemeindetabelle neu Laden:"
-  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/gemeinden_laden.sql
+echo "** Optimierte Gemeindetabelle neu Laden:"
+psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/gemeinden_laden.sql
+#
+echo "Das Fehler-Protokoll wurde ausgegeben in die Datei '$errprot' "
 ##

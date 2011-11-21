@@ -56,6 +56,17 @@
 --  2011-11-04 FJ: Anpassungen fuer Buchauskunft "Historie" 
 --                 (z.B. Index auf ax_historischesflurstueck.flurstueckskennzeichen)
 
+--  2011-11-21 FJ
+--   a. Abgleich Tabelle "ax_gebaeude" mit ALKIS-OK NRW, Kommentare, Neue Keytables.
+--   b. Abgleich Tabelle "ax_flurstueck" mit ALKIS-OK NRW, Kommentare.
+--   c. Index auf Vorgänger/Nachfolger-Flurstück (Array!) von ax_historischsflurstueck*
+--   d. Spalte "identifier" pauschal auskommentiert. Es scheint sich nur um eine Variante (redundant) von "gml_id" zu handeln.
+--   e. Spalten mit mehreren Bezeichnungen, durch Pipe (|) getrennt pauschal auskommentiert. Reste alter fehlerhafter PostNAS-Versionen?
+--   f. Einheitliche Definition und Kommentierung von "AX_Flurstueck_Kerndaten"
+--   g. Einige Felder umgestellt von "character" auf "character varying" (aber nicht gml_id und beginnt).
+--   h. gml_id von ax_adresse von 32 auf 16 umgestellt (wurden bisher nicht korrekt gelöscht?)
+
+
 --  TEST: gml_id von character(16)  auf  character varying(32) erweitert
 --        Bei Daten aus einer Fortführung (NBA-Aktualisierung) wird dort Datum/Zeit angehängt
 --        Dies Erweiterung ist für die Fortführungslogik mit Nachprozessierung über die Function 
@@ -126,9 +137,9 @@
 CREATE TABLE ks_sonstigesbauwerk (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character(28),
+--	identifier		character(28),
 	beginnt			character(20),
-	sonstigesmodell		character(6),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	bauwerksfunktion	integer,
 	CONSTRAINT ks_sonstigesbauwerk_pk PRIMARY KEY (ogc_fid)
@@ -186,7 +197,7 @@ COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung';
 CREATE TABLE ax_anderefestlegungnachwasserrecht (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(9),
 	anlass				integer,
@@ -211,12 +222,12 @@ COMMENT ON COLUMN ax_anderefestlegungnachwasserrecht.gml_id IS 'Identifikator, g
 -- ----------------------------------------------
 CREATE TABLE ax_baublock (
 	ogc_fid serial NOT NULL,
-	gml_id			character(16),	-- character varying(32),
-	identifier character(28),
-	beginnt character(20),
-	advstandardmodell character(4),
-	anlass integer,
-	baublockbezeichnung integer,
+	gml_id			character(16),
+--	identifier		character(28),
+	beginnt			character(20),
+	advstandardmodell	character(9),
+	anlass			integer,
+	baublockbezeichnung	integer,
   CONSTRAINT ax_baublock_pk PRIMARY KEY (ogc_fid)
 );
 SELECT AddGeometryColumn('ax_baublock','wkb_geometry','25832','MULTIPOLYGON',2);
@@ -235,7 +246,7 @@ COMMENT ON COLUMN ax_baublock.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_besonderertopographischerpunkt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -262,7 +273,7 @@ COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, gl
 CREATE TABLE ax_bewertung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -286,7 +297,7 @@ COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_denkmalschutzrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -321,12 +332,12 @@ COMMENT ON COLUMN ax_denkmalschutzrecht.gml_id IS 'Identifikator, global eindeut
 CREATE TABLE ax_gebaeudeausgestaltung (
 	ogc_fid serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier character(28),
-	beginnt character(20),
-	advstandardmodell character(4),
-	anlass integer,
-	darstellung integer,
-	zeigtauf character varying,
+--	identifier		character(28),
+	beginnt			character(20),
+	advstandardmodell	character(9),
+	anlass			integer,
+	darstellung		integer,
+--	zeigtauf		character varying,  -- Relation?
 	CONSTRAINT ax_gebaeudeausgestaltung_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -345,8 +356,8 @@ COMMENT ON COLUMN ax_gebaeudeausgestaltung.gml_id IS 'Identifikator, global eind
 -- ----------------------------------------------
 CREATE TABLE ax_georeferenziertegebaeudeadresse (
 	ogc_fid			serial NOT NULL,
-	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+	gml_id			character(16),
+--	identifier		character varying(28),
 	beginnt			character(20),		-- Inhalt z.B. "2008-06-10T15:19:17Z"
 							-- ISO:waere   "2008-06-10 15:19:17-00"
 --	beginnt			timestamp,		-- timestamp-Format wird nicht geladen, bleibt leer
@@ -360,16 +371,15 @@ CREATE TABLE ax_georeferenziertegebaeudeadresse (
 	gemeinde		integer,		--      020
 	ortsteil		integer,		--         0
 	--			--			-- --
-	postleitzahl		character varying(5),	-- integer - ueblich sind char(5) mit fuehrenden Nullen
-	ortsnamepost		character varying(40),	-- (4),  generierte Laenge, Name wird abgeschnitten
-	zusatzortsname		character varying(30),	-- (7),  ", Lippe", erscheint allgemein zu knapp
-	strassenname		character varying(50),	-- (23), generierte Laenge, Name wird abgeschnitten
+	postleitzahl		character varying(5),	-- mit fuehrenden Nullen
+	ortsnamepost		character varying(40),	-- 
+	zusatzortsname		character varying(30),	-- 
+	strassenname		character varying(50),	-- 
 	strassenschluessel	integer,		-- max.  5 Stellen
 	hausnummer		integer,		-- meist 3 Stellen
-	adressierungszusatz	character(1),		-- Hausnummernzusatz-Buchstabe
+	adressierungszusatz	character varying(1),	-- Hausnummernzusatz-Buchstabe
 	CONSTRAINT ax_georeferenziertegebaeudeadresse_pk PRIMARY KEY (ogc_fid)
 );
--- Auchtung! Das Feld Gemeinde hier ist nur ein Teilschlüssel.
 
 SELECT AddGeometryColumn('ax_georeferenziertegebaeudeadresse','wkb_geometry','25832','POINT',2);
 
@@ -394,7 +404,7 @@ COMMENT ON COLUMN ax_georeferenziertegebaeudeadresse.gml_id IS 'Identifikator, g
 CREATE TABLE ax_grablochderbodenschaetzung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -423,36 +433,54 @@ COMMENT ON COLUMN ax_grablochderbodenschaetzung.gml_id IS 'Identifikator, global
 
 -- H i s t o r i s c h e s   F l u r s t ü c k   A L B
 -- ---------------------------------------------------
+-- Variante A: "Standardhistorie" (statt ax_historischesflurstueckohneraumbezug)
 
--- Die "alte" Historie, die schon aus dem Vorgängerverfahren ALB übernommen wurde.
--- Vorgänger-Nachfolger-Beziehungen, ohne Geometrie
+-- Diese Tabelle bleibt beim Laden mit produktiven Daten (Vollhistorie) leer.
+-- Wird vorübergehend benötigt für die Demodaten RLP Mustermonzel.
 
 CREATE TABLE ax_historischesflurstueckalb (
-	ogc_fid				serial NOT NULL,
+	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier			character varying(28),
-	beginnt				character(20),
-	advstandardmodell		character varying(8),
-	anlass				integer,
-	art				character varying(40),  -- (15)
-	"name"				character varying(13),
-	land				integer,
-	gemarkungsnummer		integer,
-	flurnummer			integer,
-	zaehler				integer,
-	nenner				integer,
-	flurstueckskennzeichen		character(20),
-	amtlicheflaeche			double precision,
-	blattart			integer,
-	buchungsart			character varying(11),
+--	identifier		character varying(28),
+
+	-- GID: AX_Flurstueck_Kerndaten
+	-- 'Flurstück_Kerndaten' enthält Eigenschaften des Flurstücks, die auch für andere Flurstücksobjektarten gelten (z.B. Historisches Flurstück).
+
+	land 			integer,         --
+	gemarkungsnummer 	integer,            --
+	flurnummer		integer,               -- Teile des Flurstückskennzeichens 
+	zaehler 		integer,            --    (redundant zu flurstueckskennzeichen)
+	nenner			integer,         --
+	-- daraus abgeleitet:
+	flurstueckskennzeichen	character(20),         -- Inhalt rechts mit __ auf 20 aufgefüllt
+
+	amtlicheflaeche		double precision,      -- AFL
+	abweichenderrechtszustand character(5),        -- ARZ
+	zweifelhafterFlurstuecksnachweis character(5), -- ZFM Boolean
+	rechtsbehelfsverfahren	integer,               -- RBV
+	zeitpunktderentstehung	character(10),         -- ZDE  Inhalt jjjj-mm-tt  besser Format date ?
+
+	gemeindezugehoerigkeit	integer,
+	gemeinde		integer,  -- Welches von den beiden wird dann gefüllt?
+	-- GID: ENDE AX_Flurstueck_Kerndaten
+
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+--	art			character varying[],
+	"name"			character varying[],
+
+	blattart		integer,
+	buchungsart		character varying(11),
 	buchungsblattkennzeichen	integer,
-	"buchung|ax_buchung_historischesflurstueck|buchungsblattbezirk|a" integer,
-	bezirk						integer,
-	buchungsblattnummermitbuchstabenerweiterung	character(7), --integer,
+--	"buchung|ax_buchung_historischesflurstueck|buchungsblattbezirk|a" integer,
+	bezirk					integer,
+	buchungsblattnummermitbuchstabenerweiterung	character varying(7), --integer,
 	laufendenummerderbuchungsstelle			integer,
 	zeitpunktderentstehungdesbezugsflurstuecks	character varying(10),
-	vorgaengerflurstueckskennzeichen character	varying[],
-	nachfolgerflurstueckskennzeichen character	varying[],
+
+	vorgaengerflurstueckskennzeichen	character varying[],
+	nachfolgerflurstueckskennzeichen	character varying[],
 	CONSTRAINT ax_historischesflurstueckalb_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -463,45 +491,95 @@ VALUES ('', 'public', 'ax_historischesflurstueckalb', 'dummy', 2, 25832, 'POINT'
 CREATE UNIQUE INDEX ax_historischesflurstueckalb_gml 
                  ON ax_historischesflurstueckalb USING btree (gml_id);
 
-COMMENT ON TABLE  ax_historischesflurstueckalb        IS 'Historisches Flurstück ALB';
-COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global eindeutig';
+-- Suche nach Vorgänger / Nachfolger
+-- ++ Welche Methode für ein Array? Wirkt das bei der Suche nach einem einzelnen Wert aus dem Array?
+CREATE INDEX idx_histfsalb_vor
+   ON ax_historischesflurstueckalb (vorgaengerflurstueckskennzeichen ASC);
+  COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
+
+CREATE INDEX idx_histfsalb_nach
+   ON ax_historischesflurstueckalb (vorgaengerflurstueckskennzeichen ASC);
+  COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
+
+
+  COMMENT ON TABLE  ax_historischesflurstueckalb        IS 'Historisches Flurstück ALB';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global eindeutig';
+
+  COMMENT ON COLUMN ax_historischesflurstueckalb.flurnummer                IS 'FLN "Flurnummer" ist die von der Katasterbehörde zur eindeutigen Bezeichnung vergebene Nummer einer Flur, die eine Gruppe von zusammenhängenden Flurstücken innerhalb einer Gemarkung umfasst.';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.zaehler                   IS 'ZAE  Dieses Attribut enthält den Zähler der Flurstücknummer';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.nenner                    IS 'NEN  Dieses Attribut enthält den Nenner der Flurstücknummer';
+
+  COMMENT ON COLUMN ax_historischesflurstueckalb.flurstueckskennzeichen    IS '"Flurstückskennzeichen" ist ein von der Katasterbehörde zur eindeutigen Bezeichnung des Flurstücks vergebenes Ordnungsmerkmal.
+Die Attributart setzt sich aus den nachfolgenden expliziten Attributarten in der angegebenen Reihenfolge zusammen:
+ 1.  Land (2 Stellen)
+ 2.  Gemarkungsnummer (4 Stellen)
+ 3.  Flurnummer (3 Stellen)
+ 4.  Flurstücksnummer
+ 4.1 Zähler (5 Stellen)
+ 4.2 Nenner (4 Stellen)
+ 5.  Flurstücksfolge (2 Stellen)
+Die Elemente sind rechtsbündig zu belegen, fehlende Stellen sind mit führenden Nullen zu belegen.
+Da die Flurnummer und die Flurstücksfolge optional sind, sind aufgrund der bundeseinheitlichen Definition im Flurstückskennzeichen die entsprechenden Stellen, sofern sie nicht belegt sind, durch Unterstrich "_" ersetzt.
+Gleiches gilt für Flurstücksnummern ohne Nenner, hier ist der fehlende Nenner im Flurstückskennzeichen durch Unterstriche zu ersetzen.';
+
+  COMMENT ON COLUMN ax_historischesflurstueckalb.amtlicheflaeche           IS 'AFL "Amtliche Fläche" ist der im Liegenschaftskataster festgelegte Flächeninhalt des Flurstücks in [qm]. Flurstücksflächen kleiner 0,5 qm können mit bis zu zwei Nachkommastellen geführt werden, ansonsten ohne Nachkommastellen.';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.abweichenderrechtszustand IS 'ARZ "Abweichender Rechtszustand" ist ein Hinweis darauf, dass außerhalb des Grundbuches in einem durch Gesetz geregelten Verfahren der Bodenordnung (siehe Objektart "Bau-, Raum- oder Bodenordnungsrecht", AA "Art der Festlegung", Werte 1750, 1770, 2100 bis 2340) ein neuer Rechtszustand eingetreten ist und das amtliche Verzeichnis der jeweiligen ausführenden Stelle maßgebend ist.';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.zweifelhafterFlurstuecksnachweis IS 'ZFM "Zweifelhafter Flurstücksnachweis" ist eine Kennzeichnung eines Flurstücks, dessen Angaben nicht zweifelsfrei berichtigt werden können.';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.rechtsbehelfsverfahren    IS 'RBV "Rechtsbehelfsverfahren" ist der Hinweis darauf, dass bei dem Flurstück ein laufendes Rechtsbehelfsverfahren anhängig ist.';
+  COMMENT ON COLUMN ax_historischesflurstueckalb.zeitpunktderentstehung    IS 'ZDE "Zeitpunkt der Entstehung" ist der Zeitpunkt, zu dem das Flurstück fachlich entstanden ist.';
+
+  COMMENT ON COLUMN ax_historischesflurstueckalb.gemeindezugehoerigkeit    IS 'GDZ "Gemeindezugehörigkeit" enthält das Gemeindekennzeichen zur Zuordnung der Flustücksdaten zu einer Gemeinde.';
+-- oder gemeinde?
+
 
 
 -- Historisches Flurstück (ALKIS)
 -- ------------------------------
 -- Die "neue" Historie, die durch Fortführungen innerhalb von ALKIS entstanden ist.
 CREATE TABLE ax_historischesflurstueck (
-	ogc_fid					serial NOT NULL,
-	gml_id					character(16),
-	identifier				character(28),
-	beginnt					character(20),
-	advstandardmodell			character(8),
-	anlass					integer,
-	art					character varying[], -- Array
-	"name"					character varying[], -- Array
-	land					integer,
-	gemarkungsnummer			integer,
-	flurnummer				integer,
-	zaehler					integer,
-	nenner					integer,
-	flurstueckskennzeichen			character(20), -- Inhalt rechts mit __ auf 20 aufgefüllt
-	amtlicheflaeche				double precision,
-	abweichenderrechtszustand		character(5),
-	rechtsbehelfsverfahren			character(5),
-	zeitpunktderentstehung			character(10),
-	"gemeindezugehoerigkeit|ax_gemeindekennzeichen|land"	integer,
-	regierungsbezirk			integer,
-	kreis					integer,
-	gemeinde				integer,
-	vorgaengerflurstueckskennzeichen	character varying[],  -- array von FS-Kennzeichen hinten mit __
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+--	identifier			character(28),
+
+	-- GID: AX_Flurstueck_Kerndaten
+	-- 'Flurstück_Kerndaten' enthält Eigenschaften des Flurstücks, die auch für andere Flurstücksobjektarten gelten (z.B. Historisches Flurstück).
+
+	land 				integer,         --
+	gemarkungsnummer 		integer,            --
+	flurnummer			integer,               -- Teile des Flurstückskennzeichens 
+	zaehler 			integer,            --    (redundant zu flurstueckskennzeichen)
+	nenner				integer,         --
+	-- daraus abgeleitet:
+	flurstueckskennzeichen	character(20),         -- Inhalt rechts mit __ auf 20 aufgefüllt
+
+	amtlicheflaeche			double precision,      -- AFL
+	abweichenderrechtszustand	character varying(5),        -- ARZ
+	zweifelhafterFlurstuecksnachweis character varying(5), -- ZFM Boolean
+	rechtsbehelfsverfahren		integer,               -- RBV
+	zeitpunktderentstehung		character(10),         -- ZDE  Inhalt jjjj-mm-tt  besser Format date ?
+
+	gemeindezugehoerigkeit		integer,
+	gemeinde			integer,  -- Welches von den beiden wird dann gefüllt?
+	-- GID: ENDE AX_Flurstueck_Kerndaten
+
+	beginnt				character(20),
+	advstandardmodell		character varying(9),
+	anlass				integer,
+	art				character varying[], -- Array
+	"name"				character varying[], -- Array
+
+--	"gemeindezugehoerigkeit|ax_gemeindekennzeichen|land"	integer,
+	regierungsbezirk		integer,
+	kreis				integer,
+	vorgaengerflurstueckskennzeichen	character varying[],  -- array von FS-Kennzeichen
 	nachfolgerflurstueckskennzeichen	character varying[],
-	blattart				integer,
-	buchungsart				integer,
-	buchungsblattkennzeichen		double precision,
-	"buchung|ax_buchung_historischesflurstueck|buchungsblattbezirk|a"	integer,
-	bezirk					integer,
+	blattart			integer,
+	buchungsart			integer,
+	buchungsblattkennzeichen	double precision,
+--	"buchung|ax_buchung_historischesflurstueck|buchungsblattbezirk|a"	integer,
+	bezirk				integer,
 	buchungsblattnummermitbuchstabenerweiterung	character(20), --integer, -- hier länger als (7)!
-	laufendenummerderbuchungsstelle		integer,
+	laufendenummerderbuchungsstelle	integer,
 	CONSTRAINT ax_historischesflurstueck_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -521,8 +599,54 @@ CREATE INDEX ax_historischesflurstueck_geom_idx ON ax_historischesflurstueck USI
 CREATE UNIQUE INDEX ax_historischesflurstueck_gml 
                  ON ax_historischesflurstueck USING btree (gml_id);
 
-COMMENT ON TABLE  ax_historischesflurstueck        IS 'Historisches Flurstück, ALKIS, MIT Geometrie';
-COMMENT ON COLUMN ax_historischesflurstueck.gml_id IS 'Identifikator, global eindeutig';
+
+-- Suche nach Vorgänger / Nachfolger
+-- ++ Welche Methode für ein Array? 
+-- Wirkt das überhaupt bei der Suche nach einem einzelnen Wert aus dem Array?
+CREATE INDEX idx_histfs_vor
+   ON ax_historischesflurstueck (vorgaengerflurstueckskennzeichen ASC);
+COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
+
+CREATE INDEX idx_histfs_nach
+   ON ax_historischesflurstueck (vorgaengerflurstueckskennzeichen ASC);
+COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
+
+-- Die postgresql-Doku sagt dazu (http://www.postgresql.org/docs/9.1/static/arrays.html):
+-- Arrays are not sets; 
+-- searching for specific array elements can be a sign of database misdesign.
+-- Consider using a separate table with a row for each item that would be an array element.
+-- This will be easier to search, and is likely to scale better for a large number of elements. 
+
+
+  COMMENT ON TABLE  ax_historischesflurstueck        IS 'Historisches Flurstück, ALKIS, MIT Geometrie';
+  COMMENT ON COLUMN ax_historischesflurstueck.gml_id IS 'Identifikator, global eindeutig';
+
+  COMMENT ON COLUMN ax_historischesflurstueck.flurnummer                IS 'FLN "Flurnummer" ist die von der Katasterbehörde zur eindeutigen Bezeichnung vergebene Nummer einer Flur, die eine Gruppe von zusammenhängenden Flurstücken innerhalb einer Gemarkung umfasst.';
+  COMMENT ON COLUMN ax_historischesflurstueck.zaehler                   IS 'ZAE  Dieses Attribut enthält den Zähler der Flurstücknummer';
+  COMMENT ON COLUMN ax_historischesflurstueck.nenner                    IS 'NEN  Dieses Attribut enthält den Nenner der Flurstücknummer';
+
+  COMMENT ON COLUMN ax_historischesflurstueck.flurstueckskennzeichen    IS '"Flurstückskennzeichen" ist ein von der Katasterbehörde zur eindeutigen Bezeichnung des Flurstücks vergebenes Ordnungsmerkmal.
+Die Attributart setzt sich aus den nachfolgenden expliziten Attributarten in der angegebenen Reihenfolge zusammen:
+ 1.  Land (2 Stellen)
+ 2.  Gemarkungsnummer (4 Stellen)
+ 3.  Flurnummer (3 Stellen)
+ 4.  Flurstücksnummer
+ 4.1 Zähler (5 Stellen)
+ 4.2 Nenner (4 Stellen)
+ 5.  Flurstücksfolge (2 Stellen)
+Die Elemente sind rechtsbündig zu belegen, fehlende Stellen sind mit führenden Nullen zu belegen.
+Da die Flurnummer und die Flurstücksfolge optional sind, sind aufgrund der bundeseinheitlichen Definition im Flurstückskennzeichen die entsprechenden Stellen, sofern sie nicht belegt sind, durch Unterstrich "_" ersetzt.
+Gleiches gilt für Flurstücksnummern ohne Nenner, hier ist der fehlende Nenner im Flurstückskennzeichen durch Unterstriche zu ersetzen.';
+
+  COMMENT ON COLUMN ax_historischesflurstueck.amtlicheflaeche           IS 'AFL "Amtliche Fläche" ist der im Liegenschaftskataster festgelegte Flächeninhalt des Flurstücks in [qm]. Flurstücksflächen kleiner 0,5 qm können mit bis zu zwei Nachkommastellen geführt werden, ansonsten ohne Nachkommastellen.';
+  COMMENT ON COLUMN ax_historischesflurstueck.abweichenderrechtszustand IS 'ARZ "Abweichender Rechtszustand" ist ein Hinweis darauf, dass außerhalb des Grundbuches in einem durch Gesetz geregelten Verfahren der Bodenordnung (siehe Objektart "Bau-, Raum- oder Bodenordnungsrecht", AA "Art der Festlegung", Werte 1750, 1770, 2100 bis 2340) ein neuer Rechtszustand eingetreten ist und das amtliche Verzeichnis der jeweiligen ausführenden Stelle maßgebend ist.';
+  COMMENT ON COLUMN ax_historischesflurstueck.zweifelhafterFlurstuecksnachweis IS 'ZFM "Zweifelhafter Flurstücksnachweis" ist eine Kennzeichnung eines Flurstücks, dessen Angaben nicht zweifelsfrei berichtigt werden können.';
+  COMMENT ON COLUMN ax_historischesflurstueck.rechtsbehelfsverfahren    IS 'RBV "Rechtsbehelfsverfahren" ist der Hinweis darauf, dass bei dem Flurstück ein laufendes Rechtsbehelfsverfahren anhängig ist.';
+  COMMENT ON COLUMN ax_historischesflurstueck.zeitpunktderentstehung    IS 'ZDE "Zeitpunkt der Entstehung" ist der Zeitpunkt, zu dem das Flurstück fachlich entstanden ist.';
+
+  COMMENT ON COLUMN ax_historischesflurstueck.gemeindezugehoerigkeit    IS 'GDZ "Gemeindezugehörigkeit" enthält das Gemeindekennzeichen zur Zuordnung der Flustücksdaten zu einer Gemeinde.';
+-- oder gemeinde?
+
 
 -- Kennzeichen indizieren, z.B. fuer Suche aus der Historie
 CREATE INDEX ax_historischesflurstueck_kennz
@@ -536,7 +660,7 @@ COMMENT ON INDEX ax_historischesflurstueck_kennz IS 'Suche nach Flurstückskennz
 CREATE TABLE ax_naturumweltoderbodenschutzrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -570,7 +694,7 @@ COMMENT ON COLUMN ax_naturumweltoderbodenschutzrecht.gml_id IS 'Identifikator, g
 CREATE TABLE ax_schutzgebietnachwasserrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -628,16 +752,15 @@ COMMENT ON COLUMN ax_schutzzone.gml_id IS 'Identifikator, global eindeutig';
 
 -- T o p o g r a p h i s c h e   L i n i e 
 -- ---------------------------------------------------
--- neu 02.2011
 CREATE TABLE ax_topographischelinie (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character(28),
+--	identifier		character(28),
 	beginnt			character(20),
-	advstandardmodell	character(4),
+	advstandardmodell	character varying(9),
 	anlass			integer,
 	liniendarstellung	integer,
-	sonstigeeigenschaft	character(21),
+	sonstigeeigenschaft	character varying(21),
 	CONSTRAINT ax_topographischelinie_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -673,10 +796,10 @@ COMMENT ON COLUMN ax_topographischelinie.gml_id IS 'Identifikator, global eindeu
 CREATE TABLE ap_ppo (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying[],
-	sonstigesmodell		character varying(8),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	signaturnummer		integer,
 	art			character varying(20),
@@ -704,10 +827,10 @@ COMMENT ON COLUMN ap_ppo.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ap_lpo (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 --	beginnt			timestamp without time zone,	-- Feld bleibt leer, wenn als timestamp angelegt!
-	advstandardmodell	character varying[],		-- ,character(9), hier als Array!
+	advstandardmodell	character varying[],		-- hier als Array!
 	anlass			integer,
 	signaturnummer		integer,
 	art			character varying(5),
@@ -738,7 +861,7 @@ COMMENT ON COLUMN ap_lpo.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ap_pto (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),  -- PostNAS 0.5: bleibt leer 
+--	identifier		character varying(28),  -- PostNAS 0.5: bleibt leer 
 	beginnt			character(20),
 	advstandardmodell	character varying[],
 	anlass			integer,
@@ -750,8 +873,8 @@ CREATE TABLE ap_pto (
 	signaturnummer		integer,
 	art			character varying(40),  -- (18)
 	drehwinkel		double precision,       -- falsche Masseinheit für Mapserver, im View umrechnen
-	"zeigtaufexternes|aa_fachdatenverbindung|art" character varying(40),
-	--"name"		character(17),          -- leer?
+--	"zeigtaufexternes|aa_fachdatenverbindung|art" character varying(40),
+	--"name"		character varying(17),          -- leer?
 	CONSTRAINT ap_pto_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -803,7 +926,7 @@ COMMENT ON COLUMN ap_lto.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ap_darstellung (
 	ogc_fid			serial NOT NULL, 
 	gml_id			character(16),	-- character varying(32), 
-	identifier		character varying(28),		-- leer
+--	identifier		character varying(28),		-- leer
 	beginnt			character(20),			-- Datumsformat
 --	beginnt			timestamp without time zone,	-- dies Format wird nicht gefuellt
 	advstandardmodell	character varying(9),
@@ -839,68 +962,48 @@ COMMENT ON COLUMN ap_darstellung.gml_id IS 'Identifikator, global eindeutig';
 --** Objektartengruppe: Angaben zum Flurstück
 --   ===================================================================
 
-
 -- F l u r s t u e c k
 -- ----------------------------------------------
+-- Kennung 11001
 CREATE TABLE ax_flurstueck (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),	-- character varying(32),         -- Datenbank-Tabelle interner Schlüssel
-	identifier		character varying(28), -- Kann wech? redundant: gml_id mit prefix
-	beginnt			character(20),         -- Timestamp der Enststehung
-	advstandardmodell 	character varying(8),  -- steuert die Darstellung nach Kartentyp
-	anlass			integer,               -- 
---	art			character varying[],   -- Wozu braucht man das? Weglassen?
-	"name"			character varying[],   -- 03.11.2011: array, Buchauskunft anpassen!
-	land 			integer,         --
-	gemarkungsnummer 	integer,            --
-	flurnummer		integer,               -- Teile des Flurstückskennzeichens (redundant zu flurstueckskennzeichen)
-	zaehler 		integer,            --
-	nenner			integer,         --
-	flurstueckskennzeichen	character(20),   -- Inhalt rechts mit __ auf 20 aufgefüllt
-	regierungsbezirk	integer,
-	kreis			integer,
-	gemeinde		integer,
-	amtlicheflaeche		double precision,   -- integer,
-	--abweichenderrechtszustand character(5),
-	rechtsbehelfsverfahren	integer,            -- Konverter-Fehler
-	zeitpunktderentstehung	character(10),      -- inhalt jjjj-mm-tt  besser Format date ?
-	"gemeindezugehoerigkeit|ax_gemeindekennzeichen|land"	integer,
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),         -- Datenbank-Tabelle interner Schlüssel
+--	identifier			character varying(28), -- Kann wech? redundant: gml_id mit prefix
+--	zustaendigeStelle		character varying,     -- ZST
+
+	-- GID: AX_Flurstueck_Kerndaten
+	-- 'Flurstück_Kerndaten' enthält Eigenschaften des Flurstücks, die auch für andere Flurstücksobjektarten gelten (z.B. Historisches Flurstück).
+
+	land 				integer,         --
+	gemarkungsnummer 		integer,            --
+	flurnummer			integer,               -- Teile des Flurstückskennzeichens 
+	zaehler 			integer,            --    (redundant zu flurstueckskennzeichen)
+	nenner				integer,         --
+	-- daraus abgeleitet:
+	flurstueckskennzeichen		character(20),         -- Inhalt rechts mit __ auf 20 aufgefüllt
+
+	amtlicheflaeche			double precision,      -- AFL
+	abweichenderrechtszustand	character varying(5),  -- ARZ
+	zweifelhafterFlurstuecksnachweis character varying(5), -- ZFM Boolean
+	rechtsbehelfsverfahren		integer,               -- RBV
+	zeitpunktderentstehung		character(10),         -- ZDE  Inhalt jjjj-mm-tt  besser Format date ?
+
+	gemeindezugehoerigkeit		integer,
+	gemeinde			integer,  -- Welches von den beiden wird dann gefüllt?
+	-- GID: ENDE AX_Flurstueck_Kerndaten
+
+	beginnt				character(20),         -- Timestamp der Enststehung
+	advstandardmodell 		character varying(9),  -- steuert die Darstellung nach Kartentyp
+	anlass				integer,               -- 
+--	art				character varying[],   -- Wozu braucht man das? Weglassen?
+	"name"				character varying[],   -- 03.11.2011: array, Buchauskunft anpassen!
+	regierungsbezirk		integer,
+	kreis				integer,
 	CONSTRAINT ax_flurstueck_pk PRIMARY KEY (ogc_fid)
 );
 
--- MUSTER aus native PostNAS 06
---  ogc_fid serial NOT NULL,
---  wkb_geometry geometry,
---  gml_id character varying(32),
---  identifier character varying(28),
---  beginnt character varying(20),
---  advstandardmodell character varying(4),
---  anlass integer,
---  art character varying[],
---  "name" character varying[],
---  uri character varying(28),
---  land integer,
---  gemarkungsnummer integer,
---  zaehler integer,
---  flurstueckskennzeichen character varying(20),
---  amtlicheflaeche integer,
---  flurnummer integer,
---  abweichenderrechtszustand character varying(5),
---  rechtsbehelfsverfahren character varying(5),
---  zeitpunktderentstehung character varying(10),
---  "gemeindezugehoerigkeit|ax_gemeindekennzeichen|land" integer,
---  regierungsbezirk integer,
---  kreis integer,
---  gemeinde integer,
---  "zustaendigestelle|ax_dienststelle_schluessel|land" integer,
---  stelle integer,
---  istgebucht character varying,
---  zeigtauf character varying,
---  weistauf character varying,
--- MUSTER ENDE
 
 SELECT AddGeometryColumn('ax_flurstueck','wkb_geometry','25832','MULTIPOLYGON',2);
-
 -- verschiedene Geometrietypen?
 ALTER TABLE ax_flurstueck DROP CONSTRAINT enforce_geotype_wkb_geometry;
 
@@ -910,18 +1013,55 @@ CREATE INDEX ax_flurstueck_geom_idx   ON ax_flurstueck USING gist (wkb_geometry)
 CREATE UNIQUE INDEX ax_flurstueck_gml
                  ON ax_flurstueck  USING btree (gml_id);
 
-COMMENT ON TABLE  ax_flurstueck        IS 'F l u r s t u e c k';
-COMMENT ON COLUMN ax_flurstueck.gml_id IS 'Identifikator, global eindeutig';
+  COMMENT ON TABLE  ax_flurstueck                           IS '"F l u r s t u e c k" ist ein Teil der Erdoberfläche, der von einer im Liegenschaftskataster festgelegten Grenzlinie umschlossen und mit einer Nummer bezeichnet ist. Es ist die Buchungseinheit des Liegenschaftskatasters.';
+  COMMENT ON COLUMN ax_flurstueck.gml_id                    IS 'Identifikator, global eindeutig';
+--COMMENT ON COLUMN ax_flurstueck.zustaendigeStelle         IS 'ZST "Flurstück" wird verwaltet von "Dienststelle". Diese Attributart wird nur dann belegt, wenn eine fachliche Zuständigkeit über eine Gemarkung bzw. Gemarkungsteil/Flur nicht abgebildet werden kann. Die Attributart enthält den Dienststellenschlüssel der Stelle, die fachlich für ein Flurstück zustandig ist.';
+  COMMENT ON COLUMN ax_flurstueck.flurnummer                IS 'FLN "Flurnummer" ist die von der Katasterbehörde zur eindeutigen Bezeichnung vergebene Nummer einer Flur, die eine Gruppe von zusammenhängenden Flurstücken innerhalb einer Gemarkung umfasst.';
+  COMMENT ON COLUMN ax_flurstueck.zaehler                   IS 'ZAE  Dieses Attribut enthält den Zähler der Flurstücknummer';
+  COMMENT ON COLUMN ax_flurstueck.nenner                    IS 'NEN  Dieses Attribut enthält den Nenner der Flurstücknummer';
+
+  COMMENT ON COLUMN ax_flurstueck.flurstueckskennzeichen    IS '"Flurstückskennzeichen" ist ein von der Katasterbehörde zur eindeutigen Bezeichnung des Flurstücks vergebenes Ordnungsmerkmal.
+Die Attributart setzt sich aus den nachfolgenden expliziten Attributarten in der angegebenen Reihenfolge zusammen:
+ 1.  Land (2 Stellen)
+ 2.  Gemarkungsnummer (4 Stellen)
+ 3.  Flurnummer (3 Stellen)
+ 4.  Flurstücksnummer
+ 4.1 Zähler (5 Stellen)
+ 4.2 Nenner (4 Stellen)
+ 5.  Flurstücksfolge (2 Stellen)
+Die Elemente sind rechtsbündig zu belegen, fehlende Stellen sind mit führenden Nullen zu belegen.
+Da die Flurnummer und die Flurstücksfolge optional sind, sind aufgrund der bundeseinheitlichen Definition im Flurstückskennzeichen die entsprechenden Stellen, sofern sie nicht belegt sind, durch Unterstrich "_" ersetzt.
+Gleiches gilt für Flurstücksnummern ohne Nenner, hier ist der fehlende Nenner im Flurstückskennzeichen durch Unterstriche zu ersetzen.';
+
+  COMMENT ON COLUMN ax_flurstueck.amtlicheflaeche           IS 'AFL "Amtliche Fläche" ist der im Liegenschaftskataster festgelegte Flächeninhalt des Flurstücks in [qm]. Flurstücksflächen kleiner 0,5 qm können mit bis zu zwei Nachkommastellen geführt werden, ansonsten ohne Nachkommastellen.';
+  COMMENT ON COLUMN ax_flurstueck.abweichenderrechtszustand IS 'ARZ "Abweichender Rechtszustand" ist ein Hinweis darauf, dass außerhalb des Grundbuches in einem durch Gesetz geregelten Verfahren der Bodenordnung (siehe Objektart "Bau-, Raum- oder Bodenordnungsrecht", AA "Art der Festlegung", Werte 1750, 1770, 2100 bis 2340) ein neuer Rechtszustand eingetreten ist und das amtliche Verzeichnis der jeweiligen ausführenden Stelle maßgebend ist.';
+  COMMENT ON COLUMN ax_flurstueck.zweifelhafterFlurstuecksnachweis IS 'ZFM "Zweifelhafter Flurstücksnachweis" ist eine Kennzeichnung eines Flurstücks, dessen Angaben nicht zweifelsfrei berichtigt werden können.';
+  COMMENT ON COLUMN ax_flurstueck.rechtsbehelfsverfahren    IS 'RBV "Rechtsbehelfsverfahren" ist der Hinweis darauf, dass bei dem Flurstück ein laufendes Rechtsbehelfsverfahren anhängig ist.';
+  COMMENT ON COLUMN ax_flurstueck.zeitpunktderentstehung    IS 'ZDE "Zeitpunkt der Entstehung" ist der Zeitpunkt, zu dem das Flurstück fachlich entstanden ist.';
+
+  COMMENT ON COLUMN ax_flurstueck.gemeindezugehoerigkeit    IS 'GDZ "Gemeindezugehörigkeit" enthält das Gemeindekennzeichen zur Zuordnung der Flustücksdaten zu einer Gemeinde.';
+-- oder gemeinde?
+
+  COMMENT ON COLUMN ax_flurstueck.anlass                    IS '?';
+  COMMENT ON COLUMN ax_flurstueck.art                       IS '?';
+  COMMENT ON COLUMN ax_flurstueck.name                      IS 'Array mit Fortführungsjahr und -Nummer';
+  COMMENT ON COLUMN ax_flurstueck.regierungsbezirk          IS 'Regierungsbezirk';
+  COMMENT ON COLUMN ax_flurstueck.kreis                     IS 'Kreis';
+
 
 -- Kennzeichen indizieren, z.B. fuer Suche aus der Historie
 CREATE INDEX ax_flurstueck_kennz
    ON ax_flurstueck USING btree (flurstueckskennzeichen ASC NULLS LAST);
 COMMENT ON INDEX ax_flurstueck_kennz IS 'Suche nach Flurstückskennzeichen';
 
+
 -- Relationen:
--- istGebucht --> AX_Buchungsstelle
--- zeigtAuf   --> AX_LagebezeichnungOhneHausnummer
--- weistAuf   --> AX_LagebezeichnungMitHausnummer
+--  istGebucht                --> AX_Buchungsstelle
+--  zeigtAuf                  --> AX_LagebezeichnungOhneHausnummer
+--  weistAuf                  --> AX_LagebezeichnungMitHausnummer
+--  gehoertAnteiligZu         --> AX_Flurstueck
+--  beziehtSichAufFlurstueck  --> AX_Flurstueck
+
 
 
 -- B e s o n d e r e   F l u r s t u e c k s g r e n z e
@@ -929,7 +1069,7 @@ COMMENT ON INDEX ax_flurstueck_kennz IS 'Suche nach Flurstückskennzeichen';
 CREATE TABLE ax_besondereflurstuecksgrenze (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -953,10 +1093,10 @@ COMMENT ON COLUMN ax_besondereflurstuecksgrenze.gml_id IS 'Identifikator, global
 -- ----------------------------------------------
 CREATE TABLE ax_grenzpunkt (
 	ogc_fid				serial NOT NULL,
-	gml_id			character(16),	-- character varying(32),
-	identifier			character varying(28),
+	gml_id				character(16),	-- character varying(32),
+--	identifier			character varying(28),
 	beginnt				character(20),
-	advstandardmodell		character varying(8),
+	advstandardmodell		character varying(9),
 	anlass				integer,
 	punktkennung			character varying(15), -- integer,
 	land				integer,
@@ -968,7 +1108,7 @@ CREATE TABLE ax_grenzpunkt (
 	art				character varying(40), --(37)
 	"name"				character varying[],
 	zeitpunktderentstehung		integer,
-	--uri				character(28)
+	--uri				character varying(28)
 	CONSTRAINT ax_grenzpunkt_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1003,7 +1143,7 @@ COMMENT ON COLUMN ax_grenzpunkt.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_lagebezeichnungohnehausnummer (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1038,7 +1178,7 @@ COMMENT ON COLUMN ax_lagebezeichnungohnehausnummer.gml_id IS 'Identifikator, glo
 CREATE TABLE ax_lagebezeichnungmithausnummer (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1083,7 +1223,7 @@ COMMENT ON COLUMN ax_lagebezeichnungmithausnummer.gml_id IS 'Identifikator, glob
 CREATE TABLE ax_lagebezeichnungmitpseudonummer (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1158,7 +1298,7 @@ COMMENT ON COLUMN ax_aufnahmepunkt.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_sonstigervermessungspunkt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1198,7 +1338,7 @@ COMMENT ON COLUMN ax_sonstigervermessungspunkt.gml_id IS 'Identifikator, global 
 CREATE TABLE ax_punktortag (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1206,7 +1346,7 @@ CREATE TABLE ax_punktortag (
 	"name"			character varying[],
 	--kartendarstellung	character varying(5), -- true/false
 	kartendarstellung	integer,
-	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer, -- character varying[],
+--	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer, -- character varying[],
 	genauigkeitsstufe	integer,
 	vertrauenswuerdigkeit	integer,
 	CONSTRAINT ax_punktortag_pk PRIMARY KEY (ogc_fid)
@@ -1229,17 +1369,17 @@ COMMENT ON COLUMN ax_punktortag.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_punktortau (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
 --	kartendarstellung	character varying(5), -- true / false: boolean
 	kartendarstellung	integer, 
-	art			character varying(61),
+--	art			character varying(61),  - entbehrlich
 	"name"			character varying(26),
-	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer,  --character varying[],
-	datetime		character(20),
-	individualname		character(7),
+--	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer,  --character varying[],
+--	datetime		character varying(40),
+	individualname		character varying(7),
 	vertrauenswuerdigkeit	integer,
 	genauigkeitsstufe	integer,
 	CONSTRAINT ax_punktortau_pk PRIMARY KEY (ogc_fid)
@@ -1262,18 +1402,18 @@ COMMENT ON COLUMN ax_punktortau.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_punktortta (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
-	--kartendarstellung	character(5), -- true/false
+--	kartendarstellung	character(5), -- true/false
 	kartendarstellung	integer,      -- boolean
 	description		integer,
 	art			character varying[],  -- character(61),
 	"name"			character varying[],
-	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|source|li_s"	integer,
-	characterstring		character varying(10), -- merkwuerdig, rlp: Inhalt = "Berechnung"
-	datetime		character varying(20), -- merkwuerdig, rlp: Inhalt = "1900-01-01T00:00:00Z"
+--	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|source|li_s"	integer,
+--	characterstring		character varying(10), -- merkwuerdig, rlp: Inhalt = "Berechnung"
+--	datetime		character varying(20), -- merkwuerdig, rlp: Inhalt = "1900-01-01T00:00:00Z"
 	genauigkeitsstufe	integer,
 	vertrauenswuerdigkeit	integer,
 	CONSTRAINT ax_punktortta_pk PRIMARY KEY (ogc_fid)
@@ -1289,7 +1429,6 @@ CREATE UNIQUE INDEX ax_punktortta_gml
 
 COMMENT ON TABLE  ax_punktortta        IS 'P u n k t o r t   T A';
 COMMENT ON COLUMN ax_punktortta.gml_id IS 'Identifikator, global eindeutig';
-
 
 
 --AX_DQPunktort
@@ -1312,23 +1451,23 @@ COMMENT ON COLUMN ax_punktortta.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_fortfuehrungsnachweisdeckblatt (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character varying(20),
-	advstandardmodell		character varying(4),
+	advstandardmodell		character varying(9),
 	anlass				integer,
-	art				character varying(43),
+--	art				character varying(43),		-- entbehrlich
 	uri				character varying(28),
 	fortfuehrungsfallnummernbereich	character varying(7),
 	land				integer,
 	gemarkungsnummer		integer,
 	laufendenummer			integer,
-	titel				character varying(21),
-	"ingemarkung|ax_gemarkung_schluessel|land"	integer,
-	"ingemarkung|ax_gemarkung_schluessel|gemarkungsnummer"	integer,
-	erstelltam			character varying(10),
+	titel				character varying(40),
+--	"ingemarkung|ax_gemarkung_schluessel|land"	integer,	-- land '5'
+--	"ingemarkung|ax_gemarkung_schluessel|gemarkungsnummer"	integer,	-- gemarkung (4)
+	erstelltam			character varying(10),		-- Datum jjjj-mm-tt
 	fortfuehrungsentscheidungam	character varying(10),
-	fortfuehrungsentscheidungvon	character varying(23),
-	bemerkung			character varying(29),
+	fortfuehrungsentscheidungvon	character varying(40),		-- Bearbeiter-Name und -Titel
+	bemerkung			character varying(80),
 	beziehtsichauf			character varying,
 	CONSTRAINT ax_fortfuehrungsnachweisdeckblatt_pk PRIMARY KEY (ogc_fid)
 );
@@ -1338,26 +1477,29 @@ INSERT INTO geometry_columns
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_fortfuehrungsnachweisdeckblatt', 'dummy', 2, 25832, 'POINT');
 
+COMMENT ON TABLE  ax_fortfuehrungsnachweisdeckblatt
+IS 'F o r t f u e h r u n g s n a c h w e i s / D e c k b l a t t';
 
--- F o r t f u e h r u n g s f a l l 
+
+-- F o r t f u e h r u n g s f a l l
 -- ---------------------------------
 -- neu 02.11.2011
 
 CREATE TABLE ax_fortfuehrungsfall (
 	ogc_fid					serial NOT NULL,
 	gml_id					character(16),
-	identifier				character varying(28),
+--	identifier				character varying(28),
 	beginnt					character varying(20),
-	advstandardmodell			character varying(4),
+	advstandardmodell			character varying(9),
 	anlass					integer,
-	art					character varying(37),
+--	art					character varying(40),  -- entbehrlich
 	uri					character varying(28),
 	fortfuehrungsfallnummer			integer,
 	laufendenummer				integer,
 	ueberschriftimfortfuehrungsnachweis	integer[],
 	anzahlderfortfuehrungsmitteilungen	integer,
-	zeigtaufaltesflurstueck			character varying[],
-	zeigtaufneuesflurstueck			character varying[],
+	zeigtaufaltesflurstueck			character varying[], -- Format wie flurstueckskennzeichen (20) als Array
+	zeigtaufneuesflurstueck			character varying[], -- Format wie flurstueckskennzeichen (20) als Array
 	bemerkung				character varying(14),
 	CONSTRAINT ax_fortfuehrungsfall_pk PRIMARY KEY (ogc_fid)
 );
@@ -1366,6 +1508,8 @@ CREATE TABLE ax_fortfuehrungsfall (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'ax_fortfuehrungsfall', 'dummy', 2, 25832, 'POINT');
+
+COMMENT ON TABLE  ax_fortfuehrungsfall IS 'F o r t f u e h r u n g s f a l l';
 
 
 --
@@ -1397,9 +1541,9 @@ VALUES ('', 'public', 'ax_fortfuehrungsfall', 'dummy', 2, 25832, 'POINT');
 CREATE TABLE ax_reservierung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character varying(20),
-	advstandardmodell	character varying(4),
+	advstandardmodell	character varying(9),
 	art			integer,
 	nummer			character varying(20),
 	land			integer,
@@ -1423,10 +1567,10 @@ VALUES ('', 'public', 'ax_reservierung', 'dummy', 2, 25832, 'POINT');
 CREATE TABLE ax_punktkennunguntergegangen (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character varying(20),
-	advstandardmodell	character varying(4),
-	sonstigesmodell		character varying(6),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	punktkennung		character varying(15),
 	art			integer,
@@ -1446,36 +1590,91 @@ VALUES ('', 'public', 'ax_punktkennunguntergegangen', 'dummy', 2, 25832, 'POINT'
 --** Objektartengruppe: Angaben zur Historie
 --   ===================================================================
 
+-- Variante B: "Vollhistorie" ( statt ax_historischesflurstueckalb)
+
 -- AX_HistorischesFlurstueckOhneRaumbezug
--- Neu 05.2011
+
 CREATE TABLE ax_historischesflurstueckohneraumbezug (
 	ogc_fid					serial NOT NULL,
 	gml_id					character(16),
-	identifier				character(28),  -- verzichtbar?
-	beginnt					character(20),
-	advstandardmodell			character(4),
-	anlass					integer,
-	art					character varying[], -- Array {a,b,c}
-	"name"					character varying[], -- Array {a,b,c}
-	land					integer,
-	gemarkungsnummer			integer,
-	flurnummer				integer,
-	zaehler					integer,
-	nenner					integer, 
-	flurstueckskennzeichen			character(20),
-	amtlicheflaeche				integer,
 
-	abweichenderrechtszustand		character(5), -- boolean? Inhalt 'false'
-	rechtsbehelfsverfahren			character(5), -- boolean? Inhalt 'false'
-	zeitpunktderentstehung			character(10),
+	-- GID: AX_Flurstueck_Kerndaten
+	-- 'Flurstück_Kerndaten' enthält Eigenschaften des Flurstücks, die auch für andere Flurstücksobjektarten gelten (z.B. Historisches Flurstück).
+
+	land 				integer,         --
+	gemarkungsnummer 		integer,            --
+	flurnummer			integer,               -- Teile des Flurstückskennzeichens 
+	zaehler 			integer,            --    (redundant zu flurstueckskennzeichen)
+	nenner				integer,         --
+	-- daraus abgeleitet:
+	flurstueckskennzeichen		character(20),         -- Inhalt rechts mit __ auf 20 aufgefüllt
+
+	amtlicheflaeche			double precision,      -- AFL
+	abweichenderrechtszustand	character varying(5),        -- ARZ
+	zweifelhafterFlurstuecksnachweis character varying(5), -- ZFM Boolean
+	rechtsbehelfsverfahren		integer,               -- RBV
+	zeitpunktderentstehung		character(10),         -- ZDE  Inhalt jjjj-mm-tt  besser Format date ?
+
+	gemeindezugehoerigkeit		integer,
+	gemeinde			integer,  -- Welches von den beiden wird dann gefüllt?
+	-- GID: ENDE AX_Flurstueck_Kerndaten
+
+--	identifier			character(28),  -- verzichtbar?
+	beginnt				character(20),
+	advstandardmodell		character varying(9),
+	anlass				integer,
+--	art				character varying[], -- Array {a,b,c}  -- verzichtbar?
+	"name"				character varying[], -- Array {a,b,c}
+
 	nachfolgerflurstueckskennzeichen	character varying[], -- Array {a,b,c}
 	vorgaengerflurstueckskennzeichen	character varying[], -- Array {a,b,c}
-	istgebucht				character varying,
+--	istgebucht			character varying,
 	CONSTRAINT ax_historischesflurstueckohneraumbezug_pk PRIMARY KEY (ogc_fid)
 );
 
-COMMENT ON TABLE  ax_historischesflurstueckohneraumbezug        IS 'historisches Flurstueck ohne Raumbezug';
-COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.gml_id IS 'Identifikator, global eindeutig';
+  COMMENT ON TABLE  ax_historischesflurstueckohneraumbezug        IS '"Historisches Flurstück ohne Raumbezug" ist ein nicht mehr aktuelles Flurstück, das schon im ALB historisch geworden ist, nach ALKIS migriert und im Rahmen der Vollhistorie geführt wird.';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.gml_id IS 'Identifikator, global eindeutig';
+
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.flurnummer                IS 'FLN "Flurnummer" ist die von der Katasterbehörde zur eindeutigen Bezeichnung vergebene Nummer einer Flur, die eine Gruppe von zusammenhängenden Flurstücken innerhalb einer Gemarkung umfasst.';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.zaehler                   IS 'ZAE  Dieses Attribut enthält den Zähler der Flurstücknummer';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.nenner                    IS 'NEN  Dieses Attribut enthält den Nenner der Flurstücknummer';
+
+  COMMENT ON COLUMN ax_flurstueck.flurstueckskennzeichen    IS '"Flurstückskennzeichen" ist ein von der Katasterbehörde zur eindeutigen Bezeichnung des Flurstücks vergebenes Ordnungsmerkmal.
+Die Attributart setzt sich aus den nachfolgenden expliziten Attributarten in der angegebenen Reihenfolge zusammen:
+ 1.  Land (2 Stellen)
+ 2.  Gemarkungsnummer (4 Stellen)
+ 3.  Flurnummer (3 Stellen)
+ 4.  Flurstücksnummer
+ 4.1 Zähler (5 Stellen)
+ 4.2 Nenner (4 Stellen)
+ 5.  Flurstücksfolge (2 Stellen)
+Die Elemente sind rechtsbündig zu belegen, fehlende Stellen sind mit führenden Nullen zu belegen.
+Da die Flurnummer und die Flurstücksfolge optional sind, sind aufgrund der bundeseinheitlichen Definition im Flurstückskennzeichen die entsprechenden Stellen, sofern sie nicht belegt sind, durch Unterstrich "_" ersetzt.
+Gleiches gilt für Flurstücksnummern ohne Nenner, hier ist der fehlende Nenner im Flurstückskennzeichen durch Unterstriche zu ersetzen.';
+
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.amtlicheflaeche           IS 'AFL "Amtliche Fläche" ist der im Liegenschaftskataster festgelegte Flächeninhalt des Flurstücks in [qm]. Flurstücksflächen kleiner 0,5 qm können mit bis zu zwei Nachkommastellen geführt werden, ansonsten ohne Nachkommastellen.';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.abweichenderrechtszustand IS 'ARZ "Abweichender Rechtszustand" ist ein Hinweis darauf, dass außerhalb des Grundbuches in einem durch Gesetz geregelten Verfahren der Bodenordnung (siehe Objektart "Bau-, Raum- oder Bodenordnungsrecht", AA "Art der Festlegung", Werte 1750, 1770, 2100 bis 2340) ein neuer Rechtszustand eingetreten ist und das amtliche Verzeichnis der jeweiligen ausführenden Stelle maßgebend ist.';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.zweifelhafterFlurstuecksnachweis IS 'ZFM "Zweifelhafter Flurstücksnachweis" ist eine Kennzeichnung eines Flurstücks, dessen Angaben nicht zweifelsfrei berichtigt werden können.';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.rechtsbehelfsverfahren    IS 'RBV "Rechtsbehelfsverfahren" ist der Hinweis darauf, dass bei dem Flurstück ein laufendes Rechtsbehelfsverfahren anhängig ist.';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.zeitpunktderentstehung    IS 'ZDE "Zeitpunkt der Entstehung" ist der Zeitpunkt, zu dem das Flurstück fachlich entstanden ist.';
+
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.gemeindezugehoerigkeit    IS 'GDZ "Gemeindezugehörigkeit" enthält das Gemeindekennzeichen zur Zuordnung der Flustücksdaten zu einer Gemeinde.';
+-- oder gemeinde?
+
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.anlass                    IS '?';
+--COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.art                       IS '?';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.name                      IS 'Array mit Fortführungsjahr und -Nummer';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.regierungsbezirk          IS 'Regierungsbezirk';
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.kreis                     IS 'Kreis';
+
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.nachfolgerflurstueckskennzeichen 
+  IS '"Nachfolger-Flurstückskennzeichen" ist die Bezeichnung der Flurstücke, die dem Objekt "Historisches Flurstück ohne Raumbezug" direkt nachfolgen.
+Array mit Kennzeichen im Format der Spalte "flurstueckskennzeichen"';
+
+  COMMENT ON COLUMN ax_historischesflurstueckohneraumbezug.vorgaengerflurstueckskennzeichen 
+  IS '"Vorgänger-Flurstückskennzeichen" ist die Bezeichnung der Flurstücke, die dem Objekt "Historisches Flurstück ohne Raumbezugs" direkt vorangehen.
+Array mit Kennzeichen im Format der Spalte "flurstueckskennzeichen"';
+
 
 -- keine Geometrie, daher ersatzweise: Dummy-Eintrag in Metatabelle
 INSERT INTO geometry_columns 
@@ -1487,14 +1686,24 @@ CREATE INDEX ax_hist_fs_ohne_kennz
    ON ax_historischesflurstueckohneraumbezug USING btree (flurstueckskennzeichen ASC NULLS LAST);
 COMMENT ON INDEX ax_hist_fs_ohne_kennz IS 'Suche nach Flurstückskennzeichen';
 
+-- Suche nach Vorgänger / Nachfolger
+-- ++ Welche Methode für ein Array? Wirkt das bei der Suche nach einem einzelnen Wert aus dem Array?
+CREATE INDEX idx_histfsor_vor
+   ON ax_historischesflurstueckohneraumbezug (vorgaengerflurstueckskennzeichen ASC);
+COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
+
+CREATE INDEX idx_histfsor_nach
+   ON ax_historischesflurstueckohneraumbezug (vorgaengerflurstueckskennzeichen ASC);
+COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
 
 
---*** ############################################################
---*** Objektbereich: Eigentümer
---*** ############################################################
+
+-- *** ############################################################
+-- *** Objektbereich: Eigentümer
+-- *** ############################################################
 
 
---** Objektartengruppe:Personen- und Bestandsdaten
+-- ** Objektartengruppe:Personen- und Bestandsdaten
 --   ===================================================================
 
 
@@ -1504,10 +1713,10 @@ COMMENT ON INDEX ax_hist_fs_ohne_kennz IS 'Suche nach Flurstückskennzeichen';
 CREATE TABLE ax_person (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(9),
-	--sonstigesmodell		character varying(6),
+	--sonstigesmodell		character varying(9),
 	anlass				integer,
 	nachnameoderfirma		character varying(100), --(97),
 	anrede				integer,        -- 'Anrede' ist die Anrede der Person. Diese Attributart ist optional, da Körperschaften und juristischen Person auch ohne Anrede angeschrieben werden können.
@@ -1554,42 +1763,21 @@ COMMENT ON COLUMN ax_person.namensbestandteil IS 'enthält z.B. Titel wie "Baron
 -- Konverter versucht Tabelle noch einmal anzulegen, wenn kein (Dummy-) Eintrag in Metatabelle 'geometry_columns'.
 CREATE TABLE ax_anschrift (
 	ogc_fid				serial NOT NULL,
-	gml_id				character(32), -- 16  TEST
-	identifier			character varying(28),
+	gml_id				character(16),
+--	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(9),
-	--sonstigesmodell		character varying(6),
+	--sonstigesmodell		character varying(9),
 	anlass				integer,
 	--art				character varying[],
 	--uri				character varying[],
 	ort_post			character varying(30),
 	postleitzahlpostzustellung	integer,
 	strasse				character varying(40),
-	hausnummer			character varying(9),
+	hausnummer			character varying(9), -- integer
 	bestimmungsland			character varying(30),
 	CONSTRAINT ax_anschrift_pk PRIMARY KEY (ogc_fid)
 );
-
--- MUSTER native geladen
---  gml_id character varying(32),  - Datum und Zeit hinter dem Kennzeichen?
---  ogc_fid serial NOT NULL,
---  gml_id character varying(32),
---  identifier character varying(28),
---  beginnt character varying(20),
---  advstandardmodell character varying(4),
---  sonstigesmodell character varying(6),
---  anlass integer,
---  art character varying[],
---  uri character varying[],
---  ort_post character varying(13),
---  postleitzahlpostzustellung integer,
---  bestimmungsland character varying(11),
---  strasse character varying(13),
---  hausnummer integer,
---  CONSTRAINT ax_anschrift_pk PRIMARY KEY (ogc_fid)
--- ENDE MUSTER native geladen
-
-
 
 -- Dummy-Eintrag in Metatabelle
 INSERT INTO geometry_columns 
@@ -1609,16 +1797,16 @@ COMMENT ON COLUMN ax_anschrift.gml_id IS 'Identifikator, global eindeutig';
 -- Buchwerk. Keine Geometrie
 CREATE TABLE ax_namensnummer (
 	ogc_fid				serial NOT NULL,
-	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+	gml_id				character(16),
+--	identifier			character varying(28),
 	beginnt				character(20),
-	advstandardmodell		character varying(8),
+	advstandardmodell		character varying(9),
 	anlass				integer,
 	laufendenummernachdin1421	character(16),      -- 0000.00.00.00.00
 	zaehler				double precision,   -- Anteil ..
 	nenner				double precision,   --    .. als Bruch 
 	eigentuemerart			integer,
-	nummer				character(6),       -- leer bei NRW GID 5.1 / Inhalt bei RLP GID 6
+	nummer				character varying(6), -- immer leer ?
 	artderrechtsgemeinschaft	integer,            -- Schlüssel
 	beschriebderrechtsgemeinschaft	character varying(1000),  -- (977)
 	CONSTRAINT ax_namensnummer_pk PRIMARY KEY (ogc_fid)
@@ -1643,14 +1831,14 @@ COMMENT ON COLUMN ax_namensnummer.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_buchungsblatt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
-	buchungsblattkennzeichen	character(13), -- integer
+	buchungsblattkennzeichen	character varying(13), -- integer
 	land			integer,
 	bezirk			integer,
-	buchungsblattnummermitbuchstabenerweiterung	character(7),
+	buchungsblattnummermitbuchstabenerweiterung	character varying(7),
 	blattart		integer,
 	art			character varying(15),
 	-- "name" character(13),  -- immer leer?
@@ -1672,10 +1860,10 @@ COMMENT ON COLUMN ax_buchungsblatt.gml_id IS 'Identifikator, global eindeutig';
 -- -----------------------------
 CREATE TABLE ax_buchungsstelle (
 	ogc_fid				serial NOT NULL,
-	gml_id			character(16),	-- character varying(32),
-	identifier			character varying(28),
+	gml_id				character(16),	-- character varying(32),
+--	identifier			character varying(28),
 	beginnt				character(20),
-	advstandardmodell		character varying(8),
+	advstandardmodell		character varying(9),
 	anlass				integer,
 	buchungsart			integer,
 	laufendenummer			integer,
@@ -1725,24 +1913,39 @@ COMMENT ON COLUMN ax_buchungsstelle.gml_id IS 'Identifikator, global eindeutig';
 
 -- G e b a e u d e
 -- ---------------
+-- Abgleich 2011-11-15 mit 
+--  http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/ALKIS-OK-NRW_MAX_20090722.html#_3B2A042900B5
 CREATE TABLE ax_gebaeude (
 	ogc_fid			serial NOT NULL,
-	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+	gml_id			character(16),		-- character varying(32),
+--	identifier		character varying(28),	-- redundant zu gml_id
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
+--	sonstigesmodell		character(9),
 	anlass			integer,
-	gebaeudefunktion	integer,
-	description		integer,
+	gebaeudefunktion	integer,		-- Werte siehe Schlüsseltabelle
+	weiteregebaeudefunktion	integer,		-- Neu 2011-11-15
 	"name"			character varying(25),
-	lagezurerdoberflaeche	integer,
-	art			character varying(40),  -- (37)
+--	nutzung			character varying,	-- ???
 	bauweise		integer,
 	anzahlderoberirdischengeschosse	integer,
-	grundflaeche		integer,
-	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
-	individualname		character varying(7),
+	anzahlderunterirdischengeschosse	integer, -- Neu 2011-11-15
+	hochhaus		character varying(5),	-- Neu 2011-11-15  Boolean "true"/"false", meist aber leer
+	objekthoehe		integer,
+	dachform		integer,		-- Neu 2011-11-15
 	zustand			integer,
+	geschossflaeche		integer,		-- Neu 2011-11-15
+	grundflaeche		integer,		-- Neu 2011-11-15
+	umbauterraum		integer,		-- Neu 2011-11-15
+	baujahr			integer,		-- Neu 2011-11-15
+	lagezurerdoberflaeche	integer,
+	dachart			character varying(30),	-- Neu 2011-11-15
+	dachgeschossausbau	integer,		-- Neu 2011-11-15
+	qualitaetsangaben	character varying(8),	-- neu 2011-11-15
+--	description		integer,
+--	art			character varying(40),
+--	individualname		character varying(7),
+
 	CONSTRAINT ax_gebaeude_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1762,8 +1965,28 @@ CREATE INDEX ax_gebaeude_geom_idx ON ax_gebaeude USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gebaeude_gml
                  ON ax_gebaeude  USING btree  (gml_id);
 
-COMMENT ON TABLE  ax_gebaeude        IS 'G e b a e u d e';
-COMMENT ON COLUMN ax_gebaeude.gml_id IS 'Identifikator, global eindeutig';
+  COMMENT ON TABLE  ax_gebaeude                    IS '"G e b ä u d e" ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient.';
+  COMMENT ON COLUMN ax_gebaeude.gml_id             IS 'Identifikator, global eindeutig';
+  COMMENT ON COLUMN ax_gebaeude.gebaeudefunktion   IS 'GFK "Gebäudefunktion" ist die zum Zeitpunkt der Erhebung vorherrschend funktionale Bedeutung des Gebäudes (Dominanzprinzip). Werte siehe ax_gebaeude_funktion';
+  COMMENT ON COLUMN ax_gebaeude.weiteregebaeudefunktion IS 'WGF "Weitere Gebäudefunktion" ist die Funktion, die ein Gebäude neben der dominierenden Gebäudefunktion hat.';
+  COMMENT ON COLUMN ax_gebaeude."name"             IS 'NAM "Name" ist der Eigenname oder die Bezeichnung des Gebäudes.';
+--COMMENT ON COLUMN ax_gebaeude.nutzung            IS 'NTZ "Nutzung" ist die Gebäudenutzung und enthält den jeweiligen prozentualen Nutzungsanteil an der Gesamtnutzung.';
+  COMMENT ON COLUMN ax_gebaeude.bauweise           IS 'BAW "Bauweise" ist die Beschreibung der Art der Bauweise. Werte siehe ax_gebaeude_bauweise';
+  COMMENT ON COLUMN ax_gebaeude.anzahlderoberirdischengeschosse IS 'AOG "Anzahl der oberirdischen Geschosse" ist die Anzahl der oberirdischen Geschosse des Gebäudes.';
+  COMMENT ON COLUMN ax_gebaeude.anzahlderunterirdischengeschosse IS 'AUG "Anzahl der unterirdischen Geschosse" ist die Anzahl der unterirdischen Geschosse des Gebäudes.';
+  COMMENT ON COLUMN ax_gebaeude.hochhaus           IS 'HOH "Hochhaus" ist ein Gebäude, das nach Gebäudehöhe und Ausprägung als Hochhaus zu bezeichnen ist. Für Gebäude im Geschossbau gilt dieses i.d.R. ab 8 oberirdischen Geschossen, für andere Gebäude ab einer Gebäudehöhe von 22 m. Abweichungen hiervon können sich durch die Festlegungen in den länderspezifischen Bauordnungen ergeben.';
+  COMMENT ON COLUMN ax_gebaeude.objekthoehe        IS 'HHO "Objekthöhe" ist die Höhendifferenz in [m] zwischen dem höchsten Punkt der Dachkonstruktion und der festgelegten Geländeoberfläche des Gebäudes.';
+  COMMENT ON COLUMN ax_gebaeude.dachform           IS 'DAF "Dachform" beschreibt die charakteristische Form des Daches. Werte siehe ax_gebaeude_dachform';
+  COMMENT ON COLUMN ax_gebaeude.zustand            IS 'ZUS "Zustand" beschreibt die Beschaffenheit oder die Betriebsbereitschaft von "Gebäude". Diese Attributart wird nur dann optional geführt, wenn der Zustand des Gebäudes vom nutzungsfähigen Zustand abweicht. Werte siehe ax_gebaeude_zustand';
+  COMMENT ON COLUMN ax_gebaeude.geschossflaeche    IS 'GFL "Geschossfläche" ist die Gebäudegeschossfläche in [qm].';
+  COMMENT ON COLUMN ax_gebaeude.grundflaeche       IS 'GRF "Grundfläche" ist die Gebäudegrundfläche in [qm].';
+  COMMENT ON COLUMN ax_gebaeude.umbauterraum       IS 'URA "Umbauter Raum" ist der umbaute Raum [Kubikmeter] des Gebäudes.';
+  COMMENT ON COLUMN ax_gebaeude.baujahr            IS 'BJA "Baujahr" ist das Jahr der Fertigstellung oder der baulichen Veränderung des Gebäudes.';
+  COMMENT ON COLUMN ax_gebaeude.lagezurerdoberflaeche IS 'OFL "Lage zur Erdoberfläche" ist die Angabe der relativen Lage des Gebäudes zur Erdoberfläche. Diese Attributart wird nur bei nicht ebenerdigen Gebäuden geführt. 1200=Unter der Erdoberfläche, 1400=Aufgeständert';
+  COMMENT ON COLUMN ax_gebaeude.dachart            IS 'DAA "Dachart" gibt die Art der Dacheindeckung (z.B. Reetdach) an.';
+  COMMENT ON COLUMN ax_gebaeude.dachgeschossausbau IS 'DGA "Dachgeschossausbau" ist ein Hinweis auf den Ausbau bzw. die Ausbaufähigkeit des Dachgeschosses.';
+  COMMENT ON COLUMN ax_gebaeude.qualitaetsangaben  IS 'QAG Angaben zur Herkunft der Informationen (Erhebungsstelle). Die Information ist konform zu den Vorgaben aus ISO 19115 zu repräsentieren.';
+
 
 -- Wie oft kommt welcher Typ von Gebäude-Geometrie vor?
 --
@@ -1815,7 +2038,7 @@ COMMENT ON COLUMN ax_bauteil.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_besonderegebaeudelinie (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	beschaffenheit		integer,
@@ -1841,7 +2064,7 @@ CREATE TABLE ax_firstlinie (
 	gml_id			character(16),	-- character varying(32),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
-	sonstigesmodell		character varying(8),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	art			character varying(40),
 	uri			character varying(28),
@@ -1864,7 +2087,7 @@ COMMENT ON COLUMN ax_firstlinie.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_besonderergebaeudepunkt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1912,13 +2135,13 @@ COMMENT ON COLUMN ax_besonderergebaeudepunkt.gml_id IS 'Identifikator, global ei
 CREATE TABLE ax_wohnbauflaeche (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
 	artderbebauung		integer,
 	zustand			integer,
-	name			character(50),
+	name			character varying(50),
 	CONSTRAINT ax_wohnbauflaeche_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1943,7 +2166,7 @@ COMMENT ON COLUMN ax_wohnbauflaeche.name            IS 'NAM "Name" ist der Eigen
 CREATE TABLE ax_industrieundgewerbeflaeche (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -1982,7 +2205,7 @@ COMMENT ON COLUMN ax_industrieundgewerbeflaeche.primaerenergie IS 'PEG "Primäre
 CREATE TABLE ax_halde
 (	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2012,7 +2235,7 @@ COMMENT ON COLUMN ax_halde.zustand    IS 'ZUS "Zustand" beschreibt die Betriebsb
 CREATE TABLE ax_bergbaubetrieb ( 
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2044,7 +2267,7 @@ COMMENT ON COLUMN ax_bergbaubetrieb.bezeichnung IS 'BEZ "Bezeichnung" ist die vo
 CREATE TABLE ax_tagebaugrubesteinbruch (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2073,7 +2296,7 @@ COMMENT ON COLUMN ax_tagebaugrubesteinbruch.zustand  IS 'ZUS "Zustand" beschreib
 CREATE TABLE ax_flaechegemischternutzung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2105,7 +2328,7 @@ COMMENT ON COLUMN ax_flaechegemischternutzung.zustand        IS 'ZUS "Zustand" b
 CREATE TABLE ax_flaechebesondererfunktionalerpraegung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2136,7 +2359,7 @@ COMMENT ON COLUMN ax_flaechebesondererfunktionalerpraegung.zustand        IS 'ZU
 CREATE TABLE ax_sportfreizeitunderholungsflaeche (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2166,12 +2389,12 @@ COMMENT ON COLUMN ax_sportfreizeitunderholungsflaeche.name     IS 'NAM "Name" is
 CREATE TABLE ax_friedhof (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
 	funktion		integer,
-	"name"			character(50),
+	"name"			character varying(50),
 	zustand			integer,
 	CONSTRAINT ax_friedhof_pk PRIMARY KEY (ogc_fid)
 );
@@ -2200,13 +2423,13 @@ COMMENT ON COLUMN ax_friedhof.zustand   IS 'ZUS "Zustand" beschreibt die Betrieb
 CREATE TABLE ax_strassenverkehr (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
 	funktion		integer,
-	"name"			character(50),
-	zweitname		character(50),
+	"name"			character varying(50),
+	zweitname		character varying(50),
 	zustand			integer,
 	CONSTRAINT ax_strassenverkehr_pk PRIMARY KEY (ogc_fid)
 );
@@ -2234,7 +2457,7 @@ COMMENT ON COLUMN ax_strassenverkehr.zustand   IS 'ZUS "Zustand" beschreibt die 
 CREATE TABLE ax_weg (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2265,7 +2488,7 @@ COMMENT ON COLUMN ax_weg.bezeichnung  IS 'BEZ "Bezeichnung" ist die amtliche Num
 CREATE TABLE ax_platz (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2295,7 +2518,7 @@ COMMENT ON COLUMN ax_platz.zweitname IS 'ZNM "Zweitname" ist der touristische od
 CREATE TABLE ax_bahnverkehr (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2336,7 +2559,7 @@ COMMENT ON COLUMN ax_bahnverkehr.zustand              IS 'ZUS "Zustand" beschrei
 CREATE TABLE ax_flugverkehr (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2372,7 +2595,7 @@ COMMENT ON COLUMN ax_flugverkehr.zustand     IS 'ZUS "Zustand" beschreibt die Be
 CREATE TABLE ax_schiffsverkehr (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2406,7 +2629,7 @@ COMMENT ON COLUMN ax_schiffsverkehr.zustand  IS 'ZUS "Zustand" beschreibt die Be
 CREATE TABLE ax_landwirtschaft (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2464,7 +2687,7 @@ COMMENT ON COLUMN ax_wald.bezeichnung IS 'BEZ "Bezeichnung" ist die von einer Fa
 CREATE TABLE ax_gehoelz (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass 			integer,
@@ -2495,7 +2718,7 @@ COMMENT ON COLUMN ax_gehoelz.funktion           IS 'FKT "Funktion" beschreibt, w
 CREATE TABLE ax_heide (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2521,7 +2744,7 @@ COMMENT ON COLUMN ax_heide.name   IS 'NAM "Name" ist der Eigenname von "Heide".'
 CREATE TABLE ax_moor (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2548,7 +2771,7 @@ COMMENT ON COLUMN ax_moor.name IS 'NAM "Name" ist der Eigenname von "Moor".';
 CREATE TABLE ax_sumpf (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2574,7 +2797,7 @@ COMMENT ON COLUMN ax_sumpf.name   IS 'NAM "Name" ist der Eigenname von "Sumpf".'
 CREATE TABLE ax_unlandvegetationsloseflaeche (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2618,7 +2841,7 @@ COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.funktion             IS 'FKT "
 CREATE TABLE ax_fliessgewaesser (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2648,7 +2871,7 @@ COMMENT ON COLUMN ax_fliessgewaesser.zustand  IS 'ZUS "Zustand" beschreibt die B
 CREATE TABLE ax_hafenbecken (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2681,7 +2904,7 @@ COMMENT ON COLUMN ax_hafenbecken.nutzung  IS 'NTZ "Nutzung" gibt den Nutzerkreis
 CREATE TABLE ax_stehendesgewaesser (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2713,7 +2936,7 @@ COMMENT ON COLUMN ax_stehendesgewaesser.hydrologischesMerkmal IS 'HYD  "Hydrolog
 CREATE TABLE ax_meer (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2770,11 +2993,11 @@ COMMENT ON COLUMN ax_meer.tidemerkmal  IS 'TID "Tidemerkmal" gibt an, ob "Meer" 
 CREATE TABLE ax_turm (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
- 	bauwerksfunktion	integer,
+	bauwerksfunktion	integer,
 	CONSTRAINT ax_turm_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -2795,7 +3018,7 @@ COMMENT ON COLUMN ax_turm.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_bauwerkoderanlagefuerindustrieundgewerbe (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2823,7 +3046,7 @@ COMMENT ON COLUMN ax_bauwerkoderanlagefuerindustrieundgewerbe.gml_id IS 'Identif
 CREATE TABLE ax_vorratsbehaelterspeicherbauwerk (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2858,7 +3081,7 @@ COMMENT ON COLUMN ax_vorratsbehaelterspeicherbauwerk.gml_id IS 'Identifikator, g
 CREATE TABLE ax_transportanlage (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -2912,12 +3135,12 @@ COMMENT ON COLUMN ax_leitung.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_bauwerkoderanlagefuersportfreizeitunderholung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
 	bauwerksfunktion	integer,
-	-- "name"		character(15),
+	-- "name"		character varying(15),
 	CONSTRAINT ax_bauwerkoderanlagefuersportfreizeitunderholung_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -2941,7 +3164,7 @@ COMMENT ON COLUMN ax_bauwerkoderanlagefuersportfreizeitunderholung.gml_id IS 'Id
 CREATE TABLE ax_historischesbauwerkoderhistorischeeinrichtung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	sonstigesmodell		character varying[],
@@ -2968,17 +3191,16 @@ COMMENT ON COLUMN ax_historischesbauwerkoderhistorischeeinrichtung.gml_id IS 'Id
 
 -- H e i l q u e l l e  /  G a s q u e l l e
 -- ----------------------------------------------
--- neu 02.2011
 CREATE TABLE ax_heilquellegasquelle (
-	ogc_fid serial NOT NULL,
+	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier character(28),
-	beginnt character(20),
-	advstandardmodell character(4),
-	sonstigesmodell character(5),
-	anlass integer,
-	art integer,
-	"name" character(13),
+--	identifier		character(28),
+	beginnt			character(20),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(9),
+	anlass			integer,
+	art			integer,
+	"name"			character varying(13),
 	CONSTRAINT ax_heilquellegasquelle_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3030,9 +3252,9 @@ COMMENT ON COLUMN ax_sonstigesbauwerkodersonstigeeinrichtung.gml_id IS 'Identifi
 CREATE TABLE ax_einrichtunginoeffentlichenbereichen (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character(28),
+--	identifier		character(28),
 	beginnt			character(20),
-	sonstigesmodell		character(6),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	art			integer,
 	CONSTRAINT ax_einrichtunginoeffentlichenbereichen_pk PRIMARY KEY (ogc_fid)
@@ -3055,14 +3277,14 @@ COMMENT ON COLUMN ax_einrichtunginoeffentlichenbereichen.gml_id IS 'Identifikato
 CREATE TABLE ax_besondererbauwerkspunkt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
 	punktkennung		character varying(15), -- integer,
 	land			integer,
 	stelle			integer,
-	--sonstigeeigenschaft	character(26),
+	--sonstigeeigenschaft	character varying(26),
 	CONSTRAINT ax_besondererbauwerkspunkt_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3088,7 +3310,7 @@ COMMENT ON COLUMN ax_besondererbauwerkspunkt.gml_id IS 'Identifikator, global ei
 CREATE TABLE ax_bauwerkimverkehrsbereich (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3147,7 +3369,7 @@ COMMENT ON COLUMN ax_strassenverkehrsanlage.gml_id IS 'Identifikator, global ein
 CREATE TABLE ax_wegpfadsteig (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	sonstigesmodell		character varying[],
@@ -3206,7 +3428,7 @@ COMMENT ON COLUMN ax_bahnverkehrsanlage.gml_id IS 'Identifikator, global eindeut
 CREATE TABLE ax_gleis (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	sonstigesmodell		character varying[],
@@ -3235,14 +3457,14 @@ COMMENT ON COLUMN ax_gleis.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_flugverkehrsanlage (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character(28),
+--	identifier		character(28),
 	beginnt			character(20),
-	advstandardmodell	character(4),
-	sonstigesmodell		character(5),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	art			integer,
 	oberflaechenmaterial	integer,
-	"name"			character(20),
+	"name"			character varying(50),
 	CONSTRAINT ax_flugverkehrsanlage_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3267,7 +3489,7 @@ COMMENT ON COLUMN ax_flugverkehrsanlage.gml_id      IS 'Identifikator, global ei
 CREATE TABLE ax_bauwerkimgewaesserbereich (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3298,7 +3520,7 @@ COMMENT ON COLUMN ax_bauwerkimgewaesserbereich.gml_id IS 'Identifikator, global 
 CREATE TABLE ax_vegetationsmerkmal (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3329,7 +3551,7 @@ COMMENT ON COLUMN ax_vegetationsmerkmal.gml_id IS 'Identifikator, global eindeut
 CREATE TABLE ax_gewaessermerkmal (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3354,7 +3576,7 @@ COMMENT ON COLUMN ax_gewaessermerkmal.gml_id IS 'Identifikator, global eindeutig
 CREATE TABLE ax_untergeordnetesgewaesser (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3527,10 +3749,10 @@ COMMENT ON COLUMN ax_felsenfelsblockfelsnadel.gml_id IS 'Identifikator, global e
 CREATE TABLE ax_gelaendekante (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character(28),
+--	identifier		character(28),
 	beginnt			character(20),
-	advstandardmodell	character(4),
-	sonstigesmodell		character(5),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	istteilvon		character varying, -- Beziehung?
 	artdergelaendekante	integer,
@@ -3560,10 +3782,10 @@ COMMENT ON COLUMN ax_gelaendekante.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_besondererhoehenpunkt (
 	ogc_fid serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character(28),
+--	identifier		character(28),
 	beginnt			character(20),
-	advstandardmodell	character(4),
-	sonstigesmodell		character(5),
+	advstandardmodell	character varying(9),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	besonderebedeutung	integer,
 	CONSTRAINT ax_besondererhoehenpunkt_pk PRIMARY KEY (ogc_fid)
@@ -3598,12 +3820,12 @@ COMMENT ON COLUMN ax_besondererhoehenpunkt.gml_id IS 'Identifikator, global eind
 CREATE TABLE ax_klassifizierungnachstrassenrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
-	qadvstandardmodell	character varying(9),
+	advstandardmodell	character varying(9),
 	anlass			integer,
 	artderfestlegung	integer,
-	bezeichnung		character varying(20),
+	bezeichnung		character varying(40),
 	CONSTRAINT ax_klassifizierungnachstrassenrecht_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3634,7 +3856,7 @@ COMMENT ON COLUMN ax_klassifizierungnachstrassenrecht.gml_id IS 'Identifikator, 
 CREATE TABLE ax_klassifizierungnachwasserrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3667,7 +3889,7 @@ COMMENT ON COLUMN ax_klassifizierungnachwasserrecht.gml_id IS 'Identifikator, gl
 CREATE TABLE ax_bauraumoderbodenordnungsrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3704,7 +3926,7 @@ COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.bezeichnung IS 'BEZ, Amtlich 
 CREATE TABLE ax_sonstigesrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3715,8 +3937,8 @@ CREATE TABLE ax_sonstigesrecht (
 	characterstring		integer,
 	art			character varying(40),  --(15)
 	"name"			character varying(20), 
-	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
-	datetime		character(20),
+--	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" character varying(8),
+--	datetime		character varying(20),
 	CONSTRAINT ax_sonstigesrecht_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3744,7 +3966,7 @@ COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_bodenschaetzung (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(9),
 	anlass				integer,
@@ -3787,9 +4009,9 @@ COMMENT ON COLUMN ax_bodenschaetzung.gml_id IS 'Identifikator, global eindeutig'
 CREATE TABLE ax_musterlandesmusterundvergleichsstueck (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character(20), 
-	advstandardmodell		character varying(8),
+	advstandardmodell		character varying(9),
 	anlass				integer,
 	merkmal				integer,
 	nummer				integer,
@@ -3837,7 +4059,7 @@ COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.gml_id IS 'Identifika
 CREATE TABLE ax_bundesland (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3863,7 +4085,7 @@ COMMENT ON COLUMN ax_bundesland.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_regierungsbezirk (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(9),
 	anlass				integer,
@@ -3893,7 +4115,7 @@ COMMENT ON COLUMN ax_regierungsbezirk.gml_id IS 'Identifikator, global eindeutig
 CREATE TABLE ax_kreisregion (
 	ogc_fid				serial NOT NULL,
 	gml_id				character(16),	-- character varying(32),
-	identifier			character varying(28),
+--	identifier			character varying(28),
 	beginnt				character(20),
 	advstandardmodell		character varying(9),
 	anlass				integer,
@@ -3921,7 +4143,7 @@ COMMENT ON COLUMN ax_kreisregion.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_gemeinde (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3946,8 +4168,39 @@ COMMENT ON TABLE  ax_gemeinde        IS 'G e m e i n d e';
 COMMENT ON COLUMN ax_gemeinde.gml_id IS 'Identifikator, global eindeutig';
 
 
---AX_Gemeindeteil
--- ** Tabelle bisher noch nicht generiert
+-- G e m e i n d e t e i l
+-- -----------------------------------------
+-- neu: 21.11.2011
+
+CREATE TABLE ax_gemeindeteil (
+	ogc_fid			serial NOT NULL,
+	gml_id			character varying(16),
+--	identifier		character varying(28),
+	beginnt			character varying(20),
+	advstandardmodell	character varying(9),
+	anlass			integer,
+	schluesselgesamt	double precision,
+	bezeichnung		character varying(40),
+	administrativefunktion	integer,
+	land			integer,
+	regierungsbezirk	integer,
+	kreis			integer,
+	gemeinde		integer,
+	gemeindeteil		integer,
+	CONSTRAINT ax_gemeindeteil_pk PRIMARY KEY (ogc_fid)
+);
+
+-- Index für alkis_beziehungen
+CREATE UNIQUE INDEX ax_gemeindeteil_gml 
+                 ON ax_gemeindeteil USING btree (gml_id);
+
+INSERT INTO geometry_columns 
+       (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
+VALUES ('', 'public', 'ax_gemeindeteil', 'dummy', 2, 25832, 'POINT');
+
+COMMENT ON TABLE  ax_gemeindeteil        IS 'G e m e i n d e - T e i l';
+COMMENT ON COLUMN ax_gemeindeteil.gml_id IS 'Identifikator, global eindeutig';
+
 
 
 -- G e m a r k u n g
@@ -3956,7 +4209,7 @@ COMMENT ON COLUMN ax_gemeinde.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_gemarkung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -3964,7 +4217,7 @@ CREATE TABLE ax_gemarkung (
 	bezeichnung		character varying(23),
 	land			integer,
 	gemarkungsnummer	integer,  -- Key
-	"istamtsbezirkvon|ax_dienststelle_schluessel|land" integer,
+--	"istamtsbezirkvon|ax_dienststelle_schluessel|land" integer,
 	stelle			integer,
 	CONSTRAINT ax_gemarkung_pk PRIMARY KEY (ogc_fid)
 );
@@ -3991,7 +4244,7 @@ COMMENT ON COLUMN ax_gemarkung.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_gemarkungsteilflur (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -4020,7 +4273,7 @@ COMMENT ON COLUMN ax_gemarkungsteilflur.gml_id IS 'Identifikator, global eindeut
 CREATE TABLE ax_buchungsblattbezirk (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -4028,7 +4281,7 @@ CREATE TABLE ax_buchungsblattbezirk (
 	bezeichnung		character varying(26),
 	land			integer,
 	bezirk			integer,
-	"gehoertzu|ax_dienststelle_schluessel|land" integer,
+--	"gehoertzu|ax_dienststelle_schluessel|land" integer,
 	stelle			character varying(4),
 	CONSTRAINT ax_buchungsblattbezirk_pk PRIMARY KEY (ogc_fid)
 );
@@ -4055,10 +4308,10 @@ COMMENT ON COLUMN ax_buchungsblattbezirk.gml_id IS 'Identifikator, global eindeu
 CREATE TABLE ax_dienststelle (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
-	sonstigesmodell		character varying(8),
+	sonstigesmodell		character varying(9),
 	anlass			integer,
 	schluesselgesamt	character varying(7),
 	bezeichnung		character varying(120), -- 102
@@ -4086,7 +4339,7 @@ COMMENT ON COLUMN ax_dienststelle.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_lagebezeichnungkatalogeintrag (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -4196,7 +4449,7 @@ COMMENT ON COLUMN ax_kleinraeumigerlandschaftsteil.gml_id IS 'Identifikator, glo
 CREATE TABLE ax_wohnplatz (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),	-- character varying(32),
-	identifier		character varying(28),
+--	identifier		character varying(28),
 	beginnt			character(20),
 	advstandardmodell	character varying(9),
 	anlass			integer,
@@ -4305,7 +4558,7 @@ COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionsspa
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
 CREATE TABLE "delete" (
 	ogc_fid		serial NOT NULL,
-	typename	character(255),
+	typename	character varying(255),
 	featureid	character(32),
 	CONSTRAINT delete_pk PRIMARY KEY (ogc_fid)
 );
@@ -4314,6 +4567,10 @@ CREATE TABLE "delete" (
 INSERT INTO geometry_columns 
        (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type)
 VALUES ('', 'public', 'delete', 'dummy', 2, 25832, 'POINT');
+
+COMMENT ON TABLE "delete" IS 'Hilfstabelle für das temporäre Zwischenspeichern von Löschinformationen während einer Aktualisierung über NAS-NBA-Verfahren.';
+COMMENT ON COLUMN delete.typename   IS 'Objektart, also Name der Tabelle, aus der das Obejkt zu löschen ist.';
+COMMENT ON COLUMN delete.featureid  IS 'Zusammen gesetzt aus GML-ID (16) und Zeitstempel.';
 
 --
 -- Funktion to run after import of the delete-Layer
