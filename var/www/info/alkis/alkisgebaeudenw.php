@@ -6,6 +6,7 @@
 	07.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 	26.07.2011  debug, SQL nur im Testmodus anzeigen
+	22.11.2011  Feld ax_gebaeude.description ist entfallen
 	
 	ToDo: lfd.Nr. der Nebengebäude alternativ zur Hausnummer anzeigen.
 		Dazu aber Join auf ax_lagebezeichnungmitpseudonummer notwendig.
@@ -120,10 +121,8 @@ echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".number_format($flstflaec
 echo "\n\n<h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ude</h3>";
 echo "\n<p>.. auf oder an dem Flurst&uuml;ck. Ermittelt durch Verschneidung der Geometrie.</p>";
 
-// +++ Zustand 3000 = geplantes Gebäude
-
 // G e b a e u d e
-$sqlg ="SELECT g.gml_id, g.name, g.description, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, ";
+// $sqlg ="SELECT g.gml_id, g.name, g.description, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, ";$sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, ";
 $sqlg.="h.bauweise_beschreibung, u.bezeichner, v.beziehungsart, v.beziehung_zu, s.lage, s.bezeichnung, l.hausnummer, ";
 
 // Gebaeudeflaeche komplett auch ausserhalb des FS
@@ -142,6 +141,11 @@ $sqlg.="FROM ax_flurstueck f, ax_gebaeude g ";
 $sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 $sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
 
+// Weitere Schlüsseltabellen (ab 11.2011)
+// ++ ax_gebaeude_zustand
+// ++ ax_gebaeude_weiterefunktion
+// ++ ax_gebaeude_dachform
+
 // Beziehungen verfolgen (holt die Hausnummer Hauptgeb.)
 $sqlg.="LEFT JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
 $sqlg.="LEFT JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id ";
@@ -156,12 +160,9 @@ if ($dbvers=="05") {
 // $sqlg.="LEFT JOIN ax_lagebezeichnungmitpseudonummer p ON ... ";
 // oder in Loop: Wenn HsNr leer ist, eine kurze Abfrage auf Nebengebäude-Nr.
 
-// ID des aktuellen FS
-$sqlg.="WHERE f.gml_id= $1 "; 
+$sqlg.="WHERE f.gml_id= $1 "; // ID des akt. FS
 
-// ALT: "within" liefert nur Gebaeude, die komplett im Flurstueck liegen
-//$sqlg.="AND within(g.wkb_geometry,f.wkb_geometry) = true ";
-
+// "within" liefert nur Gebaeude, die komplett im Flurstueck liegen
 // "intersects" liefert ueberlappende Flaechen
 $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
 

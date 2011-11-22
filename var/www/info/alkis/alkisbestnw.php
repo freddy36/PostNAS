@@ -9,6 +9,7 @@
 	02.11.2011  6. Parameter fuer function eigentuemer()
 	16.11.2011  neuer Style class='dbg'
 	17.11.2011  Parameter der Functions geändert
+	22.11.2011  Feldname land in ax_buchungsblattbezirk geändert
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
@@ -63,7 +64,8 @@ $sql.="b.gml_id, b.bezirk, b.bezeichnung AS beznam, "; // Bezirk
 $sql.="a.gml_id, a.land, a.bezeichnung, a.stelle, a.stellenart "; // Amtsgericht
 $sql.="FROM ax_buchungsblatt g ";
 $sql.="LEFT JOIN ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk ";  // BBZ
-$sql.="LEFT JOIN ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
+//$sql.="LEFT JOIN ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
+$sql.="LEFT JOIN ax_dienststelle a ON b.land = a.land AND b.stelle = a.stelle ";
 $sql.="WHERE g.gml_id= $1 ";
 $sql.="AND a.stellenart=1000;"; // Amtsgericht
 
@@ -375,7 +377,8 @@ if ($i == 0) {
 	$sql.="JOIN alkis_beziehungen vb ON sb.gml_id = vb.beziehung_von ";	// Verbindung berechtigt
 	$sql.="JOIN ax_buchungsblatt  bb ON bb.gml_id = vb.beziehung_zu ";	// Blatt berechtigt
 	$sql.="LEFT JOIN ax_buchungsblattbezirk bz ON bb.land = bz.land AND bb.bezirk = bz.bezirk ";
-	$sql.="LEFT JOIN ax_dienststelle ag ON bz.\"gehoertzu|ax_dienststelle_schluessel|land\" = ag.land AND bz.stelle=ag.stelle ";
+//	$sql.="LEFT JOIN ax_dienststelle ag ON bz.\"gehoertzu|ax_dienststelle_schluessel|land\" = ag.land AND bz.stelle=ag.stelle ";
+	$sql.="LEFT JOIN ax_dienststelle ag ON bz.land = ag.land AND bz.stelle=ag.stelle ";	
 	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart ba ON sb.buchungsart = ba.wert ";
 	$sql.="WHERE vf.beziehung_zu= $1 ";
 	$sql.="AND  vf.beziehungsart='istBestandteilVon' ";

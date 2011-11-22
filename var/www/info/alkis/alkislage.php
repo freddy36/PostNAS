@@ -8,6 +8,7 @@
 	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
 	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
 	26.07.2011  debug, SQL nur im Testmodeus ausgeben
+	22.11.2011  Felder ax_gebaeude.description und .individualname sind entfallen
 
 	ToDo: Entschluesseln Kreis usw.
 */
@@ -378,7 +379,8 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 			$bezart="zeigtAuf";
 			break;
 	}
-	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.description, g.name, g.lagezurerdoberflaeche, g.bauweise, g.anzahlderoberirdischengeschosse AS aog, g.grundflaeche, g.individualname, g.zustand, ";
+//	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.description, g.name, g.lagezurerdoberflaeche, g.bauweise, g.anzahlderoberirdischengeschosse AS aog, g.grundflaeche, g.individualname, g.zustand, ";
+	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.name, g.lagezurerdoberflaeche, g.bauweise, g.anzahlderoberirdischengeschosse AS aog, g.grundflaeche, g.zustand, ";
 	$sql.="round(area(g.wkb_geometry)::numeric,2) AS flaeche, h.bauweise_beschreibung, u.bezeichner ";
 	$sql.="FROM ax_gebaeude g ";
 	$sql.="JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
@@ -405,9 +407,9 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 			}
 			echo $row["bezeichner"]."</td></tr>"; // integer
 
-			if (!$row["description"] == "") {
-				echo "\n\t<tr><td>Beschreibung:</td><td>".$row["description"]."</td></tr>"; // integer - Entschlüsseln!
-			}
+	//		if (!$row["description"] == "") {
+	//			echo "\n\t<tr><td>Beschreibung:</td><td>".$row["description"]."</td></tr>"; // integer - Entschlüsseln!
+	//		}
 
 			if (!$row["name"] == "") {
 				echo "\n\t<tr><td>Name:</td><td>".$row["name"]."</td></tr>"; // char(25)
@@ -435,9 +437,9 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 
 			echo "\n\t<tr><td>Geometrische Fl&auml;che:</td><td title='berechnete Fl&auml;che'>".$row["flaeche"]." m&#178;</td></tr>";
 
-			if (!$row["individualname"] == "") {
-				echo "\n\t<tr><td>Individualname:</td><td>".$row["individualname"]."</td></tr>"; // char(7)
-			}
+	//		if (!$row["individualname"] == "") {
+	//			echo "\n\t<tr><td>Individualname:</td><td>".$row["individualname"]."</td></tr>"; // char(7)
+	//		}
 
 			if (!$row["zustand"] == "") {
 				echo "\n\t<tr><td>Zustand:</td><td>".$row["zustand"]."</td></tr>"; // integer
