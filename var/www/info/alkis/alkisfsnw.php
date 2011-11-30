@@ -5,24 +5,22 @@
 	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
 	Version:
-	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
-	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
-	26.07.2011  debug, SQL nur im Test-Modus anzeigen.
-	02.11.2011  6.+7. Parameter fuer function eigentuemer()
 	16.11.2011  Neuer Style class='dbg', Link Historie
 	17.11.2011  Parameter der Functions geändert
+	30.11.2011  import_request_variables, $dbvers PostNAS 0.5 entfernt
 	
 	ToDo:
-	- Nach Umstellung auf PostNAS 0.6 die Sonderbehandlung Version 0.5 entfernen 
 	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
-//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -41,21 +39,6 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gmlid=urldecode($_REQUEST["gmlid"]);
-$eig=urldecode($_REQUEST["eig"]);
-
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
-if ($id == "j") {
-	$idanzeige=true;
-} else {
-	$idanzeige=false;
-}
-$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
-if ($keys == "j") {
-	$showkey=true;
-} else {
-	$showkey=false;
-}
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 //if ($debug > 1) {echo "<p class='dbg'>DB=".$dbname.", user=".$dbuser."</p>";}
@@ -211,11 +194,7 @@ $sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
 $sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-if ($dbvers=="05") { // 25.07.11
-	$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
-} else { // ab PostNAS 0.6
-	$sql.="AND l.lage = s.lage ";
-}
+$sql.="AND l.lage = s.lage ";
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
@@ -262,11 +241,7 @@ $sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=v.beziehung_zu ";
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-if ($dbvers=="05") {
-	$sql.="AND l.lage::text=trim(leading '0' from s.lage) ";
-} else { // ab PostNAS 0.6
-	$sql.="AND l.lage = s.lage ";
-}
+$sql.="AND l.lage = s.lage ";
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
 $v = array($gmlid);

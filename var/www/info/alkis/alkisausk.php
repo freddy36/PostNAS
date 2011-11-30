@@ -9,19 +9,17 @@
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
 	Siehe auch alkisinlayausk.php - eine Variante für den Einbau in einen iFrame
 
-	Version:	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
-	26.07.2011  debug, SQL nur im Testmodus ausgeben
-	02.11.2011  6.+7. Parameter fuer function eigentuemer()
-	17.11.2011  Link FS-Historie, Parameter der Functions geändert
+	Version:	17.11.2011  Link FS-Historie, Parameter der Functions geändert
+	30.11.2011  import_request_variables
 */
-ini_set('error_reporting', 'E_ALL');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") { // Bindung an Mapbender-Auth.
-	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -40,19 +38,6 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
-if ($id == "j") {
-	$idanzeige=true;
-} else {
-	$idanzeige=false;
-}
-$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
-if ($keys == "j") {
-	$showkey=true;
-} else {
-	$showkey=false;
-}
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
@@ -149,11 +134,7 @@ echo "\n\t</p>\n</td>";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-if ($dbvers=="05") {
-	$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
-} else { // ab PostNAS 0.6
-	$sql.="AND l.lage = s.lage ";
-}
+$sql.="AND l.lage = s.lage ";
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";

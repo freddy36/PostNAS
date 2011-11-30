@@ -20,7 +20,6 @@
 
 	$customer=$_SESSION["mb_user_name"];
 	echo "\n<div class='confbereich noprint'>";
-
 	echo "\n<table class='outer'>\n<tr>";
 
 	// Spalte 1: Info Benutzerkennung
@@ -28,26 +27,10 @@
 
 	// Spalte 2: Umschalter
 	echo "\n\t<td title='Konfiguration'>";
-		// Umschalter:
-		// - Schluessel
-		// - Testmodus ID-Anzeige
-
-		// bei beiden
 		$mylink ="\n\t\t<a class='gmlid' href='".$link."gkz=".$gkz."&amp;gmlid=".$gmlid.$append;
-
-		if ($showkey) { // bleibt so
-			$mykey = "&amp;showkey=j";
-		} else {
-			$mykey = "&amp;showkey=n";
-		}
-
+		if ($showkey) {$mykey = "&amp;showkey=j";} else {$mykey = "&amp;showkey=n";}
 		if ($idumschalter) { // fuer Entwicklung ODER Test
-
-			if ($idanzeige) { // bleibt so
-				$myid = "&amp;id=j";
-			} else {
-				$myid = "&amp;id=n";
-			}
+			if ($idanzeige) {$myid = "&amp;id=j";} else {$myid = "&amp;id=n";}
 
 			// Umschalter nur ausgeben, wenn in conf gesetzt
 			if ($idanzeige) { // Umschalten ID ein/aus
@@ -67,26 +50,12 @@
 		} else {
 			echo $mylink.$myid."&amp;showkey=j' title='Verschl&uuml;sselungen anzeigen'>Schl&uuml;ssel ein</a>";
 		}
-
 	echo "\n\t</td>";
 
 	// Spalte 3
 	echo "\n\t<td title='Hilfe'>";
 	echo "\n\t\t<p class='nwlink'>\n\t\t\t<a target='_blank' href='".$hilfeurl."' title='Dokumentation'>Hilfe zur ALKIS-Auskunft</a>\n\t\t</p>\n\t</td>";
-
-	echo "\n</tr>\n</table>\n</div>\n";
-
-/*	echo "<br><p class='err'>";
-	echo "gkz=".$gkz."<br>";
-	echo "gmlid=".$gmlid."<br>";
-	echo "idumschalter=".$idumschalter."<br>";
-	echo "idanzeige=".$idanzeige."<br>";
-	echo "link=".$link."<br>";
-	echo "hilfeurl=".$hilfeurl."<br>";
-	echo "append=".$append."<br>";
-	echo "showkey=".$showkey;
-	echo "</p>"; */
-	return 0;
+	echo "\n</tr>\n</table>\n</div>\n";	return 0;
 }
 
 function linkgml($gkz, $gml, $typ)  {
@@ -387,8 +356,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	} // End Loop NamNum
 	echo "\n</table>\n";
 	if ($n == 0) {
-		if ($debug > 0) {echo "<p class='err'>keine Namensnummern zum Blatt</p>";}
-		if ($debug > 2) {echo "<p class='err'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
+		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
+		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
 	}	
 	return $n; 
 } // End Function eigentuemer

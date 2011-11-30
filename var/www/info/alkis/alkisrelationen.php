@@ -6,20 +6,15 @@
 	Link durch "&id=j;" in den anderen Modulen zuschaltbar.
 	Dies ist fuer die Entwicklung der Auskunft gedacht (Sonderfaelle) nicht fuer den Anwender.
 
-	Version:
-	01.10.2010  htmlentities $otyp
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
-	02.11.2011  h3
-	10.11.2011  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
+	Version:	10.11.2011  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
+	30.11.2011  import_request_variables
 */
-ini_set('error_reporting', 'E_ALL');
+//ini_set('error_reporting', 'E_ALL');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
+$otyp=htmlentities($otyp, ENT_QUOTES, "UTF-8");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -35,9 +30,6 @@ if ($auth == "mapbender") {	require_once($mapbender);
 </head>
 <body>
 <?php
-$gmlid=isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-$otyp=isset($_GET["otyp"]) ? $_GET["otyp"] : "Objekt";
-$otyp=htmlentities($otyp, ENT_QUOTES, "UTF-8");
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 echo "\n<p class='bezieh'>Beziehungen ".$gmlid."</p>"; // Balken
 

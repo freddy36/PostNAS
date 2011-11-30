@@ -4,24 +4,22 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
 
-	Version:	07.02.2011  ggf. vereinfachte Kopfzeile "Flurstuecke" nach Vorpruefung "Rechte"
-	26.07.2011  debug, SQL nur im Testmodus anzeigen, Prepared Statements
-	02.11.2011  6. Parameter fuer function eigentuemer()
-	16.11.2011  neuer Style class='dbg'
-	17.11.2011  Parameter der Functions geändert
+	Version:	17.11.2011  Parameter der Functions geändert
 	22.11.2011  Feldname land in ax_buchungsblattbezirk geändert
+	30.11.2011  import_request_variables
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
-//ini_set('error_reporting', 'E_ALL');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") { // Bindung an Mapbender-Authentifizierung
-	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {$showkey=true;} else {$showkey=false;}
+
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -40,19 +38,6 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gmlid=urldecode($_REQUEST["gmlid"]);
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
-if ($id == "j") {
-	$idanzeige=true;
-} else {
-	$idanzeige=false;
-}
-$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
-if ($keys == "j") {
-	$showkey=true;
-} else {
-	$showkey=false;
-}
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 

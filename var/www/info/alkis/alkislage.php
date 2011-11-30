@@ -4,22 +4,37 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Kann die 3 Arten von Lagebezeichnung anzeigen und verbundene Objekte verlinken
 
-	Version:
-	11.07.2011  Ersetzen $self durch $_SERVER['PHP_SELF']."?"
-	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
-	26.07.2011  debug, SQL nur im Testmodeus ausgeben
-	22.11.2011  Felder ax_gebaeude.description und .individualname sind entfallen
+	Version:	22.11.2011
+		Felder ax_gebaeude.description und .individualname sind entfallen
+		Gebäude als Tabelle
+		Link auf neues Modul "alkishaus". 
+		Sonderfall PostNAS-Vers. 05 entfernt.
+		Kennzeichen im Balken verkürzt.
+	30.11.2011  import_request_variables
 
-	ToDo: Entschluesseln Kreis usw.
+	ToDo:
+	- Entschluesseln Kreis usw.
+	- Das Balken-Kennzeichen noch kompatibel machen mit der Eingabe der Navigation für Adresse 
 */
-//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") { // Bindung an Mapbender-Authentifizierung
-	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+switch ($ltyp) {
+	case "m": // "Mit HsNr"     = Hauptgebaeude
+		$tnam = "ax_lagebezeichnungmithausnummer"; break;
+	case "p": // "mit PseudoNr" = Nebengebaeude
+		$tnam = "ax_lagebezeichnungmitpseudonummer";	break;
+	case "o": //"Ohne HsNr"    = Gewanne oder Strasse
+		$tnam = "ax_lagebezeichnungohnehausnummer"; break;
+	default:
+		$ltyp = "m";
+		$tnam = "ax_lagebezeichnungmithausnummer"; break;
+}
+if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -38,38 +53,10 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gmlid=urldecode($_REQUEST["gmlid"]);
-$ltyp=urldecode($_REQUEST["ltyp"]); // 3 Arten Lage-Typ
-switch ($ltyp) {
-	case "m": // "Mit HsNr"     = Hauptgebaeude
-		$tnam = "ax_lagebezeichnungmithausnummer";
-	break;
-	case "p": // "mit PseudoNr" = Nebengebaeude
-		$tnam = "ax_lagebezeichnungmitpseudonummer";
-	break;
-	case "o": //"Ohne HsNr"    = Gewanne oder Strasse
-		$tnam = "ax_lagebezeichnungohnehausnummer";
-	break;
-	default:
-		$ltyp = "m";
-		$tnam = "ax_lagebezeichnungmithausnummer";
-	break;
-}
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
-if ($id == "j") {
-	$idanzeige=true;
-} else {
-	$idanzeige=false;
-}
-$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
-if ($keys == "j") {
-	$showkey=true;
-} else {
-	$showkey=false;
-}$con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
+$con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
-// Lagebezeichnung
+// L a g e b e z e i c h n u n g
 $sql ="SELECT s.bezeichnung AS snam, k.bezeichnung AS knam, g.bezeichnung AS gnam, l.land, l.regierungsbezirk, l.kreis, l.gemeinde, l.lage, ";
 switch ($ltyp) {
 	case "m": // "Mit HsNr"
@@ -87,27 +74,8 @@ $sql.="FROM ".$tnam." l ";
 $sql.="LEFT JOIN ax_gemeinde g ON l.land=g.land AND l.regierungsbezirk=g.regierungsbezirk AND l.kreis=g.kreis AND l.gemeinde=g.gemeinde ";
 $sql.="LEFT JOIN ax_kreisregion k ON l.land=k.land AND l.regierungsbezirk=k.regierungsbezirk AND l.kreis=k.kreis ";
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ";
-
-if ($dbvers == "05") { // bis PostNAS 0.5
-	// Besonderheit: unterschiedliche Feldformate und Fuellungen!!!
-	// +++ Nach vollstaendiger Umstellung diesen Programmteil entfernen 
-	switch ($ltyp) {
-		case "o": //"Ohne HsNr"
-			// hier beide .lage als Char(5)
-			//  in ax_lagebezeichnungKatalogeintrag mit führenden Nullen
-			//  in ax_lagebezeichnungOhneHausnummer jedoch ohne führende Nullen
-			$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=trim(leading '0' from s.lage) ";
-		break;
-		default: // "Mit HsNr" + "mit PseudoNr"
-			// ax_LagebezeichnungKatalogeintrag.lage   ist char,
-			// ax_LagebezeichnungMitHausnummer.lage    ist integer,
-			// ax_lagebezeichnungMitPseudonummer.lage  ist integer,
-			$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND to_char(l.lage, 'FM00000')=s.lage ";
-		break;
-	}
-} else { // ab PostNAS 0.6 char(5) mit fuehr.Nullen
-	$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-}
+// ab PostNAS 0.6: Feld "lage" char(5) mit fuehr.Nullen
+$sql.="ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 $sql.="WHERE l.gml_id= $1;";
 
 $v = array($gmlid);
@@ -128,7 +96,9 @@ if ($row = pg_fetch_array($res)) {
 	$lage =$row["lage"]; // Strassenschluessel
 	$snam =$row["snam"]; //Strassennamen
 	$unver=$row["unverschluesselt"]; // Gewanne
-	$kennz=$land."-".$regbez."-".$kreis."-".$gem."-".$lage."-";
+//	$kennz=$land."-".$regbez."-".$kreis."-".$gem."-".$lage."-";
+	$kennz=$gem."-".$lage."-"; // ToDo: Kompatibel machen als Eingabe in in Navigation/Adresse 
+	
 	switch ($ltyp) {
 		case "m": // "Mit HsNr"
 			$hsnr=$row["hausnummer"];
@@ -231,12 +201,8 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	// ax_Flurstueck  >weistAuf>  ax_LagebezeichnungMitHausnummer
 	// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
 	switch ($ltyp) {
-		case "m":
-			$bezart="weistAuf";
-		break;
-		case "o":
-			$bezart="zeigtAuf";
-		break;
+		case "m": $bezart="weistAuf"; break;
+		case "o": $bezart="zeigtAuf"; break;
 	}
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, ";
 	$sql.="f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
@@ -266,20 +232,11 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	$j=0;
 	while($rowf = pg_fetch_array($resf)) {
 		$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
-
-		//$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
-		//if ($rowf["nenner"] != "") {$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);}
-
-		$fskenn=$rowf["zaehler"]; // Bruchnummer (ohne fuehrende Nullen)
-		if ($rowf["nenner"] != "") {
-			$fskenn.="/".$rowf["nenner"];
-		}
-
+		$fskenn=$rowf["zaehler"]; // Bruchnummer
+		if ($rowf["nenner"] != "") {$fskenn.="/".$rowf["nenner"];}
 		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 		echo "\n<tr>";			echo "\n\t<td>";
-			if ($showkey) {
-				echo "<span class='key'>".$rowf["gemarkungsnummer"]."</span> ";
-			}
+			if ($showkey) {echo "<span class='key'>".$rowf["gemarkungsnummer"]."</span> ";}
 			echo $rowf["bezeichnung"]."</td>";
 			echo "\n\t<td>".$flur."</td>";
 			echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
@@ -288,8 +245,8 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 			echo "\n\t<td class='fla'>".$flae."</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 				echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$rowf["gml_id"]."&amp;eig=n";
-				if ($idanzeige) {echo "&amp;id=j";}
-				if ($showkey)   {echo "&amp;showkey=j";}
+					if ($idanzeige) {echo "&amp;id=j";}
+					if ($showkey)   {echo "&amp;showkey=j";}
 				echo "' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
 			echo "\n\t\t</p>\n\t</td>";
 		echo "\n</tr>";
@@ -305,6 +262,8 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 	echo "\n<p>andere Lagebezeichnungen zur gleichen Hausnummer.</p>";
 	$whereclaus="WHERE land= $1 AND regierungsbezirk= $2 AND kreis= $3 AND gemeinde= $4 AND lage= $5 ";
 	$url=$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;id=".$id."&amp;gmlid="; // Basis
+	if ($idanzeige) {$url.="&amp;id=j";}
+	if ($showkey)   {$url.="&amp;showkey=j";}
 
 	switch ($ltyp) {
 		case "m": // aktuell Hausnummer gefunden
@@ -360,32 +319,20 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 }
 
 // G E B A E U D E
-
-// Mittelfristig ist zu ueberlegen, ob hier weitere Einzelheiten dargestellt werden,
-// oder ob nicht besser ein eigenes Modul alkisgebaeude.php dies uebernehmen sollte.
-// Dort sollten auch diese Relationen abgebildet werden:
-//  ax_gebaeude >gehoertZu> ax_gebaeude  (ringförmige Verbindung Gebäudekomplex)
-//  ax_gebaeude (umschliesst) ax_bauteil
-//  ax_gebaeude >gehoert> ax_person  (Ausnahme)
-
 if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	echo "\n\n<a name='geb'></a><h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ude</h3>";
 	echo "\n<p>mit dieser Lagebezeichnung.</p>";
 	switch ($ltyp) {
-		case "p":
-			$bezart="hat";
-			break;
-		case "m":
-			$bezart="zeigtAuf";
-			break;
+		case "p": $bezart="hat"; break;
+		case "m": $bezart="zeigtAuf"; break;
 	}
-//	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.description, g.name, g.lagezurerdoberflaeche, g.bauweise, g.anzahlderoberirdischengeschosse AS aog, g.grundflaeche, g.individualname, g.zustand, ";
-	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.name, g.lagezurerdoberflaeche, g.bauweise, g.anzahlderoberirdischengeschosse AS aog, g.grundflaeche, g.zustand, ";
+	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.name, g.bauweise, g.grundflaeche, g.zustand, ";
 	$sql.="round(area(g.wkb_geometry)::numeric,2) AS flaeche, h.bauweise_beschreibung, u.bezeichner ";
 	$sql.="FROM ax_gebaeude g ";
 	$sql.="JOIN alkis_beziehungen v ON g.gml_id=v.beziehung_von "; 
 	$sql.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 	$sql.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
+// +++ JOIN Zustand
 	$sql.="WHERE v.beziehung_zu= $1 AND v.beziehungsart= $2 ;";
 	$v = array($gmlid,$bezart);
 	$res = pg_prepare("", $sql);
@@ -394,59 +341,45 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 		echo "<p class='err'>Fehler bei Gebaeude.</p>\n";
 		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 	}
+	echo "\n<table class='geb'>";	echo "\n<tr>"; // T-Header
+		echo "\n\t<td class='head' title='Geb&auml;udename'>Name</td>";
+		echo "\n\t<td class='head fla' title='Fl&auml;che'>Fl&auml;che</td>";		echo "\n\t<td class='head' title='Geb&auml;udefunktion ist die zum Zeitpunkt der Erhebung vorherrschend funktionale Bedeutung des Geb&auml;udes'>Funktion</td>";
+		echo "\n\t<td class='head' title='Bauweise (Schl&uuml;ssel und Beschreibung)'>Bauweise</td>";
+		echo "\n\t<td class='head' title='Zustand (Schl&uuml;ssel und Beschreibung)'>Zustand</td>";
+		echo "\n\t<td class='head nwlink' title='Link zu kompletten Hausdaten'>Haus</td>";
+	echo "\n</tr>";
+	// T-Body
 	$i=0;
-	while($row = pg_fetch_array($res)) { // Only You!
-		echo "<p>";
-			if ($idanzeige) {linkgml($gkz, $row["gml_id"], "Geb&auml;ude");}
-		echo "</p>";
-		echo "\n<table>";
+	while($row = pg_fetch_array($res)) {
+		$ggml=$row["gml_id"];
+		$gfla=$row["flaeche"];
+		echo "\n\t<tr>";
 
-			echo "\n\t<tr><td>Funktion:</td><td>";
-			if ($showkey) {
-				echo "<span class='key'>".$row["gebaeudefunktion"]."</span> ";
-			}
-			echo $row["bezeichner"]."</td></tr>"; // integer
+			echo "<td>";
+				if ($idanzeige) {linkgml($gkz, $ggml, "Geb&auml;ude");}
+				// +++ Hausnummer / Adresse ???
+			echo $row["name"]."</td>";
 
-	//		if (!$row["description"] == "") {
-	//			echo "\n\t<tr><td>Beschreibung:</td><td>".$row["description"]."</td></tr>"; // integer - Entschlüsseln!
-	//		}
+		//	echo "<td class='fla'>".$row["grundflaeche"]."</td>";			echo "<td class='fla'>".$gfla." m&#178;</td>";
 
-			if (!$row["name"] == "") {
-				echo "\n\t<tr><td>Name:</td><td>".$row["name"]."</td></tr>"; // char(25)
-			}
+			echo "<td>";
+				if ($showkey) {echo "<span class='key'>".$row["gebaeudefunktion"]."</span> ";}
+			echo $row["bezeichner"]."</td>";
 
-			if (!$row["lagezurerdoberflaeche"] == "") {
-				echo "\n\t<tr><td>Lage zur Erdoberfl&auml;che:</td><td>".$row["lagezurerdoberflaeche"]."</td></tr>";
-			} // integer - Entschlüsseln!
+			echo "<td>";
+				if ($showkey) {echo "<span class='key'>".$row["bauweise"]."</span> ";}
+			echo $row["bauweise_beschreibung"]."</td>";
 
-			if (!$row["bauweise"] == "") {
-				echo "\n\t<tr><td>Bauweise:</td><td>";
-				if ($showkey) {
-					echo "<span class='key'>".$row["bauweise"]."</span> ";
-				}
-				echo $row["bauweise_beschreibung"]."</td></tr>"; // integer
-			}
+			echo "<td>".$row["zustand"]."</td>"; // +++ Entschlüsseln
 
-			if (!$row["aog"] == "") {
-				echo "\n\t<tr><td>Anz. der oberird. Geschosse:</td><td>".$row["aog"]."</td></tr>"; //
-			}
-
-			if (!$row["grundflaeche"] == "") {
-				echo "\n\t<tr><td>Grundfl&auml;che:</td><td title='Buchfl&auml;che'>".$row["grundflaeche"]."</td></tr>"; // integer
-			}
-
-			echo "\n\t<tr><td>Geometrische Fl&auml;che:</td><td title='berechnete Fl&auml;che'>".$row["flaeche"]." m&#178;</td></tr>";
-
-	//		if (!$row["individualname"] == "") {
-	//			echo "\n\t<tr><td>Individualname:</td><td>".$row["individualname"]."</td></tr>"; // char(7)
-	//		}
-
-			if (!$row["zustand"] == "") {
-				echo "\n\t<tr><td>Zustand:</td><td>".$row["zustand"]."</td></tr>"; // integer
-			}
-
-		echo "\n</table>";
+			echo "\n\t<td class='nwlink noprint'>";
+				echo "<a title='Hausdaten' href='alkishaus.php?gkz=".$gkz."&amp;gmlid=".$ggml;
+				if ($idanzeige) {echo "&amp;id=j";}
+				echo "'><img src='ico/Haus.ico' width='16' height='16' alt=''></a>";
+			echo "</td>";
+		echo "</tr>";
 	}
+	echo "\n</table>";
 }
 
 ?>

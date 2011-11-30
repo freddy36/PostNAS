@@ -10,23 +10,14 @@
 	Dies ist eine Variante von alkisausk.ph 
 	 welches als vollstaendige Seite aufgerufen wird.
 
-	Version:	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	25.07.2011  PostNAS 0.5/0.6 Versionen unterscheiden
-	26.07.2011  debug, SQL nur im Testmodus ausgeben
-	02.11.2011  6.+7. Parameter fuer function eigentuemer()
-	17.11.2011  Link FS-Historie, Parameter der Functions geändert
-
-	ToDo:  Link im neuen Fenster erzwingen (Javascript?), statt _blank = tab
-*/
-ini_set('error_reporting', 'E_ALL');
+	Version:	17.11.2011  Link FS-Historie, Parameter der Functions geändert
+	30.11.2011  import_request_variables, $dbvers PostNAS 0.5 entfernt*/
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {
-	// Bindung an Mapbender-Authentifizierung
-	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+$gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -41,14 +32,12 @@ include("alkisfkt.php");
 	<title>ALKIS-Auskunft</title>	<script type="text/javascript">
 	function imFenster(dieURL) {
 		var link = encodeURI(dieURL);
-		window.open(link,'','left=10,top=10,width=620,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+		window.open(link,'','left=10,top=10,width=640,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
 	}
 	</script>
 </head>
 <body>
 <?php
-$gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
@@ -117,11 +106,7 @@ echo "\n\t</p>\n</td>";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-if ($dbvers=="05") {
-	$sql.="AND to_char(l.lage, 'FM00000') = lpad(s.lage,5,'0') ";
-} else { // ab PostNAS 0.6
-	$sql.="AND l.lage=s.lage ";
-}
+$sql.="AND l.lage=s.lage ";
 $sql.="WHERE v.beziehung_von= $1 "; // id FS";
 $sql.="AND v.beziehungsart='weistAuf' ";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";

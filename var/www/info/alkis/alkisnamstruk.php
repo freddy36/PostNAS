@@ -5,25 +5,22 @@
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
 
 	Version:
-	06.09.2010  Schluessel anschaltbar
-	15.09.2010  Function "buchungsart" durch JOIN ersetzt, Tabelle GB einzeilig
-	14.12.2010  Pfad zur Conf
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	26.01.2011  Space in leere td
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
 	02.11.2011  $sqla, $sqlg, Meldungen mit $debug steuern
 	17.11.2011  Parameter der Functions geändert
+	30.11.2011  import_request_variables
 
 	ToDo: 
 	Sortierung der Grundbücher zum Namen
-	Mehrere Adressen zum Namen? Historische ausblenden/markieren?
 */
-ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+if ($id == "j") {	$idanzeige=true;} else {$idanzeige=false;}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {$showkey=true;} else {$showkey=false;}
+
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -42,19 +39,6 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gmlid=urldecode($_REQUEST["gmlid"]);
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
-if ($id == "j") {
-	$idanzeige=true;
-} else {
-	$idanzeige=false;
-}
-$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
-if ($keys == "j") {
-	$showkey=true;
-} else {
-	$showkey=false;
-}
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 // Balken
 echo "<p class='nakennz'>ALKIS Name id=".$gmlid."&nbsp;</p>\n";

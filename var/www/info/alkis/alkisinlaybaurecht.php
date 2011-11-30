@@ -3,16 +3,16 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
 	Version:
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	26.07.2011  debug	
+	26.07.2011  debug
+	28.11.2011  import_request_variables
 */
-ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
+//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
+import_request_variables("G");
+//$gkz=urldecode($_REQUEST["gkz"]);
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {
-	require_once($mapbender);
-}
+if ($auth == "mapbender") {require_once($mapbender);}
+// $gmlid=urldecode($_REQUEST["gmlid"]);
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -30,7 +30,6 @@ if ($auth == "mapbender") {
 <body>
 
 <?php
-$gmlid=urldecode($_REQUEST["gmlid"]);
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 if ($debug > 1) {echo "<p class='err'>DB=".$dbname.", user=".$dbuser."</p>";}

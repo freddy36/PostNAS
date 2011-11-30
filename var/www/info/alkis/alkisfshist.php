@@ -4,9 +4,9 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Flurstücks-Historie fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
-	Version:	2011-11-03 Prototyp
-	2011-11-16 Zum aktuellen FS die Vorgänger suchen
+	Version:	2011-11-16 Zum aktuellen FS die Vorgänger suchen
 	2011-11-17 Parameter der Functions geändert
+	2011-11-30 import_request_variables
 */
 
 function fzerleg($fs) {
@@ -105,10 +105,12 @@ function such_vor_arr($fsk) {
 }
 
 session_start();
-$gkz=urldecode($_REQUEST["gkz"]);
-require_once("alkis_conf_location.php");
+import_request_variables("G");require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
+if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
+$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
+if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -127,12 +129,6 @@ include("alkisfkt.php");
 </head>
 <body>
 <?php
-$gmlid = urldecode($_REQUEST["gmlid"]);
-$fskennz = urldecode($_REQUEST["fskennz"]);
-$id = isset($_GET["id"]) ? $_GET["id"] : "n";
-if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
-$keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
-if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 // if ($debug > 1) {echo "<p class='err'>DB=".$dbname.", user=".$dbuser."</p>";}
