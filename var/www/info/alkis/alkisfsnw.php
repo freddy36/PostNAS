@@ -8,6 +8,7 @@
 	16.11.2011  Neuer Style class='dbg', Link Historie
 	17.11.2011  Parameter der Functions geändert
 	30.11.2011  import_request_variables, $dbvers PostNAS 0.5 entfernt
+	01.12.2011  Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
 	
 	ToDo:
 	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
@@ -41,10 +42,9 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 <?php
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
-//if ($debug > 1) {echo "<p class='dbg'>DB=".$dbname.", user=".$dbuser."</p>";}
 
 // F L U R S T U E C K
-$sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, f.zeitpunktderentstehung, ";
+$sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, st_area(f.wkb_geometry) AS fsgeomflae, f.zeitpunktderentstehung, ";
 $sql.="g.gemarkungsnummer, g.bezeichnung ";
 $sql.="FROM ax_flurstueck f ";
 $sql.="LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
@@ -67,7 +67,10 @@ if ($row = pg_fetch_array($res)) {
 	$flstnummer=$row["zaehler"];
 	$nenner=$row["nenner"];
 	if ($nenner > 0) {$flstnummer.="/".$nenner;} // BruchNr
-	$flae=number_format($row["amtlicheflaeche"],0,",",".") . " m&#178;";
+	$fsbuchflae=$row["amtlicheflaeche"]; // amtliche Fl. aus DB-Feld
+	$fsgeomflae=$row["fsgeomflae"]; // aus Geometrie ermittelte Fläche
+	$fsbuchflaed=number_format($fsbuchflae,0,",",".") . " m&#178;"; // Display-Format dazu
+	$fsgeomflaed=number_format($fsgeomflae,0,",",".") . " m&#178;";
 	$entsteh=$row["zeitpunktderentstehung"];
 	$name=$row["name"]; // Fortfuehrungsnummer(n)
 	$arrn = split(",", trim($name, "{}") ); // PHP-Array
@@ -259,7 +262,7 @@ while($row = pg_fetch_array($res)) {
 	$lgml=$row["gml_id"]; // key der Lage
 	if (!$gewann == "") {
 		echo "\n<tr>";
-			echo "\n\t<td class='ll'><img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''> Gewanne:</td>";
+			echo "\n\t<td class='ll' title='Lagebezeichnung'><img src='ico/Lage_Gewanne.ico' width='16' height='16' alt=''> Gewanne:</td>";
 			echo "\n\t<td></td>";
 			echo "\n\t<td class='lr'>".$gewann."</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
@@ -294,9 +297,9 @@ while($row = pg_fetch_array($res)) {
 // Tabellenzeilen (3 Spalten) mit tats. Nutzung zu einem FS ausgeben
 $sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, c.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, ";
 // Gemeinsame Fläche von NUA und FS
-$sql.="round(st_area(st_intersection(n.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae, ";
+//$sql.="round(st_area(st_intersection(n.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae, ";
+$sql.="st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) AS schnittflae, ";
 $sql.="c.label, c.blabla ";
-//	$sql.="round(area(n.wkb_geometry)::numeric,2) AS nflae "; // Flaeche NUA gesamt
 $sql.="FROM ax_flurstueck f, nutzung n ";
 $sql.="JOIN nutzung_meta m ON m.nutz_id=n.nutz_id ";
 $sql.="LEFT JOIN nutzung_class c ON c.nutz_id=n.nutz_id AND c.class=n.class ";
@@ -312,37 +315,34 @@ if (!$res) {
 	echo "<p class='err'>Fehler bei Suche tats. Nutzung</p>\n";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
+$the_Xfactor=$fsbuchflae / $fsgeomflae; // geom. ermittelte Fläche auf amtl. Buchfläche angleichen
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$grupp = $row["gruppe"];  // Individuelles Icon?
 	$title = htmlentities($row["title"], ENT_QUOTES, "UTF-8"); // NUA-Titel
-	$fldclass=$row["fldclass"]; // Feldname erstes  Zusatzfeld
-	$fldinfo= $row["fldinfo"];  // Feldname zweites Zusatzfeld
-	$gml=$row["gml_id"]; // Objekt-Kennung
-	$class=$row["class"];  // erstes Zusatzfeld verschlüsselt -> nutzung_class
-	$info=$row["info"]; // zweites Zusatzfeld verschlüsselt (noch keine Info zum entschl.)
+	$fldclass=$row["fldclass"]; // Feldname 1.  Zusatzfeld
+	$fldinfo= $row["fldinfo"];  // Feldname 2. Zusatzfeld
+	$gml=$row["gml_id"];
+	$class=$row["class"];  // 1. Zusatzfeld verschlüsselt -> nutzung_class
+	$info=$row["info"]; // 2. Zus. verschlüsselt (noch keine Info zum entschl.)
 	$schnittflae=$row["schnittflae"];
 	$label=$row["label"]; // Nutzungsart entschlüsselt
 	$zus=$row["zustand"]; // im Bau
 	$nam=$row["name"]; // Eigenname
 	$bez=$row["bezeichnung"]; // weiterer Name (unverschl.)
-	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8"); // Beschr. aus GeoInfoDok als PopUp-Label, enthält auch ""
-//	$nflae=$row["nflae"];
-
-	// Beispiele (verkürzte Anzeige):
-	// $group:    Verkehr           Vegatation       -> Icon
-	// $title:    Weg               Landwirtschaft   -> PopUp über Icon
-	// $fldclass: Funktion          Funktion
-	// $class:    5250              ___
-	// $label:    Rad- und Fußweg   Grünland         -> angezeigter Text
+	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8");
 
 	echo "\n<tr>\n\t";
 		if ($j == 0) {
-			echo "<td class='ll'><img src='ico/Abschnitt.ico' width='16' height='16' alt=''> Nutzung:</td>";
+			echo "<td class='ll' title='Abschnitt der tats&auml;chlichen Nutzung'><img src='ico/Abschnitt.ico' width='16' height='16' alt=''> Nutzung:</td>";
 		} else {
 			echo "<td>&nbsp;</td>";
 		}
-		echo "\n\t<td class='fla'>".$schnittflae." m&#178;</td>";
+		$absflaebuch = $schnittflae * $the_Xfactor; // angleichen geometrisch an amtliche Fläche
+		$schnittflae = number_format($schnittflae,1,",",".") . " m&#178;"; // geometrisch
+		$absflaebuch = number_format($absflaebuch,0,",",".") . " m&#178;"; // Abschnitt an Buchfläche angeglichen
+		echo "\n\t<td class='fla' title='geometrisch berechnet: ".$schnittflae."'>".$absflaebuch."</td>";
+
 		echo "\n\t<td class='lr'>";
 			If ( ($fldclass == "Funktion" OR $fldclass == "Vegetationsmerkmal") AND $label != "") { // Kurze Anzeige
 				if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
@@ -376,14 +376,10 @@ while($row = pg_fetch_array($res)) {
 				if ($showkey) {echo "<span class='key'>(".$zus.")</span> ";}
 				echo "<span title='Zustand'>";				
 				switch ($zus) {
-					case 2100:
-						echo "Außer Betrieb, stillgelegt, verlassen";	break;
-					case 4000:
-						echo "Im Bau";	break;
-					case 8000:
-						echo "Erweiterung, Neuansiedlung";	break;
-					default:
-						echo "Zustand: ".$zus;	break;
+					case 2100: echo "Außer Betrieb, stillgelegt, verlassen"; break;
+					case 4000: echo "Im Bau"; break;
+					case 8000: echo "Erweiterung, Neuansiedlung"; break;
+					default: echo "Zustand: ".$zus; break;
 				}
 				echo "</span>";
 			}
@@ -391,20 +387,12 @@ while($row = pg_fetch_array($res)) {
 			If ($bez != "") {echo "<br>Bezeichnung: ".$bez;}
 		echo "</td>";
 		echo "\n\t<td>";
-			// Eigene Nachweis-Seite für Nutzungsart-Fläche sinnvoll? dann hier verlinken 
-			//echo "\n\t\t\t<a href='alkisnua.php?gkz=".$gkz."amp;gmlid=".$gml."'>Nutzung ";
-			//if ($idanzeige) {linkgml($gkz, $gml, "Nutzung");} // Nein, ist mit nix verknuepft
 			switch ($grupp) { // Icon nach 4 Objektartengruppen
-				case "Siedlung":
-					$ico = "Abschnitt.ico";	break;
-				case "Verkehr":
-					$ico = "Strassen_Klassifikation.ico";	break;
-				case "Vegetation":
-					$ico = "Wald.ico";	break;
-				case "Gewässer":
-					$ico = "Wasser.ico";	break;
-				default:
-					$ico = "Abschnitt.ico";	break;
+				case "Siedlung":		$ico = "Abschnitt.ico";	break;
+				case "Verkehr":		$ico = "Strassen_Klassifikation.ico";	break;
+				case "Vegetation":	$ico = "Wald.ico";	break;
+				case "Gewässer":		$ico = "Wasser.ico";	break;
+				default:					$ico = "Abschnitt.ico";	break;
 			}
 			// Icon ist auch im Druck sichtbar, class='noprint' ?		
 			echo "<p class='nwlink'><img title='".$title."' src='ico/".$ico."' width='16' height='16' alt='NUA'></p>";
@@ -414,10 +402,12 @@ while($row = pg_fetch_array($res)) {
 }
 // ENDE  N U T Z U N G
 
-// Flaeche und Link auf Gebäude-Auswertung
-echo "\n<tr>";
-	echo "\n\t<td class='ll'>Fl&auml;che:</td>";
-	echo "\n\t<td class='fla'><span class='flae'>".$flae."</span></td>";
+echo "\n<tr>"; // Summenzeile
+	echo "\n\t<td class='ll' title='amtliche Fl&auml;che (Buchfl&auml;che))'>Fl&auml;che:</td>";
+	echo "\n\t<td class='fla'>";
+	echo "<span title='geometrisch berechnete Fl&auml;che = ".$fsgeomflaed."' class='flae'>".$fsbuchflaed."</span></td>";
+
+	// Flaeche und Link auf Gebäude-Auswertung
 	echo "\n\t<td>&nbsp;</td>\n\t<td>";
 		echo "\n\t\t<p class='nwlink noprint'>"; // Gebaeude-Verschneidung
 			echo "\n\t\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
@@ -637,9 +627,7 @@ while($rows = pg_fetch_array($ress)) {
 					echo "\n\t</tr>";
 					echo "\n\t<tr>";
 						echo "\n\t\t<td title='Grundbuchbezirk'>";
-						if ($showkey) {
-							echo "<span class='key'>".$rowan["bezirk"]."</span><br>";
-						}
+						if ($showkey) {echo "<span class='key'>".$rowan["bezirk"]."</span><br>";}
 						echo $beznam."</td>";
 
 						echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowan["blatt"]."</span></td>";
@@ -647,9 +635,7 @@ while($rows = pg_fetch_array($ress)) {
 						echo "\n\t\t<td title='Bestandsverzeichnis-Nummer (BVNR, Grundst&uuml;ck)'>".$rowan["lfd"]."</td>";
 
 						echo "\n\t\t<td title='Buchungsart'>";
-							if ($showkey) {
-								echo "<span class='key'>".$rowan["buchungsart"]."</span><br>";
-							}
+							if ($showkey) {echo "<span class='key'>".$rowan["buchungsart"]."</span><br>";}
 							echo $rowan["bart"];
 						echo "</td>";
 					echo "\n\t</tr>";
@@ -681,7 +667,7 @@ while($rows = pg_fetch_array($ress)) {
 		if ($blattkeyan != 1000) {
 			echo "\n<p>Blattart: ".$blattartan." (".$blattkeyan.").<br>\n"; 
 		}
-		// +++ Weitere Felder ausgeben? BeschreibungDesUmfangsDerBuchung
+		// +++ BeschreibungDesUmfangsDerBuchung ?
 		if ($rowan["nrpl"] != "") {
 			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rowan["nrpl"]."</span> im Aufteilungsplan.</p>";
 		}
@@ -690,11 +676,9 @@ while($rows = pg_fetch_array($ress)) {
 		}
 		if ($eig == "j") {
 			$n = eigentuemer($con, $rowan["g_gml"], false, ""); // ohne Adresse
-			// Anzahl $n kontrollieren? Warnen?
 		}
 		$an++;
 	}
-	// Zaehler $an==0 ist hier der Normalfall
 	$bs++;
 }
 if ($bs == 0) {
