@@ -40,7 +40,7 @@ function getEigByName() {
 // ===============================
 	global $gkz, $gemeinde, $epsg, $con, $name, $person, $gb;
 	$linelimit=120;
-	$arr = explode(" ", $name);
+	$arr = explode(",", $name);
 	$name0 = trim($arr[0]);
 	$name1 = trim($arr[1]);
 	if(preg_match("/\*/",$name0)){
@@ -53,10 +53,11 @@ function getEigByName() {
 		$match1 = trim(preg_replace("/\*/i","%", strtoupper($name1)));
 	} else {
 		$match1 = trim($name1)."%";
-	}	
+	}		
+	
 	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.gml_id FROM ax_person as p ";
 	if($match1 != '%'){
-		$sql.="WHERE p.vorname ILIKE $1 AND nachnameoderfirma ILIKE $2 ";		
+		$sql.="WHERE nachnameoderfirma ILIKE $1 AND p.vorname ILIKE $2 ";		
 		$sql.="ORDER BY p.nachnameoderfirma, p.vorname LIMIT $3 ;";
 		$v=array($match, $match1, $linelimit);
 	}else{
