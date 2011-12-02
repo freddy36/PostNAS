@@ -5,6 +5,7 @@
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
+	02.12.2011 Suche nach Vorname Nachname oder Nachname
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
@@ -39,15 +40,31 @@ function getEigByName() {
 // ===============================
 	global $gkz, $gemeinde, $epsg, $con, $name, $person, $gb;
 	$linelimit=120;
-	if(preg_match("/\*/",$name)){
-		$match = trim(preg_replace("/\*/i","%", strtoupper($name)));
+	$arr = explode(" ", $name);
+	$name0 = trim($arr[0]);
+	$name1 = trim($arr[1]);
+	if(preg_match("/\*/",$name0)){
+		$match = trim(preg_replace("/\*/i","%", strtoupper($name0)));
 	} else {
-		$match = trim($name)."%";
+		$match = trim($name0)."%";
+	}	
+	
+	if(preg_match("/\*/",$name1)){
+		$match1 = trim(preg_replace("/\*/i","%", strtoupper($name1)));
+	} else {
+		$match1 = trim($name1)."%";
 	}	
 	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.gml_id FROM ax_person as p ";
-	$sql.="WHERE nachnameoderfirma ILIKE $1 ORDER BY p.nachnameoderfirma, p.vorname LIMIT $2 ;"; 
+	if($match1 != '%'){
+		$sql.="WHERE p.vorname ILIKE $1 AND nachnameoderfirma ILIKE $2 ";		
+		$sql.="ORDER BY p.nachnameoderfirma, p.vorname LIMIT $3 ;";
+		$v=array($match, $match1, $linelimit);
+	}else{
+		$sql.="WHERE nachnameoderfirma ILIKE $1 ";		
+		$sql.="ORDER BY p.nachnameoderfirma, p.vorname LIMIT $2 ;";
+		$v=array($match, $linelimit);
+	} 
 	// +++ Adresse der Person zur eindeutigen Bestimmung?
-	$v=array($match, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -59,9 +76,11 @@ function getEigByName() {
 	while($row = pg_fetch_array($res)) {
 		$nnam=htmlentities($row["nachnameoderfirma"], ENT_QUOTES, "UTF-8");
 		$vnam=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
-		$gml=$row["gml_id"];		// +++ Icon mit Link auf Person-Auskunft, über gml_id	
+		$gml=$row["gml_id"];
+		// +++ Icon mit Link auf Person-Auskunft, über gml_id	
 		// Zur Zeit siehe unten: erst nach Auswahl einer einzelnen Person
-		echo "\n<a class='nam' title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";		$cnt++;
+		echo "\n<a class='nam' title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";
+		$cnt++;
 	}
 	if($cnt == 0){ 
 		echo "\n<p class='err'>Keine Person.</p>";
@@ -125,7 +144,8 @@ function getGBbyPerson() {
 	$sql.="JOIN ax_buchungsblatt g ON bng.beziehung_zu=g.gml_id ";
 	$sql.="JOIN ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
 	$sql.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
-	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung LIMIT $2 ;";	$v=array($person, $linelimit);
+	$sql.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung LIMIT $2 ;";
+	$v=array($person, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -136,7 +156,8 @@ function getGBbyPerson() {
 	while($row = pg_fetch_array($res)) {
 		$gml=$row["gml_g"];
 		$beznam=$row["beznam"];
-		$nr=$row["nr"];		echo "\n<div class='gb'>";
+		$nr=$row["nr"];
+		echo "\n<div class='gb'>";
 			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='GB'>";
 			echo "\n\t</a> ";		
@@ -222,7 +243,8 @@ function getFSbyGB($backlink) {
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 			echo "\n\t</a> ";	
 			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
+					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
+					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()'>";
 			echo $bvnr." ".$gmkg." ".$flur."-".$fskenn."</a>";
