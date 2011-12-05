@@ -104,6 +104,7 @@ $sql.="FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r  ";
 $sql.="WHERE r.gml_id= $1 "; 
 $sql.="AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true ";
 $sql.="AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 ";  // > 0.0 ist gemeint, Ungenauigkeit durch st_simplify
+$sql.="AND isvalid(r.wkb_geometry) AND isvalid(f.wkb_geometry) "; 
 $sql.="ORDER BY schnittflae DESC ";
 // Limit: Flurbereinigungsgebiete koennen sehr gross werden!
 $sql.="LIMIT 40;";
