@@ -1,10 +1,5 @@
 <?php
 /* Version vom
-	13.01.2011
-	25.03.2011 Filter als Gemeinde-Liste
-	12.04.2011 epsg in Link, transform nur wenn notwendig
-	12.05.2011 Syntaxfehler in SQL
-	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 	07.11.2011 optional auch Historische FS suchen, Link auf Buchauskunft-Modul alkisfshis.php
 	09.11.2011 "h" hinter Flur oder Flurstück sucht sofort in Historie
@@ -15,7 +10,7 @@
 				Gemarkung- und Flur-Zeile vor einzelnem Flurstück ausgeben
 	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
 */
-import_request_variables("PG");
+import_request_variables("G");
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);
 ?>

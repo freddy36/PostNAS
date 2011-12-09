@@ -1,13 +1,9 @@
 <?php
 /* Version vom
-	14.01.2011
-	12.04.2011 epsg in Link, transform nur wenn notwendig, 
-	neue Suchstrategie bei Leer-Eingabe (Liste Amtsgerichte), Icon GB-Bez.
-	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
 */
-import_request_variables("PG");
+import_request_variables("G");
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);

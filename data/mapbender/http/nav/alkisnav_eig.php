@@ -1,17 +1,17 @@
 <?php
 /* Version vom 
-	13.01.2011 
-	11.04.2011 epsg in Link, transform nur wenn notwendig
-	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
-	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
-	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
-	02.12.2011 Suche nach Vorname Nachname oder Nachname
+	24.10.2011	Nach Pos-Klick Highlight erneuern statt hideHighlight
+	17.11.2011	Nachweis-Links über javascript im neuen Hochformat-Fenster
+	02.12.2011	Suche nach Vorname Nachname oder Nachname
+	09.12.2011	Filter "Gemeinde" für Ebene Flurstücke.
+					Filter "Gemeinde" für Personen über neue Hilfstabelle "gemeinde_person".
+					Format css Person (Rahmen).
+	ToDo: Auf der Stufe 2 "getGBbyPerson" noch Filtern nach Gemeinde
 */
 import_request_variables("PG");
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindung zur Datenbank</p>".$dbname.$dbvers.$gkz);
-// ToDo: Buchung zwischen Blatt und Flst?
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -38,7 +38,7 @@ function getEigByName() {
 // 1 =============================
 // Eigentuemer nach Name(-nsanfang)
 // ===============================
-	global $gkz, $gemeinde, $epsg, $con, $name, $person, $gb;
+	global $gkz, $gemeinde, $epsg, $con, $name, $person, $gb, $gfilter, $persfilter, $auskpath;
 	$linelimit=120;
 	$arr = explode(",", $name);
 	$name0 = trim($arr[0]);
@@ -48,24 +48,34 @@ function getEigByName() {
 	} else {
 		$match = trim($name0)."%";
 	}	
-	
 	if(preg_match("/\*/",$name1)){
 		$match1 = trim(preg_replace("/\*/i","%", strtoupper($name1)));
 	} else {
 		$match1 = trim($name1)."%";
 	}		
 	
-	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.gml_id FROM ax_person as p ";
+	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.gml_id FROM ax_person p ";
+
+	if ($persfilter and ($gfilter > 0)) {
+		$sql.="JOIN gemeinde_person g ON p.gml_id = g.person WHERE ";
+		switch ($gfilter) {
+			case 1: // Einzelwert
+				$sql.="g.gemeinde=".$gemeinde." AND "; break;
+			case 2: // Liste
+				$sql.="g.gemeinde in (".$gemeinde.") AND "; break;
+		}
+	} else {
+		$sql.="WHERE ";
+	}
 	if($match1 != '%'){
-		$sql.="WHERE nachnameoderfirma ILIKE $1 AND p.vorname ILIKE $2 ";		
+		$sql.="nachnameoderfirma ILIKE $1 AND p.vorname ILIKE $2 ";		
 		$sql.="ORDER BY p.nachnameoderfirma, p.vorname LIMIT $3 ;";
 		$v=array($match, $match1, $linelimit);
 	}else{
-		$sql.="WHERE nachnameoderfirma ILIKE $1 ";		
+		$sql.="nachnameoderfirma ILIKE $1 ";		
 		$sql.="ORDER BY p.nachnameoderfirma, p.vorname LIMIT $2 ;";
 		$v=array($match, $linelimit);
 	} 
-	// +++ Adresse der Person zur eindeutigen Bestimmung?
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -73,14 +83,15 @@ function getEigByName() {
 		return;
 	}
 	$cnt = 0;
-	// einfache Liste ohne div und Icon	
 	while($row = pg_fetch_array($res)) {
 		$nnam=htmlentities($row["nachnameoderfirma"], ENT_QUOTES, "UTF-8");
 		$vnam=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
 		$gml=$row["gml_id"];
-		// +++ Icon mit Link auf Person-Auskunft, über gml_id	
-		// Zur Zeit siehe unten: erst nach Auswahl einer einzelnen Person
-		echo "\n<a class='nam' title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";
+		// Link zur Auskunft Person  +++ Icon differenzieren? Firma/Person
+		echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."\")'>";
+			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'>";
+		echo "\n\t</a> ";		
+		echo "\n<a title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$gml."&amp;name=".$nnam."'>".$nnam.", ".$vnam."</a>\n<br>";
 		$cnt++;
 	}
 	if($cnt == 0){ 
@@ -116,12 +127,12 @@ function getGBbyPerson() {
 	$res=pg_execute("", $v);
 	if (!$res) {echo "\n<p class='err'>Fehler bei Name</p>\n";}
 	// Daten der Person
-	echo "\n<div class='nam'>";
-		// Link zur Auskunft Person
+	echo "\n\t<table>\n\t<tr>\n\t\t<td valign='top'>";
+		// Sp. 1: Icon, Link zur Auskunft Person
 		echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$person."\")'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'>";
-		echo "\n\t</a> ";
-		echo "\n\t<p class='nam'>";		
+		echo "\n\t</a></td>\n\t\t<td>";
+		echo "\n\t<p class='nam'>"; // Sp. 2: Rahmen
 		if ($row = pg_fetch_array($res)) {
 			$namzeil=$row["nachnameoderfirma"].", ".$row["vorname"];
 			$gebdat=$row["geburtsdatum"];
@@ -134,8 +145,7 @@ function getGBbyPerson() {
 			$namzeil=$row["strasse"]." ".$row["hausnummer"];
 			if (trim($namzeil) != "") {echo "\n\t<br>".htmlentities($namzeil, ENT_QUOTES, "UTF-8");}
 		}
-		echo "\n\t</p>";
-	echo "\n</div>";
+	echo "\n\t</p></td></tr>\n\t</table>";
 
 	// Suche nach Grundbüchern der Person
 	$sql ="SELECT g.gml_id AS gml_g, g.buchungsblattnummermitbuchstabenerweiterung as nr, b.bezeichnung AS beznam ";
@@ -180,7 +190,7 @@ function getFSbyGB($backlink) {
 // 3 =================================
 // Flurstücke zum gewählten Grundbuch
 // ===================================
-	global $gkz, $gemeinde, $con, $name, $person, $gb, $scalefs, $auskpath, $epsg;
+	global $gkz, $gemeinde, $con, $name, $person, $gb, $scalefs, $auskpath, $epsg, $gfilter, $persfilter;
 	$linelimit=120;
 
 	if($backlink) {	
@@ -196,26 +206,48 @@ function getFSbyGB($backlink) {
 		echo "</div>";	
 	}
 
-	// Blatt <vbg/istBestandteilVon<  Buchungsstelle <vfb/istGebucht< Flurstck.
-	$sql ="SELECT s.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
+	// SQL-Bausteine vorbereiten
+	$sql1 ="SELECT s1.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
 	if($epsg == "25832") { // Transform nicht notwendig
-		$sql.="x(st_centroid(f.wkb_geometry)) AS x, ";
-		$sql.="y(st_centroid(f.wkb_geometry)) AS y, ";
+		$sql1.="x(st_centroid(f.wkb_geometry)) AS x, ";
+		$sql1.="y(st_centroid(f.wkb_geometry)) AS y, ";
 	} else {  
-		$sql.="x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-		$sql.="y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
+		$sql1.="x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+		$sql1.="y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
 	}
-	$sql.="g.gemarkungsnummer, g.bezeichnung ";
-   $sql.="FROM alkis_beziehungen vbg ";
-	$sql.="JOIN ax_buchungsstelle s ON vbg.beziehung_von = s.gml_id "; 
-	$sql.="JOIN alkis_beziehungen vfb ON s.gml_id = vfb.beziehung_zu "; 
-	$sql.="JOIN ax_flurstueck f  ON vfb.beziehung_von = f.gml_id ";
-   $sql.="JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-	$sql.="WHERE vbg.beziehung_zu= $1 AND vbg.beziehungsart='istBestandteilVon' AND vfb.beziehungsart='istGebucht' ";
-	$sql.="ORDER BY s.laufendenummer, f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner LIMIT $2 ;";
+	$sql1.="g.gemarkungsnummer, g.bezeichnung ";
+   $sql1.="FROM alkis_beziehungen vbg ";
+	$sql1.="JOIN ax_buchungsstelle s1 ON vbg.beziehung_von = s1.gml_id "; 
 
-	// +++ Sonderfall Fehlt noch: Blatt -> Buchung -> (Recht an) Buchung -> Flurstück
-	// +++ Ebene Buchung dazwischen wie im Teil 'Grundbuch' ?
+	// Zwischen-JOIN (zusätzlich nur bei zweiter Abfrage)
+	$sqlz ="JOIN alkis_beziehungen vss ON vss.beziehung_von = s1.gml_id ";
+	$sqlz.="JOIN ax_buchungsstelle s2 ON vss.beziehung_zu = s2.gml_id ";
+
+	$sqla1 ="JOIN alkis_beziehungen vfb ON s1.gml_id = vfb.beziehung_zu ";
+	$sqla2 ="JOIN alkis_beziehungen vfb ON s2.gml_id = vfb.beziehung_zu ";
+
+	$sql2.="JOIN ax_flurstueck f  ON vfb.beziehung_von = f.gml_id ";
+   $sql2.="JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+
+	if ($persfilter and ($gfilter > 0)) {
+		$sql2.="JOIN gemeinde_gemarkung v ON g.land=v.land AND g.gemarkungsnummer=v.gemarkung ";
+	}
+
+	$sql2.="WHERE vbg.beziehung_zu= $1 AND vbg.beziehungsart='istBestandteilVon' AND vfb.beziehungsart='istGebucht' ";
+
+	if ($persfilter and ($gfilter > 0)) {
+		switch ($gfilter) {
+			case 1: // Einzelwert
+				$sql2.="AND v.gemeinde=".$gemeinde." "; break;
+			case 2: // Liste
+				$sql2.="AND v.gemeinde in (".$gemeinde.") "; break;
+		}
+	}
+	$sql2.="ORDER BY s1.laufendenummer, f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner LIMIT $2 ;";
+
+	// Blatt <vbg/istBestandteilVon<  Buchungsstelle <vfb/istGebucht< Flurstck.
+	$sql=$sql1.$sqla1.$sql2; // Direkte Buchungen
+
 	$v=array($gb, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -224,15 +256,11 @@ function getFSbyGB($backlink) {
 		if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
 		return;
 	}
-	$zfs=0;
+	$zfs1=0;
 	while($row = pg_fetch_array($res)) {	
 		$fs_gml=$row["gml_id"];
 		$bvnr=$row["lfd"];
-		if ($bvnr > 0) {		
-			$bvnr=str_pad($bvnr, 4, "0", STR_PAD_LEFT);
-		} else {
-			$bvnr="";
-		}
+		if ($bvnr > 0) {$bvnr=str_pad($bvnr, 4, "0", STR_PAD_LEFT);} else {$bvnr="";}
 		$gmkg=$row["bezeichnung"];
 		$flur=$row["flurnummer"];
 		$fskenn=$row["zaehler"];
@@ -250,11 +278,49 @@ function getFSbyGB($backlink) {
 				echo "onmouseout='parent.parent.hideHighlight()'>";
 			echo $bvnr." ".$gmkg." ".$flur."-".$fskenn."</a>";
 		echo "\n</div>";
-		$zfs++;
+		$zfs1++;
 	}
-	if($zfs == 0) { 
-		echo "\n<p class='err'>Kein Flurst&uuml;ck.</p>";
-		echo "\n<p class='hilfe'>Hinweis: Sonderf&auml;lle wie 'Erbbaurecht' sind noch nicht umgesetzt.</p>";
+
+	// Zweite Abfrage (Variante) aus den Bausteinen zusammen bauen
+	// buchungsStelle2 < an < buchungsStelle1
+	$sql=$sql1.$sqlz.$sqla2.$sql2; // Rechte an
+
+	$v=array($gb, $linelimit);
+	$res=pg_prepare("", $sql);
+	$res=pg_execute("", $v);
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei Recht an Buchung.</p>";
+		if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
+		return;
+	}
+	$zfs2=0;
+	while($row = pg_fetch_array($res)) {	
+		$fs_gml=$row["gml_id"];
+		$bvnr=$row["lfd"];
+		if ($bvnr > 0) {$bvnr=str_pad($bvnr, 4, "0", STR_PAD_LEFT);} else {$bvnr="";}
+		$gmkg=$row["bezeichnung"];
+		$flur=$row["flurnummer"];
+		$fskenn=$row["zaehler"];
+		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
+		$x=$row["x"];
+		$y=$row["y"];
+		echo "\n<div class='fs'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
+				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
+			echo "\n\t</a> ";	
+			echo "\n\tRecht an <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
+					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
+					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
+				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
+				echo "onmouseout='parent.parent.hideHighlight()'>";
+			echo $bvnr." ".$gmkg." ".$flur."-".$fskenn."</a>";
+		echo "\n</div>";
+		$zfs2++;
+	}
+
+	if($zfs1 + $zfs2 == 0) { 
+		echo "\n<p class='err'>Kein Flurst&uuml;ck im berechtigten Bereich.</p>";
+	//	echo "\n<p class='hilfe'>Hinweis: Sonderf&auml;lle wie 'Erbbaurecht' sind noch nicht umgesetzt.</p>";
 	} elseif($zfs >= $linelimit) {
 		echo "\n<p>... und weitere</p>"; 
 	}
@@ -276,6 +342,13 @@ if(isset($epsg)) {
 	$epsg=$gui_epsg; // aus Conf
 }
 if ($debug >= 2) {echo "<p>Filter Gemeinde = ".$gemeinde."</p>";}
+if ($gemeinde == "") {
+	$gfilter = 0; // ungefiltert
+} elseif(strpos($gemeinde, ",") === false) {
+	$gfilter = 1; // Einzelwert
+} else {
+	$gfilter = 2; // Liste
+}
 
 // Welche Parameter?
 // 3. Stufe: Flurstücke zum Grundbuch

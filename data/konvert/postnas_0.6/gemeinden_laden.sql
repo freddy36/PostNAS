@@ -13,11 +13,13 @@
 -- muss diese Information als (redundante) Tabelle nach dem Laden zwischengespeichert werden. 
 
 
--- Teil 2: Laden der Tabelle
+-- Teil 2: Laden der Tabellen
 
 -- Stand 
 
 --  2011-07-25 PostNAS 06, Umbenennung
+--  2011-12-08 Person -> Gemeinde
+
 
 SET client_encoding = 'UTF-8';
 
@@ -55,6 +57,39 @@ UPDATE gemeinde_gemarkung a
      WHERE a.land=b.land 
        AND a.gemarkung=b.gemarkungsnummer
    );
+
+
+
+-- =======================================================
+-- Tabelle fuer die Zuordnung vom Eigentümern zu Gemeinden
+-- =======================================================
+
+
+-- erst mal sauber machen
+DELETE FROM gemeinde_person;
+
+-- alle direkten Buchungen mit View ermitteln und in Tabelle speichern
+-- Für eine Stadt: ca. 20 Sekunden
+INSERT INTO  gemeinde_person 
+       (land, regierungsbezirk, kreis, gemeinde, person, buchtyp)
+ SELECT land, regierungsbezirk, kreis, gemeinde, person, 1
+   FROM gemeinde_person_typ1;
+
+
+-- noch die komplexeren Buchungen ergänzen (Recht an ..)
+-- Mit View ermitteln und in Tabelle speichern
+-- Für eine Stadt: ca. 10 Sekunden
+INSERT INTO  gemeinde_person 
+       (  land,   regierungsbezirk,   kreis,   gemeinde,   person,  buchtyp)
+ SELECT q.land, q.regierungsbezirk, q.kreis, q.gemeinde, q.person,  2
+   FROM gemeinde_person_typ2 q   -- Quelle
+   LEFT JOIN gemeinde_person z   -- Ziel
+     ON q.person   = z.person    -- Aber nur, wenn dieser Fall im Ziel
+    AND q.land     = z.land 
+    AND q.regierungsbezirk = z.regierungsbezirk 
+    AND q.kreis    = z.kreis 
+    AND q.gemeinde = z.gemeinde
+  WHERE z.gemeinde is Null;      -- ..  noch nicht vorhanden ist
 
 
 -- ENDE --

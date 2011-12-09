@@ -5,6 +5,8 @@
 --  PostNAS 0.6
 
 --  2011-07-25 PostNAS 06, Umbenennung
+--  2011-10-20 Nummer Nebengebäude und Zuordnungspfeile fuer Gebäude   ##### IN ARBEIT
+--  2011-12-08 umbenannt "gemeinde_in_gemarkung" -> "gemarkung_in_gemeinde"
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -26,8 +28,6 @@
 -- nicht den Wert 'ZAE_NEN' sondern 'urn:adv:fachdatenverbindung'.
 -- Die Flurstücksnummer fehlt dann im WMS.
 -- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
-
--- 4.11.2011 Sichten für die Grenzen aus der Tabelle ax_besondereflurstuecksgrenze Astrid Emde
 
 
 -- Bruchnummerierung erzeugen
@@ -76,6 +76,29 @@ AS
 
 COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
 
+
+-- Layer "ag_t_nebengeb"
+-- ---------------------
+
+CREATE OR REPLACE VIEW s_nummer_nebengebaeude 
+AS 
+ SELECT ap_pto.ogc_fid, 
+        ap_pto.wkb_geometry, 
+        ap_pto.drehwinkel * 57.296 AS drehwinkel,        -- umn: ANGLE [drehwinkel]
+     -- alkis_beziehungen.beziehungsart,                 -- TEST
+     -- ax_lagebezeichnungmitpseudonummer.pseudonummer,  -- die HsNr des zugehoerigen Hauptgebaeudes
+        ax_lagebezeichnungmitpseudonummer.laufendenummer -- umn: LABELITEM - die laufende Nummer des Nebengebaeudes
+   FROM ap_pto
+   JOIN alkis_beziehungen 
+     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
+   JOIN ax_lagebezeichnungmitpseudonummer 
+     ON alkis_beziehungen.beziehung_zu  = ax_lagebezeichnungmitpseudonummer.gml_id
+  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
+;
+
+COMMENT ON VIEW s_nummer_nebengebaeude IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
+
+-- ToDo: Die Zahl in Klammern setzen ?  (in Map oder View?)
 
 
 -- Layer "ag_p_flurstueck"
@@ -139,6 +162,88 @@ AS
 -- Lippe: Der Wert 'ZAE_NEN' fehlt. Diese Fälle anders identifizieren?
 
 COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
+
+
+BAUSTELLE
+
+
+-- Layer "s_zuordungspfeil_gebaeude"
+-- -----------------------------------
+
+CREATE OR REPLACE VIEW s_zuordungspfeil_gebaeude 
+AS 
+ SELECT ap_lpo.ogc_fid, 
+     -- alkis_beziehungen.beziehungsart, -- TEST
+     -- ap_lpo.art, -- TEST
+        ap_lpo.wkb_geometry
+   FROM ap_lpo
+   JOIN alkis_beziehungen 
+     ON ap_lpo.gml_id = alkis_beziehungen.beziehung_von
+   JOIN ax_gebaeude 
+     ON alkis_beziehungen.beziehung_zu = ax_gebaeude.gml_id
+  WHERE ap_lpo.art = 'Pfeil'
+    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+
+COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung';
+
+
+-- Sichten vom OBK (Oberbergischer Kreis) zu "Grenzen"
+-- ---------------------------------------------------
+-- Schema "alkis" daraus entfernt.
+
+-- Feld "ax_besondereflurstuecksgrenze.artderflurstuecksgrenze" als Array "integer[]" !
+-- Anpassung Schema 18.09.2011
+
+CREATE OR REPLACE VIEW sk2022_gemeindegrenze 
+AS 
+ SELECT gemg.ogc_fid, gemg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze gemg
+  WHERE (7106 = ANY (gemg.artderflurstuecksgrenze)) 
+    AND gemg.advstandardmodell ~~ 'DLKM'::text;
+
+
+CREATE OR REPLACE VIEW sk2020_regierungsbezirksgrenze 
+AS 
+ SELECT rbg.ogc_fid, rbg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze rbg
+  WHERE (7103 = ANY (rbg.artderflurstuecksgrenze)) 
+    AND rbg.advstandardmodell ~~ 'DLKM'::text;
+
+
+CREATE OR REPLACE VIEW sk2018_bundeslandgrenze 
+AS 
+ SELECT blg.ogc_fid, blg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze blg
+  WHERE (7102 = ANY (blg.artderflurstuecksgrenze)) 
+    AND blg.advstandardmodell ~~ 'DLKM'::text;
+
+
+CREATE OR REPLACE VIEW sk2014_gemarkungsgrenze 
+AS 
+ SELECT gemag.ogc_fid, gemag.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze gemag
+  WHERE (7003 = ANY (gemag.artderflurstuecksgrenze)) 
+    AND gemag.advstandardmodell ~~ 'DLKM'::text;
+
+
+--CREATE OR REPLACE VIEW sk2012_flurgrenze 
+--AS 
+-- SELECT fg.ogc_fid, fg.wkb_geometry
+--   FROM ax_besondereflurstuecksgrenze fg
+--  WHERE (3000 = ANY (fg.artderflurstuecksgrenze)) 
+--    AND fg.advstandardmodell ~~ 'DLKM'::text;
+
+-- Vorlaeufig, bis Schema umgestellt ist
+
+CREATE OR REPLACE VIEW sk2012_flurgrenze 
+AS 
+ SELECT fg.ogc_fid, fg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze fg
+  WHERE (3000 = fg.artderflurstuecksgrenze) 
+    AND fg.advstandardmodell ~~ 'DLKM'::text;
+
+-- comment ....
+
 
 --  ------------------------------------------
 --  Sichten fuer Fehlersuche und Daten-Analyse
@@ -239,14 +344,16 @@ AS
 -- Man glaubt es kaum, aber im ALKIS haben Gemeinde und Gemarkung keinerlei Beziehung miteinander
 -- Nur durch Auswertung der Flurstücke kann man ermitteln, in welcher Gemeinde eine Gemarkung liegt.
 
-CREATE OR REPLACE VIEW gemeinde_in_gemarkung
+-- 2011-12-08 umbenannt
+
+CREATE OR REPLACE VIEW gemarkung_in_gemeinde
 AS
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
   FROM            ax_flurstueck
   ORDER BY        land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
 ;
 
-COMMENT ON VIEW gemeinde_in_gemarkung IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
+COMMENT ON VIEW gemarkung_in_gemeinde IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
 
 
 -- Untersuchen, welche Geometrie-Typen vorkommen
@@ -479,32 +586,6 @@ AS
          g.buchungsblattnummermitbuchstabenerweiterung,
          sh.laufendenummer 
 ;
-
---
--- Sichten für Grenzen aus ax_besondereflurstuecksgrenze
---
--- Select distinct artderflurstuecksgrenze from ax_besondereflurstuecksgrenze
-Create view grenze_flur_3000 as 
-Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
-where 3000 = ANY(artderflurstuecksgrenze);
-
-Create view grenze_gemarkung_7003 as 
-Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
-where 7003 = ANY(artderflurstuecksgrenze);
-
-
-Create view grenze_regierungsbezirk_7103 as 
-Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
-where 7103 = ANY(artderflurstuecksgrenze);
-
-Create view grenze_landkreisgrenze_7104 as 
-Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
-where 7104 = ANY(artderflurstuecksgrenze);
-
-
-Create view grenze_gemeinde_7106 as 
-Select ogc_fid, artderflurstuecksgrenze, wkb_geometry from ax_besondereflurstuecksgrenze
-where 7106 = ANY(artderflurstuecksgrenze);
 
 -- END --
 

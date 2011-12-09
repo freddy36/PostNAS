@@ -1,9 +1,10 @@
 <?php
 /* Einstellungen fuer Mapbender-Navigation mit ALKIS-Daten
-	ALKIS-PostGIS-Datenbank aus Konverter PostNAS 0.5/0.6
+	ALKIS-PostGIS-Datenbank aus Konverter PostNAS 0.6
 	krz Mi.-Ra./Li.
 	2011-07-26
 	2011-11-07 Land
+	2011-12-09 $persfilter (gemeinde_person)
 */
 
 # DB-Connection
@@ -34,6 +35,10 @@ $land="05"; // NRW
 # Form: WHERE IN ()
 # Bei leerer Eingabe in Tab 'Grundb.'
 $ag_liste = "'2102','2105','2106','2107','2108','2110','2303','2307'";
+
+# Nur Personen anzeigen, die Eigentum in der Gemeinde (-liste) haben
+# "true" setzt voraus, dass die Hilfstabelle "gemeinde_person" gefuellt ist
+$persfilter=true;
 
 # Entwicklungsumgebung
 $debug=0; // 0=Produktion, 1=mit Fehlermeldungen, 2=mit Informationen, 3=mit SQL

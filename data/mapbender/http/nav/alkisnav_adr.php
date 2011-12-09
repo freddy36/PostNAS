@@ -1,16 +1,17 @@
 <?php
 /* Version vom 
-	24.03.2011: bei HsNr auch Gemeinde in Where, Anzeige Gemeinde je nach Filter 
-	25.03.2011: parameter &gemeinde= auch als Liste moeglich
-	z.B. Wasserverband zustaendig fuer: &gemeinde=12,20,24,28,32
 	11.04.2011 epsg in Link, transform nur wenn notwendig
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
+	09.12.2011 Sonderfall PostNAS 0.5 raus,
 
-	ToDo: Mouse-Over in Straßenliste soll Position zeigen,
+	ToDo:
+	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
+		Analog zur Zerlegung des FS-Kennz in _fls
+	-	Mouse-Over in Straßenliste soll Position zeigen,
 		dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
 */
-import_request_variables("PG");
+import_request_variables("G");
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$$dbname.$dbvers.$gkz);
@@ -177,11 +178,7 @@ function suchHausZurStr($showParent){
 		$kreis=$row["kreis"];
 		$gemnd=$row["gemeinde"];
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
-		if ($dbvers=="05") { // 2011-07-25
-			$nr=ltrim($row["lage"], "0");
-		} else { // >= PostNAS 0.6
-			$nr=$row["lage"];
-		}
+		$nr=$row["lage"];
 
 		if ($showParent) {
 			// eine Koordinate zur Strasse besorgen
