@@ -627,4 +627,113 @@ INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1200,'Nadelholz
 INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1300,'Laub- und Nadelholz');
 INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1310,'Laubwald mit Nadelholz');
 INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1320,'Nadelwald mit Laubholz');
+
+-- ax_bodenschaetzung_kulturart
+-- ---------------------------------
+
+CREATE TABLE ax_bodenschaetzung_kulturart (
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_kulturart  PRIMARY KEY (wert)
+  );
+
+
+COMMENT ON TABLE ax_bodenschaetzung_kulturart 
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+
+INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (1000,'Ackerland (A)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (2000,'Acker-Grünland (AGr)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (3000,'Grünland (Gr)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (4000,'Grünland-Acker (GrA)');
+
+
+
+-- ax_bodenschaetzung_bodenart
+-- ---------------------------------
+
+CREATE TABLE ax_bodenschaetzung_bodenart (
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_bodenart  PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bodenschaetzung_bodenart 
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (1100,'Sand (S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (2100,'Lehmiger Sand (lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (3100,'Lehm (L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (4100,'Ton (T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (5000,'Moor (Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (1200,'Anlehmiger Sand (Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (2200,'Stark lehmiger Sand (SL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (3200,'Sandiger Lehm (sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (4200,'Schwerer Lehm (LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6110,'Sand, Moor (SMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6120,'Lehmiger Sand, Moor (lSMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6130,'Lehm, Moor (LMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6140,'Ton, Moor (TMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6210,'Moor,Sand (MoS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6220,'Moor, Lehmiger Sand (MolS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6230,'Moor, Lehm (MoL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6240,'Moor, Ton (MoT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7110,'Sand auf sandigem Lehm (S/sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7130,'Sand auf schwerem Lehm (S/LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7210,'Anlehmiger Sand auf Lehm (Sl/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7220,'Anlehmiger Sand auf schwerem Lehm (Sl/LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7230,'Anlehmiger Sand auf Ton (Sl/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7310,'Lehmiger Sand auf schwerem Lehm (lS/LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7320,'Lehmiger Sand auf Sand (lS/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7400,'Stark lehmiger Sand auf Ton (SL/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7510,'Ton auf stark lehmigen Sand (T/SL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7530,'Ton auf anlehmigen Sand (T/Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7610,'Schwerer Lehm auf lehmigen Sand (LT/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7620,'Schwerer Lehm auf anlehmigen Sand (LT/Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7630,'Schwerer Lehm auf Sand (LT/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7710,'Lehm auf anlehmigen Sand (L/Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7800,'Sandiger Lehm auf Sand (sL/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7120,'Sand auf Lehm (S/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7140,'Sand auf Ton (S/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7330,'Lehmiger Sand auf Ton (lS/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7520,'Ton auf lehmigen Sand (T/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7540,'Ton auf Sand (T/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7720,'Lehm auf Sand (L/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8110,'Sand auf Moor (S/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8120,'Lehmiger Sand auf Moor (lS/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8130,'Lehm auf Moor (L/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8140,'Ton auf Moor (T/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8210,'Moor auf Sand (Mo/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8220,'Moor auf lehmigen Sand (Mo/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8230,'Moor auf Lehm (Mo/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8240,'Moor auf Ton (Mo/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9120,'Bodenwechsel vom Lehm zu Moor (L+Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9130,'Lehmiger Sand mit starkem Steingehalt (lSg)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9140,'Lehm mit starkem Steingehalt (Lg)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9150,'lehmiger Sand mit Steinen und Blöcken (lS+St)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9160,'Lehm mit Steinen und Blöcken L+St)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9170,'Steine und Blöcke mit  lehmigem Sand (St+lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9180,'Steine und Blöcke mit  Lehm (St+L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9190,'lehmiger Sand mit Felsen (lS+Fe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9200,'Lehm mit Felsen (L+Fe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9210,'Felsen mit lehmigem Sand (Fe+lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9220,'Felsen mit Lehm (Fe+L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9310,'Sand auf lehmigen Sand (S/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9320,'Anlehmiger Sand auf Mergel (Sl/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9330,'Anlehmiger Sand auf sandigem Lehm (Sl/sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9340,'Lehmiger Sand auf Lehm (lS/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9350,'Lehmiger Sand auf Mergel (lS/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9360,'Lehmiger Sand auf sandigem Lehm (lS/sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9370,'Lehmiger Sand, Mergel (lSMe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9380,'Lehmiger Sand, Moor auf Mergel (lSMo/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9390,'Anlehmiger Sand, Moor (SlMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9410,'Lehm auf Mergel (L/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9420,'Lehm, Moor auf Mergel (LMo/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9430,'Schwerer Lehm auf Moor (LT/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9440,'Ton auf Mergel (T/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9450,'Moor auf Mergel (Mo/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9460,'Moor, Lehm auf Mergel (MoL/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9470,'Moor, Mergel (MoMe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9480,'LößDiluvium(LöD)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9490,'AlluviumDiluvium(AlD)');
 -- ENDE --
