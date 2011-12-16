@@ -723,4 +723,20 @@ INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstu
 INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (IV)',3300);
 
 
+-----
+CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_musterlandesmusterundvergleichsstueck_merkmal  PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal 
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+
+INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (1000,'Musterstück (M)');
+INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (2000,'Landesmusterstück (L)');
+INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (3000,'Vergleichsstück (V)');
+
+
 -- ENDE --
