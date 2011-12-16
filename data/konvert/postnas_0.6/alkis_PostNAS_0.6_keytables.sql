@@ -584,49 +584,6 @@ INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner)
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner) VALUES (2700,'Grenzfeststellungsverfahren nach Hamb. Wassergesetz');
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner) VALUES (2800,'Verkehrsflächenbereinigung');
 
---ax_landwirtschaft_vegetationsmerkmal
--- ---------------------------------
-
-CREATE TABLE ax_landwirtschaft_vegetationsmerkmal (
-    wert            integer, 
-    bezeichner  character varying,
-    CONSTRAINT pk_ax_landwirtschaft_vegetationsmerkmal PRIMARY KEY (wert)
-  );
-COMMENT ON TABLE ax_landwirtschaft_vegetationsmerkmal 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Wird für Infoabfrage benötigt.';
-
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1100,'Ackerland');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1011,'Streuobstacker');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1012,'Hopfen');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1013,'Spargel');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1020,'Grünland');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1021,'Streuobstwiese');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1030,'Gartenland');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1031,'Baumschule');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1040,'Weingarten');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1050,'Obstplantage');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1051,'Obstbaumplantage');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1052,'Obststrauchplantage');
-INSERT INTO ax_landwirtschaft_vegetationsmerkmal (wert,bezeichner) VALUES (1200,'Brachland');
-
-
--- ax_wald_vegetationsmerkmal
--- ---------------------------------
-
-CREATE TABLE ax_wald_vegetationsmerkmal (
-    wert            integer, 
-    bezeichner  character varying,
-    CONSTRAINT pk_ax_wald_vegetationsmerkmal PRIMARY KEY (wert)
-  );
-
-COMMENT ON TABLE ax_wald_vegetationsmerkmal
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Wird für Infoabfrage benötigt.';
-
-INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1100,'Laubholz');
-INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1200,'Nadelholz');
-INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1300,'Laub- und Nadelholz');
-INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1310,'Laubwald mit Nadelholz');
-INSERT INTO ax_wald_vegetationsmerkmal (wert,bezeichner) VALUES (1320,'Nadelwald mit Laubholz');
 
 -- ax_bodenschaetzung_kulturart
 -- ---------------------------------
@@ -736,4 +693,5 @@ INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9460,'Moor, L
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9470,'Moor, Mergel (MoMe)');
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9480,'LößDiluvium(LöD)');
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9490,'AlluviumDiluvium(AlD)');
+
 -- ENDE --
