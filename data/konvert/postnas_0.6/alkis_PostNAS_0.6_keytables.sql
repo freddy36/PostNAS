@@ -760,4 +760,120 @@ INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (13
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (2000,'Grabloch für Muster-, Landesmuster-, Vergleichsstück');
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (3000,'Grabloch, nicht bestimmend');
 
+
+--
+-- Thema ax_forstrecht - ax_forstrecht_besonderefunktion
+--
+CREATE TABLE ax_forstrecht_artderfestlegung(
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_forstrecht_artderfestlegung  PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_forstrecht_artderfestlegung
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Klassifizierung nach Bundes- oder Landeswaldgesetz',3900);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Staatswald Bund',3910);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Staatswald Land',3920);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Kommunalwald',3930);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Anstalts- und Stiftungswald',3940);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Anderer öffentlicher Wald',3950);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Privater Gemeinschaftswald',3960);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Großprivatwald',3970);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Kleinprivatwald',3980);
+INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Anderer Privatwald',3990);
+
+--
+-- Thema ax_forstrecht - ax_forstrecht_besonderefunktion
+--
+CREATE TABLE ax_forstrecht_besonderefunktion(
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_forstrecht_besonderefunktion  PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_forstrecht_besonderefunktion
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Ohne besondere gesetzliche Bindung',1000);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Ohne besondere gesetzliche Bindung nach LWaldG- Holzboden',1010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Schutzwald',2000);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Schutzwald - Holzboden',2010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Erholungswald',3000);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Erholungswald - Holzboden',3010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Bannwald',4000);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Nationalpark - Holzboden',4010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Naturschutzgebiet - Holzboden',5010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Schutz- und Erholungswald',6000);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Schutz- und Erholungswald - Holzboden',6010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Nationalpark - Nichtholzboden',7010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Naturschutzgebiet - Nichtholzboden',8010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Andere Forstbetriebsfläche',9000);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Nichtholzboden',9010);
+INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Sonstiges',9999);
+
+
+--
+-- Thema ax_bodenschaetzung - entstehungsartoderklimastufe Tabellennamen gekürzt ax_bodenschaetzung_entstehungsartoderklimastufewasserverhaeltnisse
+--
+CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe(
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_entstehungsartoderklimastufe PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium (D)',1000);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium über Alluvium (DAl)',1100);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium über Löß (DLö)',1200);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium über Verwitterung (DV)',1300);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig (Dg)',1400);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig über Alluvium (DgAl)',1410);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig über Löß (DgLö)',1420);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig über Verwitterung (DgV)',1430);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß (Lö)',2000);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Diluvium (LöD)',2100);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß, Diluvium, Gesteinsböden (LöDg)',2110);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß, Diluvium, Verwitterung (LöDV)',2120);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Alluvium (LöAl)',2200);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Verwitterung (LöV)',2300);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß, Verwitterung, Gesteinsböden (LöVg)',2310);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Verwitterung, gesteinig (LöVg)',2400);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium (Al)',3000);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium über Diluvium (AlD)',3100);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium über Löß (AlLö)',3200);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium über Verwitterung (AlV)',3300);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig (Alg)',3400);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig über Diluvium (AlgD)',3410);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig über Löß (AlgLö)',3420);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig über Verwitterung (AlgV)',3430);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, Marsch (AlMa)',3500);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, Moor (AlMo)',3610);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Moor, Alluvium (MoAI)',3620);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Mergel (Me)',3700);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung (V)',4000);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung über Diluvium (VD)',4100);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung über Alluvium (VAl)',4200);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung über Löß (VLö)',4300);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung, Gesteinsböden (Vg)',4400);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung, Gesteinsböden über Diluvium (VgD)',4410);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Entstehungsart nicht erkennbar (-)',5000);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 8° C und darüber (a)',6100);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 7,9° - 7,0° C (b)',6200);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 6,9° - 5,7° C (c)',6300);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 5,6° C und darunter (d)',6400);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (1)',7100);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (2)',7200);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3)',7300);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (4)',7400);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (4-)',7410);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (5)',7500);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (5-)',7510);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3-)',7520);
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3+4)',7530);
 -- ENDE --
