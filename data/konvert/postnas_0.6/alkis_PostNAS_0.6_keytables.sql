@@ -694,4 +694,33 @@ INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9470,'Moor, M
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9480,'LößDiluvium(LöD)');
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9490,'AlluviumDiluvium(AlD)');
 
+---
+--- 
+CREATE TABLE ax_bodenschaetzung_zustandsstufe (
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_zustandsstufe  PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bodenschaetzung_zustandsstufe 
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (1)',1100);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (2)',1200);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (3)',1300);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (4)',1400);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (5)',1500);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (6)',1600);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (7)',1700);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe Misch- und Schichtböden sowie künstlichveränderte Böden (-)',1800);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (I)',2100);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (II)',2200);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (III)',2300);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe Misch- und Schichtböden sowie künstlich veränderte Böden (-)',2400);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (II+III)',3100);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe ("(III)")',3200);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (IV)',3300);
+
+
 -- ENDE --
