@@ -723,7 +723,9 @@ INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstu
 INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (IV)',3300);
 
 
------
+--
+-- Thema ax_bodenschaetzung - ax_musterlandesmusterundvergleichsstueck
+--
 CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
     wert integer,
     bezeichner character varying,
@@ -738,5 +740,24 @@ INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) V
 INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (2000,'Landesmusterstück (L)');
 INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (3000,'Vergleichsstück (V)');
 
+
+--
+-- Thema ax_bodenschaetzung - ax_grablochderbodenschaetzung
+--
+CREATE TABLE ax_grablochderbodenschaetzung_bedeutung (
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_grablochderbodenschaetzung_bedeutung  PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_grablochderbodenschaetzung_bedeutung
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1100,'Grabloch, bestimmend, lagerichtig (innerhalb der Fläche)');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1200,'Grabloch, bestimmend, lagerichtig (außerhalb des Abschnitts)');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1300,'Grabloch, nicht lagerichtig, im Abschnitt nicht vorhanden');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (2000,'Grabloch für Muster-, Landesmuster-, Vergleichsstück');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (3000,'Grabloch, nicht bestimmend');
 
 -- ENDE --
