@@ -15,10 +15,11 @@
 -- Alternativ kann eine Template-Datenbbank bereits mit diesen Schluesseltabellen angelegt werden.
 
 -- Version
---  2010-09-16  krz f.j. Buchungsart hinzugefuegt
---  2011-07-25  PostNAS 06, Umbenennung, "grant" raus
---  2011-11-21  Mehrere neue Schlüsseltabellen zu ax_gebaeude_*, Konstanten aus Tabellen entfernt (Wozu?)
-
+--  2010-09-16  F.J. Buchungsart hinzugefuegt
+--  2011-07-25       PostNAS 06, Umbenennung, "grant" raus
+--  2011-11-21  F.J. Mehrere neue Schlüsseltabellen zu ax_gebaeude_*, Konstanten aus Tabellen entfernt (Wozu?)
+--  2011-12-16  A.E. Mehrere neue Tabellen zum Bereich "Bodenschaetzung"
+--  2011-12-19  F.J. Neue Tabelle "ax_datenerhebung"
 
   SET client_encoding = 'UTF8';
 
@@ -67,8 +68,6 @@ INSERT INTO ax_gebaeude_bauweise (bauweise_id, bauweise_beschreibung) VALUES (40
 CREATE TABLE ax_gebaeude_funktion (
     wert        integer, 
     bezeichner  character varying,
---  kennung     integer,            entfernt 21.11.2011, ist konstant! "31001"
---  objektart   character varying   entfernt 21.11.2011, ist konstant! "ax_gebaeude"
     CONSTRAINT pk_ax_gebaeude_funktion_wert PRIMARY KEY (wert)
    );
 
@@ -437,8 +436,6 @@ INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (4000, 'Im Bau');
 CREATE TABLE ax_buchungsstelle_buchungsart (
    wert integer,
    bezeichner character varying,
--- kennung integer, -- Konstant 21008, entfernt 21.11.2011
--- objektart character varying, -- Konstant 'ax_buchungsstelle', entfernt 21.11.2011
    CONSTRAINT pk_ax_bsba_wert PRIMARY KEY (wert)
   );
 
@@ -446,7 +443,6 @@ COMMENT ON TABLE  ax_buchungsstelle_buchungsart
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
 -- 51 Werte
-
 INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (1100,'Grundstück');
 INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (1101,'Aufgeteiltes Grundstück WEG');
 INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (1102,'Aufgeteiltes Grundstück Par. 3 Abs. 4 GBO');
@@ -500,7 +496,6 @@ INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (5203,'Anlie
 INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (6101,'Nicht gebuchtes Fischereirecht');
 
 
-
 -- E i g e n t u e m e r a r t
 
 -- Laut GeoInfoDok nur 3 Werte.
@@ -508,7 +503,6 @@ INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (6101,'Nicht
 
 -- Fuer "viele Werte" wuerde sich eine Tabelle lohnen.
 -- 3 Werte koennen ueber Function (case) entschluesselt werden.
-
 
 
 -- B a u - , R a u m -  oder  B o d e n - O r d n u n g s r e c h t  -  A r t  d e r  F e s t l e g u n g
@@ -585,8 +579,8 @@ INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner)
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner) VALUES (2800,'Verkehrsflächenbereinigung');
 
 
--- ax_bodenschaetzung_kulturart
--- ---------------------------------
+-- B o d e n s c h a e t z u n g -  K u l t u r a r t
+-- --------------------------------------------------
 
 CREATE TABLE ax_bodenschaetzung_kulturart (
     wert integer,
@@ -605,9 +599,8 @@ INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (3000,'Grünl
 INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (4000,'Grünland-Acker (GrA)');
 
 
-
--- ax_bodenschaetzung_bodenart
--- ---------------------------------
+-- B o d e n s c h a e t z u n g  -  B o d e n a r t
+-- -------------------------------------------------
 
 CREATE TABLE ax_bodenschaetzung_bodenart (
     wert integer,
@@ -694,8 +687,10 @@ INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9470,'Moor, M
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9480,'LößDiluvium(LöD)');
 INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9490,'AlluviumDiluvium(AlD)');
 
----
---- 
+
+-- B o d e n s c h a e t z u n g  -  Z u s t a n d s s t u f e
+-- ------------------------------------------------------------
+
 CREATE TABLE ax_bodenschaetzung_zustandsstufe (
     wert integer,
     bezeichner character varying,
@@ -723,9 +718,8 @@ INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstu
 INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (IV)',3300);
 
 
---
--- Thema ax_bodenschaetzung - ax_musterlandesmusterundvergleichsstueck
---
+-- B o d e n s c h a e t z u n g   -  Muster-, Landesmuster- und Vergleichsstueck
+-- ------------------------------------------------------------------------------
 CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
     wert integer,
     bezeichner character varying,
@@ -735,15 +729,14 @@ CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
 COMMENT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal 
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
-
 INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (1000,'Musterstück (M)');
 INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (2000,'Landesmusterstück (L)');
 INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (3000,'Vergleichsstück (V)');
 
 
---
--- Thema ax_bodenschaetzung - ax_grablochderbodenschaetzung
---
+-- B o d e n s c h a e t z u n g  -  Grabloch der Bodenschaetzung
+-- --------------------------------------------------------------
+
 CREATE TABLE ax_grablochderbodenschaetzung_bedeutung (
     wert integer,
     bezeichner character varying,
@@ -761,9 +754,9 @@ INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (20
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (3000,'Grabloch, nicht bestimmend');
 
 
---
--- Thema ax_forstrecht - ax_forstrecht_besonderefunktion
---
+-- F o r s t r e c h t  -  A r t   d e r   F e s t l e g u n g
+-- -----------------------------------------------------------
+
 CREATE TABLE ax_forstrecht_artderfestlegung(
     wert integer,
     bezeichner character varying,
@@ -784,9 +777,9 @@ INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Großpriva
 INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Kleinprivatwald',3980);
 INSERT INTO ax_forstrecht_artderfestlegung (bezeichner, wert) VALUES('Anderer Privatwald',3990);
 
---
--- Thema ax_forstrecht - ax_forstrecht_besonderefunktion
---
+
+-- F o r s t r e c h t - B e s o n d e r e   F u n k t i o n
+-- ---------------------------------------------------------
 CREATE TABLE ax_forstrecht_besonderefunktion(
     wert integer,
     bezeichner character varying,
@@ -814,9 +807,10 @@ INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Nichtholz
 INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Sonstiges',9999);
 
 
---
--- Thema ax_bodenschaetzung - entstehungsartoderklimastufe Tabellennamen gekürzt ax_bodenschaetzung_entstehungsartoderklimastufewasserverhaeltnisse
---
+
+-- B o d e n s c h a e t z u n g   -  Entstehungsart oder Klimastufe / Wasserverhaeltnisse
+-- ----------------------------------------------------------------------------------------
+
 CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe(
     wert integer,
     bezeichner character varying,
@@ -825,7 +819,6 @@ CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe(
 
 COMMENT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
-
 
 
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium (D)',1000);
@@ -876,4 +869,46 @@ INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) V
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (5-)',7510);
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3-)',7520);
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3+4)',7530);
+
+
+-- D a t e n e r h e b u n g
+-- -------------------------
+-- Datentyp: AX_LI_Source_MitDatenerhebung
+
+CREATE TABLE ax_datenerhebung (
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_Datenerhebung PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_datenerhebung
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katastervermessung ermittelt', 1000); -- (G)
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aufgrund Anforderungen mit Netzanschluss ermittelt', 1100);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aufgrund Anforderungen mit Bezug zur Flurstücksgrenze ermittelt', 1200);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstiger Vermessung ermittelt', 1900);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Luftbildmessung oder Fernerkundungsdaten ermittelt', 2000);-- 	
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterunterlagen und Karten für graphische Zwecke ermittelt', 4000);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterzahlen für graphische Zwecke ermittelt', 4100);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterkarten digitalisiert', 4200);-- (G)
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterkarten digitalisiert, Kartenmaßstab M größer gleich 1 zu 1000', 4210);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterkarten digitalisiert, Kartenmaßstab 1 zu 1000 größer M größer gleich 1 zu 2000', 4220);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterkarten digitalisiert, Kartenmaßstab 1 zu 2000 größer M größer gleich 1 zu 3000', 4230);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterkarten digitalisiert, Kartenmaßstab 1 zu 3000 größer M größer gleich 1 zu 5000', 4240);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus Katasterkarten digitalisiert, Kartenmaßstab 1 zu 5000 größer M', 4250);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert', 4300);-- (G)
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, Kartenmaßstab M größer gleich 1 zu 1000', 4310);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, Kartenmaßstab 1 zu 1000 größer M größer gleich 1 zu 2000', 4320);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, Kartenmaßstab 1 zu 2000 größer M größer gleich 1 zu 3000', 4330);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, Kartenmaßstab 1 zu 3000 größer M größer gleich 1 zu 5000', 4340);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, Kartenmaßstab 1 zu 5000 größer M', 4350);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, mit sonstigen geometrischen Bedingungen und bzw. oder Homogenisierung (M größer gleich 1 zu 1000)', 4360);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, mit Berechnung oder Abstandsbedingung (M größer gleich 1 zu 1000)', 4370);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, mit sonstigen geometrischen Bedingungen und bzw. oder Homogenisierung (M kleiner 1 zu 1000)', 4380);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Aus sonstigen Unterlagen digitalisiert, mit Berechnung oder Abstandsbedingungen (M kleiner 1 zu 1000)', 4390);
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Nach Quellenlage nicht zu spezifizieren', 9998);--  (G)
+INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Sonstiges', 9999);
+
+
 -- ENDE --
