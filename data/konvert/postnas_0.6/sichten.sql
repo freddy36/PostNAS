@@ -164,7 +164,7 @@ AS
 COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
 
 
-BAUSTELLE
+--BAUSTELLE
 
 
 -- Layer "s_zuordungspfeil_gebaeude"
