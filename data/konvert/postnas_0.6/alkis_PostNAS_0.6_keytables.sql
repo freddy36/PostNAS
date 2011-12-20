@@ -911,4 +911,48 @@ INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Nach Quellenlage nicht z
 INSERT INTO ax_datenerhebung (bezeichner, wert) VALUES('Sonstiges', 9999);
 
 
+-- Sonstiges Bauwerk oder sonstige Einrichtung
+-- -------------------------
+-- Datentyp: ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion
+CREATE TABLE ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion(
+    wert integer,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Überdachung',1610);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Carport',1611);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Treppe',1620);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Freitreppe',1621);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Rolltreppe',1622);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Treppenunterkante',1630);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Kellereingang',1640);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Rampe',1650);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Terrasse',1670);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Mauer',1700);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Mauerkante, rechts',1701);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Mauerkante, links',1702);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Mauermitte',1703);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Stützmauer',1720);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Stützmauer, rechts',1721);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Stützmauer, links',1722);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Stützmauermitte',1723);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Zaun',1740);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Denkmal, Denkstein, Standbild',1750);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Bildstock, Wegekreuz, Gipfelkreuz',1760);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Bildstock',1761);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Wegekreuz',1762);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Gipfelkreuz',1763);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Meilenstein, historischer Grenzstein',1770);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Brunnen',1780);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Brunnen (Trinkwasserversorgung)',1781);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Springbrunnen, Zierbrunnen',1782);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Ziehbrunnen',1783);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Spundwand',1790);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Höckerlinie',1791);
+INSERT INTO ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion (bezeichner, wert) VALUES ('Sonstiges',9999);
 -- ENDE --
