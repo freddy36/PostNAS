@@ -20,6 +20,9 @@
 --  2011-11-21  F.J. Mehrere neue Schlüsseltabellen zu ax_gebaeude_*, Konstanten aus Tabellen entfernt (Wozu?)
 --  2011-12-16  A.E. Mehrere neue Tabellen zum Bereich "Bodenschaetzung"
 --  2011-12-19  F.J. Neue Tabelle "ax_datenerhebung"
+--  2011-12-20  A.E. ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion
+--  2011-12-22  A.E. ax_bauteil_bauart
+
 
   SET client_encoding = 'UTF8';
 

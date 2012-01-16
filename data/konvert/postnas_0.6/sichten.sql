@@ -5,8 +5,9 @@
 --  PostNAS 0.6
 
 --  2011-07-25 PostNAS 06, Umbenennung
---  2011-10-20 Nummer Nebengebäude und Zuordnungspfeile fuer Gebäude   ##### IN ARBEIT
+--  2011-10-20 Nummer Nebengebäude und Zuordnungspfeile fuer Gebäude
 --  2011-12-08 umbenannt "gemeinde_in_gemarkung" -> "gemarkung_in_gemeinde"
+--  2012-01-16 Feinheiten
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -19,19 +20,8 @@
 -- Die Geometrie befindet sich in "ap_pto", der Label in "ax_flurstueck"
 -- Die Verbindung erfolgt über "alkis_beziehungen"
 
--- PostNAS 0.5, September 2010:
---   Musterdaten RLP: zaehler-nenner steht auch in Feld "ap_pto.schriftinhalt"
---   Lippe NRW:       Feld "ap_pto.schriftinhalt" ist leer. Label aus Tabelle "ax_flurstueck" entnehmen
-
-
--- In einigen Gebieten enthält das Feld "ap_pto.art"
--- nicht den Wert 'ZAE_NEN' sondern 'urn:adv:fachdatenverbindung'.
--- Die Flurstücksnummer fehlt dann im WMS.
--- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
-
 
 -- Bruchnummerierung erzeugen
-
 CREATE OR REPLACE VIEW s_flurstueck_nr
 AS 
  SELECT ap_pto.ogc_fid, 
@@ -48,7 +38,6 @@ AS
    JOIN ax_flurstueck 
      ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
   WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
-  --AND ap_pto.art = 'ZAE_NEN'
   ;
 
 COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück';
@@ -57,14 +46,15 @@ COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Fl
 -- Layer "ag_t_gebaeude"
 -- ---------------------
 
--- In einigen Gebieten in Lippe enthält das Feld "ap_pto.art"
--- nicht den Wert 'HNR'. Die Hausnummer fehlt dann im WMS.
--- Die Bedingung vorübergehend heraus nehmen. Ursache klären!
+-- Problem: Zu einigen Gebäuden gibt es mehrere Hausnummern.
+-- Diese unterscheiden sich im Feld ap-pto.advstandardmodell
+-- z.B. 3 verschiedene Einträge mit <NULL>, {DKKM500}, {DKKM1000}, (Beispiel; Lage, Lange Straße 15 c)
+
 
 CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 AS 
  SELECT ap_pto.ogc_fid, 
-        ap_pto.wkb_geometry, 
+        ap_pto.wkb_geometry, -- Point
         ap_pto.drehwinkel * 57.296 AS drehwinkel,   -- umn: ANGLE [drehwinkel]
         ax_lagebezeichnungmithausnummer.hausnummer  -- umn: LABELITEM
    FROM ap_pto
@@ -98,8 +88,6 @@ AS
 
 COMMENT ON VIEW s_nummer_nebengebaeude IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
 
--- ToDo: Die Zahl in Klammern setzen ?  (in Map oder View?)
-
 
 -- Layer "ag_p_flurstueck"
 -- -----------------------
@@ -108,7 +96,8 @@ CREATE OR REPLACE VIEW s_zugehoerigkeitshaken_flurstueck
 AS 
  SELECT ap_ppo.ogc_fid, 
         ap_ppo.wkb_geometry, 
-        ap_ppo.drehwinkel * 57.296 + 90 AS drehwinkel, 
+    -- ap_ppo.drehwinkel * 57.296 + 90 AS drehwinkel, -- Korrektur 2011-12-22 (Arbeit am Mapfile)
+        ap_ppo.drehwinkel * 57.296 AS drehwinkel,
         ax_flurstueck.flurstueckskennzeichen
    FROM ap_ppo
    JOIN alkis_beziehungen 
@@ -134,9 +123,28 @@ AS
    JOIN ax_flurstueck 
      ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
   WHERE ap_lpo.art = 'Pfeil'
-    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
+    AND ('DKKM1000' ~~ ANY (ap_lpo.advstandardmodell));
 
-COMMENT ON VIEW s_zuordungspfeil_flurstueck IS 'fuer Kartendarstellung';
+COMMENT ON VIEW s_zuordungspfeil_flurstueck IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer';
+
+
+CREATE OR REPLACE VIEW s_zuordungspfeilspitze_flurstueck 
+AS 
+ SELECT ap_lpo.ogc_fid, (((st_azimuth(st_pointn(ap_lpo.wkb_geometry, 1), 
+        st_pointn(ap_lpo.wkb_geometry, 2)) * (- (180)::double precision)) / pi()) + (90)::double precision) AS winkel, 
+        st_startpoint(ap_lpo.wkb_geometry) AS wkb_geometry 
+   FROM ap_lpo
+   JOIN alkis_beziehungen 
+     ON ap_lpo.gml_id = alkis_beziehungen.beziehung_von
+   JOIN ax_flurstueck 
+     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
+  WHERE ap_lpo.art = 'Pfeil'
+    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
+    AND ('DKKM1000' ~~ ANY (ap_lpo.advstandardmodell));
+
+COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
+
 
 
 -- Layer NAME "ap_pto" GROUP "praesentation"
@@ -164,9 +172,6 @@ AS
 COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
 
 
---BAUSTELLE
-
-
 -- Layer "s_zuordungspfeil_gebaeude"
 -- -----------------------------------
 
@@ -184,38 +189,46 @@ AS
   WHERE ap_lpo.art = 'Pfeil'
     AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
 
-COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung';
+COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
 
 
--- Sichten vom OBK (Oberbergischer Kreis) zu "Grenzen"
--- ---------------------------------------------------
--- Schema "alkis" daraus entfernt.
+-- Sichten vom OBK (Oberbergischer Kreis)
+-- --------------------------------------
 
--- Feld "ax_besondereflurstuecksgrenze.artderflurstuecksgrenze" als Array "integer[]" !
--- Anpassung Schema 18.09.2011
+-- Dazu notwendig: Feld "ax_besondereflurstuecksgrenze.artderflurstuecksgrenze" als Array "integer[]" !
+-- Anpassung DB-Schema erfolgte am 18.09.2011
 
-CREATE OR REPLACE VIEW sk2022_gemeindegrenze 
+
+CREATE VIEW sk2004_zuordnungspfeil 
+AS
+ SELECT ap.ogc_fid, ap.wkb_geometry 
+ FROM ap_lpo ap 
+ WHERE ((ap.signaturnummer = 2004) 
+   AND ('DKKM1000'::text ~~ ANY ((ap.advstandardmodell)::text[])));
+
+COMMENT ON VIEW sk2004_zuordnungspfeil IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer"';
+-- krz: ap.signaturnummer is NULL in allen Sätzen
+--      Siehe s_zuordungspfeil_flurstueck 
+
+CREATE VIEW sk2004_zuordnungspfeil_spitze 
+AS
+ SELECT ap.ogc_fid, (((st_azimuth(st_pointn(ap.wkb_geometry, 1), 
+        st_pointn(ap.wkb_geometry, 2)) * (- (180)::double precision)) / pi()) + (90)::double precision) AS winkel, 
+        st_startpoint(ap.wkb_geometry) AS wkb_geometry 
+ FROM ap_lpo ap 
+ WHERE ((ap.signaturnummer = 2004) 
+   AND ('DKKM1000'::text ~~ ANY ((ap.advstandardmodell)::text[])));
+-- krz: ap.signaturnummer is NULL in allen Sätzen
+
+
+CREATE OR REPLACE VIEW sk2012_flurgrenze 
 AS 
- SELECT gemg.ogc_fid, gemg.wkb_geometry
-   FROM ax_besondereflurstuecksgrenze gemg
-  WHERE (7106 = ANY (gemg.artderflurstuecksgrenze)) 
-    AND gemg.advstandardmodell ~~ 'DLKM'::text;
+ SELECT fg.ogc_fid, fg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze fg
+  WHERE (3000 = ANY (fg.artderflurstuecksgrenze)) 
+    AND fg.advstandardmodell ~~ 'DLKM'::text;
 
-
-CREATE OR REPLACE VIEW sk2020_regierungsbezirksgrenze 
-AS 
- SELECT rbg.ogc_fid, rbg.wkb_geometry
-   FROM ax_besondereflurstuecksgrenze rbg
-  WHERE (7103 = ANY (rbg.artderflurstuecksgrenze)) 
-    AND rbg.advstandardmodell ~~ 'DLKM'::text;
-
-
-CREATE OR REPLACE VIEW sk2018_bundeslandgrenze 
-AS 
- SELECT blg.ogc_fid, blg.wkb_geometry
-   FROM ax_besondereflurstuecksgrenze blg
-  WHERE (7102 = ANY (blg.artderflurstuecksgrenze)) 
-    AND blg.advstandardmodell ~~ 'DLKM'::text;
+COMMENT ON VIEW sk2012_flurgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Flurgrenze"';
 
 
 CREATE OR REPLACE VIEW sk2014_gemarkungsgrenze 
@@ -225,24 +238,67 @@ AS
   WHERE (7003 = ANY (gemag.artderflurstuecksgrenze)) 
     AND gemag.advstandardmodell ~~ 'DLKM'::text;
 
+COMMENT ON VIEW sk2014_gemarkungsgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemarkungsgrenze"';
 
---CREATE OR REPLACE VIEW sk2012_flurgrenze 
---AS 
--- SELECT fg.ogc_fid, fg.wkb_geometry
---   FROM ax_besondereflurstuecksgrenze fg
---  WHERE (3000 = ANY (fg.artderflurstuecksgrenze)) 
---    AND fg.advstandardmodell ~~ 'DLKM'::text;
 
--- Vorlaeufig, bis Schema umgestellt ist
-
-CREATE OR REPLACE VIEW sk2012_flurgrenze 
+CREATE OR REPLACE VIEW sk2018_bundeslandgrenze 
 AS 
- SELECT fg.ogc_fid, fg.wkb_geometry
-   FROM ax_besondereflurstuecksgrenze fg
-  WHERE (3000 = fg.artderflurstuecksgrenze) 
-    AND fg.advstandardmodell ~~ 'DLKM'::text;
+ SELECT blg.ogc_fid, blg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze blg
+  WHERE (7102 = ANY (blg.artderflurstuecksgrenze)) 
+    AND blg.advstandardmodell ~~ 'DLKM'::text;
 
--- comment ....
+COMMENT ON VIEW sk2018_bundeslandgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Bundeslandgrenze"';
+
+
+CREATE OR REPLACE VIEW sk2020_regierungsbezirksgrenze 
+AS 
+ SELECT rbg.ogc_fid, rbg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze rbg
+  WHERE (7103 = ANY (rbg.artderflurstuecksgrenze)) 
+    AND rbg.advstandardmodell ~~ 'DLKM'::text;
+
+COMMENT ON VIEW sk2020_regierungsbezirksgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Regierungsbezirksgrenze"';
+
+
+CREATE OR REPLACE VIEW sk2022_gemeindegrenze 
+AS 
+ SELECT gemg.ogc_fid, gemg.wkb_geometry
+   FROM ax_besondereflurstuecksgrenze gemg
+  WHERE (7106 = ANY (gemg.artderflurstuecksgrenze)) 
+    AND gemg.advstandardmodell ~~ 'DLKM'::text;
+
+COMMENT ON VIEW sk2022_gemeindegrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemeindegrenze"';
+
+
+-- Zusammenfassung "Politische Grenzen"  Art= 7102, 7103, 7104, 7106
+
+-- Grenze der Bundesrepublik Deutschland 7101 (G)
+-- Grenze des Bundeslandes 7102 (G)
+-- Grenze des Regierungsbezirks 7103 (G)
+-- Grenze des Landkreises 7104 (G)
+-- Grenze der Gemeinde 7106
+-- Grenze des Gemeindeteils 7107
+-- Grenze der Verwaltungsgemeinschaft 7108
+
+CREATE OR REPLACE VIEW sk201x_politische_grenze 
+AS 
+ SELECT ogc_fid, artderflurstuecksgrenze as art, wkb_geometry
+   FROM ax_besondereflurstuecksgrenze
+
+-- WHERE ( ANY (artderflurstuecksgrenze) IN (7102,7103,7104,7106) ) 
+
+  WHERE (7102 = ANY (artderflurstuecksgrenze) 
+     OR  7102 = ANY (artderflurstuecksgrenze) 
+     OR  7103 = ANY (artderflurstuecksgrenze) 
+     OR  7104 = ANY (artderflurstuecksgrenze) 
+     OR  7106 = ANY (artderflurstuecksgrenze)
+    )
+    AND advstandardmodell ~~ 'DLKM'::text;
+
+COMMENT ON VIEW sk201x_politische_grenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze Politische Grenzen (Bund, Land, Kreis, Gemeinde)';
+-- Gefällt mir nicht!
+-- Array-Felder eignen sich nicht als Filter. Optimierung: in Tabelle speichern
 
 
 --  ------------------------------------------
