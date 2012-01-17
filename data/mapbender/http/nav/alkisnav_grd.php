@@ -4,6 +4,7 @@
 	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
 	14.12.2011 "window.open(..,width=680"
 	16.01.2012 Blattnummer in 2 Varianten suchen
+	17.01.2012 Blattnummer ohne Buchstabe in 3 Varianten suchen
 */
 import_request_variables("G");
 include("../../conf/alkisnav_conf.php");
@@ -49,13 +50,11 @@ function ZerlegungGBKennz($gbkennz) {
 		return 1; // Such Bezirk-NAME
 	} elseif ($zblatt == "") {
 		return 2; // Such Bezirk-NUMMER
-	} else  { // Format von Blatt pruefen
-	// Stand Jan. 2012: 2 gemischt vorkommende Formate in Blatt-Nr
-	// 1234567   Stelle
+	} else  { // Format von BlattNr pruefen
 	//'19'       linksbündig
-	//'19A'      .. mit Zusatz
-	//'000019 '  gefüllt
-	//'000019A'  .. mit Zusatz
+	//'000019 '  gefüllt 6 + blank
+	//'000019A'  .. mit Zusatzbuchstabe
+	//'0300001'  gefüllt 7, bei Blattart 5000 "fiktives Blatt"
 		$len=strlen($zblatt);
 		if ($len > 0 AND $len < 8) {		
 			if (trim($zblatt, "0..9 ") == "") { // Normalfall: nur Zahlen (und Blank))
@@ -213,7 +212,7 @@ function SuchGBBezName() {
 function EinBezirk($showParent) {
 	// Kennzeichen bestehend nur aus GB-Bezirk-Schlüssel wurde eingegeben
 	global $con, $gkz, $gemeinde, $epsg, $debug, $zgbbez, $auskpath;
-	$linelimit=200; // max. Blatt je Bezirk
+	$linelimit=250; // max. Blatt je Bezirk
 	// Dies linelimit ist nicht ausreichend fuer alle Blaetter eines Bezirks, aber ...
 	// Wenn man die Blatt-Nr nicht kennt, kommt man hier sowieso nicht weiter.
 	// Es nutzt also nichts, hier Tausende Nummern aufzulisten.
@@ -286,7 +285,7 @@ function EinBezirk($showParent) {
 	} else {
 		if($cntbl >= $linelimit) {
 			echo "\n<p>... und weitere</p>";
-			echo "\n<p>Geben sie ein: '".$zgbbez."-999999A'<br>wobei '999999A' = gesuchtes GB-Blatt</p>";
+			echo "\n<p>Geben sie ein: '".$zgbbez."-999A'<br>wobei '999A' = gesuchtes GB-Blatt</p>";
 		}
 	}
 	return;
@@ -296,12 +295,14 @@ function gml_blatt() {
 	// Kennzeichen "Bezirk + Blatt" eingegeben. Dazu die gml_id des Blattes ermitteln.
 	global $con, $gkz, $debug, $zgbbez, $zblatt, $zblattn, $zblattz;
 	$sql ="SELECT b.gml_id, b.buchungsblattnummermitbuchstabenerweiterung AS blatt FROM ax_buchungsblatt b "; 
-	$sql.="WHERE b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung IN ( $2 , $3 );";
+	$sql.="WHERE b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung ";
 
-	// Alternatives Suchformat mit 0en vorn und Blank statt Zusatz
-	$zblatt0v=str_pad($zblattn, 6, "0", STR_PAD_LEFT).str_pad($zblattz, 1, " ", STR_PAD_LEFT);
-
-	$v=array($zgbbez,$zblattn.$zblattz,$zblatt0v);
+	if ($zblattz == "") { // Ohne Buchstabenerweiterung: Formate '123','000123 ','0000123'
+		$sql.="IN ('".$zblattn."','".str_pad($zblattn, 6, "0", STR_PAD_LEFT)." ','".str_pad($zblattn, 7, "0", STR_PAD_LEFT)."');";
+	} else { // Mit Buchstabenerweiterung: '000123A'
+		$sql.="='".str_pad($zblattn, 6, "0", STR_PAD_LEFT).$zblattz."';";
+	}
+	$v=array($zgbbez);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -367,7 +368,6 @@ function EinBlatt($showParent) {
 	if($cntbu == 0) { 
 		echo "\n<p class='err'>Keine Buchung gefunden.</p>";
 	} elseif($cntbu == 1) {
-		//echo "\n<p>genau EINE Buchung gefunden".$lfd."</p>";
 		$zbvnr=$lfd; // mit dieser BVNR gleich weiter machen
 		// Blatt zerteilen (benoetigt in gml_buchungsstelle)
 		if (trim($zblatt, "0..9") == "") { // Normalfall: nur Zahlen
@@ -389,12 +389,16 @@ function gml_buchungsstelle() {
 	$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
 	$sql.="JOIN ax_buchungsblatt b ON b.gml_id=v.beziehung_zu "; 
 	$sql.="WHERE v.beziehungsart='istBestandteilVon' ";
-	$sql.="AND b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung IN ( $2, $3 ) AND s.laufendenummer= $4 ;";
+	$sql.="AND b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung ";
+	if ($zblattz == "") { // Ohne Buchstabenerweiterung
+		//Formate '123','000123 ','0000123'
+		$sql.="IN ('".$zblattn."','".str_pad($zblattn, 6, "0", STR_PAD_LEFT)." ','".str_pad($zblattn, 7, "0", STR_PAD_LEFT)."')";
+	} else { // Mit Buchstabenerweiterung: '000123A'
+		$sql.="='".str_pad($zblattn, 6, "0", STR_PAD_LEFT).$zblattz."'";
+	}
+	$sql.=" AND s.laufendenummer= $2 ;";
 
-	// Alternatives Suchformat mit 0en vorn und Blank statt Zusatz
-	$zblatt0v=str_pad($zblattn, 6, "0", STR_PAD_LEFT).str_pad($zblattz, 1, " ", STR_PAD_LEFT);
-
-	$v=array($zgbbez, $zblattn.$zblattz, $zblatt0v, $zbvnr);
+	$v=array($zgbbez, $zbvnr);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -581,7 +585,7 @@ if (isset($gbuchung)) { // gml der Buchungsstelle
 			}
 			break;
 		case 9: // Fehler
-			echo "<p class='err'>Bitte ein Grundbuchkennzeichen eingegeben, Format 'gggg-999999A-llll</p>";
+			echo "<p class='err'>Bitte ein g&uuml;ltiges Grundbuchkennzeichen eingegeben, Format 'gggg-999999A-llll</p>";
 			break;
 	}
 }
