@@ -8,6 +8,7 @@
 --  2011-10-20 Nummer Nebengebäude und Zuordnungspfeile fuer Gebäude
 --  2011-12-08 umbenannt "gemeinde_in_gemarkung" -> "gemarkung_in_gemeinde"
 --  2012-01-16 Feinheiten
+--  2012-02-06 VIEW s_beschriftung: Wert "ZAE_NEN" kommt nicht mehr vor 
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -96,7 +97,6 @@ CREATE OR REPLACE VIEW s_zugehoerigkeitshaken_flurstueck
 AS 
  SELECT ap_ppo.ogc_fid, 
         ap_ppo.wkb_geometry, 
-    -- ap_ppo.drehwinkel * 57.296 + 90 AS drehwinkel, -- Korrektur 2011-12-22 (Arbeit am Mapfile)
         ap_ppo.drehwinkel * 57.296 AS drehwinkel,
         ax_flurstueck.flurstueckskennzeichen
    FROM ap_ppo
@@ -154,20 +154,32 @@ COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'fuer Kartendarstellung: Zu
 CREATE OR REPLACE VIEW s_beschriftung 
 AS 
   SELECT ap_pto.ogc_fid, 
-      -- ap_pto.gml_id, 
          ap_pto.schriftinhalt, 
          ap_pto.art, 
          ap_pto.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
          ap_pto.wkb_geometry 
     FROM ap_pto 
    WHERE not ap_pto.schriftinhalt IS NULL 
-     AND art NOT IN ('ZAE_NEN', 'HNR')
-   ;
---  IN ('FKT', 'Friedhof', 'urn:adv:fachdatenv')
+     AND art NOT IN ('HNR', 'PNR');
 
--- Diese IN-Liste fortschreiben bei Erweiterungen des Mapfiles
+-- Feb. 2012 PostNAS 0.6: 'ZAE_NEN' kommt nicht mehr vor!
 
--- Lippe: Der Wert 'ZAE_NEN' fehlt. Diese Fälle anders identifizieren?
+-- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
+-- Wenn ein Text zum fachlich passenden Layer angezeigt wird, dann hier ausblenden,
+-- d.h. die Kennung in die Klammer eintragen.
+
+-- Werte in ap_pto.art:
+-- 'HNR'  = Hausnummer
+-- 'PNR'  = Pseudo-Nummer = laufende Nummer Nebengebäude
+
+-- Ermittlung der vorkommenden Arten mit:
+--   SELECT DISTINCT art FROM ap_pto ORDER BY art;
+
+-- Noch nicht berücksichtigt:
+   
+--"AGT""ART""ATP""BBD""BezKlassifizierungStrasse""BSA""BWF""BWF_ZUS""FKT""Fliessgewaesser""FreierText"
+--"Friedhof""Gewanne""GFK""Halde_LGT""HHO""NAM""PKN""Platz""PRO""SPG""SPO""StehendesGewaesser"
+--"Strasse""VEG""Vorratsbehaelter""Weg""Weitere Höhe""ZNM""<NULL>"
 
 COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
 
@@ -421,14 +433,6 @@ AS
  FROM     ax_flurstueck
  GROUP BY st_geometrytype(wkb_geometry);
 
--- Lage
---   256 ST_MultiPolygon
--- 23377 ST_Polygon
-
--- RLP
---    2 ST_MultiPolygon
--- 2367 ST_Polygon
-
 
 -- A d r e s s e n 
 
@@ -456,8 +460,7 @@ AS
     JOIN   ax_lagebezeichnungkatalogeintrag s 
       ON l.kreis=s.kreis 
      AND l.gemeinde=s.gemeinde 
-  -- AND to_char(l.lage, 'FM00000')=s.lage   -- PostNAS 0.5
-     AND l.lage = s.lage                     -- PostNAS 0.6
+     AND l.lage = s.lage        -- ab PostNAS 0.6
     WHERE     l.gemeinde = 40;  -- "40" = Stadt Lage
 
 
@@ -486,8 +489,7 @@ AS
       JOIN   ax_lagebezeichnungkatalogeintrag s 
         ON l.kreis=s.kreis 
        AND l.gemeinde=s.gemeinde 
-    -- AND to_char(l.lage, 'FM00000')=s.lage   -- PostNAS 0.5
-       AND l.lage = s.lage                     -- PostNAS 0.6
+       AND l.lage = s.lage   -- ab PostNAS 0.6
      WHERE v.beziehungsart='weistAuf'
        AND l.gemeinde = 40  -- "40" = Stadt Lage
      ORDER BY 
