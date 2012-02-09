@@ -30,13 +30,11 @@
 # 2011-12-22 F.J. krz  Extent in alle Layer, Umstellung Mapserver 6.0
 #                      Integrieren von Teilen der Mapfiles des OBK (begonnen, aber weiter in Arbeit)
 
-# ToDo:
-# - Recht Baulast wird von FS-Grenze verdeckt, Reihenfolge ändern?
-# - Template auf Gebäude-Objekt, Auskunft aufrufen?
-# - Beschriftung: Straßennamen tiefer setzen
-# - Zuordnungspfeil Flurstueck ist doppelt: in "Flurstück" und in "Präsentation/Zuordnungspfeile"
-# - Layer Beschriftung in mehrere Layer (nach Thema) zerlegen
-#     Langfristig diese Beschriftungen zum fachlichen Layer gruppieren
+# 2012-02-06 F.J. krz  Veröffentlicht als Version 0.6
+# 2012-02-08 F.J. krz  Harmonisierung mit _4-Version
+
+
+# ToDo: Die weitere Bearbeitung erfolgt nun im Branch 0.7
 
 MAP
 	NAME "alkis"
@@ -88,42 +86,6 @@ MAP
 
 # ALKIS tatsaechliche Nutzung (Siedlung, Verkehr, Gewässer, Vegetaion)
 # alle Layer von GROUP "ax_nutzungen"
-
-## ** Siedlung **
-## 01  AX_Wohnbauflaeche
-## 02  AX_IndustrieUndGewerbeflaeche
-## 03  AX_Halde
-## 04  AX_Bergbaubetrieb
-## 05  AX_TagebauGrubeSteinbruch
-## 06  AX_FlaecheGemischterNutzung
-## 07  AX_FlaecheBesondererFunktionalerPraegung
-## 08  AX_SportFreizeitUndErholungsflaeche
-## 09  AX_Friedhof
-
-## ** Verkehr **
-## 10  AX_Strassenverkehr
-## 11  AX_Weg
-## 12  AX_Platz
-## 13  AX_Bahnverkehr
-## 14  AX_Flugverkehr
-## 15  AX_Schiffsverkehr
- 
-## ** Vegetation **
-## 16  AX_Landwirtschaft
-## 17  AX_Wald
-## 18  AX_Gehoelz
-## 19  AX_Heide
-## 20  AX_Moor
-## 21  AX_Sumpf
-##     (AX_UnkultivierteFlaeche)
-## 22  AX_UnlandVegetationsloseFlaeche
-##     (AX_Vegetationsmerkmal)
-
-## ** Gewässer **
-## 24  AX_Fliessgewaesser
-## 25  AX_Hafenbecken
-## 26  AX_StehendesGewaesser
-## 27  (AX_Meer)
 
 # Der Layer "nutzung_alle" wird gefuettert aus der Tabelle "nutzung".
 # "nutzung" wird nicht von PostNAS gefuellt sondern nach jeder Konvertierung als Optimierung aus vielen verschiedenen Tabellen zusammen gefasst.
@@ -420,128 +382,13 @@ LAYER
 	# '27' = Meer
 END
 
-### +++++++  TODO: OBK-Code integrieren
-
-# OBK:	#GROUP Tatsächliche Nutzung
-# OBK:		# AX_TatsaechlicheNutzung
-# OBK:		# Siedlung
-# OBK:			include "include/layer/obk_wohnbauflaeche.incl"
-# OBK:			include "include/layer/obk_industrieundgewerbeflaeche.incl"
-# OBK:			include "include/layer/obk_halde.incl"
-# OBK:
-# OBK:	#nicht wes	include "include/layer/obk_bergbaubetrieb.incl"
-# OBK:			include "include/layer/obk_tagebaugrubesteinbruch.incl"
-# OBK:			include "include/layer/obk_flaechegemischternutzung.incl"
-# OBK:			include "include/layer/obk_flaechebesondererfunktionalerpraegung.incl"
-# OBK:			include "include/layer/obk_sportfreizeitunderholungsflaeche.incl"
-# OBK:			include "include/layer/obk_friedhof.incl"
-# OBK:		# Verkehr
-# OBK:			include "include/layer/obk_strassenverkehr.incl"
-# OBK:			include "include/layer/obk_weg.incl"
-# OBK:			include "include/layer/obk_platz.incl"
-# OBK:			include "include/layer/obk_bahnverkehr.incl"
-# OBK:			include "include/layer/obk_flugverkehr.incl"
-# OBK:			#include "include/layer/ax_schiffsverkehr.map"
-# OBK:
-# OBK:		# Vegetation
-# OBK:			include "include/layer/obk_landwirtschaft.incl"
-# OBK:			include "include/layer/obk_wald.incl"
-# OBK:			include "include/layer/obk_gehoelz.incl"
-# OBK:			include "include/layer/obk_heide.incl"
-# OBK:			include "include/layer/obk_moor.incl"
-# OBK:			include "include/layer/obk_sumpf.incl"
-# OBK:	#nicht wes	include "include/layer/obk_unlandvegetationsloseflaeche.incl"
-# OBK:
-# OBK:		# Gewässer
-# OBK:			include "include/layer/obk_fliessgewaesser.incl"
-# OBK:			#include "include/layer/ax_hafenbecken.map"
-# OBK:	nicht wes	include "include/layer/obk_stehendesgewaesser.incl"
-# OBK:	#nicht wes	include "include/layer/obk_nutzung_ppo.incl"
-# OBK:	#nicht wes	include "include/layer/obk_nutzung_pto.incl"
-
-# OBK:	#GROUP Gebäude
-# OBK:		# Angaben zum Gebäude
-# OBK:			include "include/layer/obk_gebaeude.incl"
-# OBK:			include "include/layer/obk_bauteil.incl" #ok
-# OBK:			include "include/layer/obk_besonderegebaeudelinie.incl" #ok
-# OBK:			include "include/layer/obk_hausnummer.incl"
-# OBK:			include "include/layer/obk_gebaeude_ppo.incl"
-# OBK:			include "include/layer/obk_gebaeude_pto.incl"
-
-# OBK:	#GROUP Bauwerke
-# OBK:		# Besondere Angaben zum Gewässer
-# OBK:			include "include/layer/obk_gewaessermerkmal.incl"
-# OBK:			include "include/layer/obk_untergeordnetesgewaesser.incl"	
-# OBK:		# Bauwerke und Einrichtungen in Siedlungsflächen
-# OBK:			include "include/layer/obk_turm.incl"
-# OBK:			include "include/layer/obk_bauwerkoderanlagefuerindustrieundgewerbe.incl"
-# OBK:			include "include/layer/obk_vorratsbehaelterspeicherbauwerk.incl"
-# OBK:			#include "include/layer/ax_transportanlage.map"
-# OBK:			include "include/layer/obk_leitung.incl"
-# OBK:			include "include/layer/obk_bauwerkoderanlagefuersportfreizeitunderholung.incl"
-# OBK:			include "include/layer/obk_historischesbauwerkoderhistorischeeinrichtung.incl"
-# OBK:			include "include/layer/obk_sonstigesbauwerkodersonstigeeinrichtung.incl"
-# OBK:		# Bauwerke, Anlagen und Einrichtungen für den Verkehr
-# OBK:			include "include/layer/obk_bauwerkimverkehrsbereich.incl"
-# OBK:			include "include/layer/obk_strassenverkehrsanlage.incl"
-# OBK:			include "include/layer/obk_wegpfadsteig.incl"
-# OBK:			#include "include/layer/obk_bahnverkehrsanlagen.map"
-# OBK:			include "include/layer/obk_bauwerkimgewaesserbereich.incl"
-# OBK:		# Besondere Vegetationsmerkmale
-# OBK:			include "include/layer/obk_vegetationsmerkmal.incl"
-# OBK:			include "include/layer/obk_bauwerke_ppo.incl"
-# OBK:			include "include/layer/obk_bauwerke_pto.incl"
-
-# OBK:	#Beschriftung
-# OBK:			include "include/layer/obk_ap_pto.incl"
-
-# OBK:	#GROUP Flurstücke
-# OBK:		# Angaben zum Flurstück
-# OBK:			include "include/layer/obk_flurstueck_auszug.incl"
-# OBK:			include "include/layer/obk_flurstueck.incl" 
-# OBK:			include "include/layer/obk_strittige_grenze.incl"
-# OBK:			include "include/layer/obk_mittellinie_gewaesser.incl"
-# OBK:			include "include/layer/obk_ueberhaken.incl" 
-# OBK:			include "include/layer/obk_punktortta.incl"
-
-# OBK:	#GROUP Bodenschaetzung
-# OBK:			include "include/layer/obk_bodenschaetzung.incl"
-# OBK:	#		include "include/layer/ax_grablochderbodenschaetzung.map"
-# OBK:	#		include "include/layer/ax_musterlandesmusterundvergleichsstueck.map"
-# OBK:	#GROUP Gesetzliche Festlegungen
-# OBK:			#include "include/layer/ax_sonstigesrecht.map"	
-# OBK:			#include "include/layer/ax_denkmalschutzrecht.map"
-# OBK:			include "include/layer/obk_bauraumoderbodenordnungsrecht.incl"
-# OBK:			#include "include/layer/ax_naturumweltoderbodenschutzrecht.map"
-# OBK:			#include "include/layer/ax_klassifizierungnachstrassenrecht.map"
-# OBK:			#include "include/layer/ax_anderefestlegungnachwasserrecht.map"
-# OBK:			include "include/layer/obk_gebaeude_bauweise.incl"
-
-# OBK:	#	# OBK Flur und Gemarkungsgrenze
-# OBK:	#	# Flurgrenze
-# OBK:	#		include "include/layer/obk_flurgrenze.map"
-# OBK:	#		include "include/layer/obk_gemarkungsgrenze.map"
-# OBK:	#		include "include/layer/obk_politische_Grenze.map"
-# OBK:	#		# Angaben zum Punktort
-# OBK:	#		include "include/layer/ax_punktortag.map"
-# OBK:	###		include "include/layer/ax_punktortau.map"
-# OBK:	#	# AAA_Praesentationsobjekte
-# OBK:	#		include "include/layer/obk_ap_pto.map"
-# OBK:	#		include "include/layer/obk_ap_ppo.map"
-
-### +++++++++++++++++  TODO: OBK-Code integrieren
-
-
 ## ** Siedlung **
-
-#### ToDo: jeden der folgenden Layer nur zulassen, wenn "nutzung_alle" = aus   !!!!!
 
 ##  AX_Wohnbauflaeche
 LAYER
 	NAME "ax_wohnbauflaeche"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -574,7 +421,6 @@ LAYER
 	NAME "ax_industrieundgewerbeflaeche"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -607,7 +453,6 @@ LAYER
 	NAME "ax_halde"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -638,7 +483,6 @@ LAYER
 	NAME "ax_bergbaubetrieb"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -668,7 +512,6 @@ LAYER
 	NAME "ax_tagebaugrubesteinbruch"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -699,7 +542,6 @@ LAYER
 	NAME "ax_flaechegemischternutzung"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -732,7 +574,6 @@ LAYER
 	NAME "ax_flaechebesondererfunktionalerpraegung"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -763,7 +604,6 @@ LAYER
 	NAME "ax_sportfreizeitunderholungsflaeche"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -795,7 +635,6 @@ LAYER
 	NAME "ax_friedhof"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -830,7 +669,6 @@ LAYER
 	NAME "ax_strassenverkehr"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -894,7 +732,6 @@ LAYER
 	NAME "ax_weg"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -925,7 +762,6 @@ LAYER
 	NAME "ax_platz"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -964,7 +800,6 @@ LAYER
 	NAME "ax_bahnverkehr"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -996,7 +831,6 @@ LAYER
 	NAME "ax_flurverkehr"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1028,7 +862,6 @@ LAYER
 	NAME "ax_schiffsverkehr"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1062,7 +895,6 @@ LAYER
 	NAME "ax_landwirtschaft"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1113,7 +945,6 @@ LAYER
 	NAME "ax_wald"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1122,7 +953,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Wald"
 		wms_abstract "'Wald' ist eine Fläche, die mit Forstpflanzen (Waldbäume und Waldsträucher) bestockt ist."
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1144,7 +974,6 @@ LAYER
 	NAME "ax_gehoelz"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1153,7 +982,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Gehölz"
 		wms_abstract "Gehölz"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1164,8 +992,8 @@ LAYER
 	CLASS
 		NAME "Gehoelz" #sn1414_sn2517
 		STYLE
-			COLOR 187 222 201 # 217 255 217 ?
-			OUTLINECOLOR  153 153 153 # 0 255 0 ?
+			COLOR 187 222 201 # 217 255 217
+			OUTLINECOLOR  153 153 153 # 0 255 0
 		END
 	END
 END
@@ -1175,7 +1003,6 @@ LAYER
 	NAME "ax_heide"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1184,7 +1011,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Heide"
 		wms_abstract "Heide"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1206,7 +1032,6 @@ LAYER
 	NAME "ax_moor"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1215,7 +1040,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Moor"
 		wms_abstract "Moor ist eine unkultivierte Fläche, deren obere Schicht aus vertorften oder zersetzten Pflanzenresten besteht. Torfstich bzw. Torfabbaufläche wird der Objektart 41005 'Tagebau, Grube, Steinbruch' mit AGT 'Torf' zugeordnet."
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1237,7 +1061,6 @@ LAYER
 	NAME "ax_sumpf"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1246,7 +1069,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Sumpf"
 		wms_abstract "Sumpf"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1270,7 +1092,6 @@ LAYER
 	NAME "ax_unlandvegetationsloseflaeche"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1279,7 +1100,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Unland"
 		wms_abstract "Unland, vegetationslose Fläche"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1301,7 +1121,6 @@ LAYER
 	NAME "ax_vegetationsmerkmal"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1310,7 +1129,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Vegetationsmerkmal"
 		wms_abstract "'Vegetationsmerkmal' beschreibt den zusätzlichen Bewuchs oder besonderen Zustand einer Grundfläche."
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1334,7 +1152,6 @@ LAYER
 	NAME "ax_fliessgewaesser"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1343,7 +1160,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Fließgewässer"
 		wms_abstract "Fließgewässer"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1365,7 +1181,6 @@ LAYER
 	NAME "ax_hafenbecken"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1374,7 +1189,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Hafenbecken"
 		wms_abstract "Hafenbecken' ist ein natürlicher oder künstlich angelegter oder abgetrennter Teil eines Gewässers, in dem Schiffe be- und entladen werden."
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1396,7 +1210,6 @@ LAYER
 	NAME "ax_stehendesgewaesser"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -1405,7 +1218,6 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "stehendes Gewässer"
 		wms_abstract "stehendes Gewässer"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
@@ -1597,13 +1409,10 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 10000
 #	CLASSITEM 'artderfestlegung'
-	CLASS
+	CLASS #sn1705
 		NAME "Andere Festlegung nach Wasserrecht"
-		STYLE
-		#	SYMBOL 0 #sn1705
-		#	COLOR -1 -1 -1 #?
+		STYLE 
 			OUTLINECOLOR 178 255 255
-		#	SIZE 2.8
 			WIDTH 3
 			PATTERN 11.34 2.85 END
 		END
@@ -1653,100 +1462,13 @@ LAYER
 	FOOTER   "/data/umn/templates/footer.html"
 
 	CLASSITEM "artderfestlegung" # integer
-
-	# Inhalte "Art der Festlegung"
-
-	#1700 - Festlegung nach Baugesetzbuch - Allgemeines Städtebaurecht
-	#1710   Bebauungsplan
-	#1720   Veränderungssperre nach Baugesetzbuch
-	#1730   Vorkaufrechtssatzung
-	#1740   Enteignungsverfahren
-	#1750 * Umlegung nach dem BauGB
-	#1760 * Bauland
-	#1770 * Vereinfachte Umlegung
-	#1780   Vorhaben- und Erschließungsplan
-	#1790   Flächennutzungsplan
-	
-	#1800 - Festlegung nach Baugesetzbuch - Besonderes Städtebaurecht
-	#1810   Städtebauliche Entwicklungsmaßnahme
-	#1811   Städtebauliche Entwicklungsmaßnahme (Beschluss zu vorbereitenden Untersuchungen gefasst)
-	#1820   Erhaltungssatzung
-	#1821   Städtebauliches Erhaltungsgebiet
-	#1822   Soziales Erhaltungsgebiet
-	#1823   Erhaltungsgebiet zur städtebaulichen Umstrukturierung
-	#1824   Soziales Erhaltungsgebiet (Aufstellungsbeschluss gefasst)
-	#1830   Städtebauliche Gebote
-	#1840   Sanierung
-	#1841   Sanierung (Beschluss zu vorbereitenden Untersuchungen gefasst)
-
-	#1900 - Wohnungsbauerleichterungsgesetz
-
-	#2100 - Flurbereinigungsgesetz
-	#2110 * Flurbereinigung (Par. 1, 37 FlurbG)
-	#2120   Vereinfachtes Flurbereinigungsverfahren (Par. 86 FlurbG)
-	#2130 * Unternehmensflurbereinigung (nach Par. 87 oder 90 FlurbG)
-	#2140 * Beschleunigtes Zusammenlegungsverfahren (Par. 91 FlurbG)
-	#2150   Freiwilliger Landtausch (Par. 103a FlurbG)
-	#2160   Verfahren nach dem Gemeinheitsteilungsgesetz
-	#2170   Verfahren nach dem Gemeinschaftswaldgesetz
-	#2180   Freiwilliger Nutzungstausch
-
-	#2200 - Verfahren nach dem Landwirtschaftsanpassungsgesetz
-	#2210   Flurneuordnung
-	#2220   Freiwilliger Landtausch (Par. 54 LwAnpG)
-	#2230   Bodenordnungsverfahren (Par. 56 LwAnpG)
-	#2240   Zusammenführung von Boden- und Gebäudeeigentum (Par. 64 LwAnpG)
-
-	#2300 - Bodensonderungsgesetz
-	#2310   Unvermessenes Eigentum
-	#2320   Unvermessenes Nutzungsrecht
-	#2330   Ergänzende Bodenneuordnung
-	#2340   Komplexe Bodenneuordnung
-
-	#2400 - Vermögenszuordnungsgesetz
-	#2410   Vermögenszuordnung nach Plan
-	#2411   Vermögenszuordnung nach dem Aufteilungsplan
-	#2412   Vermögenszuordnung nach dem Zuordnungsplan
-
-	#2500 - Landesraumordnungsgesetz
-	#2510   Wasservorranggebiete
-
-	#2600 - Bauordnung
-	#2610 * Baulast
-	#2611   Begünstigende Baulast
-	#2612   Belastende Baulast
-
-	#2700 - Grenzfeststellungsverfahren nach Hamb. Wassergesetz
-
-	#2800 - Verkehrsflächenbereinigung
-	
-	# Auswertung: Vorkommen in der Praxis
-
-	#	SELECT artderfestlegung, count(gml_id) as anzahl
-	#	FROM ax_bauraumoderbodenordnungsrecht
-	#	GROUP BY artderfestlegung
-	#	ORDER BY count(gml_id) desc;
-	
-	# key	HBM		LEO 	LAGE	RLP
-	# ----  ----	----	----	____
-	# 1750	0		0		0		1
-	# 1760	0		0		0		29
-	# 1770	0		0		0		1
-	# 2610	888		1327	203		7
-	# 2100	0		0		0		2
-	# 2110	4		8		2		0
-	# 2130	0		0		0		1
-	# 2140	0		0		10		0
-
 	# Gruppe 26**
 	CLASS
 		EXPRESSION "2610" # häufig vorkommender Einzelwert
 		NAME "Baulast"
 		TEXT "Baulast"
-		STYLE
+		STYLE #sn1704
 			OUTLINECOLOR 255 128 128
-		#	SYMBOL 0 #sn1704
-		#	SIZE 2.835 MINSIZE 2 MAXSIZE 5
 			WIDTH 3 MINWIDTH 2 MAXWIDTH 5
 			PATTERN 11 3 END
 		END
@@ -1776,13 +1498,11 @@ LAYER
 	CLASS
 		EXPRESSION ([artderfestlegung] ge 2100 and [artderfestlegung] le 2199) # Rest der Gruppe
 		NAME "Flurbereinigung"
-
 		STYLE # Flächenfüllung mit Punkt-Raster
 			COLOR 100 100 100 # grau 40%
 			SYMBOL "sn3631"
 			SIZE 15 MINSIZE 10 MAXSIZE 25
 		END
-
 		STYLE #sn1704
 			OUTLINECOLOR 255 128 128
 		#	SYMBOL 0
@@ -1907,10 +1627,8 @@ LAYER
 	CLASS
 		NAME "Freileitung" # sn1704_sn7881 Schriftzusatz fehlt
 		EXPRESSION ([artderfestlegung] = 4720)
-		STYLE
-		#	SYMBOL 0 #"sn1704"
+		STYLE #sn1704
 			PATTERN 11.34 2.85 END
-		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 255 128 128
 		END
 	END
@@ -1921,13 +1639,6 @@ END
 
 # 2011-10-19: Teilen der Gebäude in Gebäude-Flächen und Gebäude-Umring.
 #             Die Flächenfuellung ist im GIS stoerend, also unerwuenscht.
-
-# OBK:	include "include/layer/obk_gebaeude.incl"
-# OBK:	include "include/layer/obk_bauteil.incl" #ok
-# OBK:	include "include/layer/obk_besonderegebaeudelinie.incl" #ok
-# OBK:	include "include/layer/obk_hausnummer.incl"
-# OBK:	include "include/layer/obk_gebaeude_ppo.incl"
-# OBK:	include "include/layer/obk_gebaeude_pto.incl"
 
 LAYER
 	NAME "ax_gebaeude_fl" # Gebäude - Flächen
@@ -1968,8 +1679,7 @@ LAYER
 			SYMBOL 'filler'
 			SIZE 15
 		END
-		STYLE
-		#	SYMBOL 0 #sn2032
+		STYLE #sn2032
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 1 2 END
@@ -1983,8 +1693,7 @@ LAYER
 			SYMBOL 'filler'
 			SIZE 15
 		END
-		STYLE
-		#	SYMBOL 0 #sn2030_2031
+		STYLE #sn2030_2031
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
@@ -1998,8 +1707,7 @@ LAYER
 			SYMBOL 'filler'
 			SIZE 15
 		END
-		STYLE
-		#	SYMBOL 0 #sn2030_2031
+		STYLE #sn2030_2031
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 2
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
@@ -2314,21 +2022,18 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 	CLASSITEM 'gebaeudefunktion' #'zustand'
 	CLASS
 		NAME "Gebäude,unterirdisch" # z.B. Tiefgarage
-		# Beispiel 150: Triftenstraße 54 e, lfd.Nr 2
 		EXPRESSION ([lagezurerdoberflaeche] = 1200)
 		STYLE # Dummy-Füllung. Legende zeigt Fläche, Fläche bleibt transparent
 			COLOR 255 255 255
 			SYMBOL 'filler'
 			SIZE 15
 		END
-		STYLE # verschwindet >1:300
-		#	SYMBOL 'point' #sn2032
+		STYLE #sn2032
 			OUTLINECOLOR 0 0 0
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			PATTERN 1 2 END
 		END
 	END
-
 	#CLASS
 	#	NAME "Hochhaus,verfallen" # Theorie! kommt hier nicht vor
 	#	EXPRESSION ([hochhaus]="true" AND [zustand] > 2199)
@@ -2344,7 +2049,6 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 	#		PATTERN 8 4 END
 	#	END
 	#END
-
 	CLASS
 		NAME "Gebäude,verfallen"
 		EXPRESSION ([zustand] > 2199)
@@ -2744,11 +2448,10 @@ LAYER
 	CLASS
 		NAME "Brücke"
 		STYLE
-		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 128 128 128
-		#	SYMBOL 'point'
-			PATTERN 5.67 2.85 END # sn1530
-			WIDTH 2 #1.417
+		#	SYMBOL 'point' # sn1530
+			PATTERN 5.67 2.85 END 
+			WIDTH 2 # 1.417
 		END
 	END
 END
@@ -2928,33 +2631,6 @@ LAYER
 	END
 	# else
 END
-
-# SELECT DISTINCT bauwerksfunktion, st_geometrytype(wkb_geometry) AS geotype
-# FROM ax_sonstigesbauwerkodersonstigeeinrichtung
-# ORDER BY bauwerksfunktion
-
-# *gkz 140:
-# 1610;"ST_Polygon"
-# 1611;"ST_Polygon"
-# 1620;"ST_Polygon"
-# 1630;"ST_LineString"
-# 1640;"ST_Point"
-# 1650;"ST_Polygon"
-# 1670;"ST_Polygon"
-# 1700;"ST_LineString";"ST_Polygon"
-# 1701;"ST_LineString"
-# 1702;"ST_LineString"
-# 1703;"ST_LineString"
-# 1721;"ST_LineString"
-# 1722;"ST_LineString"
-# 1723;"ST_LineString"
-# 1740;"ST_LineString"
-# 1750;"ST_Point","ST_Polygon"
-# 1770;"ST_Point"
-# 1780;"ST_Point","ST_Polygon"
-# 1782;"ST_Polygon"
-# 1783;"ST_Point"
-# 9999;"ST_Polygon"
 
 LAYER
 	NAME "ax_leitung"
@@ -3254,14 +2930,7 @@ LAYER
 	#CLASS
 	#	EXPRESSION /./ # Else - NEIN z.B. politische Gernzen solange nicht gefiltert
 	#	NAME "Besondere Flurstücksgrenze"
-	#	STYLE
-	#		SYMBOL 'point'
-	#		COLOR 0 0 0
-	#		SIZE 1
-	#		PATTERN 17 2.85 END
-	#	END
-	#END
-## Weitere Bedeutungen siehe Layer "grenzen"
+	# Weitere Bedeutungen siehe Layer "grenzen"
 END
 
 # Ausgestaltung FS (DATA: Views in DB anlegen fuer Beziehungen)
@@ -3321,147 +2990,6 @@ LAYER
 	END
 END
 
-### OBK START
-
-#LAYER
-#	NAME "sk4111_Bruchstrich_Z"
-#	GROUP "ALKIS" 
-#	TYPE ANNOTATION
-#	DUMP TRUE
-#	
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=localhost dbname=obk user=alkis"
-#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
-#	
-#	METADATA
-#		"WMS_SRS" "epsg:25832"
-#		"WMS_TITLE" "Flurstücksnummer Bruchstrichzähler "
-#	END
-#	MINSCALEDENOM 0
-#	MAXSCALEDENOM 2600
-#	LABELITEM "bruchstrich_z"  
-#	SYMBOLSCALEDENOM 1000
-#	CLASSITEM "bruchstrich_n"
-#	CLASS
-#		#NAME "Bruchstrich_Z"
-#		EXPRESSION /^F/
-#		LABEL
-#			SIZE 9
-#			MINSIZE 6
-#			MAXSIZE 12
-#			TYPE TRUETYPE
-#			FONT "alkis_textsymbols"
-#			POSITION cc
-#			FORCE True
-#			COLOR 0 0 0
-#			BACKGROUNDCOLOR 255 255 255
-#		END
-#	END
-#END
-
-#LAYER
-#	NAME "sk4111_Bruchstrich_N"
-#	GROUP "ALKIS" 
-#	TYPE ANNOTATION
-#	DUMP TRUE
-#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
-#	METADATA
-#		"WMS_SRS" "epsg:25832"
-#		"WMS_TITLE" "Flurstücksnummer Bruchstrichnenner"
-#	END
-#	MINSCALEDENOM 0
-#	MAXSCALEDENOM 2600
-#	LABELITEM "bruchstrich_n"
-#	SYMBOLSCALEDENOM 1000
-#	CLASSITEM "bruchstrich_n"
-#	CLASS
-#		EXPRESSION /^F/
-#		LABEL
-#			SIZE 9
-#			MINSIZE 6
-#			MAXSIZE 12
-#			TYPE TRUETYPE
-#			FONT "alkis_textsymbols"
-#			POSITION cc
-#			FORCE True
-#			COLOR 0 0 0
-#			BACKGROUNDCOLOR 255 255 255
-#		END
-#	END
-#END
-
-#LAYER
-#	NAME "sk4111_flurstuecksnummer_z"
-#	GROUP "ALKIS" 
-#	TYPE ANNOTATION
-#	DUMP TRUE
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=localhost dbname=obk user=alkis"
-#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
-#	METADATA
-#		"WMS_SRS" "epsg:25832"
-#		"WMS_TITLE" "Flurstücksnummer Zähler"
-#	END
-#	MINSCALEDENOM 0
-#	MAXSCALEDENOM 2600
-#	LABELITEM "zaehler" 
-#	SYMBOLSCALEDENOM 1000
-#
-#	CLASS
-#	#NAME "Flurstueckszaehler"
-#	LABEL
-#		FONT "arialkursiv"
-#		TYPE TRUETYPE
-#		SIZE 9
-#		MINSIZE 6
-#		MAXSIZE 12
-#		ANGLE auto 
-#		POSITION uc
-#		#OFFSET 0 0
-#		FORCE True
-#		COLOR 0 0 0
-#		BACKGROUNDCOLOR 254 254 254 #255 255 255
-#	END
-#END
-
-#LAYER
-#	NAME "sk4111_flurstuecksnummer_n"
-#	GROUP "ALKIS" 
-#	TYPE ANNOTATION
-#	DUMP TRUE
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=localhost dbname=obk user=alkis"
-#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
-#	METADATA
-#		"WMS_SRS" "epsg:25832"
-#		"WMS_TITLE" "Flurstücksnummer Nenner"
-#	END
-#	MINSCALEDENOM 0
-#	MAXSCALEDENOM 2600
-#	LABELITEM "nenner"
-#	SYMBOLSCALEDENOM 1000
-#	CLASSITEM "bruchstrich_n"
-#	CLASS
-#	#NAME "Flurstuecksnenner"
-#	EXPRESSION /^F/
-#	LABEL
-#		FONT "arialkursiv"
-#		TYPE TRUETYPE
-#		SIZE 9
-#		MINSIZE 6
-#		MAXSIZE 12
-#		ANGLE auto 
-#		POSITION lc
-#		#OFFSET 0 2
-#		FORCE True
-#		COLOR 0 0 0
-#		BACKGROUNDCOLOR 254 254 254 #255 255 255
-#	END
-#END
-
-### OBK ENDE
-
-
 # Zuordnungspfeile Flurstück
 # siehe auch Layer "ap_lpo"
 LAYER
@@ -3517,11 +3045,6 @@ LAYER
 	CLASS
 		#NAME "Zuordnungspfeilspitze"
 		TEXT 'E'
-	#	STYLE
-	#		SYMBOL'POINT'
-	#		SIZE 1
-	#		COLOR 0 255 0
-	#	END
 		LABEL
 			TYPE TRUETYPE
 			FONT "alkis_textsymbols"
@@ -3784,50 +3307,6 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 5000
 	LABELITEM "schriftinhalt"
-
-#  SELECT DISTINCT art, horizontaleausrichtung, vertikaleausrichtung 
-#  FROM ap_pto WHERE not schriftinhalt is null ORDER BY art;
-
-
-#  SELECT art, horizontaleausrichtung, vertikaleausrichtung FROM ap_pto WHERE not schriftinhalt is null AND art IN ('ZAE_NEN');
-
-
-# 2012: PostNAS 0.6
-# ------------------
-#	"ART"					"linksbündig"	"Basis"
-#	"ATP"					"zentrisch"		"Basis"
-#	"BBD"					"linksbündig"	"Basis"
-#	"BBD"					"zentrisch"		"Basis"
-#	"BezKlassifizierungStrasse"	"linksbündig"	"Basis"
-#	"BezKlassifizierungStrasse"	"zentrisch"	"Basis"
-#	"BWF"					"zentrisch"		"Basis"
-#	"BWF_ZUS"				"zentrisch"		"Basis"
-#	"FKT"					"linksbündig"	"Basis"
-#	"FKT"					"zentrisch"		"Basis"
-#	"Fliessgewaesser"		"linksbündig"	"Basis"
-#	"Fliessgewaesser"		"zentrisch"		"Basis"
-#	"FreierText"			"linksbündig"	"Basis"
-#	"FreierText"			"zentrisch"		"Basis"
-#	"Friedhof"				"zentrisch"		"Basis"
-#	"Gewanne"				"zentrisch"		"Basis"
-#	"GFK"					"zentrisch"		"Basis"
-#	"HHO"					"zentrisch"		"Basis"
-#	"HNR"					"zentrisch"		"Basis" --> Hausnummer, group gebaeude
-#	"NAM"					"linksbündig"	"Basis"
-#	"NAM"					"zentrisch"		"Basis"
-#	"Platz"					"linksbündig"	"Basis"
-#	"Platz"					"zentrisch"		"Basis"
-#	"PNR"					"zentrisch"		"Basis" --> Pseudonummer, group gebaeude
-#	"StehendesGewaesser"	"zentrisch"		"Basis"
-#	"Strasse"				"linksbündig"	"Basis"
-#	"Strasse"				"zentrisch"		"Basis"
-#	"Vorratsbehaelter"		"zentrisch"		"Basis"
-#	"Weg"					"linksbündig"	"Basis"
-#	"Weg"					"zentrisch"		"Basis"
-#	"Weitere Höhe"			"zentrisch"		"Basis"
-#	"ZNM"					"linksbündig"	"Basis"
-#	"<NULL>"				"zentrisch"		"Basis"
-
 	#CLASSITEM "art"
 	CLASS
 		NAME "Beschriftung"
@@ -3937,8 +3416,8 @@ LAYER
 			COLOR 255 255 255
 			WIDTH 7 MINWIDTH 7 MAXWIDTH 7
 		END
-		STYLE
-			SYMBOL 'point' #sn2018
+		STYLE #sn2018
+			SYMBOL 'point'
 			COLOR 242 128 255
 			SIZE 7 MINSIZE 7 MAXSIZE 7
 			PATTERN 5 15 5 15 27 12 27 15 END
@@ -3951,8 +3430,8 @@ LAYER
 			COLOR 255 255 255
 			WIDTH 5 MINWIDTH 5 MAXWIDTH 5
 		END
-		STYLE
-			SYMBOL 'point' #sn2020 Kreisgrenze
+		STYLE #sn2020 Kreisgrenze
+			SYMBOL 'point' 
 			COLOR 242 128 255
 			SIZE 5 MINSIZE 5 MAXSIZE 5
 			PATTERN 4 15 4 15 25 10 25 13 END
@@ -4052,8 +3531,8 @@ LAYER
 			COLOR 254 254 254 # heller Untergrund
 			SIZE 4 MINSIZE 3 MAXSIZE 5
 		END
-		STYLE
-			SYMBOL 'point' #sn2012
+		STYLE #sn2012
+			SYMBOL 'point'
 			COLOR 242 128 255
 			SIZE 4 MINSIZE 3 MAXSIZE 5
 			PATTERN 16.67 8.33 3.33 10 3.33 10 3.33 8.33 END
@@ -4074,7 +3553,7 @@ LAYER
 	END
 	FEATURE
 		POINTS 0 0 END
-		# hier fuer den Kreis Lippe die individuelle Vertragsnummer einsetzen!
+		# hier die individuelle Vertragsnummer einsetzen!
 	#	TEXT 'Copyright Geobasisdaten Liegenschaftskataster Kreis Lippe, JJ-NZR-???'
 		TEXT 'Copyright Geobasisdaten Liegenschaftskataster Kreis __'
 	END
@@ -4091,5 +3570,4 @@ LAYER
 		END
 	END
 END
-
 END

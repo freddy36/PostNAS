@@ -1,11 +1,8 @@
-# WMS: ALKIS PostNAS 0.6 Muster mit Platzhalter *gkz* für Mandant
-# Druckversion zum Mapfile vom ...
-
-# 2011-12-20 F.J. krz  Extent in alle Layer, Integrieren der Mapfiles des OBK (begonnen, weiter in Arbeit)
-# 2012-02-06 F.J. Layer angepasst an Bildschirm-Version
-# 2012-02-08 F.J. Noch ein paar Symbole aus Mapserver5-Version eleminiert
+# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant - Druckversion
 
 # _4-Version ohne WFS ('DUMP TRUE', 'gml_include_items "all"')
+
+# 2012-02-09 F.J. krz  Branch 0.7 aus Version 0.6
 
 MAP
 	NAME "alkis"
@@ -21,13 +18,13 @@ MAP
 
 	WEB
 		METADATA
+			wms_title "ALKIS Test"
+			ows_abstract "ALKIS - PostNAS Version 0.7"
 			wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 			wms_encoding "UTF-8"
-			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis06/alkis06*gkz*.map"
-			wms_title "ALKIS"
+			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
 			wms_feature_info_mime_type "text/html"
 			ows_schema_location ".."
-			ows_abstract "ALKIS - PostNAS Version 0.6"
 			ows_keywordlist "ALKIS,Flurstück,NAS"
 			ows_fees "none"
 			ows_accessconstraints "für den Dienstgebrauch"

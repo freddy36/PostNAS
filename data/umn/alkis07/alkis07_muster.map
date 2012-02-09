@@ -1,11 +1,16 @@
-# WMS: ALKIS PostNAS 0.6 Muster mit Platzhalter *gkz* für Mandant
-# Druckversion zum Mapfile vom ...
+# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant
 
-# 2011-12-20 F.J. krz  Extent in alle Layer, Integrieren der Mapfiles des OBK (begonnen, weiter in Arbeit)
-# 2012-02-06 F.J. Layer angepasst an Bildschirm-Version
-# 2012-02-08 F.J. Noch ein paar Symbole aus Mapserver5-Version eleminiert
+# Stand / Historie:
 
-# _4-Version ohne WFS ('DUMP TRUE', 'gml_include_items "all"')
+# 2012-02-09 F.J. krz  Branch 0.7 aus Version 0.6
+
+# ToDo:
+# - Recht Baulast wird von FS-Grenze verdeckt, Reihenfolge ändern?
+# - Template auf Gebäude-Objekt, Auskunft aufrufen?
+# - Beschriftung: Straßennamen tiefer setzen
+# - Zuordnungspfeil Flurstueck ist doppelt: in "Flurstück" und in "Präsentation/Zuordnungspfeile"
+# - Layer Beschriftung in mehrere Layer (nach Thema) zerlegen
+#     Langfristig diese Beschriftungen zum fachlichen Layer gruppieren
 
 MAP
 	NAME "alkis"
@@ -14,25 +19,31 @@ MAP
 	PROJECTION
 		"init=epsg:25832"
 	END
-	MAXSIZE 8400 # 2100 # Druckversion
+	MAXSIZE 2100
 	SYMBOLSET "symbols/symbols_alkis.sym"
-	FONTSET "fonts/fonts_alkis.fnt"	
+	FONTSET "fonts/fonts_alkis.fnt"
 	UNITS METERS
-
 	WEB
 		METADATA
+			wms_title "ALKIS Test"
+			ows_abstract "ALKIS - PostNAS Version 0.7" 
 			wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 			wms_encoding "UTF-8"
-			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis06/alkis06*gkz*.map"
-			wms_title "ALKIS"
+			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
 			wms_feature_info_mime_type "text/html"
+			wfs_accessconstraints "none"
+			wfs_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+			wfs_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
+			wfs_title "ALKIS"
+			wfs_feature_info_mime_type "text/html"
+			wfs_encoding "UTF-8"
 			ows_schema_location ".."
-			ows_abstract "ALKIS - PostNAS Version 0.6"
+			wfs_geometry_element_name "wkb_geometry"
 			ows_keywordlist "ALKIS,Flurstück,NAS"
 			ows_fees "none"
 			ows_accessconstraints "für den Dienstgebrauch"
 			ows_enable_request "*"
-			#include "meta_contact.map"
+			include "meta_contact.map"
 		END
 	END
 
@@ -49,6 +60,50 @@ MAP
 		END
 	END
 
+# ALKIS tatsaechliche Nutzung (Siedlung, Verkehr, Gewässer, Vegetaion)
+# alle Layer von GROUP "ax_nutzungen"
+
+## ** Siedlung **
+## 01  AX_Wohnbauflaeche
+## 02  AX_IndustrieUndGewerbeflaeche
+## 03  AX_Halde
+## 04  AX_Bergbaubetrieb
+## 05  AX_TagebauGrubeSteinbruch
+## 06  AX_FlaecheGemischterNutzung
+## 07  AX_FlaecheBesondererFunktionalerPraegung
+## 08  AX_SportFreizeitUndErholungsflaeche
+## 09  AX_Friedhof
+
+## ** Verkehr **
+## 10  AX_Strassenverkehr
+## 11  AX_Weg
+## 12  AX_Platz
+## 13  AX_Bahnverkehr
+## 14  AX_Flugverkehr
+## 15  AX_Schiffsverkehr
+ 
+## ** Vegetation **
+## 16  AX_Landwirtschaft
+## 17  AX_Wald
+## 18  AX_Gehoelz
+## 19  AX_Heide
+## 20  AX_Moor
+## 21  AX_Sumpf
+##     (AX_UnkultivierteFlaeche)
+## 22  AX_UnlandVegetationsloseFlaeche
+##     (AX_Vegetationsmerkmal)
+
+## ** Gewässer **
+## 24  AX_Fliessgewaesser
+## 25  AX_Hafenbecken
+## 26  AX_StehendesGewaesser
+## 27  (AX_Meer)
+
+# Der Layer "nutzung_alle" wird gefuettert aus der Tabelle "nutzung".
+# "nutzung" wird nicht von PostNAS gefuellt sondern nach jeder Konvertierung als Optimierung aus vielen verschiedenen Tabellen zusammen gefasst.
+# Dieser Layer soll hauptsaechlich fuer das Generieren (Seeding) des NUA-Layers im MapProxy verwendet werden.
+# Dieser Layer wird als WFS konfiguriert.
+# Die WFS auf die anderen (einzelnen) NUA-Layer werden deaktiviert.
 LAYER
 	NAME "nutzung_alle"
 	TYPE POLYGON
@@ -66,8 +121,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 20000 # die Einzel-Layer bis 10T
 	CLASSITEM nutz_id
 	# ** Siedlung **
 	CLASS
@@ -306,7 +361,7 @@ LAYER
 	END
 	#CLASS
 	#	EXPRESSION 23
-	#	NAME "Vegetationsmerkmal" ????
+	#	NAME "Vegetationsmerkmal" ??
 	#	STYLE
 	#		OUTLINECOLOR 0 255 0
 	#	END
@@ -339,7 +394,121 @@ LAYER
 	# '27' = Meer
 END
 
+### +++++++  TODO: OBK-Code integrieren
+
+# OBK:	#GROUP Tatsächliche Nutzung
+# OBK:		# AX_TatsaechlicheNutzung
+# OBK:		# Siedlung
+# OBK:			include "include/layer/obk_wohnbauflaeche.incl"
+# OBK:			include "include/layer/obk_industrieundgewerbeflaeche.incl"
+# OBK:			include "include/layer/obk_halde.incl"
+# OBK:
+# OBK:	#nicht wes	include "include/layer/obk_bergbaubetrieb.incl"
+# OBK:			include "include/layer/obk_tagebaugrubesteinbruch.incl"
+# OBK:			include "include/layer/obk_flaechegemischternutzung.incl"
+# OBK:			include "include/layer/obk_flaechebesondererfunktionalerpraegung.incl"
+# OBK:			include "include/layer/obk_sportfreizeitunderholungsflaeche.incl"
+# OBK:			include "include/layer/obk_friedhof.incl"
+# OBK:		# Verkehr
+# OBK:			include "include/layer/obk_strassenverkehr.incl"
+# OBK:			include "include/layer/obk_weg.incl"
+# OBK:			include "include/layer/obk_platz.incl"
+# OBK:			include "include/layer/obk_bahnverkehr.incl"
+# OBK:			include "include/layer/obk_flugverkehr.incl"
+# OBK:			#include "include/layer/ax_schiffsverkehr.map"
+# OBK:
+# OBK:		# Vegetation
+# OBK:			include "include/layer/obk_landwirtschaft.incl"
+# OBK:			include "include/layer/obk_wald.incl"
+# OBK:			include "include/layer/obk_gehoelz.incl"
+# OBK:			include "include/layer/obk_heide.incl"
+# OBK:			include "include/layer/obk_moor.incl"
+# OBK:			include "include/layer/obk_sumpf.incl"
+# OBK:	#nicht wes	include "include/layer/obk_unlandvegetationsloseflaeche.incl"
+# OBK:
+# OBK:		# Gewässer
+# OBK:			include "include/layer/obk_fliessgewaesser.incl"
+# OBK:			#include "include/layer/ax_hafenbecken.map"
+# OBK:	nicht wes	include "include/layer/obk_stehendesgewaesser.incl"
+# OBK:	#nicht wes	include "include/layer/obk_nutzung_ppo.incl"
+# OBK:	#nicht wes	include "include/layer/obk_nutzung_pto.incl"
+
+# OBK:	#GROUP Gebäude
+# OBK:		# Angaben zum Gebäude
+# OBK:			include "include/layer/obk_gebaeude.incl"
+# OBK:			include "include/layer/obk_bauteil.incl" #ok
+# OBK:			include "include/layer/obk_besonderegebaeudelinie.incl" #ok
+# OBK:			include "include/layer/obk_hausnummer.incl"
+# OBK:			include "include/layer/obk_gebaeude_ppo.incl"
+# OBK:			include "include/layer/obk_gebaeude_pto.incl"
+
+# OBK:	#GROUP Bauwerke
+# OBK:		# Besondere Angaben zum Gewässer
+# OBK:			include "include/layer/obk_gewaessermerkmal.incl"
+# OBK:			include "include/layer/obk_untergeordnetesgewaesser.incl"	
+# OBK:		# Bauwerke und Einrichtungen in Siedlungsflächen
+# OBK:			include "include/layer/obk_turm.incl"
+# OBK:			include "include/layer/obk_bauwerkoderanlagefuerindustrieundgewerbe.incl"
+# OBK:			include "include/layer/obk_vorratsbehaelterspeicherbauwerk.incl"
+# OBK:			#include "include/layer/ax_transportanlage.map"
+# OBK:			include "include/layer/obk_leitung.incl"
+# OBK:			include "include/layer/obk_bauwerkoderanlagefuersportfreizeitunderholung.incl"
+# OBK:			include "include/layer/obk_historischesbauwerkoderhistorischeeinrichtung.incl"
+# OBK:			include "include/layer/obk_sonstigesbauwerkodersonstigeeinrichtung.incl"
+# OBK:		# Bauwerke, Anlagen und Einrichtungen für den Verkehr
+# OBK:			include "include/layer/obk_bauwerkimverkehrsbereich.incl"
+# OBK:			include "include/layer/obk_strassenverkehrsanlage.incl"
+# OBK:			include "include/layer/obk_wegpfadsteig.incl"
+# OBK:			#include "include/layer/obk_bahnverkehrsanlagen.map"
+# OBK:			include "include/layer/obk_bauwerkimgewaesserbereich.incl"
+# OBK:		# Besondere Vegetationsmerkmale
+# OBK:			include "include/layer/obk_vegetationsmerkmal.incl"
+# OBK:			include "include/layer/obk_bauwerke_ppo.incl"
+# OBK:			include "include/layer/obk_bauwerke_pto.incl"
+
+# OBK:	#Beschriftung
+# OBK:			include "include/layer/obk_ap_pto.incl"
+
+# OBK:	#GROUP Flurstücke
+# OBK:		# Angaben zum Flurstück
+# OBK:			include "include/layer/obk_flurstueck_auszug.incl"
+# OBK:			include "include/layer/obk_flurstueck.incl" 
+# OBK:			include "include/layer/obk_strittige_grenze.incl"
+# OBK:			include "include/layer/obk_mittellinie_gewaesser.incl"
+# OBK:			include "include/layer/obk_ueberhaken.incl" 
+# OBK:			include "include/layer/obk_punktortta.incl"
+
+# OBK:	#GROUP Bodenschaetzung
+# OBK:			include "include/layer/obk_bodenschaetzung.incl"
+# OBK:	#		include "include/layer/ax_grablochderbodenschaetzung.map"
+# OBK:	#		include "include/layer/ax_musterlandesmusterundvergleichsstueck.map"
+# OBK:	#GROUP Gesetzliche Festlegungen
+# OBK:			#include "include/layer/ax_sonstigesrecht.map"	
+# OBK:			#include "include/layer/ax_denkmalschutzrecht.map"
+# OBK:			include "include/layer/obk_bauraumoderbodenordnungsrecht.incl"
+# OBK:			#include "include/layer/ax_naturumweltoderbodenschutzrecht.map"
+# OBK:			#include "include/layer/ax_klassifizierungnachstrassenrecht.map"
+# OBK:			#include "include/layer/ax_anderefestlegungnachwasserrecht.map"
+# OBK:			include "include/layer/obk_gebaeude_bauweise.incl"
+
+# OBK:	#	# OBK Flur und Gemarkungsgrenze
+# OBK:	#	# Flurgrenze
+# OBK:	#		include "include/layer/obk_flurgrenze.map"
+# OBK:	#		include "include/layer/obk_gemarkungsgrenze.map"
+# OBK:	#		include "include/layer/obk_politische_Grenze.map"
+# OBK:	#		# Angaben zum Punktort
+# OBK:	#		include "include/layer/ax_punktortag.map"
+# OBK:	###		include "include/layer/ax_punktortau.map"
+# OBK:	#	# AAA_Praesentationsobjekte
+# OBK:	#		include "include/layer/obk_ap_pto.map"
+# OBK:	#		include "include/layer/obk_ap_ppo.map"
+
+### +++++++++++++++++  TODO: OBK-Code integrieren
+
+
 ## ** Siedlung **
+
+#### ToDo: jeden der folgenden Layer nur zulassen, wenn "nutzung_alle" = aus   !!!!!
 
 ##  AX_Wohnbauflaeche
 LAYER
@@ -354,7 +523,7 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Wohnbaufläche"
 		wms_abstract "'Wohnbaufläche' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient."
-		wms_group_title "Nutzung " # nur im ersten Layer der Gruppe
+		wms_group_title "Nutzung" # nur im ersten Layer der Gruppe
 		wms_group_abstract "ALKIS tatsächliche Nutzung (Siedlung, Verkehr, Gewässer, Vegetation)"
 		#gml_include_items "all"
 	END
@@ -362,8 +531,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Wohnbaufläche" #sn1401_sn2515
 		STYLE
@@ -392,8 +561,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'funktion'
 	CLASS
 		NAME "Industrie- und Gewerbefläche" #sn1305_sn2515
@@ -424,8 +593,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Halde"
 		STYLE
@@ -454,8 +623,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Bergbaubetrieb" # sn2515_sn3405_sn3406 letzten beiden sind Symbole
 		STYLE
@@ -483,8 +652,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Tagebau Grube Steinbruch" #sn1305_sn2515
 		STYLE
@@ -515,8 +684,8 @@ sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einric
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Fläche gemischter Nutzung" #sn1401_sn2515
 		STYLE
@@ -545,8 +714,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Fläche besonderer funktionaler Prägung" # sn1401_sn2515
 		STYLE
@@ -575,8 +744,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'funktion'
 	CLASS
 		NAME "Sport-, Freizeit- und Erholungsfläche" # sn1405_sn2515
@@ -606,8 +775,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 3750 #15000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 15000
 	#CLASSITEM 'funktion'
 	CLASS
 		NAME "Friedhof"
@@ -640,8 +809,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'funktion'
 	CLASS
 		NAME "Fußgängerzone"
@@ -703,8 +872,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Weg" #sn2515
 		STYLE
@@ -733,8 +902,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'funktion'
 	CLASS
 		NAME "Fußgängerzone (Platz)" #sn1414_sn2515
@@ -771,8 +940,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	#CLASSITEM 'funktion'
 	CLASS
 		NAME "Bahnverkehr"
@@ -802,8 +971,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	#CLASSITEM 'funktion'
 	CLASS
 		NAME "Flugverkehr"
@@ -833,8 +1002,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Schiffsverkehr" # sn1544
 		STYLE
@@ -868,8 +1037,8 @@ Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jah
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'vegetationsmerkmal'
 	CLASS
 		NAME "Ackerland, Streuobstacker, Hopfen und Spargel" #sn1409_sn2515
@@ -902,6 +1071,7 @@ LAYER
 	NAME "ax_wald"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
+	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wald) as foo using unique ogc_fid using SRID=25832"
@@ -914,8 +1084,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Wald" #sn1414_sn2517
 		STYLE
@@ -930,6 +1100,7 @@ LAYER
 	NAME "ax_gehoelz"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
+	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_gehoelz) as foo using unique ogc_fid using SRID=25832"
@@ -942,13 +1113,13 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Gehoelz" #sn1414_sn2517
 		STYLE
-			COLOR 187 222 201
-			OUTLINECOLOR  153 153 153
+			COLOR 187 222 201 # 217 255 217
+			OUTLINECOLOR  153 153 153 # 0 255 0
 		END
 	END
 END
@@ -958,6 +1129,7 @@ LAYER
 	NAME "ax_heide"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
+	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_heide) as foo using unique ogc_fid using SRID=25832"
@@ -970,8 +1142,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Heide"
 		STYLE
@@ -986,6 +1158,7 @@ LAYER
 	NAME "ax_moor"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
+	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_moor) as foo using unique ogc_fid using SRID=25832"
@@ -998,10 +1171,10 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
-		NAME "Moor" # sn1404_sn2515_sn3476
+		NAME "Moor" #sn1404_sn2515_sn3476
 		STYLE
 			COLOR 242 235 232
 			OUTLINECOLOR 153 153 153
@@ -1014,6 +1187,7 @@ LAYER
 	NAME "ax_sumpf"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
+	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_sumpf) as foo using unique ogc_fid using SRID=25832"
@@ -1026,8 +1200,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Sumpf"
 		STYLE
@@ -1057,8 +1231,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Unland, vegetationslose Flaeche"
 		STYLE
@@ -1086,10 +1260,10 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
-		NAME "Vegetationsmerkmal" # sn1560
+		NAME "Vegetationsmerkmal" #sn1560
 		STYLE
 			OUTLINECOLOR 0 255 0
 		END
@@ -1117,8 +1291,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "Fliessgewaesser" #sn2515
 		STYLE
@@ -1146,8 +1320,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Hafenbecken" # sn1410_sn2518 sn3490 als Symbol fehlt
 		STYLE
@@ -1175,8 +1349,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
 		NAME "stehendes Gewaesser" #sn2515
 		STYLE
@@ -1187,8 +1361,9 @@ LAYER
 END
 
 ##  AX_Meer
-# ++ fehlt ++
+# fehlt
 
+### Der Rest gehoert wahrscheinlich nicht zu "Nutzung" sondern zu "Bauwerke & Co." ?
 
 # Besondere Angaben zum Gewässer
 LAYER
@@ -1196,7 +1371,8 @@ LAYER
 	#GROUP "ax_untergeordnetesgewaesser"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
+	# REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
@@ -1207,14 +1383,14 @@ LAYER
 		wms_title "Untergeordnetes Gewässer (Flächen)"
 		#WMS_GROUP_TITLE "Untergeordnetes Gewässer"
 		wms_abstract "UntergeordnetesGewaesser' ist ein stehendes oder fließendes Gewässer mit untergeordneter Bedeutung."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Untergeordnetes Gewässer" # sn1523
 		EXPRESSION ([funktion] = 1010)
@@ -1227,10 +1403,9 @@ END
 
 LAYER
 	NAME "ax_untergeordnetesgewaesser_line"
-	#GROUP "ax_untergeordnetesgewaesser"
 	GROUP "ax_nutzungen"
 	TYPE LINE
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
@@ -1239,14 +1414,14 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Untergeordnetes Gewässer (Line)"
 		wms_abstract "UntergeordnetesGewaesser' ist ein stehendes oder fließendes Gewässer mit untergeordneter Bedeutung."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	# Feld funktion, Werte 1010, 1030, 1040
 	CLASS
 		NAME "Untergeordnetes Gewässer" # sn1523
@@ -1257,6 +1432,7 @@ LAYER
 	END
 END
 
+
 # ALKIS Recht (Klassifizierungen, ges. Festlegungen)
 # alle Layer von GROUP "recht"
 
@@ -1264,7 +1440,7 @@ LAYER
 	NAME "ax_klassifizierungnachstrassenrecht"
 	GROUP "recht"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_klassifizierungnachstrassenrecht) as foo using unique ogc_fid using SRID=25832"
@@ -1274,14 +1450,14 @@ LAYER
 		wms_abstract "Klassifizierung nach Straßenrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, straßenrechtlichen Vorschriften."
 		wms_group_title "Recht"
 		wms_group_abstract "'Recht' gruppiert die Ebenen zur Klassifizierung und der auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'artderfestlegung'
 	CLASS
 		NAME "Bundesautobahn, Bundesstrasse" # sn1701
@@ -1309,7 +1485,7 @@ LAYER
 	NAME "ax_naturumweltoderbodenschutzrecht"
 	GROUP "recht"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_naturumweltoderbodenschutzrecht) as foo using unique ogc_fid using SRID=25832"
@@ -1317,20 +1493,23 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Natur, Umwelt oder Bodenschutzrecht"
 		wms_abstract "'Natur-, Umwelt- oder Bodenschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche oder eines Gegenstandes nach öffentlichen, natur-, umwelt- oder bodenschutzrechtlichen Vorschriften."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
-		NAME "Natur, Umwelt oder Bodenschutzrecht" # sn1703
+		NAME "Natur, Umwelt oder Bodenschutzrecht"
 		STYLE
+		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 128 255 128
-			WIDTH 12 # 3
-			PATTERN 45 11.4 END # 11.34 2.85
+		#	SYMBOL 0 #sn1703
+		#	SIZE 2.835
+			WIDTH 3 # MINWIDTH 3 MAXWIDTH 3
+			PATTERN 11.34 2.85 END
 		END
 	END
 END
@@ -1339,7 +1518,7 @@ LAYER
 	NAME "ax_anderefestlegungnachwasserrecht"
 	GROUP "recht"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_anderefestlegungnachwasserrecht) as foo using unique ogc_fid using SRID=25832"
@@ -1347,21 +1526,21 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Andere Festlegung nach Wasserrecht"
 		wms_abstract "Die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, wasserrechtlichen Vorschriften."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 12 # 50
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 #	CLASSITEM 'artderfestlegung'
 	CLASS #sn1705
-		NAME "Andere Festlegung nach Wasserrecht" 
-		STYLE
+		NAME "Andere Festlegung nach Wasserrecht"
+		STYLE 
 			OUTLINECOLOR 178 255 255
-			WIDTH 12 #3
-			PATTERN 45 11.4 END # 11.34 2.85
+			WIDTH 3
+			PATTERN 11.34 2.85 END
 		END
 	END
 #	CLASS
@@ -1375,100 +1554,233 @@ LAYER
 	NAME "ax_bauraumoderbodenordnungsrecht_umrandung"
 	GROUP "recht"
 	TYPE POLYGON
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
+
+	# Tabelle (Standard-Template)
+	#DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
+
+	# Tabelle (Template mit Inlay, gkz als Parameter fuer DB-Zugriff uebergeben)
+	#DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, wkb_geometry, *gkz* as gkz FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
+
+	# Tabelle (Template mit Inlay, gkz im Namen des Templat)
 	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
+
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bau-, Raum- oder Bodenordnungsrecht"
 		wms_abstract "'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften."
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 12 #50
-	MAXSCALEDENOM 2500 #10000
-	SYMBOLSCALEDENOM 250 # 1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
+	SYMBOLSCALEDENOM 1000
+	TOLERANCEUNITS pixels
+	TOLERANCE 1
+	HEADER   "/data/umn/templates/alkisrechtbauh.html"
+	#TEMPLATE "/data/umn/templates/alkisrechtbau.html" # konventionell
+	TEMPLATE "/data/umn/templates/alkisrechtbau_inl*gkz*.html" # mit Inlay, gkz-spezifisch
+	FOOTER   "/data/umn/templates/footer.html"
 
-	CLASSITEM "artderfestlegung"
+	CLASSITEM "artderfestlegung" # integer
 
+	# Inhalte "Art der Festlegung"
+
+	#1700 - Festlegung nach Baugesetzbuch - Allgemeines Städtebaurecht
+	#1710   Bebauungsplan
+	#1720   Veränderungssperre nach Baugesetzbuch
+	#1730   Vorkaufrechtssatzung
+	#1740   Enteignungsverfahren
+	#1750 * Umlegung nach dem BauGB
+	#1760 * Bauland
+	#1770 * Vereinfachte Umlegung
+	#1780   Vorhaben- und Erschließungsplan
+	#1790   Flächennutzungsplan
+	
+	#1800 - Festlegung nach Baugesetzbuch - Besonderes Städtebaurecht
+	#1810   Städtebauliche Entwicklungsmaßnahme
+	#1811   Städtebauliche Entwicklungsmaßnahme (Beschluss zu vorbereitenden Untersuchungen gefasst)
+	#1820   Erhaltungssatzung
+	#1821   Städtebauliches Erhaltungsgebiet
+	#1822   Soziales Erhaltungsgebiet
+	#1823   Erhaltungsgebiet zur städtebaulichen Umstrukturierung
+	#1824   Soziales Erhaltungsgebiet (Aufstellungsbeschluss gefasst)
+	#1830   Städtebauliche Gebote
+	#1840   Sanierung
+	#1841   Sanierung (Beschluss zu vorbereitenden Untersuchungen gefasst)
+
+	#1900 - Wohnungsbauerleichterungsgesetz
+
+	#2100 - Flurbereinigungsgesetz
+	#2110 * Flurbereinigung (Par. 1, 37 FlurbG)
+	#2120   Vereinfachtes Flurbereinigungsverfahren (Par. 86 FlurbG)
+	#2130 * Unternehmensflurbereinigung (nach Par. 87 oder 90 FlurbG)
+	#2140 * Beschleunigtes Zusammenlegungsverfahren (Par. 91 FlurbG)
+	#2150   Freiwilliger Landtausch (Par. 103a FlurbG)
+	#2160   Verfahren nach dem Gemeinheitsteilungsgesetz
+	#2170   Verfahren nach dem Gemeinschaftswaldgesetz
+	#2180   Freiwilliger Nutzungstausch
+
+	#2200 - Verfahren nach dem Landwirtschaftsanpassungsgesetz
+	#2210   Flurneuordnung
+	#2220   Freiwilliger Landtausch (Par. 54 LwAnpG)
+	#2230   Bodenordnungsverfahren (Par. 56 LwAnpG)
+	#2240   Zusammenführung von Boden- und Gebäudeeigentum (Par. 64 LwAnpG)
+
+	#2300 - Bodensonderungsgesetz
+	#2310   Unvermessenes Eigentum
+	#2320   Unvermessenes Nutzungsrecht
+	#2330   Ergänzende Bodenneuordnung
+	#2340   Komplexe Bodenneuordnung
+
+	#2400 - Vermögenszuordnungsgesetz
+	#2410   Vermögenszuordnung nach Plan
+	#2411   Vermögenszuordnung nach dem Aufteilungsplan
+	#2412   Vermögenszuordnung nach dem Zuordnungsplan
+
+	#2500 - Landesraumordnungsgesetz
+	#2510   Wasservorranggebiete
+
+	#2600 - Bauordnung
+	#2610 * Baulast
+	#2611   Begünstigende Baulast
+	#2612   Belastende Baulast
+
+	#2700 - Grenzfeststellungsverfahren nach Hamb. Wassergesetz
+
+	#2800 - Verkehrsflächenbereinigung
+	
+	# Auswertung: Vorkommen in der Praxis
+
+	#	SELECT artderfestlegung, count(gml_id) as anzahl
+	#	FROM ax_bauraumoderbodenordnungsrecht
+	#	GROUP BY artderfestlegung
+	#	ORDER BY count(gml_id) desc;
+	
+	# key	HBM		LEO 	LAGE	RLP
+	# ----  ----	----	----	____
+	# 1750	0		0		0		1
+	# 1760	0		0		0		29
+	# 1770	0		0		0		1
+	# 2610	888		1327	203		7
+	# 2100	0		0		0		2
+	# 2110	4		8		2		0
+	# 2130	0		0		0		1
+	# 2140	0		0		10		0
+
+	# Gruppe 26**
 	CLASS
-		EXPRESSION "2610"
+		EXPRESSION "2610" # häufig vorkommender Einzelwert
 		NAME "Baulast"
 		TEXT "Baulast"
 		STYLE #sn1704
 			OUTLINECOLOR 255 128 128
-			WIDTH 12 MINWIDTH 8 MAXWIDTH 20 # 3 2 5
-			PATTERN 44 12 END # 11 3
+			WIDTH 3 MINWIDTH 2 MAXWIDTH 5
+			PATTERN 11 3 END
 		END
-		LABEL # in die Flaeche
+		LABEL #sn7865
 			TYPE TRUETYPE
 			COLOR 255 128 128
 			OUTLINECOLOR 255 255 255
 			FONT "arial"
-			SIZE 56 # 14
-			MINSIZE 32 # 8
-			MAXSIZE 64 # 16
+			SIZE 14
+			MINSIZE 8
+			MAXSIZE 16
 			POSITION cc
 			PARTIALS FALSE
 			FORCE FALSE
 		END
 	END
+#	CLASS
+#		EXPRESSION ([artderfestlegung] ge 2600 and [artderfestlegung] le 2699) # Rest der Gruppe
+#		NAME "Bauordnung"
+#		STYLE
+#			OUTLINECOLOR 255 128 128
+#			SYMBOL "sn1704"
+#			SIZE 2.835
+#		END
+#	END
 
 	CLASS
 		EXPRESSION ([artderfestlegung] ge 2100 and [artderfestlegung] le 2199) # Rest der Gruppe
 		NAME "Flurbereinigung"
-		STYLE
+		STYLE # Flächenfüllung mit Punkt-Raster
 			COLOR 100 100 100 # grau 40%
 			SYMBOL "sn3631"
-			SIZE 60 #15
-			MINSIZE 40 #10
-			MAXSIZE 100 #25
+			SIZE 15 MINSIZE 10 MAXSIZE 25
 		END
-		STYLE # "sn1704"
+		STYLE #sn1704
 			OUTLINECOLOR 255 128 128
-			WIDTH 12 MINWIDTH 8 MAXWIDTH 20 # 3 2 5
-			PATTERN 48 12 END # 12 3
+		#	SYMBOL 0
+		#	SIZE 3 MINSIZE 2 MAXSIZE 5
+			WIDTH 3 MINWIDTH 2 MAXWIDTH 5
+			PATTERN 12 3 END
 		END
+
+		#TEXT "Flurbereinigung"
+		#LABEL # mit TEXT
+		#	TYPE TRUETYPE
+		#	COLOR 255 128 128
+		#	FONT "arial"
+		#	SIZE 10 MINSIZE 8 MAXSIZE 14
+		#	POSITION cc
+		#	PARTIALS FALSE
+		#	FORCE FALSE
+		#END
 	END
 
 	CLASS
 		EXPRESSION ([artderfestlegung] = 1750 OR [artderfestlegung] = 1770)
 		NAME "Umlegung"
-		TEXT "Umlegung" # nur Test
-		STYLE # "sn1704"
+		TEXT "Umlegung"
+		STYLE
 			OUTLINECOLOR 255 128 128
-			WIDTH 12 MINWIDTH 8 MAXWIDTH 20 # 3 2 5
-			PATTERN 44 12 END # 11 3
+		#	SYMBOL 0 #"sn1704"
+		#	SIZE 2.835 MINSIZE 2 MAXSIZE 5
+			WIDTH 3 MINWIDTH 2 MAXWIDTH 5
+			PATTERN 11 3 END
 		END
 		STYLE
 			COLOR 100 100 100 # grau 40%
 			SYMBOL "sn3631"
-			SIZE 60 #15
-			MINSIZE 40 #10
-			MAXSIZE 80 #20
+			SIZE 15 MINSIZE 10 MAXSIZE 20
 		END
-		LABEL # nur Test
+		LABEL
 			TYPE TRUETYPE
 			COLOR 255 0 255
 			FONT "arial"
-			SIZE 10 # 14
-			MINSIZE 32 #8
-			MAXSIZE 56 #14
+			SIZE 10 MINSIZE 8 MAXSIZE 14
 			POSITION cc
 			PARTIALS FALSE
 			FORCE FALSE
 		END
 	END
 
+#	CLASS
+#		EXPRESSION "1760"
+#		NAME "Bauland"
+#		STYLE
+#		#	COLOR -1 -1 -1 #?
+#			OUTLINECOLOR 255 128 128
+#			SYMBOL "sn1704"
+#			SIZE 2.835
+#		END
+#	END
+
 	CLASS
 		EXPRESSION /./
-		NAME "Bau-, Raum oder Bodenordnungsrecht"
-		STYLE # sn1704
+		NAME "Bau-, Raum- oder Bodenordnungsrecht"
+		STYLE
 			OUTLINECOLOR 255 128 128
-			WIDTH 12 MINWIDTH 8 MAXWIDTH 15 # 3 2 5
-			PATTERN 44 12 END # 11 3
+		#	SYMBOL 0 #"sn1704"
+		#	SIZE 2.835 MINSIZE 2 MAXSIZE 5
+			WIDTH 3 MINWIDTH 2 MAXWIDTH 5
+			PATTERN 11 3 END
 		END
 	END
 END
@@ -1477,7 +1789,7 @@ LAYER
 	NAME "ax_denkmalschutzrecht"
 	GROUP "recht"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_denkmalschutzrecht) as foo using unique ogc_fid using SRID=25832"
@@ -1485,16 +1797,16 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Denkmalschutzrecht"
 		wms_abstract "'Denkmalschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche oder Gegenstand nach öffentlichen, denkmalschutzrechtlichen Vorschriften."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
-		NAME "Denkmalschutzrecht" # sn1330_sn3532 Symbol fehlt
+		NAME "Denkmalschutzrecht" #sn1330_sn3532
 		STYLE
 		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 153 153 153
@@ -1506,7 +1818,7 @@ LAYER
 	NAME "ax_sonstigesrecht"
 	GROUP "recht"
 	TYPE LINE
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_sonstigesrecht) as foo using unique ogc_fid using SRID=25832"
@@ -1514,20 +1826,20 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Sonstiges Recht"
 		wms_abstract "'Sonstiges Recht' sind die auf den Grund und Boden bezogenen Beschränkungen, Belastungen oder anderen Eigenschaften einer Fläche nach weiteren, nicht unter die Objektarten 71001 bis 71010 zu subsumierenden öffentlich - rechtlichen Vorschriften."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'artderfestlegung'
 	CLASS
 		NAME "Freileitung" # sn1704_sn7881 Schriftzusatz fehlt
 		EXPRESSION ([artderfestlegung] = 4720)
 		STYLE #sn1704
-			PATTERN 45.3 11.4 END # 11.34 2.85
+			PATTERN 11.34 2.85 END
 			OUTLINECOLOR 255 128 128
 		END
 	END
@@ -1535,29 +1847,46 @@ END
 
 # ALKIS Gebäude
 # alle Layer von GROUP "gebaeude"
-# 2011-10-19: Teilen der Gebäude in Gebäude-Flächen und Gebäude-Umring. Die Flächen sind im GIS störend, also unerwünscht
+
+# 2011-10-19: Teilen der Gebäude in Gebäude-Flächen und Gebäude-Umring.
+#             Die Flächenfuellung ist im GIS stoerend, also unerwuenscht.
+
+# OBK:	include "include/layer/obk_gebaeude.incl"
+# OBK:	include "include/layer/obk_bauteil.incl" #ok
+# OBK:	include "include/layer/obk_besonderegebaeudelinie.incl" #ok
+# OBK:	include "include/layer/obk_hausnummer.incl"
+# OBK:	include "include/layer/obk_gebaeude_ppo.incl"
+# OBK:	include "include/layer/obk_gebaeude_pto.incl"
+
 LAYER
-	NAME "ax_gebaeude_fl"
+	NAME "ax_gebaeude_fl" # Gebäude - Flächen
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
+	# Feld "ax_datenerhebung" fehlt im krz-Schema - was ist das?
+	# SQL:  ALTER TABLE ax_gebaeude ADD COLUMN ax_datenerhebung integer;
+
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Gebäude (Fläche)"
 		wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient."
-		wms_group_title "Gebäude" #beim 1.Layer d.Grp
+		wms_group_title "Gebäude" # beim 1.Layer d.Grp
 		wms_group_abstract "ALKIS Gebäude (Fläche)"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 200 #50
-	MAXSCALEDENOM 1250 #5000
-	SYMBOLSCALEDENOM 250 #1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
+	SYMBOLSCALEDENOM 1000
 	CLASSITEM 'gebaeudefunktion'
+
+	# Lage zur Erdoberfläche: 1200=Unter der Erdoberfläche, 1400=Aufgeständert
+	# Zustand: 1000=In behelfsmäßigem Zustand, 2000=In ungenutztem Zustand, 2100=Außer Betrieb, stillgelegt, verlassen
+	# 2200=Verfallen, zerstört, 2300=Teilweise zerstört, 3000=Geplant und beantragt, 4000=Im Bau
 
 	# Classes ohne Flächenfüllung
 	CLASS
@@ -1566,12 +1895,12 @@ LAYER
 		STYLE # Dummy-Füllung. Legende zeigt Fläche, Fläche bleibt transparent
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
-		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 #1 1 3
+		STYLE #sn2032
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 4 8 END # 1 2
+			PATTERN 1 2 END
 		END
 	END
 	CLASS
@@ -1580,12 +1909,12 @@ LAYER
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
-		STYLE
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 12 # 2 2 3
+		STYLE #sn2030_2031
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1594,12 +1923,12 @@ LAYER
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
-		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 8 # 1 1 2
+		STYLE #sn2030_2031
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 2
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 
@@ -1613,14 +1942,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50
-			SIZE 20 # 5
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+		#	SYMBOL 0 #sn8205
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1631,9 +1961,9 @@ LAYER
 		END
 		STYLE
 		#	SYMBOL 0 #sn2030_2031
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1644,7 +1974,7 @@ LAYER
 		END
 		STYLE
 			SYMBOL 'quadrate'
-			SIZE 8 MINSIZE 8 MAXSIZE 16 # 2 2 4
+			SIZE 2 MINSIZE 2 MAXSIZE 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
@@ -1657,14 +1987,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50 #[schrawink]
-			SIZE 20 # 5
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 #1 1 3
+		#	SYMBOL 0 #sn8205
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1674,9 +2005,10 @@ LAYER
 			COLOR 153 153 153
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+		#	SYMBOL 'point' #sn2030_2031
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1685,7 +2017,7 @@ LAYER
 		STYLE
 			COLOR 153 153 153
 			OUTLINECOLOR 0 0 0
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 #1 1 3
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 		END
 	END
 	CLASS
@@ -1697,14 +2029,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50 #[schrawink]
-			SIZE 20 # 5 
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5 
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+		#	SYMBOL 'point' #sn8205
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1714,9 +2047,10 @@ LAYER
 			COLOR 204 204 204
 		END
 		STYLE
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+		#	SYMBOL 'point' #sn2030_2031
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1727,7 +2061,7 @@ LAYER
 		END
 		STYLE
 			SYMBOL 'quadrate'
-			SIZE 8 MINSIZE 8 MAXSIZE 16 # 2 2 4
+			SIZE 2 MINSIZE 2 MAXSIZE 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
@@ -1740,14 +2074,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50 #[schrawink]
-			SIZE 20 # 5
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 #1 1 3
+		#	SYMBOL 'point' #sn8205
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1757,9 +2092,10 @@ LAYER
 			COLOR 204 204 204
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 #1 1 3
+		#	SYMBOL 'point' #sn2030_2031
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1768,7 +2104,7 @@ LAYER
 		STYLE
 			COLOR 204 204 204
 			OUTLINECOLOR 0 0 0
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 		END
 	END
 	CLASS
@@ -1780,14 +2116,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50 #[schrawink]
-			SIZE 20 # 5
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+		#	SYMBOL 'point' #'sn8205'
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1797,9 +2134,10 @@ LAYER
 			COLOR 255 128 128
 		END
 		STYLE
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+		#	SYMBOL 'point' #sn2030_2031
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1810,7 +2148,7 @@ LAYER
 		END
 		STYLE
 			SYMBOL 'quadrate'
-			SIZE 8 MINSIZE 8 MAXSIZE 16 # 2 2 4
+			SIZE 2 MINSIZE 2 MAXSIZE 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
@@ -1823,14 +2161,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50 #[schrawink]
-			SIZE 20 # 5
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5 
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+		#	SYMBOL 'point' #'sn8205'
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1840,9 +2179,10 @@ LAYER
 			COLOR 255 128 128
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+		#	SYMBOL 'point' #'sn2030_2031'
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1851,7 +2191,7 @@ LAYER
 		STYLE
 			COLOR 255 128 128
 			OUTLINECOLOR 0 0 0
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 		END
 	END
 	CLASS
@@ -1860,7 +2200,7 @@ LAYER
 		STYLE
 			COLOR 204 204 204
 			OUTLINECOLOR 0 0 0
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 		END
 	END
 #	CLASS
@@ -1869,30 +2209,34 @@ LAYER
 #		STYLE
 #			#COLOR 255 128 128
 #			OUTLINECOLOR 255 0 0
-#			WIDTH 8 MINWIDTH 8 MAXWIDTH 12 #2 2 3
+#			WIDTH 2 MINWIDTH 2 MAXWIDTH 3
 #		END
 #	END
 END
 
-LAYER
-	NAME "ax_gebaeude_umr"
+LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfernt die sich nur nach Flächenfarbe unterscheiden.
+	NAME "ax_gebaeude_umr" # Gebäude - nur Umring als Alternative zu den Flächen
 	GROUP "gebaeude"
 	REQUIRES "![ax_gebaeude_fl]" # ent oder weder
 	TYPE POLYGON
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Gebäude (Umring)"
-		wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient."
+		wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient.
+		Alternativer Layer ohne Flächenfüllung. Hiermit ist allerdings keine Unterscheidung nach der Gebäudefunktion möglich."
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1500
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 7500 # Flaechen nur bis 5000
+	SYMBOLSCALEDENOM 1000
 	CLASSITEM 'gebaeudefunktion' #'zustand'
 	CLASS
 		NAME "Gebäude,unterirdisch" # z.B. Tiefgarage
@@ -1900,42 +2244,76 @@ LAYER
 		STYLE # Dummy-Füllung. Legende zeigt Fläche, Fläche bleibt transparent
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
-		STYLE #sn2032 verschwindet >1:300
+		STYLE #sn2032
 			OUTLINECOLOR 0 0 0
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
-			PATTERN 4 8 END # 1 2 
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
+			PATTERN 1 2 END
 		END
 	END
+	#CLASS
+	#	NAME "Hochhaus,verfallen" # Theorie! kommt hier nicht vor
+	#	EXPRESSION ([hochhaus]="true" AND [zustand] > 2199)
+	#	STYLE # Dummy-Füllung
+	#		COLOR 255 255 255
+	#		SYMBOL 'filler'
+	#		SIZE 15
+	#	END
+	#	STYLE
+	#	#	SYMBOL 'point' #sn2030_2031
+	#		WIDTH 2 MINWIDTH 2 MAXWIDTH 4
+	#		OUTLINECOLOR 0 0 0
+	#		PATTERN 8 4 END
+	#	END
+	#END
 	CLASS
 		NAME "Gebäude,verfallen"
 		EXPRESSION ([zustand] > 2199)
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
 		STYLE
 		#	SYMBOL 'point' #sn2030_2031
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
+
+	#CLASS
+	#	NAME "Hochhaus graphisch" # Theorie! kommt hier nicht vor
+	#	EXPRESSION ([hochhaus]="true" AND [ax_datenerhebung] = 4300)
+	#	STYLE
+	#		SYMBOL 'hatch'
+	#		ANGLE 50
+	#		SIZE 5
+	#		WIDTH 2 MINWIDTH 2 MAXWIDTH 2
+	#		COLOR 128 64 0
+	#	END
+	#	STYLE
+	#	#	SYMBOL 'point' #'sn8205'
+	#		WIDTH 2 MINWIDTH 2 MAXWIDTH 4
+	#		OUTLINECOLOR 0 0 0
+	#		PATTERN 6 4 2 4 END
+	#	END
+	#END
+
 	CLASS
 		NAME "Hochhaus aufgeständert"
 		EXPRESSION ([hochhaus]="true" AND [lagezurerdoberflaeche] = 1400)
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
 		STYLE
 		#	SYMBOL 'point' #'sn2030_2031'
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 16 # 2 2 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1944,11 +2322,11 @@ LAYER
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
 		STYLE
 			SYMBOL 'quadrate'
-			SIZE 8 MINSIZE 8 MAXSIZE 16 # 2 2 4
+			SIZE 2 MINSIZE 2 MAXSIZE 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
@@ -1958,14 +2336,15 @@ LAYER
 		STYLE
 			SYMBOL 'hatch'
 			ANGLE 50
-			SIZE 20 # 5
-			WIDTH 8 MINWIDTH 8 MAXWIDTH 8 # 2 2 2
+			SIZE 5
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 2
 			COLOR 128 64 0
 		END
 		STYLE
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+		#	SYMBOL 'point' #'sn8205'
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 24 16 8 16 END # 6 4 2 4 
+			PATTERN 6 4 2 4 END
 		END
 	END
 	CLASS
@@ -1974,13 +2353,13 @@ LAYER
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
 		STYLE
 		#	SYMBOL 'point' #'sn2030_2031'
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
-			PATTERN 32 16 END # 8 4
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -1988,21 +2367,20 @@ LAYER
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
 			SYMBOL 'filler'
-			SIZE 60 # 15
+			SIZE 15
 		END
 		STYLE
 			OUTLINECOLOR 0 0 0
-			WIDTH 4 MINWIDTH 4 MAXWIDTH 12 # 1 1 3
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 		END
 	END
 END
-
 
 LAYER
 	NAME "ax_bauteil"
 	GROUP "gebaeude"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauart, lagezurerdoberflaeche, wkb_geometry FROM ax_bauteil) as foo using unique ogc_fid using SRID=25832"
@@ -2010,14 +2388,14 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bauteil"
 		wms_abstract "'Bauteil' ist ein charakteristisches Merkmal eines Gebäudes mit gegenüber dem jeweiligen Objekt 'Gebäude' abweichenden bzw. besonderen Eigenschaften."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1000 #4000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 4000
 	CLASSITEM 'bauart'
 	# ToDo: "lagezurerdoberflaeche" auswerten, Werte: null, 1200.
 	CLASS
@@ -2032,32 +2410,36 @@ LAYER
 		NAME "Bauteil-Schornstein"
 		EXPRESSION ([bauart] = 2710)
 		STYLE
+		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 0 0 0
-			WIDTH 8 #2
+			WIDTH 2
 		END
 	END
 	CLASS
 		NAME "Bauteil-Turm"
 		EXPRESSION ([bauart] = 2720)
 		STYLE
+		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 0 0 0
-			WIDTH 12 #3
+			WIDTH 3
 		END
 	END
 	CLASS
 		NAME "Bauteil-Hochhausgebäudeteil"
 		EXPRESSION ([bauart] = 1300)
 		STYLE
+		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 0 0 0
-			WIDTH 16 #4
+			WIDTH 4
 		END
 	END
 	CLASS # ex Layer ag_f_gebauede
 		NAME "Beschaffenheit"
 		EXPRESSION /./ # Rest
 		STYLE
+		#	COLOR -1 -1 -1 #?
 			OUTLINECOLOR 200 0 0 # rot
-			WIDTH 4 #1
+			WIDTH 1
 		END
 	END
 END
@@ -2066,7 +2448,7 @@ LAYER
 	NAME "ax_besonderegebaeudelinie"
 	GROUP "gebaeude"
 	TYPE LINE
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, beschaffenheit, wkb_geometry FROM ax_besonderegebaeudelinie) as foo using unique ogc_fid using SRID=25832"
@@ -2074,15 +2456,14 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Besondere Gebaeudelinie"
 		wms_abstract "'Besondere Gebäudelinie' ist der Teil der Geometrie des Objekts 'Gebäude' oder des Objekts 'Bauteil', der besondere Eigenschaften besitzt."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 12 #50
-	MAXSCALEDENOM 1000 #4000
-
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 4000
 	CLASS
 		NAME "Besondere Gebaeudelinie"
 		STYLE
@@ -2092,7 +2473,7 @@ LAYER
 		STYLE
 			SYMBOL 'point' #'sn2305'
 			COLOR 254 254 254
-			PATTERN 12 24 END # 3 6 
+			PATTERN 3 6 END
 		END
 	END
 END
@@ -2101,60 +2482,59 @@ LAYER # Hausnummer
 	NAME "ag_t_gebaeude"
 	GROUP "gebaeude"
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel,hausnummer FROM s_hausnummer_gebaeude) as foo using unique ogc_fid using SRID=25832"
+
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Hausnummer"
 		wms_abstract "ALKIS Gebäude Hausnummer"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	LABELITEM "hausnummer"
-	LABELMINSCALEDENOM 0
-	LABELMAXSCALEDENOM 500 #2000
-	SYMBOLSCALEDENOM 250 #1000
+	LABELMINSCALEDENOM 50
+	LABELMAXSCALEDENOM 2000
+	SYMBOLSCALEDENOM 1000
 	CLASS
 		NAME "Hausnummer"
 		STYLE
 			SYMBOL "point"
-			SIZE 4 #1
-			#OUTLINECOLOR 255 0 0
+			SIZE 1
 		END
 		LABEL
 			TYPE TRUETYPE
 			FONT 'arialnarrow'
-			SIZE 20.4 #5.1
+			SIZE 5.1
 			POSITION uc
 			OFFSET 0 -3
-			#MINDISTANCE 2
-			ANGLE [drehwinkel] 
+			ANGLE [drehwinkel]
 			COLOR 0 0 0
-			OUTLINECOLOR 255 255 255 #255 0 255
-			ANTIALIAS TRUE
+			OUTLINECOLOR 254 254 254
+			#ANTIALIAS TRUE
 			PARTIALS FALSE
-			FORCE True
+			#FORCE True
 			BUFFER 1
-			#BACKGROUNDCOLOR 254 254 254
 		END
 	END
 END
 
-LAYER # Pseudonummer
+LAYER # Pseudonummer = Ausgestaltung Text Nebengebäude
 	NAME "ag_t_nebengeb"
 	GROUP "gebaeude"
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
-	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel,laufendenummer FROM s_nummer_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
+	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel, laufendenummer FROM s_nummer_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
+	# "s_nummer_nebengebaeude" = View
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "lfd. Nr Nebengebäude"
@@ -2166,32 +2546,31 @@ LAYER # Pseudonummer
 	END
 	EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 50
-	MAXSCALEDENOM 3000
-	SYMBOLSCALEDENOM 250 #1000
+	MAXSCALEDENOM 1500
+	SYMBOLSCALEDENOM 1000
 	LABELITEM "laufendenummer"
-#	LABELMINSCALEDENOM 12 #50
-#	LABELMAXSCALEDENOM 500 #2000
+#	LABELMINSCALEDENOM 50
+#	LABELMAXSCALEDENOM 2000
 	CLASS
 		NAME "Hausnummer"
-	#	TEXT (([laufendenummer])) # Klammern drum!
 		TEXT '([laufendenummer])' # ms6 Klammern darstellen
 		STYLE
-			SYMBOL "point"
-			SIZE 4 # 1
+			SYMBOL 'point'
+			SIZE 1
 		END
 		LABEL
 			TYPE TRUETYPE
 			FONT 'arialnarrow'
-			SIZE 16 # 4
+			SIZE 4 #MINSIZE 3 MAXSIZE 7
 			POSITION uc
-			OFFSET 0 -12 #  0 -3
-			ANGLE [drehwinkel] 
+			OFFSET 0 -3
+			ANGLE [drehwinkel]
 			COLOR 50 50 50
-			OUTLINECOLOR 255 255 255
+			OUTLINECOLOR 254 254 254
 			ANTIALIAS TRUE
 			PARTIALS FALSE
 			FORCE True
-			BUFFER 4 # 1
+			BUFFER 1
 		END
 	END
 END
@@ -2227,15 +2606,15 @@ LAYER
 	END
 END
 
+
 # ALKIS Bauwerke, Anlagen und Einrichtungen für den Verkehr / ..in Siedlungsflächen
 # alle Layer von GROUP "bauwerk"
 
 LAYER
 	NAME "ax_bauwerkimverkehrsbereich_fuellung"
 	GROUP "bauwerk"
-	#GROUP "ax_bauwerkimverkehrsbereich"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
@@ -2243,20 +2622,20 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bauwerk im Verkehrsbereich (Füllung)"
 		wms_abstract "'Bauwerk im Verkehrsbereich' ist ein Bauwerk, das dem Verkehr dient."
-		wms_group_title "Bauwerke" # "Bauwerk im Verkehrsbereich"
+		wms_group_title "Bauwerke"
 		wms_group_abstract "Bauwerke gruppiert alle Ebene zu den Themen 'Bauwerke und Einrichtungen in Siedlungsflächen' und 'Bauwerke, Anlagen und Einrichtungen für den Verkehr'" 
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'bauwerksfunktion'
 
 	CLASS
-		NAME "Brücke" # sn1530
+		NAME "Brücke"
 		STYLE
 			COLOR 255 255 255
 		END
@@ -2265,9 +2644,9 @@ END
 
 LAYER
 	NAME "ax_bauwerkimverkehrsbereich_umrandung"
-	GROUP "bauwerk" # "ax_bauwerkimverkehrsbereich"
+	GROUP "bauwerk"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
@@ -2275,20 +2654,22 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bauwerk im Verkehrsbereich (Umrandung)"
 		wms_abstract "'Bauwerk im Verkehrsbereich' ist ein Bauwerk, das dem Verkehr dient."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'bauwerksfunktion'
 	CLASS
-		NAME "Brücke" # sn1530
-		STYLE # sn1530
+		NAME "Brücke"
+		STYLE
 			OUTLINECOLOR 128 128 128
-			SIZE 5.67 #1.417
+		#	SYMBOL 'point' # sn1530
+			PATTERN 5.67 2.85 END 
+			WIDTH 2 # 1.417
 		END
 	END
 END
@@ -2297,7 +2678,7 @@ LAYER
 	NAME "ax_bauwerkimgewaesserbereich"
 	GROUP "bauwerk"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimgewaesserbereich) as foo using unique ogc_fid using SRID=25832"
@@ -2305,17 +2686,17 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bauwerk im Gewässerbereich"
 		wms_abstract "Bauwerk im Gewässerbereich"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	#CLASSITEM 'bauwerksfunktion'
 	CLASS
-		NAME "Bauwerk im Gewässerbereich" # sn1551
+		NAME "Bauwerk im Gewässerbereich" #sn1551
 		STYLE
 			OUTLINECOLOR 82 0 0
 		#	COLOR -1 -1 -1 #?
@@ -2327,7 +2708,7 @@ LAYER
 	NAME "ax_bauwerkoderanlagefuerindustrieundgewerbe"
 	GROUP "bauwerk"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuerindustrieundgewerbe) as foo using unique ogc_fid using SRID=25832"
@@ -2336,17 +2717,17 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bauwerk oder Anlage für Industrie und Gewerbe"
 		wms_abstract "'Bauwerk oder Anlage für Industrie und Gewerbe' ist ein Bauwerk oder eine Anlage, die überwiegend industriellen und gewerblichen Zwecken dient oder Einrichtung an Ver- und Entsorgungsleitungen ist."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'bauwerksfunktion'
 	CLASS
-		NAME "Klärbecken" # sn1510
+		NAME "Klärbecken" #sn1510
 		EXPRESSION ([bauwerksfunktion] = 1210)
 		STYLE
 			COLOR 242 235 232
@@ -2354,7 +2735,7 @@ LAYER
 		END
 	END
 	CLASS
-		NAME "Bauwerk oder Anlage für Industrie und Gewerbe" #sn1305_sn1306 Symbole sn3501_sn3506_3504 fehlen
+		NAME "Bauwerk oder Anlage für Industrie und Gewerbe" #sn1305_sn1306  sn3501_sn3506_3504
 		EXPRESSION ([bauwerksfunktion] = 1215 OR [bauwerksfunktion] = 1220 OR [bauwerksfunktion] = 1250 OR [bauwerksfunktion] = 1260)
 		STYLE
 			COLOR 204 204 204
@@ -2368,7 +2749,7 @@ LAYER
 	NAME "ax_bauwerkoderanlagefuersportfreizeitunderholung"
 	GROUP "bauwerk"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuersportfreizeitunderholung) as foo using unique ogc_fid using SRID=25832"
@@ -2376,14 +2757,14 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bauwerk oder Anlage für Sport, Freizeit und Erholung"
 		wms_abstract "'Bauwerk oder Anlage für Sport, Freizeit und Erholung' ist ein Bauwerk oder eine Anlage in Sport-, Freizeit- und Erholungsanlagen."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END	
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	#CLASSITEM 'bauwerksfunktion'
 	CLASS
 		NAME "Bauwerk oder Anlage für Sport, Freizeit und Erholung" # sn1520
@@ -2398,7 +2779,7 @@ LAYER
 	NAME "ax_vorratsbehaelterspeicherbauwerk"
 	GROUP "bauwerk"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_vorratsbehaelterspeicherbauwerk) as foo using unique ogc_fid using SRID=25832"
@@ -2406,17 +2787,17 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Vorratsbehälter, Speicherbauwerk"
 		wms_abstract "'Vorratsbehälter, Speicherbauwerk' ist ein geschlossenes Bauwerk zum Aufbewahren von festen, flüssigen oder gasförmigen Stoffen."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	#CLASSITEM 'bauwerksfunktion'
 	CLASS
-		NAME "Vorratsbehälter, Speicherbauwerk" # sn1305_sn3522 Symbol fehlt
+		NAME "Vorratsbehälter, Speicherbauwerk" #sn1305_sn3522
 		STYLE
 			COLOR 204 204 204
 			OUTLINECOLOR 0 0 0
@@ -2428,28 +2809,33 @@ LAYER
 	NAME "ax_sonstigesbauwerkodersonstigeeinrichtung"
 	GROUP "bauwerk"
 	TYPE POLYGON
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_sonstigesbauwerkodersonstigeeinrichtung) as foo using unique ogc_fid using SRID=25832"
 	FILTER "bauwerksfunktion in (1610,1781) AND st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
+	# "name" ist ab und zu gefüllt
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Sonstiges Bauwerk oder sonstige Einrichtung"
 		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'bauwerksfunktion'
+	# Name als Label rendern?
 	CLASS
 		NAME "Überdachung" #sn1304
 	#	EXPRESSION ([bauwerksfunktion] = 1610)
 		EXPRESSION "1610"
 		STYLE
 			COLOR 204 204 204
+			#OUTLINECOLOR 0 0 0
 		END
 	END
 	CLASS
@@ -2461,13 +2847,41 @@ LAYER
 			OUTLINECOLOR 0 204 204
 		END
 	END
+	# else
 END
+
+# SELECT DISTINCT bauwerksfunktion, st_geometrytype(wkb_geometry) AS geotype
+# FROM ax_sonstigesbauwerkodersonstigeeinrichtung
+# ORDER BY bauwerksfunktion
+
+# *gkz 140:
+# 1610;"ST_Polygon"
+# 1611;"ST_Polygon"
+# 1620;"ST_Polygon"
+# 1630;"ST_LineString"
+# 1640;"ST_Point"
+# 1650;"ST_Polygon"
+# 1670;"ST_Polygon"
+# 1700;"ST_LineString";"ST_Polygon"
+# 1701;"ST_LineString"
+# 1702;"ST_LineString"
+# 1703;"ST_LineString"
+# 1721;"ST_LineString"
+# 1722;"ST_LineString"
+# 1723;"ST_LineString"
+# 1740;"ST_LineString"
+# 1750;"ST_Point","ST_Polygon"
+# 1770;"ST_Point"
+# 1780;"ST_Point","ST_Polygon"
+# 1782;"ST_Polygon"
+# 1783;"ST_Point"
+# 9999;"ST_Polygon"
 
 LAYER
 	NAME "ax_leitung"
 	GROUP "bauwerk"
 	TYPE LINE
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, spannungsebene, wkb_geometry FROM ax_leitung) as foo using unique ogc_fid using SRID=25832"
@@ -2475,30 +2889,30 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Leitung"
 		wms_abstract "'Leitung' ist eine aus Drähten oder Fasern hergestellte Leitung zum Transport von elektrischer Energie und zur Übertragung von elektrischen Signalen."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'bauwerksfunktion'
 	CLASS
-		NAME "Freileitung" # sn2524
+		NAME "Freileitung" #sn2524
 		EXPRESSION ([bauwerksfunktion] = 1110)
 		STYLE
 			COLOR 0 0 0
-			SIZE 2.04 #0.51
+			SIZE 0.51
 		END
 	END
 	CLASS
-		NAME "Erdkabel" # sn2523
+		NAME "Erdkabel"
 		EXPRESSION ([bauwerksfunktion] = 1111)
 		STYLE
 			SYMBOL 'point' #sn2523
 			COLOR 0 0 0
-			PATTERN 4 4 END # 1 1
+			PATTERN 1 1 END
 		END
 	END
 END
@@ -2507,7 +2921,7 @@ LAYER
 	NAME "ax_transportanlage"
 	GROUP "bauwerk"
 	TYPE LINE
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, lagezurerdoberflaeche, wkb_geometry  FROM ax_transportanlage) as foo using unique ogc_fid using SRID=25832"
@@ -2515,34 +2929,36 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Transportanlage"
 		wms_abstract "'Transportanlage' ist eine Anlage zur Förderung oder zum Transport von Flüssigkeiten, Gasen und Gütern."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASSITEM 'lagezurerdoberflaeche'
 #	CLASS
-#		NAME "Transportanlage" # sn3579 Symbol fehlt
+#		NAME "Transportanlage" #sn3579
 #		STYLE
 #			SYMBOL 'point'
 #			COLOR 0 0 0
 #		END
 #	END
 	CLASS
-		NAME "Pipeline unter der Erdoberfläche oder Wasseroberfläche" # sn2523
+		NAME "Pipeline unter der Erdoberfläche oder Wasseroberfläche"
 		EXPRESSION ([lagezurerdoberflaeche] = 1200 OR [lagezurerdoberflaeche] = 1700)
-		SYMBOL 'sn2523'
 		STYLE
+			SYMBOL 0 #'point' #sn2523
 			COLOR 0 0 0
+			PATTERN 1 1 END
 		END
 	END
 	CLASS
-		NAME "Pipeline" # sn2523
+		NAME "Pipeline"
 		EXPRESSION ([lagezurerdoberflaeche] = 1400)
 		STYLE
+			SYMBOL 0 #'point'
 			COLOR 0 0 0
 		END
 	END
@@ -2552,7 +2968,7 @@ LAYER
 	NAME "ax_turm"
 	GROUP "bauwerk"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_turm) as foo using unique ogc_fid using SRID=25832"
@@ -2560,16 +2976,16 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Turm"
 		wms_abstract "'Turm' ist ein hoch aufragendes, auf einer verhältnismäßig kleinen Fläche freistehendes Bauwerk."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
 	CLASS
-		NAME "Turm" # sn1501
+		NAME "Turm" #sn1501
 		STYLE
 			COLOR 204 204 204
 			OUTLINECOLOR 0 0 0
@@ -2587,8 +3003,12 @@ LAYER
 	NAME "ax_flurstueck"
 	GROUP "flurstueck"
 	TYPE POLYGON
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
+	# mit Feldern fuer klassisches Template:
+	#  DATA "wkb_geometry from (SELECT ogc_fid, gml_id, flurstueckskennzeichen, amtlicheflaeche, wkb_geometry FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
+	# reduzierte Felder: nur 'gml_id' fuer Inlay, und geometry fuer Karte
 	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, wkb_geometry FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2596,29 +3016,39 @@ LAYER
 		wms_abstract "'Flurstück' ist ein Teil der Erdoberfläche, der von einer im Liegenschaftskataster festgelegten Grenzlinie umschlossen und mit einer Nummer bezeichnet ist. Es ist die Buchungseinheit des Liegenschaftskatasters."
 		wms_group_title "Flurstück"
 		wms_group_abstract "ALKIS Flurstück"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
-	SYMBOLSCALEDENOM 250 #1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 10000
+	SYMBOLSCALEDENOM 1000
+	#feature Info - bei ALK an Flurstückskennzeichen (Text), hier an Fläche
+	TOLERANCEUNITS pixels
+	TOLERANCE 1
+	# klassische Variante mit Schaltflaeche fuer Weiterleitung zur Auskunft
+#	HEADER   "/data/umn/templates/alkis*gkz*fsh.html" # gkz = mandant
+#	TEMPLATE "/data/umn/templates/alkis_fs.html"
+	# Variante mit Inlay (ein iframe enthaelt einen php-Aufruf) 
+	HEADER   "/data/umn/templates/alkisausk_inlh.html" 
+	TEMPLATE "/data/umn/templates/alkisausk_inl*gkz*.html" # gkz = mandant
+	FOOTER   "/data/umn/templates/footer.html"
 	CLASS
 		NAME "Flurstück"
 		STYLE
 			OUTLINECOLOR 0 0 0
-			WIDTH 8 MINWIDTH 4 MAXWIDTH 12 # 2 1 3
+			WIDTH 2 MINWIDTH 1 MAXWIDTH 3
 		END
 	END
 END
 
 LAYER
-	NAME "ax_besondereflurstuecksgrenze"
+	NAME "ax_besondereflurstuecksgrenze" # Kennung: 11002
 	GROUP "flurstueck"
 	TYPE LINE
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderflurstuecksgrenze, wkb_geometry FROM ax_besondereflurstuecksgrenze) as foo using unique ogc_fid using SRID=25832"
@@ -2626,30 +3056,30 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Besondere Flurstücksgrenze"
 		wms_abstract "'Besondere Flurstücksgrenze' ist ein Teil der Grenzlinie eines Flurstücks, der von genau zwei benachbarten Grenzpunkten begrenzt wird und für den besondere Informationen vorliegen."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 2500 #10000
-	SYMBOLSCALEDENOM 250 #1000
-	CLASSITEM "artderflurstuecksgrenze"
-
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 7000
+	SYMBOLSCALE 1000
+	CLASSITEM "artderflurstuecksgrenze" # ist ein ARRAY !
+	# ToDo: FILTER oder VIEW - Werte für den Layer "Grenzen" hier ausschließen
 	CLASS
 		EXPRESSION /1000/ # reg. Expression, weil Teil eines ARRAY
 		NAME "Strittige Grenze"
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # heller Hintergrund, weiss, nicht transparent, bedeckt die Flurstücksgrenze
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0 #sn2006
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
-			PATTERN 80 40 END # 20 10
+			SIZE 1 MINSIZE 1 MAXSIZE 2
+			PATTERN 20 10 END
 		END
 	END
 	CLASS
@@ -2658,13 +3088,13 @@ LAYER
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0 #SN2008
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
-			PATTERN 68 11.4 END ##  17 2.85
+			SIZE 1 MINSIZE 1 MAXSIZE 2
+			PATTERN 17 2.85 END ##  ???
 		END
 	END
 	CLASS
@@ -2673,13 +3103,13 @@ LAYER
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
-			PATTERN 68 11.4 END ##  17 2.85
+			SIZE 1 MINSIZE 1 MAXSIZE 2
+			PATTERN 17 2.85 END ##  ???
 		END
 	END
 	CLASS
@@ -2688,13 +3118,13 @@ LAYER
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0 #SN2008
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
-			PATTERN 32 16 END # 8 4
+			SIZE 1 MINSIZE 1 MAXSIZE 2
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -2703,13 +3133,13 @@ LAYER
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0 #SN2008
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
-			PATTERN 32 16 END # 8 4 
+			SIZE 1 MINSIZE 1 MAXSIZE 2
+			PATTERN 8 4 END
 		END
 	END
 	CLASS
@@ -2718,12 +3148,12 @@ LAYER
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
+			SIZE 1 MINSIZE 1 MAXSIZE 2
 			PATTERN 17 2.85 END ##  ???
 		END
 	END
@@ -2733,55 +3163,67 @@ LAYER
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
-			SIZE 9.6 MINSIZE 6 MAXSIZE 14 # 2.4 / 1.5 / 3.5
+			SIZE 2.4 MINSIZE 1.5 MAXSIZE 3.5
 		END
 		STYLE
 			SYMBOL 0
 			COLOR 0 0 0
-			SIZE 4 MINSIZE 4 MAXSIZE 8 # 1 1 2
-			PATTERN 68 11.4 END ##  17 2.85
+			SIZE 1 MINSIZE 1 MAXSIZE 2
+			PATTERN 17 2.85 END
 		END
 	END
+	#CLASS
+	#	EXPRESSION /./ # Else - NEIN z.B. politische Gernzen solange nicht gefiltert
+	#	NAME "Besondere Flurstücksgrenze"
+	# Weitere Bedeutungen siehe Layer "grenzen"
 END
 
+# Ausgestaltung FS (DATA: Views in DB anlegen fuer Beziehungen)
+
 # Flurstuecknummer
+
+# Musterdaten RLP: zaehler-nenner steht auch in Feld "ap_pto.schriftinhalt"
+# Lippe NRW: Feld "ap_pto.schriftinhalt" ist leer. Label aus Tabelle "ax_flurstueck" entnehmen
 LAYER
 	NAME "ag_t_flurstueck"
 	GROUP "flurstueck"
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT * FROM s_flurstueck_nr) as foo using unique ogc_fid using SRID=25832"
+	# View: ap_pto >dientZurDarstellungVon> ax_flurstueck
+	# Felder: ogc_fid, wkb_geometry, gemarkungsnummer, flurnummer, zaehler, nenner, fsnum
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
-		wms_title "Flurstuecknummer"
+		wms_title "Flurstücknummer"
 		wms_abstract "ALKIS Flurstück Flurstücknummer"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1000 #4000
-	LABELITEM "fsnum"
-	#LABELMINSCALEDENOM 0
-	#LABELMAXSCALEDENOM 500 #2000
-	SYMBOLSCALEDENOM 250 #1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 4000
+
+	LABELITEM "fsnum" # geaendert 24.09.2010
+
+	#LABELMINSCALEDENOM 50
+	#LABELMAXSCALEDENOM 2000
+	SYMBOLSCALEDENOM 1000
 	CLASS
-		NAME "Flurstuecknummer"
+		NAME "Flurstücknummer"
 		STYLE
 			SYMBOL "point"
-			SIZE 4 #1
+			SIZE 1
 		END
 		LABEL
 			TYPE TRUETYPE
 			FONT 'arialnarrowkursiv'
-			SIZE 28.4 #7.1
-			#MINSIZE 20 #5
-			#MAXSIZE 40 #10
-			#ANGLE AUTO
+			SIZE 7.1
+			#MINSIZE 5
+			#MAXSIZE 10
 			POSITION cc
 			OFFSET 0 -3.5433
 			MINDISTANCE -1
@@ -2793,44 +3235,179 @@ LAYER
 	END
 END
 
+### OBK START
 
-# Ausgestaltung FS (DATA: Views in DB anlegen fuer Beziehungen)
+#LAYER
+#	NAME "sk4111_Bruchstrich_Z"
+#	GROUP "ALKIS" 
+#	TYPE ANNOTATION
+#	DUMP TRUE
+#	
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=localhost dbname=obk user=alkis"
+#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
+#	
+#	METADATA
+#		"WMS_SRS" "epsg:25832"
+#		"WMS_TITLE" "Flurstücksnummer Bruchstrichzähler "
+#	END
+#	MINSCALEDENOM 0
+#	MAXSCALEDENOM 2600
+#	LABELITEM "bruchstrich_z"  
+#	SYMBOLSCALEDENOM 1000
+#	CLASSITEM "bruchstrich_n"
+#	CLASS
+#		#NAME "Bruchstrich_Z"
+#		EXPRESSION /^F/
+#		LABEL
+#			SIZE 9
+#			MINSIZE 6
+#			MAXSIZE 12
+#			TYPE TRUETYPE
+#			FONT "alkis_textsymbols"
+#			POSITION cc
+#			FORCE True
+#			COLOR 0 0 0
+#			BACKGROUNDCOLOR 255 255 255
+#		END
+#	END
+#END
+
+#LAYER
+#	NAME "sk4111_Bruchstrich_N"
+#	GROUP "ALKIS" 
+#	TYPE ANNOTATION
+#	DUMP TRUE
+#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		"WMS_SRS" "epsg:25832"
+#		"WMS_TITLE" "Flurstücksnummer Bruchstrichnenner"
+#	END
+#	MINSCALEDENOM 0
+#	MAXSCALEDENOM 2600
+#	LABELITEM "bruchstrich_n"
+#	SYMBOLSCALEDENOM 1000
+#	CLASSITEM "bruchstrich_n"
+#	CLASS
+#		EXPRESSION /^F/
+#		LABEL
+#			SIZE 9
+#			MINSIZE 6
+#			MAXSIZE 12
+#			TYPE TRUETYPE
+#			FONT "alkis_textsymbols"
+#			POSITION cc
+#			FORCE True
+#			COLOR 0 0 0
+#			BACKGROUNDCOLOR 255 255 255
+#		END
+#	END
+#END
+
+#LAYER
+#	NAME "sk4111_flurstuecksnummer_z"
+#	GROUP "ALKIS" 
+#	TYPE ANNOTATION
+#	DUMP TRUE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=localhost dbname=obk user=alkis"
+#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		"WMS_SRS" "epsg:25832"
+#		"WMS_TITLE" "Flurstücksnummer Zähler"
+#	END
+#	MINSCALEDENOM 0
+#	MAXSCALEDENOM 2600
+#	LABELITEM "zaehler" 
+#	SYMBOLSCALEDENOM 1000
+#
+#	CLASS
+#	#NAME "Flurstueckszaehler"
+#	LABEL
+#		FONT "arialkursiv"
+#		TYPE TRUETYPE
+#		SIZE 9
+#		MINSIZE 6
+#		MAXSIZE 12
+#		ANGLE auto 
+#		POSITION uc
+#		#OFFSET 0 0
+#		FORCE True
+#		COLOR 0 0 0
+#		BACKGROUNDCOLOR 254 254 254 #255 255 255
+#	END
+#END
+
+#LAYER
+#	NAME "sk4111_flurstuecksnummer_n"
+#	GROUP "ALKIS" 
+#	TYPE ANNOTATION
+#	DUMP TRUE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=localhost dbname=obk user=alkis"
+#	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		"WMS_SRS" "epsg:25832"
+#		"WMS_TITLE" "Flurstücksnummer Nenner"
+#	END
+#	MINSCALEDENOM 0
+#	MAXSCALEDENOM 2600
+#	LABELITEM "nenner"
+#	SYMBOLSCALEDENOM 1000
+#	CLASSITEM "bruchstrich_n"
+#	CLASS
+#	#NAME "Flurstuecksnenner"
+#	EXPRESSION /^F/
+#	LABEL
+#		FONT "arialkursiv"
+#		TYPE TRUETYPE
+#		SIZE 9
+#		MINSIZE 6
+#		MAXSIZE 12
+#		ANGLE auto 
+#		POSITION lc
+#		#OFFSET 0 2
+#		FORCE True
+#		COLOR 0 0 0
+#		BACKGROUNDCOLOR 254 254 254 #255 255 255
+#	END
+#END
+
+### OBK ENDE
+
 
 # Zuordnungspfeile Flurstück
+# siehe auch Layer "ap_lpo"
 LAYER
-	NAME "ag_l_flurstueck"
+	NAME "ag_l_flurstueck" # Ausgestaltung Linie zum Flurstück
 	GROUP "flurstueck"
 	REQUIRES "[ag_t_flurstueck]" # zur Nummer
 	TYPE LINE
-	#DUMP TRUE # _4
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
-		wms_title "Zuordnungspfeile Flurstück"
-		wms_abstract "ALKIS Flurstück Zuordnungspfeile (nur Linie, Pfeilspitze fehlt noch)"
-		#gml_include_items "all"
+		wms_title "Zuordnungspfeile Linie"
+		wms_abstract "Zuordnungspfeil Flurstücksnummer Linie"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1000 #4000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 3500
+	SYMBOLSCALEDENOM 1000
 	CLASS
-		NAME "Zuordnungspfeile"
+		#NAME "Zuordnungspfeil"
 		STYLE
-			#SYMBOL 'line'
-			#SIZE 4 #1
 			COLOR 0 0 0
-			#MINSIZE 4 #1
-			#MAXSIZE 4 #1
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 2
 		END
 	END
 END
 
-LAYER # neu 2012-02-03
+LAYER
 	NAME "sk2004_zuordnungspfeil_spitze"
 	GROUP "flurstueck"
 	REQUIRES "[ag_l_flurstueck]" # nur beides
@@ -2848,16 +3425,16 @@ LAYER # neu 2012-02-03
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 10 #50
-	MAXSCALEDENOM 875 #3500
-	SYMBOLSCALEDENOM 250 #1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 3500
+	SYMBOLSCALEDENOM 1000
 	CLASS
 		#NAME "Zuordnungspfeilspitze"
 		TEXT 'E'
 		LABEL
 			TYPE TRUETYPE
 			FONT "alkis_textsymbols"
-			SIZE 12 MINSIZE 8 MAXSIZE 24 # 3 2 6
+			SIZE 3 MINSIZE 2 MAXSIZE 6
 			POSITION cc
 			ANGLE [winkel]
 			COLOR 0 0 0
@@ -2872,37 +3449,41 @@ END
 LAYER
 	NAME "ag_p_flurstueck"
 	GROUP "flurstueck"
-	TYPE ANNOTATION
-	#DUMP TRUE # _4
+	REQUIRES "[ax_flurstueck]" # an Grenze
+	TYPE POINT
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
-	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
+	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Zugehörigkeitshaken Flurstueck"
 		wms_abstract "ALKIS Flurstück Zugehörigkeitshaken"
-		#gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1000 #4000
-	SYMBOLSCALEDENOM 250 #1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 4000
+	SYMBOLSCALEDENOM 1000
 	CLASS
-		TEXT 'B'#'D'
+		TEXT 'B'
+		STYLE
+			SYMBOL 0
+			SIZE 1
+			COLOR 0 0 0
+		END
 		LABEL
 			TYPE TRUETYPE
-			FONT "alk_textsymbols"
-			SIZE 28.4 #7.1
+			FONT "alkis_textsymbols"
+			SIZE 14 MINSIZE 7 MAXSIZE 24
 			POSITION cc
-			OFFSET 0 0
+		#	OFFSET 0 0
 			COLOR 0 0 0
 			ANGLE [drehwinkel]
 			ANTIALIAS TRUE
 			PARTIALS FALSE
-			FORCE True
+			FORCE TRUE
 		END
 	END
 END
@@ -2914,7 +3495,7 @@ LAYER
 	NAME "ax_grablochderbodenschaetzung"
 	GROUP "bodenschaetzung"
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
@@ -2924,20 +3505,20 @@ LAYER
 		wms_abstract "Grabloch der Bodenschätzung"
 		wms_group_title "Bodenschätzung"
 		wms_group_abstract "Bodenschätzung" 
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
-		NAME "Grabloch der Bodenschätzung" # sn3703
+		NAME "Grabloch der Bodenschätzung"
 		STYLE
 			SYMBOL "sn3703"
 			COLOR 255 128 128
-			SIZE 1 #0.992
+			SIZE 1
 		END
 	END
 END
@@ -2946,7 +3527,7 @@ LAYER
 	NAME "ax_musterlandesmusterundvergleichsstueck"
 	GROUP "bodenschaetzung"
 	TYPE POLYGON
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
@@ -2954,14 +3535,14 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Muster Landesmuster und Vergleichsstück"
 		wms_abstract "Muster-, Landesmuster- und Vergleichsstück der Bodenschätzung"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASS
 		NAME "Muster Landesmuster und Vergleichsstück" # sn1740_sn3707 Symbol fehlt
 		STYLE
@@ -2979,7 +3560,7 @@ LAYER
 	NAME "ax_punktortta"
 	GROUP "punktort" # könnte auch zu Gruppe Flurstück
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortta) as foo using unique ogc_fid using SRID=25832"
@@ -2989,19 +3570,19 @@ LAYER
 		wms_abstract "'PunktortTA' ist ein Punktort, der in der Flurstücksgrenze liegt und einen Grenzpunkt verortet."
 		wms_group_title "Vermessungspunkte"
 		wms_group_abstract "ALKIS Punktorte"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 500 #2000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 2000
 	CLASS
 		NAME "Grenzpunkt"
 		STYLE
 			SYMBOL 'point' #"sn3020"
-			SIZE 28 #7
+			SIZE 7
 			COLOR 255 255 255
 			OUTLINECOLOR 0 0 0
 		END
@@ -3012,7 +3593,7 @@ LAYER
 	NAME "ax_punktortag"
 	GROUP "punktort" # könnte auch zu Gruppe Gebäude
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortag) as foo using unique ogc_fid using SRID=25832"
@@ -3020,19 +3601,19 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Bes. Gebäudepunkt"
 		wms_abstract "'Punktort AG' ist ein Punktort mit redundanzfreier Geometrie (Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt) innerhalb eines Geometriethemas."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 500 #2000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 2000
 	CLASS
 		NAME "Gebäudepunkt"
 		STYLE
 			SYMBOL "point"
-			SIZE 20 #5
+			SIZE 5
 			COLOR 0 0 0
 		END
 	END
@@ -3042,7 +3623,7 @@ LAYER
 	NAME "ax_punktortau"
 	GROUP "punktort"
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortau) as foo using unique ogc_fid using SRID=25832"
@@ -3052,23 +3633,24 @@ LAYER
 		wms_abstract "'Punktort AU' ist ein Punktort mit unabhängiger Geometrie ohne Zugehörigkeit zu einem Geometriethema. 
 Er kann zu ZUSOs der folgenden Objektarten gehören: Grenzpunkt, Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt, Aufnahmepunkt, Sicherungspunkt,
 Sonstiger Vermessungspunkt, Besonderer topographischer Punkt, Lagefestpunkt, Höhenfestpunkt, Schwerefestpunkt, Referenzstationspunkt."
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 500 #2000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 2000
 	CLASS
 		NAME "PunktortAU"
 		STYLE
 			SYMBOL "point"
-			SIZE 20 #5
+			SIZE 5
 			COLOR 0 0 0
 		END
 	END
 END
+
 
 # ALKIS  AAA-Präsentationsobjekte
 # alle Layer von GROUP "praesentation"
@@ -3081,12 +3663,18 @@ LAYER
 	NAME "ap_pto"
 	GROUP "praesentation"
 	TYPE POINT
-	#DUMP TRUE # _4
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
-	
+
 	#DATA "wkb_geometry from (SELECT ogc_fid, schriftinhalt, art, drehwinkel * 57.296 AS winkel, wkb_geometry FROM ap_pto WHERE not schriftinhalt is null) as foo using unique ogc_fid using SRID=25832"
-	#WHERE ...  AND art not in ('HNR', 'urn:adv:fachdatenv')
+	#WHERE ...  AND art not in ('HNR', 'ZAE_NEN')
+
+	# View gespeichert, darin Filter auf die bereits angezeigten arten (in anderen Layern)
+
+	# CREATE OR REPLACE VIEW s_beschriftung AS 
+	# SELECT ogc_fid, schriftinhalt, art, drehwinkel * 57.296 AS winkel, wkb_geometry 
+	#   FROM ap_pto WHERE not ap_pto.schriftinhalt IS NULL AND art NOT IN ('HNR', 'PNR');
 
 	DATA "wkb_geometry from (SELECT * FROM s_beschriftung) as foo using unique ogc_fid using SRID=25832"
 
@@ -3096,41 +3684,95 @@ LAYER
 		wms_abstract "ALKIS Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie PTO"
 		wms_group_title "Präsentation"
 		wms_group_abstract "Gruppierung der Ebenen mit ALKIS Präsentationsobjekten"
-		#gml_include_items "all"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	LABELITEM "schriftinhalt"
+
+#  SELECT DISTINCT art, horizontaleausrichtung, vertikaleausrichtung 
+#  FROM ap_pto WHERE not schriftinhalt is null ORDER BY art;
+
+
+#  SELECT art, horizontaleausrichtung, vertikaleausrichtung FROM ap_pto WHERE not schriftinhalt is null AND art IN ('ZAE_NEN');
+
+
+# 2012: PostNAS 0.6
+# ------------------
+#	"ART"					"linksbündig"	"Basis"
+#	"ATP"					"zentrisch"		"Basis"
+#	"BBD"					"linksbündig"	"Basis"
+#	"BBD"					"zentrisch"		"Basis"
+#	"BezKlassifizierungStrasse"	"linksbündig"	"Basis"
+#	"BezKlassifizierungStrasse"	"zentrisch"	"Basis"
+#	"BWF"					"zentrisch"		"Basis"
+#	"BWF_ZUS"				"zentrisch"		"Basis"
+#	"FKT"					"linksbündig"	"Basis"
+#	"FKT"					"zentrisch"		"Basis"
+#	"Fliessgewaesser"		"linksbündig"	"Basis"
+#	"Fliessgewaesser"		"zentrisch"		"Basis"
+#	"FreierText"			"linksbündig"	"Basis"
+#	"FreierText"			"zentrisch"		"Basis"
+#	"Friedhof"				"zentrisch"		"Basis"
+#	"Gewanne"				"zentrisch"		"Basis"
+#	"GFK"					"zentrisch"		"Basis"
+#	"HHO"					"zentrisch"		"Basis"
+#	"HNR"					"zentrisch"		"Basis" --> Hausnummer, group gebaeude
+#	"NAM"					"linksbündig"	"Basis"
+#	"NAM"					"zentrisch"		"Basis"
+#	"Platz"					"linksbündig"	"Basis"
+#	"Platz"					"zentrisch"		"Basis"
+#	"PNR"					"zentrisch"		"Basis" --> Pseudonummer, group gebaeude
+#	"StehendesGewaesser"	"zentrisch"		"Basis"
+#	"Strasse"				"linksbündig"	"Basis"
+#	"Strasse"				"zentrisch"		"Basis"
+#	"Vorratsbehaelter"		"zentrisch"		"Basis"
+#	"Weg"					"linksbündig"	"Basis"
+#	"Weg"					"zentrisch"		"Basis"
+#	"Weitere Höhe"			"zentrisch"		"Basis"
+#	"ZNM"					"linksbündig"	"Basis"
+#	"<NULL>"				"zentrisch"		"Basis"
+
 	#CLASSITEM "art"
 	CLASS
 		NAME "Beschriftung"
 		STYLE
 			SYMBOL "point"
-			SIZE 4 #1
+			SIZE 1
 		END
 		LABEL
-			SIZE 40 #10
-			MINSIZE 32 #8
-			MAXSIZE 64 #16
+			SIZE 10
+			MINSIZE 8
+			MAXSIZE 16
 			TYPE TRUETYPE
-			#ANGLE auto
 			ANGLE [winkel]
 			FONT "arial"
 			POSITION uc
+			#OFFSET 0 -4.96
+			#FORCE True
 			COLOR 0 0 0
+		#	BACKGROUNDCOLOR -1 -1 -1 # MS 6
 			WRAP "/n" # z.b. "Schwimm-/nbecken", Fehler: das "n" bleibt im Label!
+			MAXLENGTH 15
 		END
 	END
 END
 
 LAYER
+	# Dieser wms-Layer sollte ersetzt werden durch folienspezische Layer:
+	#  Flurstuecke / Zuordnungspfeile - ist bereits realisiert = redundant
+	#  Gebaeude    / Zuordnungspfeile Hausnummer         - anzeigen
+	#  Gebaeude    / Zuordnungspfeile Nebengebäudenummer - nur wenn auch lfd.Nr angezeigt wird
+	# Was gibt es noch?
+	#  Freie Präsentationsobjekte (dientZurDarstellungVon=NULL)
 	NAME "ap_lpo"
 	GROUP "praesentation"
 	TYPE LINE
+	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
@@ -3138,18 +3780,21 @@ LAYER
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
 		wms_title "Zuordnungspfeile"
 		wms_abstract "ALKIS Linienförmiges Präsentationsobjekt LPO"
+		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
 	CLASSITEM "art"
 	CLASS
 		NAME "Zuordnungspfeile"
 		EXPRESSION /Pfeil/
 		STYLE
+			#SYMBOL 'line'
+			#SIZE 1 #MINSIZE 1 MAXSIZE 1
 			COLOR 0 0 0
 		END
 	END
@@ -3157,6 +3802,7 @@ END
 
 # ap_ppo
 # fehlt noch
+
 
 #### Gruppe  G r e n z e n
 
@@ -3186,8 +3832,8 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 62 # 250
-	MAXSCALEDENOM 3000 #12000
+	MINSCALEDENOM 250
+	MAXSCALEDENOM 12000
 	#SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
@@ -3198,13 +3844,13 @@ LAYER
 		EXPRESSION /7102/ # reg. Expr.
 		STYLE
 			COLOR 255 255 255
-			WIDTH 28 MINWIDTH 28 MAXWIDTH 28 # 7 7 7
+			WIDTH 7 MINWIDTH 7 MAXWIDTH 7
 		END
 		STYLE #sn2018
 			SYMBOL 'point'
 			COLOR 242 128 255
-			SIZE 28 MINSIZE 28 MAXSIZE 28 # 7 7 7
-			PATTERN 10 60 20 60 108 48 108 60 END #5 15 5 15 27 12 27 15
+			SIZE 7 MINSIZE 7 MAXSIZE 7
+			PATTERN 5 15 5 15 27 12 27 15 END
 		END
 	END
 	CLASS
@@ -3217,8 +3863,8 @@ LAYER
 		STYLE #sn2020 Kreisgrenze
 			SYMBOL 'point' 
 			COLOR 242 128 255
-			SIZE 20 MINSIZE 20 MAXSIZE 20 # 5 5 5
-			PATTERN 16 60 16 60 100 40 100 52 END #4 15 4 15 25 10 25 13
+			SIZE 5 MINSIZE 5 MAXSIZE 5
+			PATTERN 4 15 4 15 25 10 25 13 END
 		END
 	END
 	CLASS
@@ -3226,13 +3872,13 @@ LAYER
 		EXPRESSION /7104/
 		STYLE
 			COLOR 255 255 255
-			WIDTH 20 MINWIDTH 20 MAXWIDTH 20 # 5 5 5
+			WIDTH 5 MINWIDTH 5 MAXWIDTH 5
 		END
 		STYLE
 			SYMBOL 'point' #sn2010 Kreisgrenze
 			COLOR 242 128 255 
-			SIZE 20 MINSIZE 20 MAXSIZE 20 # 5 5 5
-			PATTERN 93 50 20 60 20 50 END # 23.33 12.5 5 15 5 12.5
+			SIZE 5 MINSIZE 5 MAXSIZE 5
+			PATTERN 23.33 12.5 5 15 5 12.5 END
 		END
 	END
 	CLASS
@@ -3240,13 +3886,13 @@ LAYER
 		EXPRESSION /7106/
 		STYLE
 			COLOR 255 255 255
-			WIDTH 16 MINWIDTH 16 MAXWIDTH 16 #4 4 4
+			WIDTH 4 MINWIDTH 4 MAXWIDTH 4
 		END
 		STYLE
 			SYMBOL 'point' #sn2022 Gemeindegrenze
 			COLOR 242 128 255
-			SIZE 16 MINSIZE 16 MAXSIZE 16 # 4 4 4
-			PATTERN 67 33 13.3 33 END # 16.67 8.33 3.33 8.33
+			SIZE 4 MINSIZE 4 MAXSIZE 4
+			PATTERN 16.67 8.33 3.33 8.33 END
 		END
 	END
 END
@@ -3266,9 +3912,9 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 50 # 200
-	MAXSCALEDENOM 2500 # 10000
-	SYMBOLSCALEDENOM 250 # 1000
+	MINSCALEDENOM 200
+	MAXSCALEDENOM 10000
+	SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA 'wkb_geometry from (SELECT * FROM sk2014_gemarkungsgrenze) as foo using unique ogc_fid using SRID=25832'
@@ -3282,8 +3928,8 @@ LAYER
 		STYLE
 			SYMBOL 'point' #sn2014
 			COLOR 242 128 255
-			SIZE 16 MINSIZE 12 MAXSIZE 24 # 4 3 6
-			PATTERN 67 33 13.3 33 END # 16.67 8.33 3.33 8.33
+			SIZE 4 MINSIZE 3 MAXSIZE 6
+			PATTERN 16.67 8.33 3.33 10 3.33 8.33 END
 		END
 	END
 END
@@ -3302,9 +3948,9 @@ LAYER
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 12 # 50
-	MAXSCALEDENOM 1250 #5000
-	SYMBOLSCALEDENOM 250 #1000
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 5000
+	SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis06*gkz* user=ms5 port=5432"
 	DATA 'wkb_geometry from (SELECT * FROM sk2012_flurgrenze) as foo using unique ogc_fid using SRID=25832'
@@ -3313,13 +3959,13 @@ LAYER
 		STYLE
 			SYMBOL 'point'
 			COLOR 254 254 254 # heller Untergrund
-			SIZE 16 MINSIZE 12 MAXSIZE 20 # 4 3 5
+			SIZE 4 MINSIZE 3 MAXSIZE 5
 		END
 		STYLE #sn2012
 			SYMBOL 'point'
 			COLOR 242 128 255
-			SIZE 16 MINSIZE 12 MAXSIZE 20 # 4 3 5
-			PATTERN 67 33 13 40 13 40 13 33 END #16.67 8.33 3.33 10 3.33 10 3.33 8.33
+			SIZE 4 MINSIZE 3 MAXSIZE 5
+			PATTERN 16.67 8.33 3.33 10 3.33 10 3.33 8.33 END
 		END
 	END
 END
@@ -3337,12 +3983,13 @@ LAYER
 	END
 	FEATURE
 		POINTS 0 0 END
-		# hier die individuelle Vertragsnummer einsetzen
+		# hier die individuelle Vertragsnummer einsetzen!
+	#	TEXT 'Copyright Geobasisdaten Liegenschaftskataster Kreis Lippe, JJ-NZR-???'
 		TEXT 'Copyright Geobasisdaten Liegenschaftskataster Kreis __'
 	END
 	CLASS
 		LABEL
-			SIZE small # x4 ?
+			SIZE small
 			POSITION ul
 			COLOR 50 50 50
 			FORCE TRUE
