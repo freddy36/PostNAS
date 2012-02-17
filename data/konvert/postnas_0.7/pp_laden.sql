@@ -1,11 +1,12 @@
 
 -- ALKIS PostNAS 0.7
 
--- Post Processing Teil 2: Laden der Tabellen
+-- Post Processing (pp_) Teil 2: Laden der Tabellen
 
 -- Stand 
 
 --  2012-02-13 PostNAS 07, Umbenennung
+--  2012-02-17 Optimierung
 
 
 -- ============================
@@ -80,9 +81,13 @@ UPDATE pp_gemarkung a
    );
 
 
--- ===============================================================
--- Geometrien der Flurstücke zu größeren Einheiten zusammen fassen
--- ===============================================================
+-- ==============================================================================
+-- Geometrien der Flurstücke schrittweise zu groesseren Einheiten zusammen fassen
+-- ==============================================================================
+
+-- Dies macht nur Sinn, wenn der Inhalt der Datenbenk einen ganzen Katasterbezirk enthält.
+-- Wenn ein Gebiet durch geometrische Filter im NBA ausgegeben wurde, dann gibt es Randstreifen, 
+-- die zu Pseudo-Fluren zusammen gefasst werden. Fachlich falsch!
 
 INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
    SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
@@ -103,7 +108,7 @@ UPDATE pp_gemarkung a
      WHERE a.land=b.land AND a.gemarkung=b.gemarkung
    );
 
--- Fluren zählen
+-- Fluren zaehlen
 UPDATE pp_gemarkung a
   SET anz_flur = 
    ( SELECT count(flurnummer) AS anz_flur 
@@ -111,10 +116,8 @@ UPDATE pp_gemarkung a
      WHERE a.land=b.land AND a.gemarkung=b.gemarkung
    ); -- Gemarkungsnummer ist je BundesLand eindeutig
 
--- Geometrie vereinfachen
-UPDATE pp_gemarkung SET simple_geom = simplify(the_geom, 4.0);
-
-COMMENT ON COLUMN pp_gemarkung.simple_geom     IS 'Vereinfachte Geometrie mit 4 Meter-Genauigkeit. Für Anzeige von Übersichten in kleinen Maßstäben.';
+-- Geometrie vereinfachen (Wirkung siehe pp_gemarkung_analyse)
+UPDATE pp_gemarkung SET simple_geom = simplify(the_geom, 8.0);
 
 
 -- Gemarkungen zu Gemeinden zusammen fassen
@@ -136,12 +139,8 @@ UPDATE pp_gemeinde a
      WHERE a.land=b.land AND a.gemeinde=b.gemeinde
    );
 
--- Geometrie vereinfachen
-
-UPDATE pp_gemeinde SET simple_geom = simplify(the_geom, 10.0);
-
-COMMENT ON COLUMN pp_gemeinde.simple_geom     IS 'Vereinfachte Geometrie mit 10 Meter-Genauigkeit. Für Anzeige von Übersichten in kleinen Maßstäben.';
-
+-- Geometrie vereinfachen (Wirkung siehe pp_gemeinde_analyse)
+UPDATE pp_gemeinde SET simple_geom = simplify(the_geom, 20.0);
 
 
 -- =======================================================

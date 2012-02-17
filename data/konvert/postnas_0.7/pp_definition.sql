@@ -1,11 +1,12 @@
 
 -- ALKIS PostNAS 0.7
 
--- Post Processing Teil 1: Anlegen der Tabellen
+-- Post Processing (pp_) Teil 1: Anlegen der Tabellen und Views
 
 -- Stand 
 
 --  2012-02-13 PostNAS 07, Umbenennung
+--  2012-02-17 Optimierung
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -41,32 +42,34 @@ SET client_encoding = 'UTF-8';
 -- ========================
 
   CREATE TABLE pp_gemeinde (
-    land 		integer,
+    gid			serial,
+    land		integer NOT NULL,
     regierungsbezirk	integer,
     kreis		integer,
-    gemeinde		integer,
+    gemeinde		integer NOT NULL,
     gemeindename	character varying(80),
-    gkz			character varying(03),	-- wird (noch) nicht benutzt
+ -- gkz			character varying(03),	-- wird (noch) nicht benutzt
     anz_gemarkg		integer,		-- Anzahl Gemarkungen
     CONSTRAINT pp_gemeinde_pk PRIMARY KEY (land, gemeinde)
   );
 
+-- ALTER TABLE pp_gemeinde ADD COLUMN gid serial;
+CREATE UNIQUE INDEX pp_gemeinde_gid_ix ON pp_gemeinde (gid);
 
--- Gesamtfläche
+-- Gesamtflaeche
 SELECT AddGeometryColumn('pp_gemeinde','the_geom','25832','MULTIPOLYGON',2);
-
--- Index
 CREATE INDEX pp_gemeinde_gidx ON pp_gemeinde USING gist(the_geom);
 
--- vereinfachte Gesamtfläche
+-- vereinfachte Gesamtflaeche
 SELECT AddGeometryColumn('pp_gemeinde','simple_geom','25832','MULTIPOLYGON',2);
-
 CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 
 
 COMMENT ON TABLE  pp_gemeinde                IS 'Post-Processing: Gemeinde';
 COMMENT ON COLUMN pp_gemeinde.gemeinde       IS 'Gemeindenummer';
 COMMENT ON COLUMN pp_gemeinde.gkz            IS 'Gemeindekennziffer für Mandant';
+COMMENT ON COLUMN pp_gemeinde.the_geom       IS 'präzise Geometrie aus Summe aller Gemarkungen';
+COMMENT ON COLUMN pp_gemeinde.simple_geom    IS 'vereinfachte Geometrie für die Suche und die Anzeige von Übersichten in kleinen Maßstäben.';
 
 
 -- Tabelle fuer Gemarkungen
@@ -79,58 +82,62 @@ COMMENT ON COLUMN pp_gemeinde.gkz            IS 'Gemeindekennziffer für Mandant
 -- Da nicht ständig mit 'SELECT DISTINCT' sämtliche Flurstücke durchsucht werden können, 
 -- muss diese Information als (redundante) Tabelle nach dem Laden zwischengespeichert werden. 
 
---CREATE TABLE gemeinde_gemarkung (  -- PostNAS 0.6
-  CREATE TABLE pp_gemarkung (        -- PostNAS 0.7
-    land 		integer,
+--CREATE TABLE gemeinde_gemarkung (		-- alt: PostNAS 0.6
+  CREATE TABLE pp_gemarkung (			-- PostNAS 0.7
+    gid			serial,
+    land		integer NOT NULL,
     regierungsbezirk	integer,
     kreis		integer,
-    gemeinde		integer,	-- fast ein Foreign-Key Constraint
+    gemeinde		integer NOT NULL,	-- fast ein Foreign-Key Constraint
     gemarkung		integer NOT NULL,
     gemarkungsname	character varying(80),
-    anz_flur		integer,	-- Anzahl Fluren
+    anz_flur		integer,		-- Anzahl Fluren
     CONSTRAINT pp_gemarkung_pk PRIMARY KEY (land, gemarkung)
   );
 
+-- ALTER TABLE pp_gemarkung ADD COLUMN gid serial;
+CREATE UNIQUE INDEX pp_gemarkung_gid_ix ON pp_gemarkung (gid);
 
 -- Gesamtfläche
 SELECT AddGeometryColumn('pp_gemarkung','the_geom','25832','MULTIPOLYGON',2);
-
--- Index
 CREATE INDEX pp_gemarkung_gidx ON pp_gemarkung USING gist(the_geom);
-
 
 -- vereinfachte Gesamtfläche
 SELECT AddGeometryColumn('pp_gemarkung','simple_geom','25832','MULTIPOLYGON',2);
-
 CREATE INDEX pp_gemarkung_sgidx ON pp_gemarkung USING gist(simple_geom);
 
 
-COMMENT ON TABLE  pp_gemarkung                IS 'Post-Processing: Gemarkung. u.a. liegt in welcher Gemeinde';
-COMMENT ON COLUMN pp_gemarkung.gemeinde       IS 'Gemeindenummer';
-COMMENT ON COLUMN pp_gemarkung.gemarkung      IS 'Gemarkungsnummer';
+COMMENT ON TABLE  pp_gemarkung               IS 'Post-Processing: Gemarkung. u.a. liegt in welcher Gemeinde';
+COMMENT ON COLUMN pp_gemarkung.gemeinde      IS 'Gemeindenummer';
+COMMENT ON COLUMN pp_gemarkung.gemarkung     IS 'Gemarkungsnummer';
+COMMENT ON COLUMN pp_gemarkung.the_geom      IS 'präzise Geometrie aus Summe aller Fluren';
+COMMENT ON COLUMN pp_gemarkung.simple_geom   IS 'vereinfachte Geometrie für die Suche und die Anzeige von Übersichten in kleinen Maßstäben.';
 
 
 -- Tabelle fuer Fluren
 -- ===================
 
   CREATE TABLE pp_flur (
-    land 		integer,
+    gid			serial,
+    land		integer NOT NULL,
     regierungsbezirk	integer,
     kreis		integer,
     gemarkung		integer NOT NULL,
     flurnummer		integer NOT NULL,
-    anz_fs		integer,	-- Anzahl Flurstücke
+    anz_fs		integer,		-- Anzahl Flurstücke
     CONSTRAINT pp_flur_pk PRIMARY KEY (land, gemarkung, flurnummer)
   );
 
+-- ALTER TABLE pp_flur ADD COLUMN gid serial;
+CREATE UNIQUE INDEX pp_flur_gid_ix ON pp_flur (gid);
+
 -- Gesamtfläche
 SELECT AddGeometryColumn('pp_flur','the_geom','25832','MULTIPOLYGON',2);
-
--- Index
 CREATE INDEX pp_flur_gidx ON pp_flur USING gist(the_geom);
 
 COMMENT ON TABLE  pp_flur                IS 'Post-Processing: Flur';
 COMMENT ON COLUMN pp_flur.gemarkung      IS 'Gemarkungsnummer';
+COMMENT ON COLUMN pp_flur.the_geom       IS 'Geometrie aus Summe aller Flurstücke';
 
 
 -- =======================================================
@@ -149,11 +156,11 @@ COMMENT ON COLUMN pp_flur.gemarkung      IS 'Gemarkungsnummer';
 --DROP TABLE gemeinde_person;
 
   CREATE TABLE gemeinde_person (
-    land 			integer,
+    land 		integer,
     regierungsbezirk	integer,
-    kreis			integer,
+    kreis		integer,
     gemeinde		integer,
-    person		character varying(16), 
+    person		character varying(16),
     buchtyp		integer,
     CONSTRAINT gemeinde_person_pk PRIMARY KEY (gemeinde, person)
   );
@@ -285,6 +292,26 @@ AS
 ;
 
 COMMENT ON VIEW gemeinde_person_statistik IS 'Zählen der Personen je Gemeinde und Buchungstyp';
+
+
+-- Views zur Analyse der vereinfachten Geometrie
+-- Finden des richtigen Genauigkeits-Wertes für die Vereinfachung der Geometrie
+
+-- z.B. Gemeinden:  10 Meter
+--      Gemarkungen: 4 Meter
+
+CREATE VIEW pp_gemeinde_analyse AS
+  SELECT land, gemeinde, gemeindename,
+         st_npoints(the_geom)    AS umring_alle_punkte,
+         st_npoints(simple_geom) AS umring_einfache_punkte
+  FROM pp_gemeinde;
+
+
+CREATE VIEW pp_gemarkung_analyse AS
+  SELECT land, gemeinde, gemarkung, gemarkungsname,
+         st_npoints(the_geom)    AS umring_alle_punkte,
+         st_npoints(simple_geom) AS umring_einfache_punkte
+  FROM pp_gemarkung;
 
 
 -- ENDE --

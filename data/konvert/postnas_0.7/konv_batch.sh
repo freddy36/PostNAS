@@ -4,10 +4,24 @@
 ## NAS-Daten in einem Ordner konvertieren          -
 ## Batch-Teil, Aufruf mit geprueften Parametern    -
 ## -------------------------------------------------
+##
+## Ordner-Struktur:
+##   /mandant/
+##           /0001/*.xml.zip
+##           /0002/*.xml.zip
+##          usw.
+##           /temp/
+##   Auf der gleichen Ebene wie die Datenordner muss ein Ordner /temp/ existieren.
+##   Dort werden die NAS-Daten temporär ausgepackt.
+##   Relativ zum mitgegebenen Parameter ist das: '../temp/'
+##   Parallel laufende Konvertierungen zum gleichen Mandanten 
+##   würden hier durcheinander geraten. Vermeiden!
+##
 ## Stand: 
 ##   2012-02-10 Umbennung nach 0.7
+##   2012-02-17 Optimierung
 ##
-## Konverter:   /opt/gdal-1.9/bin/ = GDAL 1.9 / PostNAS 0.7
+## Konverter:   /opt/gdal-1.9.1/bin/ = GDAL 1.9-DEV / PostNAS 0.7
 ## Koordinaten: EPSG:25832  UTM, Zone 32
 ##              -a_srs EPSG:25832   - bleibt im UTM-System (korrigierte Werte)
 ##
@@ -49,7 +63,6 @@ errprot='/data/konvert/postnas_0.7/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
 con="-p 5432 -d ${DBNAME} "
-#
 echo "Datenbank-Name . . = ${DBNAME}"
 echo "Ordner NAS-Daten . = ${ORDNER}"
 echo "Verarbeitungs-Modus= ${verarb}"
@@ -75,7 +88,7 @@ for zipfile in *.zip ; do
     if [ $UPD == "e" ]
     then
       # E R S T L A D E N
-      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
          PG:"dbname=${DBNAME} host=localhost port=5432" \
          -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
       # Abbruch bei Fehler?
@@ -84,7 +97,7 @@ for zipfile in *.zip ; do
     else
       # A K T U A L I S I E R U N G
       echo "- 1. Nur delete-Layer auswerten" 
-      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
          PG:"dbname=${DBNAME} host=localhost port=5432" \
          -a_srs EPSG:25832  ${nasdatei}  delete  2>> $errprot
       nasresult=$?
@@ -95,7 +108,7 @@ for zipfile in *.zip ; do
       psql $con  < /data/konvert/postnas_0.7/delete.sql
       #
       echo "- 2. alle Layer auswerten"
-      /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
+      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
         PG:"dbname=${DBNAME} host=localhost port=5432" \
         -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
       nasresult=$?
