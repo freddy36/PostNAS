@@ -3,7 +3,7 @@
 --       A  L   K   I   S       
 -- *****************************
 --
--- Datenbankstruktur PostNAS 0.6  (GDAL aus aktuellem Trunc)
+-- Datenbankstruktur PostNAS 0.6  (GDAL 1.9)
 --
 -- Stand
 -- -----
@@ -72,6 +72,8 @@
 
 -- 2012-01-16 Spalte "ap_pto.art" wird doch gebraucht.
 
+-- 2012-02-28 nur Kommentar Versionsnummer
+
 
 --  TEST: gml_id von character(16)  auf  character varying(32) erweitert
 --        Bei Daten aus einer Fortführung (NBA-Aktualisierung) wird dort Datum/Zeit angehängt
@@ -83,9 +85,7 @@
 
 --  VERSIONS-NUMMER:
 
---  Dies Schema kann nicht mehr mit der installierbaren gdal-Version 1.8 verwendet werden.
---  Derzeit muss ogr2ogr (gdal) aus den Quellen compiliert werden, die o.g. Patch enthalten.
---  Weiterführung dieses Zweiges als PostNAS 0.6
+--  Dies Schema PostNAS 0.6 kann mit der gdal-Version 1.9 verwendet werden.
 
 
 -- Zur Datenstruktur siehe Dokument: 
