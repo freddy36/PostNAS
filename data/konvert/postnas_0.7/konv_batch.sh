@@ -20,6 +20,7 @@
 ## Stand: 
 ##   2012-02-10 Umbennung nach 0.7
 ##   2012-02-17 Optimierung
+##   2012-02-28 Neuer Parameter 4 um Post-Prozessing zu unterdrücken
 ##
 ## Konverter:   /opt/gdal-1.9.1/bin/ = GDAL 1.9-DEV / PostNAS 0.7
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -32,6 +33,7 @@ echo "**************************************************"
 ORDNER=$1
 DBNAME=$2
 UPD=$3
+PP=$4
 if [ $ORDNER == "" ]
 then
 	echo "Parameter 1 'Ordner' ist leer"
@@ -54,6 +56,18 @@ else
 	else
 		echo "Parameter 3 'Aktualisierung' ist weder e noch a"
 		exit 3
+	fi
+fi
+if [ $PP == "nopp" ]
+then
+	echo "KEIN Post-Processing nach dieser Konvertierung."
+else
+	if [ $PP == "pp" ]
+	then
+		echo "normales Post-Processing."
+	else
+		echo "FEHLER: Parameter 4 'Post-Proscessing' ist weder 'nopp' noch 'pp'"
+		exit 4
 	fi
 fi
 layer=""
@@ -125,11 +139,19 @@ rm ../temp/*.xml
 echo " "
 echo "** Ende Konvertierung Ordner ${ORDNER}"
 ##
-echo "** Optimierte Nutzungsarten neu Laden:"
-psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/nutzungsart_laden.sql
-##
-echo "** Post Processing neu Laden:"
-psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/pp_laden.sql
+if [ $PP == "nopp" ]
+then
+  echo "** KEIN Post-Processing - Dies Spaeter nachholen."
+  # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem großen Bestand laufen
+  # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
+else
+  echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
+  echo "** - Optimierte Nutzungsarten neu Laden:"
+  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/nutzungsart_laden.sql
+  ##
+  echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
+  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/pp_laden.sql
+fi
 #
 echo "Das Fehler-Protokoll wurde ausgegeben in die Datei '$errprot' "
 ##

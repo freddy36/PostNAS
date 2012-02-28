@@ -1,0 +1,35 @@
+
+Beispiele für die PostNAS Konvertierung von der Linux-Konsole.
+
+Es werden nicht die Shell-Scripte verwendet, die im Dialog die Parameter abfragen,
+sondern die davon aufgerufenen Shell-Scripte, die angehängte Parameter erwarten.
+Diese Kommandos würden z.B. für nächtliche Läufe verwendet.
+
+
+Version:
+ 2012-02-10  Umstellung Version 0.6 auf 0.7
+
+gkz = 290
+
+
+
+Kommandos zum Konvertieren:
+--------------------------
+
+Packen:
+ /data/konvert/postnas_0.7/zip_ordner.sh /data/nas_daten/290/0003
+
+Neu-Laden:
+ /data/konvert/postnas_0.7/konv_batch.sh /data/nas_daten/290/0000 alkis07290_neu e  pp
+
+
+Datenbank-Tausch nach Neu-Laden (SQL):
+  ALTER Database alkis07290      RENAME TO  alkis07290_alt;
+  ALTER Database alkis07290_neu  RENAME TO  alkis07290;
+
+Aktualisieren:
+ /data/konvert/postnas_0.7/konv_batch.sh /data/nas_daten/290/0002 alkis07290 a  nopp
+ /data/konvert/postnas_0.7/konv_batch.sh /data/nas_daten/290/0003 alkis07290 a  pp
+
+Kontrolle:
+ less /data/konvert/postnas_0.7/log/postnas_err.prot

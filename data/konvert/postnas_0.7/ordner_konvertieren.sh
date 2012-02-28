@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ## -------------------------------------------------
 ## Konvertierung von ALKIS NAS-Format nach PosGIS  -
 ## NAS-Daten in einem Ordner konvertieren          -
@@ -7,6 +7,7 @@
 ## Stand:
 ##  2012-02-10  PostNAS 07, Umbenennung
 ##  2012-02-17  Parameter "DBUSER" raus
+##  2012-02-28  Parameter 4 = 'pp' (mit Post-Processing)
 ## 
 function get_db_config(){
 	#
@@ -58,6 +59,10 @@ function get_db_config(){
 		echo "Datenbank $DBNAME Laden aus Ordner $ORDNER  -  j oder n ?"
 		read JEIN
 	done
+	#
+	# Mit/ohne Post-Processing
+	#
+	## pauschal ja
 }
 ## aller Laster Anfang
 get_db_config;
@@ -69,8 +74,8 @@ fi
 # Protokolldatei ueberschreiben
 echo "** Konvertierung ALKIS **" > /data/konvert/postnas_0.7/log/postnas_err.prot
 echo "** Beginn Batch **"
-##                                       1        2        3
-/data/konvert/postnas_0.7/konv_batch.sh  $ORDNER  $DBNAME  $UPD
+##                                       1        2        3     4
+/data/konvert/postnas_0.7/konv_batch.sh  $ORDNER  $DBNAME  $UPD  pp
 result=$?
 if [ $result = 0 ]
 then
@@ -80,6 +85,6 @@ else
 fi
 echo " "
 echo " Kommando fuer Wiederholung:"
-echo " /data/konvert/postnas_0.7/konv_batch.sh  $ORDNER  $DBNAME  $UPD "
+echo " /data/konvert/postnas_0.7/konv_batch.sh  $ORDNER  $DBNAME  $UPD  pp"
 echo " "
 ###

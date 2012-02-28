@@ -26,8 +26,9 @@
 ##                 Berechtigung regeln über "/etc/postgresql/[version]/main/pg_hba.conf"
 ##                 Dort Zeile: "local  [db]  [user]  ident sameuser"
 ##       Alt:    # PG:"dbname=${DBNAME} user=${DBUSER} password=${DBPASS} host=localhost port=5432"
-##      2011-11-21 Korrektur: UPD=$3 nicht $4
+##      2011-11-22 Korrektur: UPD=$3 nicht $4
 ##                 Protokollierung nach Datenbanken getrennt
+##      2012-02-28 Neuer Parameter um Post-Prozessing zu unterdrücken
 ##
 ## Konverter:   /opt/gdal-1.9/bin/ = GDAL 1.9 / PostNAS 0.6
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -40,17 +41,15 @@ echo "**************************************************"
 ORDNER=$1
 DBNAME=$2
 UPD=$3
-## Fehlerprotokoll
-errprot='/data/konvert/postnas_0.6/log/postnas_err_${DBNAME}.prot'
-## ! Bei parallelen Konvertierungen sollte die Ausgabe in getrennte Logfiles ausgegeben werden.
+PP=$4
 if [ $ORDNER == "" ]
 then
-	echo "Parameter 1 'Ordner' ist leer"
+	echo "FEHLER: Parameter 1 'Ordner' ist leer"
 	exit 1
 fi
 if [ $DBNAME == "" ]
 then
-	echo "Parameter 2 'Datenbank' ist leer"
+	echo "FEHLER: Parameter 2 'Datenbank' ist leer"
 	exit 2
 fi
 if [ $UPD == "a" ]
@@ -63,12 +62,26 @@ else
 		verarb="Erstladen"
 		update=""
 	else
-		echo "Parameter 3 'Aktualisierung' ist weder e noch a"
+		echo "FEHLER: Parameter 3 'Aktualisierung' ist weder e noch a"
 		exit 3
+	fi
+fi
+if [ $PP == "nopp" ]
+then
+	echo "KEIN Post-Processing nach dieser Konvertierung."
+else
+	if [ $PP == "pp" ]
+	then
+		echo "normales Post-Processing."
+	else
+		echo "FEHLER: Parameter 4 'Post-Proscessing' ist weder 'nopp' noch 'pp'"
+		exit 4
 	fi
 fi
 layer=""
 # leer = alle Layer
+## Fehlerprotokoll:
+errprot='/data/konvert/postnas_0.6/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
 con="-p 5432 -d ${DBNAME} "
@@ -95,7 +108,7 @@ for zipfile in *.zip ; do
     echo "* Datei:  " $nasdatei
     # Zwischenueberschrift im Fehlerprotokoll
     echo "* Datei: " $nasdatei >> $errprot
-    if [ $UPD -eq "e" ]
+    if [ $UPD == "e" ]
     then
       # E R S T L A D E N
       /opt/gdal-1.9/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
@@ -135,11 +148,18 @@ rm ../temp/*.xml
 echo " "
 echo "** Ende Konvertierung Ordner ${ORDNER}"
 ##
-echo "** Optimierte Nutzungsarten neu Laden:"
-psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/nutzungsart_laden.sql
-##
-echo "** Optimierte Gemeindetabelle neu Laden:"
-psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/gemeinden_laden.sql
+if [ $PP == "nopp" ]
+then
+  echo "** KEIN Post-Processing - Dies Spaeter nachholen."
+  # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem großen Bestand laufen
+  # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
+else
+  echo "** Optimierte Nutzungsarten neu Laden:"
+  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/nutzungsart_laden.sql
+  ##
+  echo "** Optimierte Gemeindetabelle neu Laden:"
+  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.6/gemeinden_laden.sql
+fi
 #
 echo "Das Fehler-Protokoll wurde ausgegeben in die Datei '$errprot' "
 ##
