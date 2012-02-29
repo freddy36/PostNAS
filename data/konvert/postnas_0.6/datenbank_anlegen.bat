@@ -33,14 +33,9 @@ echo.
 REM 5 Params expected
 if not %5x==x goto ARGSSUPPLIED
 
-echo Continue?
-set /p PREPARED="(y)es or (n)o:"
-if %PREPARED%x==x goto :PREP
-
-if %PREPARED%==y goto :PREP_OK
-if %PREPARED%==n goto :End
-goto :PREP
-:PREP_OK
+echo Die Parameter wurden nicht alle übergeben. Bitte rufen Sie das Skript mit Parametern auf.
+echo Das Skript wird beendet
+goto :PARAMETER_EMPTY
 
 :ARGSSUPPLIED
 set DBHOST=%1
@@ -50,6 +45,12 @@ set DBTEMPLATE=%4
 set DBUSER=%5
 set DROPDB=%6
 echo.
+if %DBHOST%x==x goto PARAMETER_EMPTY
+if %DBPORT%x==x goto PARAMETER_EMPTY
+if %DBUSER%x==x goto PARAMETER_EMPTY
+if %DBNAME%x==x goto PARAMETER_EMPTY
+if %DBTEMPLATE%x==x goto PARAMETER_EMPTY
+if %DBUSER%x==x goto PARAMETER_EMPTY
 
 :CHOICES
 REM dbtype and encoding are fixed
@@ -83,6 +84,9 @@ psql --version 2> nul 1> nul
 if NOT %ERRORLEVEL% == 0 goto PGNOTFOUND
 
 if %DROPDB%==ja goto START_DROPDB
+if %DROPDB%==j goto START_DROPDB
+if %DROPDB%==yes goto START_DROPDB
+if %DROPDB%==y goto START_DROPDB
 if %DROPDB%==no goto START_CREATE
 goto :START_CREATE
 :START_DROPDB
@@ -101,6 +105,7 @@ psql -U %DBUSER% -h %DBHOST% -p %DBPORT% -f nutzungsart_definition.sql %DBNAME% 
 psql -U %DBUSER% -h %DBHOST% -p %DBPORT% -f nutzungsart_metadaten.sql %DBNAME%  2>> ..\log_alkis_nutzungsart_metadaten.txt
 psql -U %DBUSER% -h %DBHOST% -p %DBPORT% -f gemeinden_definition.sql %DBNAME%  2>> ..\log_alkis_gemeinden_definition.txt
 psql -U %DBUSER% -h %DBHOST% -p %DBPORT% -f sichten.sql %DBNAME%  2>> ..\log_alkis_sichten.txt
+echo Die Datenbank wurde erzeugt. Prüfen Sie die Logdateien.
 goto END:
 
 
@@ -109,9 +114,20 @@ goto END:
 echo Sorry, psql not found, must be in PATH-Variable, exiting...
 goto END
 
+:PARAMETER_EMPTY
+echo ==============================================================================
+echo Sorry, Parameter müssen übergeben werden
+echo Diese Argumente müssen übergeben werden:
+echo "%0 <HOST> <PORT> <DBNAME> <DBTEMPLATE> <DBUSER> <DropDB ja/nein>"
+echo.
+echo z. B.
+echo %0 %DBHOST% %DBPORT% alkis_import template_postgis alkis_user ja
+echo.
+echo ==============================================================================
+
 REM End, keep Terminal session open
 :END
 
-echo Die Datenbank wurde erzeugt. Prüfen Sie die Logdateien.
+
 echo.
 pause 
