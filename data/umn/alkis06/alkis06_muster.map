@@ -32,6 +32,7 @@
 
 # 2012-02-06 F.J. krz  Veröffentlicht als Version 0.6
 # 2012-02-08 F.J. krz  Harmonisierung mit _4-Version
+# 2012-03-05 A.E. WG   PROCESSING "CLOSE_CONNECTION=DEFER" eingefügt siehe auch http://mapserver.org/mapfile/layer.html
 
 
 # ToDo: Die weitere Bearbeitung erfolgt nun im Branch 0.7

@@ -4,6 +4,7 @@
 # 2011-12-20 F.J. krz  Extent in alle Layer, Integrieren der Mapfiles des OBK (begonnen, weiter in Arbeit)
 # 2012-02-06 F.J. Layer angepasst an Bildschirm-Version
 # 2012-02-08 F.J. Noch ein paar Symbole aus Mapserver5-Version eleminiert
+# 2012-03-05 A.E. WG   PROCESSING "CLOSE_CONNECTION=DEFER" eingefügt siehe auch http://mapserver.org/mapfile/layer.html
 
 # _4-Version ohne WFS ('DUMP TRUE', 'gml_include_items "all"')
 
