@@ -989,5 +989,67 @@ INSERT INTO ax_bauteil_bauart (wert, bezeichner,kennung,objektart) VALUES (2720,
 INSERT INTO ax_bauteil_bauart (wert, bezeichner,kennung,objektart) VALUES (9999,'Sonstiges',31002,'ax_bauteil');
 
 
+-- ax_klassifizierungnachstrassenrecht_artdf
+-- -------------------------
+-- Datentyp:
+CREATE TABLE ax_klassifizierungnachstrassenrecht_artdf (
+wert integer, 
+bezeichner character varying,  
+kennung integer, objektart character varying);
 
+COMMENT ON TABLE ax_klassifizierungnachstrassenrecht_artdf
+IS 'artderfestlegung - Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Klassifizierung nach Bundes- oder Landesstraßengesetz',1100);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Bundesautobahn',1110);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Bundesstraße',1120);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Landes- oder Staatsstraße',1130);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Kreisstraße',1140);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Gemeindestraße',1150);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Ortsstraße',1160);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Gemeindeverbindungsstraße',1170);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Sonstige öffentliche Straße',1180);
+INSERT INTO ax_klassifizierungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Privatstraße',1190);
+
+
+-- ax_klassifizierungnachwasserrecht_artdf
+-- -------------------------
+-- Datentyp:
+CREATE TABLE ax_klassifizierungnachwasserrecht_artdf (
+wert integer, 
+bezeichner character varying,  
+kennung integer, objektart character varying);
+
+COMMENT ON TABLE ax_klassifizierungnachwasserrecht_artdf
+IS 'artderfestlegung - Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_klassifizierungnachwasserrecht_artdf (bezeichner, wert) VALUES ('Klassifizierung nach Bundes- oder Landeswassergesetz',1300);
+INSERT INTO ax_klassifizierungnachwasserrecht_artdf (bezeichner, wert) VALUES ('Gewässer I. Ordnung - Bundeswasserstraße',1310);
+INSERT INTO ax_klassifizierungnachwasserrecht_artdf (bezeichner, wert) VALUES ('Gewässer I. Ordnung - nach Landesrecht',1320);
+INSERT INTO ax_klassifizierungnachwasserrecht_artdf (bezeichner, wert) VALUES ('Gewässer II. Ordnung',1330);
+INSERT INTO ax_klassifizierungnachwasserrecht_artdf (bezeichner, wert) VALUES ('Gewässer III. Ordnung',1340);
+
+
+-- ax_anderefestlegungnachstrassenrecht_artdf
+-- -------------------------
+-- Datentyp:
+CREATE TABLE ax_anderefestlegungnachstrassenrecht_artdf (
+wert integer, 
+bezeichner character varying,  
+kennung integer, objektart character varying);
+
+COMMENT ON TABLE ax_anderefestlegungnachstrassenrecht_artdf
+IS 'artderfestlegung - Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Bundesfernstraßengesetz',1210);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbauverbot',1220);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbauverbot nach Bundesfernstraßengesetz',1230);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbauverbot (40m)',1231);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbauverbot (20m)',1232);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbaubeschränkung',1240);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbaubeschränkung (100m)',1241);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Anbaubeschränkung (40m)',1242);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Veränderungssperre nach Bundesfernstraßengesetz',1250);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Landesstraßengesetz',1260);
+INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Veränderungssperre',1280);
 -- ENDE --
