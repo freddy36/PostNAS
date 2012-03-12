@@ -22,6 +22,7 @@
 --  2011-12-19  F.J. Neue Tabelle "ax_datenerhebung"
 --  2011-12-20  A.E. ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion
 --  2011-12-22  A.E. ax_bauteil_bauart
+--  2012-03-12  A.E. ax_anderefestlegungnachstrassenrecht_artdf, ax_klassifizierungnachwasserrecht_artdf, ax_klassifizierungnachstrassenrecht_artdf, ax_naturumweltoderbodenschutzrecht_artdf, ax_sonstigesrecht_artdf, ax_anderefestlegungnachwasserrecht_artdf
 
 
   SET client_encoding = 'UTF8';
@@ -1052,4 +1053,193 @@ INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES
 INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Veränderungssperre nach Bundesfernstraßengesetz',1250);
 INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Landesstraßengesetz',1260);
 INSERT INTO ax_anderefestlegungnachstrassenrecht_artdf (bezeichner, wert) VALUES ('Veränderungssperre',1280);
+
+
+-- ax_naturumweltoderbodenschutzrecht_artdf
+-- -------------------------
+-- Datentyp:
+CREATE TABLE ax_naturumweltoderbodenschutzrecht_artdf (
+wert integer, 
+bezeichner character varying,  
+kennung integer, objektart character varying);
+
+COMMENT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf
+IS 'artderfestlegung - Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche nach Europarecht',610);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Flora-Fauna-Habitat-Gebiet',611);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Vogelschutzgebiet',612);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Schutzflächen nach Landesnaturschutzgesetz',620);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Naturschutzgebiet',621);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Geschützter Landschaftsbestandteil',622);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Landschaftsschutzgebiet',623);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Naturpark',624);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Bundesbodenschutzgesetz',630);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Verdachtsfläche auf schädliche Bodenveränderung',631);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Schädliche Bodenveränderung',632);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Altlastenverdächtige Fläche',633);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Altlast',634);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Bundesimmisionsschutzgesetz',640);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Belastungsgebiet',641);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Schutzbedürftiges Gebiet',642);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Gefährdetes Gebiet',643);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Naturschutzgesetz',650);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Besonders geschütztes Biotop',651);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Besonders geschütztes Feuchtgrünland',652);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Naturdenkmal',653);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Einstweilige Sicherstellung, Veränderungssperre',654);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Vorkaufsrecht',655);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Ausgleichs- oder Kompensationsfläche',656);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Bodenschutzgesetz',660);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Dauerbeobachtungsflächen',661);
+INSERT INTO ax_naturumweltoderbodenschutzrecht_artdf (bezeichner, wert) VALUES ('Bodenschutzgebiet',662);
+
+
+-- ax_denkmalschutzrecht_artdf
+-- -------------------------
+-- Datentyp:
+CREATE TABLE ax_denkmalschutzrecht_artdf (
+wert integer, 
+bezeichner character varying,  
+kennung integer, objektart character varying);
+
+COMMENT ON TABLE ax_denkmalschutzrecht_artdf
+IS 'artderfestlegung - Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Kulturdenkmal',2700);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Bau- und Kunstdenkmal nach Landesdenkmalschutzgesetz',2710);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Baudenkmal',2711);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Kunstdenkmal',2712);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Gartendenkmal',2713);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Archäologisches Denkmal (auch Bodendenkmal) nach Landesdenkmalschutzgesetz',2800);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Archäologisches Denkmal',2810);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Bodendenkmal',2820);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Schutzgebiet oder -bereiche nach Landesdenkmalschutzgesetz',2900);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Denkmalzone oder -bereich',2910);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Geschützter Baubereich',2920);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Grabungsschutzgebiet',2930);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Befestigungen',3100);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Befestigung (Burg)',3110);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Burg (Fliehburg, Ringwall)',3111);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Erdwerk',3112);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Ringwall',3113);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Steinwerk',3114);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Festung',3115);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Gräftenanlage',3116);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Schanze',3117);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Lager',3118);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Wachturm (römisch), Warte',3120);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Wachturm',3121);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Warte',3122);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Befestigung (Wall, Graben)',3130);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Grenzwall, Schutzwall',3131);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Limes',3132);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Landwehr',3133);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Stadtwall',3134);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Wall',3135);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historische Siedlung',3200);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Pfahlbau',3210);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Wüstung',3220);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Wurt',3230);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Abri',3240);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Höhle',3250);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historische Bestattung',3300);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Großsteingrab (Dolmen, Hünenbett)',3310);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Grabhügel',3320);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Grabhügelfeld',3330);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Urnenfriedhof',3340);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Körpergräberfeld',3350);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Reihengräberfriedhof',3360);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historisches land- oder forstwirtschaftliches Objekt',3400);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Pflanzkamp',3410);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historisches Viehgehege',3420);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Sandfang',3430);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historisches Ackersystem',3440);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historische Bergbau-, Verhüttungs- oder sonstige Produktionsstätte',3500);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historisches Bergbaurelikt',3510);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Meiler',3520);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Ofen',3530);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Verhüttungsplatz',3540);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historische Straße oder Weg',3600);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Heerstraße',3610);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Hohlweg',3620);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Moorweg',3630);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Wegespur',3640);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historisches wasserwirtschaftliches Objekt',3700);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historische Wasserleitung',3710);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Aquädukt',3720);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Deich',3730);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Damm',3740);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Graben',3750);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Steinmal',3800);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Schalenstein',3810);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Rillenstein',3820);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Wetzrillen',3830);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Kreuzstein',3840);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Historischer Grenzstein',3850);
+INSERT INTO ax_denkmalschutzrecht_artdf (bezeichner, wert) VALUES ('Menhir',3860);
+
+
+-- ax_sonstigesrecht_artdf
+-- -------------------------
+-- Datentyp:
+CREATE TABLE ax_sonstigesrecht_artdf (
+wert integer, 
+bezeichner character varying,  
+kennung integer, objektart character varying);
+
+COMMENT ON TABLE ax_sonstigesrecht_artdf
+IS 'artderfestlegung - Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Luftverkehrsgesetz',4100);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bauschutzbereich',4110);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Beschränkter Bauschutzbereich',4120);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bundeskleingartengesetz',4200);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Dauerkleingarten',4210);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Berggesetz',4300);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bodenbewegungsgebiet',4301);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bruchfeld',4302);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Baubeschränkung',4310);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Reichsheimstättengesetz',4400);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Reichsheimstätte',4410);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzbereichsgesetz',4500);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzbereich',4510);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Eisenbahnneuordnungsgesetz',4600);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Übergabebescheidverfahren',4610);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Baubeschränkungen durch Richtfunkverbindungen',4710);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Truppenübungsplatz, Standortübungsplatz',4720);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Vermessungs- und Katasterrecht',4800);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche Festpunkt',4810);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche Festpunkt, 1 m Radius',4811);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche Festpunkt, 2 m Radius',4812);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche Festpunkt, 5 m Radius',4813);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche Festpunkt, 10 m Radius',4814);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Schutzfläche Festpunkt, 30 m Radius',4815);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Marksteinschutzfläche',4820);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Liegenschaftskatastererneuerung',4830);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Fischereirecht',4900);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Jagdkataster',5100);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Landesgrundbesitzkataster',5200);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bombenblindgängerverdacht',5300);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Rieselfeld',5400);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Sicherungsstreifen',5500);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Grenzbereinigung',5600);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Hochwasserdeich',5700);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Hauptdeich, 1. Deichlinie',5710);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('2. Deichlinie',5720);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Beregnungsverband',6000);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Weinlage',7000);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Weinbausteillage',7100);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Weinbergsrolle',7200);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Weinbausteilstlage',7300);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Benachteiligtes landwirtschaftliches Gebiet',8000);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Mitverwendung Hochwasserschutz, Oberirdische Anlagen',9100);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Mitverwendung Hochwasserschutz, Unterirdische Anlagen',9200);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Hafennutzungsgebiet',9300);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Hafenerweiterungsgebiet',9400);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bohrung verfüllt',9500);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Zollgrenze',9600);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Belastung nach §7 Abs. 2 GBO',9700);
+INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Sonstiges',9999);
+-- ENDE --
 -- ENDE --
