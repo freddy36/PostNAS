@@ -3580,6 +3580,7 @@ ALTER TABLE ax_klassifizierungnachstrassenrecht
 ALTER TABLE ax_klassifizierungnachstrassenrecht
   ADD CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text 
                                                   OR geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text 
+						  OR geometrytype(wkb_geometry) = 'LINESTRING'::text 
                                                   OR wkb_geometry IS NULL);
 
 
