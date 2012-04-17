@@ -7,6 +7,7 @@
 
 --  2012-02-13 PostNAS 07, Umbenennung
 --  2012-02-17 Optimierung
+--  2012-04-17 Flurstuecksnummern auf Standardposition
 
 
 -- ============================
@@ -21,6 +22,38 @@
 -- einmal komplett aufbereitet. Die benötigten Informationen stehen somit den Anwendungen mundgerecht zur Verfügung.
 
 -- Die per PostProcessing gefüllten Tabellen bekommen den Profix "pp_". 
+
+-- Die Ausführung dieses Scriptes auf einer Datenbank für eine 80T-Einwohner-Stadt dauert ca.: 500 Sek. !
+
+
+
+-- ===========================
+-- Flurstuecksnummern-Position
+-- ===========================
+
+-- ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck"
+
+  DELETE FROM pp_flurstueck_nr;
+
+  INSERT INTO pp_flurstueck_nr
+          ( fsgml, fsnum, the_geom )
+    SELECT f.gml_id,
+           f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum,
+           p.wkb_geometry  -- manuelle Position des Textes
+      FROM ap_pto             p
+      JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
+      JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
+     WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+     --AND p."art" = 'ZAE_NEN'
+   UNION 
+    SELECT f.gml_id,
+           f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum,
+           ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry  -- Flaechenmitte als Position des Textes
+      FROM      ax_flurstueck     f 
+      LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
+     WHERE v.beziehungsart is NULL
+  ;
+-- Ausführung: mittlere Stadt: ca. 4 - 18 Sec.
 
 
 -- ========================================================

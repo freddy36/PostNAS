@@ -4,7 +4,9 @@
 
 # 2012-02-09 F.J. krz  Branch 0.7 aus Version 0.6
 # 2012-02-17 F.J. krz  data dbname=alkis07, Layer-Group pp_gebiete
-# 2012-03-05 A.E. WG   PROCESSING "CLOSE_CONNECTION=DEFER" eingefügt siehe auch http://mapserver.org/mapfile/layer.html
+# 2012-03-05 F.J. krz  PROCESSING "CLOSE_CONNECTION=DEFER"
+# 2012-04-17 F.J. krz  Tabelle pp_flurstueck_nr ersetzt View s_flurstueck_nr
+#                      Auch Standard-Position vom Flurstuecksnummern anzeigen
 
 # ToDo:
 # - Recht Baulast wird von FS-Grenze verdeckt, Reihenfolge ändern?
@@ -75,8 +77,8 @@ LAYER
 	TYPE POLYGON
 	DUMP true
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -119,8 +121,8 @@ LAYER
 	TYPE POLYGON
 	DUMP true
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemarkungsname, simple_geom FROM pp_gemarkung) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -161,8 +163,8 @@ LAYER
 	TYPE POLYGON
 	DUMP true
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -253,8 +255,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT gml_id, nutz_id, class, wkb_geometry FROM nutzung) as foo using unique gml_id using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -661,8 +663,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wohnbauflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -694,8 +696,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_industrieundgewerbeflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -727,8 +729,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_halde) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -758,8 +760,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_bergbaubetrieb) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -788,8 +790,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_tagebaugrubesteinbruch) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -819,8 +821,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechegemischternutzung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -852,8 +854,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechebesondererfunktionalerpraegung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -883,8 +885,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_sportfreizeitunderholungsflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -915,8 +917,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_friedhof) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -950,8 +952,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_strassenverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1014,8 +1016,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_weg) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1045,8 +1047,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_platz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1084,8 +1086,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_bahnverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1116,8 +1118,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flugverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1148,8 +1150,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_schiffsverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1182,8 +1184,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, vegetationsmerkmal, wkb_geometry FROM ax_landwirtschaft) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1233,8 +1235,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wald) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1263,8 +1265,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_gehoelz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1293,8 +1295,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_heide) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1323,8 +1325,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_moor) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1353,8 +1355,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_sumpf) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1385,8 +1387,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_unlandvegetationsloseflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1415,8 +1417,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_vegetationsmerkmal) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1447,8 +1449,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_fliessgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1477,8 +1479,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_hafenbecken) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1507,8 +1509,8 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_stehendesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1544,8 +1546,8 @@ LAYER
 	DUMP TRUE
 	# REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	# Feld funktion, Werte 1010, 1030, 1040
 	# Statt EXPRESSION filtern besser gleich als WHERE in SQL
@@ -1578,8 +1580,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	# Statt EXPRESSION filtern besser gleich als WHERE in SQL
 	METADATA
@@ -1614,8 +1616,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_klassifizierungnachstrassenrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1660,8 +1662,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_naturumweltoderbodenschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1694,8 +1696,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_anderefestlegungnachwasserrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1731,8 +1733,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 
 	# Tabelle (Standard-Template)
 	#DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
@@ -1967,8 +1969,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_denkmalschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -1997,8 +1999,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_sonstigesrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2041,8 +2043,8 @@ LAYER
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	# Feld "ax_datenerhebung" fehlt im krz-Schema - was ist das?
 	# SQL:  ALTER TABLE ax_gebaeude ADD COLUMN ax_datenerhebung integer;
@@ -2400,8 +2402,8 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2562,8 +2564,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauart, lagezurerdoberflaeche, wkb_geometry FROM ax_bauteil) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2631,8 +2633,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, beschaffenheit, wkb_geometry FROM ax_besonderegebaeudelinie) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2666,8 +2668,8 @@ LAYER # Hausnummer
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel,hausnummer FROM s_hausnummer_gebaeude) as foo using unique ogc_fid using SRID=25832"
 
 	METADATA
@@ -2715,8 +2717,8 @@ LAYER # Pseudonummer = Ausgestaltung Text Nebengebäude
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel, laufendenummer FROM s_nummer_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
 	# "s_nummer_nebengebaeude" = View
 	METADATA
@@ -2767,8 +2769,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_gebaeude) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 
 	METADATA
@@ -2801,8 +2803,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2834,8 +2836,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2867,8 +2869,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimgewaesserbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2898,8 +2900,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuerindustrieundgewerbe) as foo using unique ogc_fid using SRID=25832"
 	FILTER "st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
 	METADATA
@@ -2940,8 +2942,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuersportfreizeitunderholung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -2971,8 +2973,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_vorratsbehaelterspeicherbauwerk) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3002,8 +3004,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_sonstigesbauwerkodersonstigeeinrichtung) as foo using unique ogc_fid using SRID=25832"
 	FILTER "bauwerksfunktion in (1610,1781) AND st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
 	# "name" ist ab und zu gefüllt
@@ -3075,8 +3077,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, spannungsebene, wkb_geometry FROM ax_leitung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3116,8 +3118,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, lagezurerdoberflaeche, wkb_geometry  FROM ax_transportanlage) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3164,8 +3166,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_turm) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3200,8 +3202,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	# mit Feldern fuer klassisches Template:
 	#  DATA "wkb_geometry from (SELECT ogc_fid, gml_id, flurstueckskennzeichen, amtlicheflaeche, wkb_geometry FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	# reduzierte Felder: nur 'gml_id' fuer Inlay, und geometry fuer Karte
@@ -3246,8 +3248,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderflurstuecksgrenze, wkb_geometry FROM ax_besondereflurstuecksgrenze) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3377,7 +3379,7 @@ END
 
 # Ausgestaltung FS (DATA: Views in DB anlegen fuer Beziehungen)
 
-# Flurstuecknummer
+# Flurstuecksnummer
 
 # Musterdaten RLP: zaehler-nenner steht auch in Feld "ap_pto.schriftinhalt"
 # Lippe NRW: Feld "ap_pto.schriftinhalt" ist leer. Label aus Tabelle "ax_flurstueck" entnehmen
@@ -3387,15 +3389,14 @@ LAYER
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
-	DATA "wkb_geometry from (SELECT * FROM s_flurstueck_nr) as foo using unique ogc_fid using SRID=25832"
-	# View: ap_pto >dientZurDarstellungVon> ax_flurstueck
-	# Felder: ogc_fid, wkb_geometry, gemarkungsnummer, flurnummer, zaehler, nenner, fsnum
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT * FROM s_flurstueck_nr) as foo using unique ogc_fid using SRID=25832" # View
+	DATA "the_geom from (SELECT * FROM pp_flurstueck_nr) as foo using unique gid using SRID=25832" # Tabelle aus PostProcessing
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
-		wms_title "Flurstücknummer"
-		wms_abstract "ALKIS Flurstück Flurstücknummer"
+		wms_title "Flurstücksnummer"
+		wms_abstract "ALKIS Flurstück Flurstücksnummer"
 		gml_include_items "all"
 	END
 	PROJECTION
@@ -3442,7 +3443,6 @@ END
 #	DUMP TRUE
 #	
 #	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	CONNECTION "host=localhost dbname=obk user=alkis"
 #	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
 #	
@@ -3509,7 +3509,6 @@ END
 #	TYPE ANNOTATION
 #	DUMP TRUE
 #	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	CONNECTION "host=localhost dbname=obk user=alkis"
 #	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -3544,7 +3543,6 @@ END
 #	TYPE ANNOTATION
 #	DUMP TRUE
 #	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	CONNECTION "host=localhost dbname=obk user=alkis"
 #	DATA "wkb_geometry from (SELECT * FROM alkis.obk_sk4111_flurstuecksnummer) as foo using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -3585,8 +3583,8 @@ LAYER
 	REQUIRES "[ag_t_flurstueck]" # zur Nummer
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3616,8 +3614,8 @@ LAYER
 	TYPE Annotation
 	STATUS ON
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_flurstueck) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3655,8 +3653,8 @@ LAYER
 	REQUIRES "[ax_flurstueck]" # an Grenze
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3682,7 +3680,6 @@ LAYER
 			FONT "alkis_textsymbols"
 			SIZE 14 MINSIZE 7 MAXSIZE 24
 			POSITION cc
-		#	OFFSET 0 0
 			COLOR 0 0 0
 			ANGLE [drehwinkel]
 			ANTIALIAS TRUE
@@ -3701,8 +3698,8 @@ LAYER
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3734,8 +3731,8 @@ LAYER
 	TYPE POLYGON
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3768,8 +3765,8 @@ LAYER
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortta) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3802,8 +3799,8 @@ LAYER
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortag) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3833,8 +3830,8 @@ LAYER
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortau) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -3874,8 +3871,8 @@ LAYER
 	TYPE POINT
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 
 	#DATA "wkb_geometry from (SELECT ogc_fid, schriftinhalt, art, drehwinkel * 57.296 AS winkel, wkb_geometry FROM ap_pto WHERE not schriftinhalt is null) as foo using unique ogc_fid using SRID=25832"
 	#WHERE ...  AND art not in ('HNR', 'ZAE_NEN')
@@ -3984,8 +3981,8 @@ LAYER
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
@@ -4047,8 +4044,8 @@ LAYER
 	MAXSCALEDENOM 12000
 	#SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk201x_politische_grenze) as foo using unique ogc_fid using SRID=25832'
 	CLASSITEM 'art' # Art der besonderen Grundstuecksgrenze  IST EIN ARRAY! z.B.  {3000,7106}
 	CLASS
@@ -4128,8 +4125,8 @@ LAYER
 	MAXSCALEDENOM 10000
 	SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk2014_gemarkungsgrenze) as foo using unique ogc_fid using SRID=25832'
 	CLASS
 		NAME 'Gemarkungsgrenze'
@@ -4165,8 +4162,8 @@ LAYER
 	MAXSCALEDENOM 5000
 	SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
-	PROCESSING "CLOSE_CONNECTION=DEFER"
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk2012_flurgrenze) as foo using unique ogc_fid using SRID=25832'
 	CLASS
 		NAME 'Flurgrenze'

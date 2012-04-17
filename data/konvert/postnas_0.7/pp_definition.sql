@@ -7,6 +7,9 @@
 
 --  2012-02-13 PostNAS 07, Umbenennung
 --  2012-02-17 Optimierung
+--  2012-02-28 gkz aus View nehmen
+--  2012-04-17 Flurstuecksnummern auf Standardposition
+
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -65,11 +68,11 @@ SELECT AddGeometryColumn('pp_gemeinde','simple_geom','25832','MULTIPOLYGON',2);
 CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 
 
-COMMENT ON TABLE  pp_gemeinde                IS 'Post-Processing: Gemeinde';
-COMMENT ON COLUMN pp_gemeinde.gemeinde       IS 'Gemeindenummer';
-COMMENT ON COLUMN pp_gemeinde.gkz            IS 'Gemeindekennziffer für Mandant';
-COMMENT ON COLUMN pp_gemeinde.the_geom       IS 'präzise Geometrie aus Summe aller Gemarkungen';
-COMMENT ON COLUMN pp_gemeinde.simple_geom    IS 'vereinfachte Geometrie für die Suche und die Anzeige von Übersichten in kleinen Maßstäben.';
+  COMMENT ON TABLE  pp_gemeinde                IS 'Post-Processing: Gemeinde';
+  COMMENT ON COLUMN pp_gemeinde.gemeinde       IS 'Gemeindenummer';
+--COMMENT ON COLUMN pp_gemeinde.gkz            IS 'Gemeindekennziffer für Mandant';
+  COMMENT ON COLUMN pp_gemeinde.the_geom       IS 'präzise Geometrie aus Summe aller Gemarkungen';
+  COMMENT ON COLUMN pp_gemeinde.simple_geom    IS 'vereinfachte Geometrie für die Suche und die Anzeige von Übersichten in kleinen Maßstäben.';
 
 
 -- Tabelle fuer Gemarkungen
@@ -151,7 +154,7 @@ COMMENT ON COLUMN pp_flur.the_geom       IS 'Geometrie aus Summe aller Flurstüc
 -- der Navigation auf einfache Art verwendet werden kann. 
 
 
--- pp_  ?
+-- Prefix "pp_" verwenden  ?
 
 --DROP TABLE gemeinde_person;
 
@@ -174,6 +177,37 @@ COMMENT ON COLUMN gemeinde_person.person     IS 'gml_id von Person';
 CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
 
 
+-- Flurstuecksnummern-Position
+-- ===========================
+
+-- ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck"
+
+--DROP TABLE pp_flurstueck_nr;
+
+  CREATE TABLE pp_flurstueck_nr (
+    gid		serial,
+    fsgml	character(16),
+    fsnum	character varying(10),  -- zzzzz/nnnn
+    CONSTRAINT pp_flurstueck_nr_pk  PRIMARY KEY (gid),
+    CONSTRAINT pp_flurstueck_nr_gml FOREIGN KEY (fsgml)
+      REFERENCES ax_flurstueck (gml_id) MATCH SIMPLE
+      ON UPDATE CASCADE ON DELETE CASCADE
+  );
+
+SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom','25832','POINT',2);
+
+-- Geometrischer Index
+CREATE INDEX pp_flurstueck_nr_gidx ON pp_flurstueck_nr USING gist(the_geom);
+
+-- Foreig-Key Index
+CREATE INDEX fki_pp_flurstueck_nr_gml ON pp_flurstueck_nr(fsgml);
+
+COMMENT ON TABLE  pp_flurstueck_nr           IS 'Post-Processing: Position der Flurstücksnummer in der Karte';
+COMMENT ON COLUMN pp_flurstueck_nr.fsgml     IS 'gml_id des zugehörigen Flurstücks-Objektes';
+COMMENT ON COLUMN pp_flurstueck_nr.fsnum     IS 'Label, Darzustellende FS-Nummer als Bruch';
+COMMENT ON COLUMN pp_flurstueck_nr.the_geom  IS 'Position der Flurstücksnummer in der Karte';
+
+
 -- =====
 -- VIEWs 
 -- =====
@@ -184,12 +218,11 @@ CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
 
 CREATE VIEW gemeinde_gemarkung
 AS
-  SELECT g.land, g.regierungsbezirk, g.kreis, g.gemeinde, k.gemarkung, g.gemeindename, k.gemarkungsname, g.gkz
+  SELECT g.land, g.regierungsbezirk, g.kreis, g.gemeinde, k.gemarkung, g.gemeindename, k.gemarkungsname
   FROM pp_gemarkung k
   JOIN pp_gemeinde  g 
     ON k.land = g.land 
-   AND k.gemeinde = g.gemeinde
-;
+   AND k.gemeinde = g.gemeinde;
 
 -- VIEWs  fuer die Zuordnung vom Eigentümern zu Gemeinden
 -- ------------------------------------------------------
@@ -227,8 +260,7 @@ AS
   WHERE bpn.beziehungsart = 'benennt' 
     AND bnb.beziehungsart = 'istBestandteilVon'
     AND bbg.beziehungsart = 'istBestandteilVon'
-    AND bsf.beziehungsart = 'istGebucht'
-;
+    AND bsf.beziehungsart = 'istGebucht';
 
 COMMENT ON VIEW gemeinde_person_typ1 IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ1 = nomale Buchungen mit direkter Beziehung.';
 
@@ -288,8 +320,7 @@ AS
     AND  p.kreis    = g.kreis 
     AND  p.gemeinde = g.gemeinde
   GROUP BY p.land, p.regierungsbezirk, p.kreis, p.gemeinde, g.gemeindename, p.buchtyp
-  ORDER BY p.land, p.regierungsbezirk, p.kreis, p.gemeinde, p.buchtyp
-;
+  ORDER BY p.land, p.regierungsbezirk, p.kreis, p.gemeinde, p.buchtyp;
 
 COMMENT ON VIEW gemeinde_person_statistik IS 'Zählen der Personen je Gemeinde und Buchungstyp';
 

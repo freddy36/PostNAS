@@ -5,39 +5,67 @@
 --  PostNAS 0.7
 
 --  2012-02-25 PostNAS 07, Umbenennung
+--  2012-04-17 flstnr_ohne_position
+
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
 --  -----------------------------------------
 
 
--- Layer "ag_t_flurstueck"
--- -----------------------
+-- WMS-Layer "ag_t_flurstueck"
+-- ---------------------------
 
 -- Die Geometrie befindet sich in "ap_pto", der Label in "ax_flurstueck"
 -- Die Verbindung erfolgt über "alkis_beziehungen"
 
 
 -- Bruchnummerierung erzeugen
+-- ALT 2012-04-17: Diese Version zeigt nur die manuell gesetzten Positionen
 CREATE OR REPLACE VIEW s_flurstueck_nr
 AS 
- SELECT ap_pto.ogc_fid, 
-        ap_pto.wkb_geometry,   -- Position des Textes
-    --  ax_flurstueck.flurstueckskennzeichen,   -- am Stueck, aufgefuellt, unpraktisch
-    --  ax_flurstueck.gemarkungsnummer,  -- integer
-    --  ax_flurstueck.flurnummer,        -- integer
-    --  ax_flurstueck.zaehler,           -- integer
-    --  ax_flurstueck.nenner,            -- integer oder NULL
-        ax_flurstueck.zaehler::text || COALESCE ('/' || ax_flurstueck.nenner::text, '') AS fsnum
-   FROM ap_pto
-   JOIN alkis_beziehungen 
-     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_flurstueck 
-     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
-  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
+ SELECT f.ogc_fid, 
+        p.wkb_geometry,  -- Position des Textes
+        f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
+   FROM ap_pto             p
+   JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
+   JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
+  WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+  --AND p."art" = 'ZAE_NEN'
   ;
 
 COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück';
+
+-- NEU 2012-04-17
+-- Wenn keine manuelle Position gesetzt ist, wird die Flaechenmitte verwendet
+
+-- ACHTUNG: Dieser View kann nicht direkt im Mapserver-WMS verwendet werden.
+-- Die Anzeige ist zu langsam. Filterung über BBOX kann nicht funktionieren, da zunächst ALLE Standardpositionen 
+-- berechnet werden müssen, bevor darüber gefiltert werden kann.
+
+-- FAZIT: In einer Hilfstabelle mit geometrischem Index zwischenspeichern.
+--        Siehe PostProcessing Tabelle "pp_flurstueck_nr"
+
+CREATE OR REPLACE VIEW s_flurstueck_nr2
+AS 
+  SELECT f.ogc_fid, 
+         p.wkb_geometry,  -- manuelle Position des Textes
+         f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
+    FROM ap_pto             p
+    JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
+    JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
+   WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+   --AND p."art" = 'ZAE_NEN'
+ UNION 
+  SELECT f.ogc_fid,
+         ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry,  -- Flaechenmitte als Position des Textes
+         f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
+    FROM      ax_flurstueck     f 
+    LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
+   WHERE v.beziehungsart is NULL
+  ;
+
+COMMENT ON VIEW s_flurstueck_nr2 IS 'Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden';
 
 
 -- Layer "ag_t_gebaeude"
@@ -312,6 +340,33 @@ COMMENT ON VIEW sk201x_politische_grenze IS 'fuer Kartendarstellung: besondere F
 --  ------------------------------------------
 --  Sichten fuer Fehlersuche und Daten-Analyse
 --  ------------------------------------------
+
+
+-- Flurstücke mit Anzeige der Flurstücksnummer an der "Standardposition"
+
+-- Nach der Konvertierung aus ALK hat zunächst jedes Flurstück eine explizit gesetzte Position der Flurstücksnummer.
+
+-- Nach einer manuellen Teilung bekommen die neuen Flurstücke im ALKIS nur dann eine Position,
+-- wenn die Positioin manuell bestimmt (verschoben) wurde.
+-- Wenn die Flurstücksnummer an ihrer "Standardposition" angezeigt werden soll, 
+-- dann wird diese in den Daten (DHK, NAS) nicht gesetzt.
+-- Der Konverter PostNAS konvertiert aber nur die Daten, die er bekommt, er setzt nicht die Standard-Position 
+-- für die Flurstücke, die ohne eine manuelle Position kommen.
+
+-- Diese Fälle identifizieren
+CREATE OR REPLACE VIEW flstnr_ohne_position
+AS 
+ SELECT f.gml_id, 
+        f.gemarkungsnummer || '-' || f.flurnummer || '-' || f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS such -- Suchstring für ALKIS-Navigation nach FS-Kennzeichen
+ FROM        ax_flurstueck     f 
+   LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
+ --LEFT JOIN ap_pto            p  ON p.gml_id       = v.beziehung_von
+  WHERE v.beziehungsart is NULL
+--ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler
+  ;
+
+COMMENT ON VIEW flstnr_ohne_position IS 'Flurstücke ohne manuell gesetzte Position für die Präsentation der FS-Nr';
+
 
 -- Zeigt die Texte an, die nicht in einem der Mapfile-Views verarbeitet werden
 CREATE OR REPLACE VIEW s_allgemeine_texte 
