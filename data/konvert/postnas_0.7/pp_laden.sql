@@ -8,6 +8,7 @@
 --  2012-02-13 PostNAS 07, Umbenennung
 --  2012-02-17 Optimierung
 --  2012-04-17 Flurstuecksnummern auf Standardposition
+--  2012-04-24 Generell Filter 'endet IS NULL' um historische Objekte auszublenden
 
 
 -- ============================
@@ -44,6 +45,8 @@
       JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
       JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
      WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+       AND f.endet IS NULL 
+       AND p.endet IS NULL 
      --AND p."art" = 'ZAE_NEN'
    UNION 
     SELECT f.gml_id,
@@ -52,6 +55,7 @@
       FROM      ax_flurstueck     f 
       LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
      WHERE v.beziehungsart is NULL
+       AND f.endet IS NULL 
   ;
 -- Ausführung: mittlere Stadt: ca. 4 - 18 Sec.
 
@@ -82,6 +86,7 @@ INSERT INTO pp_gemarkung
   (               land, regierungsbezirk, kreis, gemeinde, gemarkung       )
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
   FROM            ax_flurstueck
+  WHERE           endet IS NULL
   ORDER BY        land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer 
 ;
 
@@ -102,6 +107,7 @@ UPDATE pp_gemeinde a
        AND a.regierungsbezirk=b.regierungsbezirk 
        AND a.kreis=b.kreis
        AND a.gemeinde=b.gemeinde
+       AND b.endet IS NULL
    );
 
 -- Namen der Gemarkung dazu als Optimierung bei der Auskunft 
@@ -111,6 +117,7 @@ UPDATE pp_gemarkung a
      FROM    ax_gemarkung b
      WHERE a.land=b.land 
        AND a.gemarkung=b.gemarkungsnummer
+       AND b.endet IS NULL
    );
 
 
@@ -122,11 +129,16 @@ UPDATE pp_gemarkung a
 -- Wenn ein Gebiet durch geometrische Filter im NBA ausgegeben wurde, dann gibt es Randstreifen, 
 -- die zu Pseudo-Fluren zusammen gefasst werden. Fachlich falsch!
 
+-- ToDo:
+--   TopologyException: found non-noded intersection between   ...
+--   Nur "geprüfte Flurstücke" verwenden?  Filter?
+
 INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
    SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
            count(gml_id) as anz_fs,
            multi(st_union(st_buffer(f.wkb_geometry,0))) AS the_geom 
      FROM  ax_flurstueck f
+     WHERE f.endet IS NULL
   GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer, f.flurnummer;
 
 

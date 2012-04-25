@@ -9,6 +9,8 @@
 --  2012-02-17 Optimierung
 --  2012-02-28 gkz aus View nehmen
 --  2012-04-17 Flurstuecksnummern auf Standardposition
+--  2012-04-23 ax_flurstueck hat keinen Unique Index mahr auf gml_id,
+--             ForeignKey vorübergehend ausgeschaltet.
 
 
 -- ============================
@@ -188,10 +190,15 @@ CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
     gid		serial,
     fsgml	character(16),
     fsnum	character varying(10),  -- zzzzz/nnnn
-    CONSTRAINT pp_flurstueck_nr_pk  PRIMARY KEY (gid),
-    CONSTRAINT pp_flurstueck_nr_gml FOREIGN KEY (fsgml)
-      REFERENCES ax_flurstueck (gml_id) MATCH SIMPLE
-      ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT pp_flurstueck_nr_pk  PRIMARY KEY (gid)  --,
+
+-- Durch Änderung Patch #5444 am 2012-04-23 hat 'ax_flurstueck' keinen Unique-Index mahr auf gml_id
+--    CONSTRAINT pp_flurstueck_nr_gml FOREIGN KEY (fsgml)
+--      REFERENCES ax_flurstueck (gml_id) MATCH SIMPLE
+--      ON UPDATE CASCADE ON DELETE CASCADE
+
+-- Ersatzweise einen ForeignKey über 2 Felder?
+
   );
 
 SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom','25832','POINT',2);
@@ -213,7 +220,7 @@ COMMENT ON COLUMN pp_flurstueck_nr.the_geom  IS 'Position der Flurstücksnummer 
 -- =====
 
 -- Ein View, der übergangsweise die ehemalige Tabelle mit diesem Namen ersetzt.
--- Wird in der Navigatioin verwendet, bis alle Datenbanken auf die Struktur 0.7 umgestellt 
+-- Wird in der Navigation verwendet, bis alle Datenbanken auf die Struktur 0.7 umgestellt 
 -- sind *UND* die Navigation an die neuen Tabellen angepasst ist.
 
 CREATE VIEW gemeinde_gemarkung

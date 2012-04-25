@@ -6,6 +6,7 @@
 
 --  2012-02-25 PostNAS 07, Umbenennung
 --  2012-04-17 flstnr_ohne_position
+--  2012-04-24 pauschal Filter 'endet IS NULL' um historische Objekte auszublenden
 
 
 --  -----------------------------------------
@@ -31,6 +32,8 @@ AS
    JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
    JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
   WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+    AND p.endet IS NULL
+    AND f.endet IS NULL
   --AND p."art" = 'ZAE_NEN'
   ;
 
@@ -55,6 +58,8 @@ AS
     JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
     JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
    WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+     AND p.endet IS NULL
+     AND f.endet IS NULL
    --AND p."art" = 'ZAE_NEN'
  UNION 
   SELECT f.ogc_fid,
@@ -63,6 +68,7 @@ AS
     FROM      ax_flurstueck     f 
     LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
    WHERE v.beziehungsart is NULL
+     AND f.endet IS NULL
   ;
 
 COMMENT ON VIEW s_flurstueck_nr2 IS 'Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden';
@@ -78,16 +84,18 @@ COMMENT ON VIEW s_flurstueck_nr2 IS 'Bruchnummerierung Flurstück, auch Standard
 
 CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 AS 
- SELECT ap_pto.ogc_fid, 
-        ap_pto.wkb_geometry, -- Point
-        ap_pto.drehwinkel * 57.296 AS drehwinkel,   -- umn: ANGLE [drehwinkel]
-        ax_lagebezeichnungmithausnummer.hausnummer  -- umn: LABELITEM
-   FROM ap_pto
-   JOIN alkis_beziehungen 
-     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_lagebezeichnungmithausnummer 
-     ON alkis_beziehungen.beziehung_zu  = ax_lagebezeichnungmithausnummer.gml_id
-  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+ SELECT p.ogc_fid, 
+        p.wkb_geometry,				-- Point
+        p.drehwinkel * 57.296 AS drehwinkel,	-- umn: ANGLE [drehwinkel]
+        l.hausnummer				-- umn: LABELITEM
+   FROM ap_pto p
+   JOIN alkis_beziehungen v
+     ON p.gml_id = v.beziehung_von
+   JOIN ax_lagebezeichnungmithausnummer l
+     ON v.beziehung_zu  = l.gml_id
+  WHERE v.beziehungsart = 'dientZurDarstellungVon'
+    AND p.endet IS NULL
+    AND l.endet IS NULL;
 
 COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
 
@@ -97,18 +105,20 @@ COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Ha
 
 CREATE OR REPLACE VIEW s_nummer_nebengebaeude 
 AS 
- SELECT ap_pto.ogc_fid, 
-        ap_pto.wkb_geometry, 
-        ap_pto.drehwinkel * 57.296 AS drehwinkel,        -- umn: ANGLE [drehwinkel]
-     -- alkis_beziehungen.beziehungsart,                 -- TEST
-     -- ax_lagebezeichnungmitpseudonummer.pseudonummer,  -- die HsNr des zugehoerigen Hauptgebaeudes
-        ax_lagebezeichnungmitpseudonummer.laufendenummer -- umn: LABELITEM - die laufende Nummer des Nebengebaeudes
-   FROM ap_pto
-   JOIN alkis_beziehungen 
-     ON ap_pto.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_lagebezeichnungmitpseudonummer 
-     ON alkis_beziehungen.beziehung_zu  = ax_lagebezeichnungmitpseudonummer.gml_id
-  WHERE alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
+ SELECT p.ogc_fid, 
+        p.wkb_geometry, 
+        p.drehwinkel * 57.296 AS drehwinkel,	-- umn: ANGLE [drehwinkel]
+     -- v.beziehungsart,		-- TEST
+     -- l.pseudonummer,			-- die HsNr des zugehoerigen Hauptgebaeudes
+        l.laufendenummer		-- umn: LABELITEM - die laufende Nummer des Nebengebaeudes
+   FROM ap_pto p
+   JOIN alkis_beziehungen v 
+     ON p.gml_id = v.beziehung_von
+   JOIN ax_lagebezeichnungmitpseudonummer l
+     ON v.beziehung_zu  = l.gml_id
+  WHERE v.beziehungsart = 'dientZurDarstellungVon'
+    AND p.endet IS NULL
+    AND l.endet IS NULL
 ;
 
 COMMENT ON VIEW s_nummer_nebengebaeude IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
@@ -119,17 +129,19 @@ COMMENT ON VIEW s_nummer_nebengebaeude IS 'fuer Kartendarstellung: Hausnummern N
 
 CREATE OR REPLACE VIEW s_zugehoerigkeitshaken_flurstueck 
 AS 
- SELECT ap_ppo.ogc_fid, 
-        ap_ppo.wkb_geometry, 
-        ap_ppo.drehwinkel * 57.296 AS drehwinkel,
-        ax_flurstueck.flurstueckskennzeichen
-   FROM ap_ppo
-   JOIN alkis_beziehungen 
-     ON ap_ppo.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_flurstueck 
-     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
-  WHERE ap_ppo.art = 'Haken'
-    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+ SELECT p.ogc_fid, 
+        p.wkb_geometry, 
+        p.drehwinkel * 57.296 AS drehwinkel,
+        f.flurstueckskennzeichen
+   FROM ap_ppo p
+   JOIN alkis_beziehungen v
+     ON p.gml_id = v.beziehung_von
+   JOIN ax_flurstueck f
+     ON v.beziehung_zu = f.gml_id
+  WHERE p.art = 'Haken'
+    AND v.beziehungsart = 'dientZurDarstellungVon'
+    AND f.endet IS NULL
+    AND p.endet IS NULL;
 
 COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck IS 'fuer Kartendarstellung';
 
@@ -139,33 +151,38 @@ COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck IS 'fuer Kartendarstellung';
 
 CREATE OR REPLACE VIEW s_zuordungspfeil_flurstueck 
 AS 
- SELECT ap_lpo.ogc_fid, 
-        ap_lpo.wkb_geometry
-   FROM ap_lpo
-   JOIN alkis_beziehungen 
-     ON ap_lpo.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_flurstueck 
-     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
-  WHERE ap_lpo.art = 'Pfeil'
-    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
-    AND ('DKKM1000' ~~ ANY (ap_lpo.advstandardmodell));
+ SELECT l.ogc_fid, 
+        l.wkb_geometry
+   FROM ap_lpo l
+   JOIN alkis_beziehungen v
+     ON l.gml_id = v.beziehung_von
+   JOIN ax_flurstueck f
+     ON v.beziehung_zu = f.gml_id
+  WHERE l.art = 'Pfeil'
+    AND v.beziehungsart = 'dientZurDarstellungVon'
+    AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
+    AND f.endet IS NULL
+    AND l.endet IS NULL;
 
 COMMENT ON VIEW s_zuordungspfeil_flurstueck IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer';
 
 
 CREATE OR REPLACE VIEW s_zuordungspfeilspitze_flurstueck 
 AS 
- SELECT ap_lpo.ogc_fid, (((st_azimuth(st_pointn(ap_lpo.wkb_geometry, 1), 
-        st_pointn(ap_lpo.wkb_geometry, 2)) * (- (180)::double precision)) / pi()) + (90)::double precision) AS winkel, 
-        st_startpoint(ap_lpo.wkb_geometry) AS wkb_geometry 
-   FROM ap_lpo
-   JOIN alkis_beziehungen 
-     ON ap_lpo.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_flurstueck 
-     ON alkis_beziehungen.beziehung_zu = ax_flurstueck.gml_id
-  WHERE ap_lpo.art = 'Pfeil'
-    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon'
-    AND ('DKKM1000' ~~ ANY (ap_lpo.advstandardmodell));
+ SELECT l.ogc_fid, 
+        (((st_azimuth(st_pointn(l.wkb_geometry, 1), 
+        st_pointn(l.wkb_geometry, 2)) * (- (180)::double precision)) / pi()) + (90)::double precision) AS winkel, 
+        st_startpoint(l.wkb_geometry) AS wkb_geometry 
+   FROM ap_lpo l
+   JOIN alkis_beziehungen v
+     ON l.gml_id = v.beziehung_von
+   JOIN ax_flurstueck f
+     ON v.beziehung_zu = f.gml_id
+  WHERE l.art = 'Pfeil'
+    AND v.beziehungsart = 'dientZurDarstellungVon'
+    AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
+    AND f.endet IS NULL
+    AND l.endet IS NULL;
 
 COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
 
@@ -177,14 +194,15 @@ COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'fuer Kartendarstellung: Zu
 
 CREATE OR REPLACE VIEW s_beschriftung 
 AS 
-  SELECT ap_pto.ogc_fid, 
-         ap_pto.schriftinhalt, 
-         ap_pto.art, 
-         ap_pto.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
-         ap_pto.wkb_geometry 
-    FROM ap_pto 
-   WHERE not ap_pto.schriftinhalt IS NULL 
-     AND art NOT IN ('HNR', 'PNR');
+  SELECT p.ogc_fid, 
+         p.schriftinhalt, 
+         p.art, 
+         p.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
+         p.wkb_geometry 
+    FROM ap_pto p
+   WHERE not p.schriftinhalt IS NULL 
+     AND p.endet IS NULL
+     AND p.art NOT IN ('HNR', 'PNR');
 
 -- Feb. 2012 PostNAS 0.6: 'ZAE_NEN' kommt nicht mehr vor!
 
@@ -213,17 +231,19 @@ COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern ange
 
 CREATE OR REPLACE VIEW s_zuordungspfeil_gebaeude 
 AS 
- SELECT ap_lpo.ogc_fid, 
+ SELECT l.ogc_fid, 
      -- alkis_beziehungen.beziehungsart, -- TEST
      -- ap_lpo.art, -- TEST
-        ap_lpo.wkb_geometry
-   FROM ap_lpo
-   JOIN alkis_beziehungen 
-     ON ap_lpo.gml_id = alkis_beziehungen.beziehung_von
-   JOIN ax_gebaeude 
-     ON alkis_beziehungen.beziehung_zu = ax_gebaeude.gml_id
-  WHERE ap_lpo.art = 'Pfeil'
-    AND alkis_beziehungen.beziehungsart = 'dientZurDarstellungVon';
+        l.wkb_geometry
+   FROM ap_lpo l
+   JOIN alkis_beziehungen v
+     ON l.gml_id = v.beziehung_von
+   JOIN ax_gebaeude g
+     ON v.beziehung_zu = g.gml_id
+  WHERE l.art = 'Pfeil'
+    AND v.beziehungsart = 'dientZurDarstellungVon'
+    AND g.endet IS NULL
+    AND l.endet IS NULL;
 
 COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
 
@@ -235,7 +255,7 @@ COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungs
 -- Anpassung DB-Schema erfolgte am 18.09.2011
 
 
-CREATE VIEW sk2004_zuordnungspfeil 
+CREATE OR REPLACE VIEW sk2004_zuordnungspfeil 
 AS
  SELECT ap.ogc_fid, ap.wkb_geometry 
  FROM ap_lpo ap 
@@ -246,7 +266,7 @@ COMMENT ON VIEW sk2004_zuordnungspfeil IS 'fuer Kartendarstellung: Zuordnungspfe
 -- krz: ap.signaturnummer is NULL in allen Sätzen
 --      Siehe s_zuordungspfeil_flurstueck 
 
-CREATE VIEW sk2004_zuordnungspfeil_spitze 
+CREATE OR REPLACE VIEW sk2004_zuordnungspfeil_spitze 
 AS
  SELECT ap.ogc_fid, (((st_azimuth(st_pointn(ap.wkb_geometry, 1), 
         st_pointn(ap.wkb_geometry, 2)) * (- (180)::double precision)) / pi()) + (90)::double precision) AS winkel, 
@@ -362,6 +382,7 @@ AS
    LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
  --LEFT JOIN ap_pto            p  ON p.gml_id       = v.beziehung_von
   WHERE v.beziehungsart is NULL
+    AND f.endet IS NULL
 --ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler
   ;
 
@@ -371,18 +392,19 @@ COMMENT ON VIEW flstnr_ohne_position IS 'Flurstücke ohne manuell gesetzte Posit
 -- Zeigt die Texte an, die nicht in einem der Mapfile-Views verarbeitet werden
 CREATE OR REPLACE VIEW s_allgemeine_texte 
 AS 
- SELECT ap_pto.ogc_fid, 
-      --ap_pto.wkb_geometry, 
-      --ap_pto.gml_id,
-        ap_pto.art, 
-        ap_pto.drehwinkel * 57.296 AS drehwinkel,   -- * 180 / Pi
-        ap_pto.schriftinhalt
-   FROM ap_pto
-  WHERE NOT ap_pto.art = 'ZAE_NEN' 
-    AND NOT ap_pto.art = 'HNR' 
-    AND NOT ap_pto.art = 'FKT' 
-    AND NOT ap_pto.art = 'Friedhof' 
-    AND ap_pto.schriftinhalt IS NOT NULL;
+ SELECT p.ogc_fid, 
+      --p.wkb_geometry, 
+      --p.gml_id,
+        p.art, 
+        p.drehwinkel * 57.296 AS drehwinkel,   -- * 180 / Pi
+        p.schriftinhalt
+   FROM ap_pto p
+  WHERE NOT p.art = 'ZAE_NEN' 
+    AND NOT p.art = 'HNR' 
+    AND NOT p.art = 'FKT' 
+    AND NOT p.art = 'Friedhof' 
+    AND p.schriftinhalt IS NOT NULL
+    AND p.endet IS NULL;
 
 
 -- Analyse zu o.g. Fehler:
@@ -419,14 +441,15 @@ AS
 
 
 
--- EXTENT für Mapfile eines Mandenten ermitteln
+-- EXTENT für das Mapfile eines Mandanten ermitteln
 
 CREATE OR REPLACE VIEW flurstuecks_minmax AS 
  SELECT min(st_xmin(wkb_geometry)) AS r_min, 
         min(st_ymin(wkb_geometry)) AS h_min, 
         max(st_xmax(wkb_geometry)) AS r_max, 
         max(st_ymax(wkb_geometry)) AS h_max
-   FROM public.ax_flurstueck;
+   FROM ax_flurstueck f
+   WHERE f.endet IS NULL;
 
 COMMENT ON VIEW flurstuecks_minmax IS 'Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile';
 
@@ -453,7 +476,10 @@ AS
     LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a
       ON r.artderfestlegung = a.wert
     LEFT JOIN ax_dienststelle d
-      ON r.land = d.land AND r.stelle = d.stelle
+      ON r.land   = d.land 
+     AND r.stelle = d.stelle 
+  WHERE r.endet IS NULL
+    AND d.endet IS NULL
  ;
 
 -- MAP NEU:
@@ -469,6 +495,7 @@ CREATE OR REPLACE VIEW gemarkung_in_gemeinde
 AS
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
   FROM            ax_flurstueck
+  WHERE           endet IS NULL
   ORDER BY        land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
 ;
 
@@ -482,6 +509,7 @@ AS
  SELECT   count(gml_id) as anzahl,
           st_geometrytype(wkb_geometry)
  FROM     ax_flurstueck
+ WHERE    endet IS NULL
  GROUP BY st_geometrytype(wkb_geometry);
 
 
@@ -493,7 +521,7 @@ AS
 --  FEHLER: Funktion to_char(character varying, unknown) existiert nicht
 
 
-CREATE VIEW  adressen_hausnummern
+CREATE OR REPLACE VIEW adressen_hausnummern
 AS
     SELECT 
         s.bezeichnung AS strassenname, 
@@ -518,7 +546,7 @@ AS
 -- Zuordnung dieser Adressen zu Flurstuecken
 -- Schluessel der Gemeinde nach Bedarf anpassen!
 
-CREATE VIEW adressen_zum_flurstueck
+CREATE OR REPLACE VIEW adressen_zum_flurstueck
 AS
     SELECT
            f.gemarkungsnummer, 
@@ -572,7 +600,7 @@ AS
 
 -- Wobei ">xxx>" = JOIN über die Verbindungs-Tabelle "alkis_beziehungen" mit der Beziehungsart "xxx".
 
-CREATE VIEW flurstuecke_eines_eigentuemers 
+CREATE OR REPLACE VIEW flurstuecke_eines_eigentuemers 
 AS 
    SELECT 
       k.bezeichnung                AS gemarkung, 
@@ -610,6 +638,13 @@ AS
      AND bng.beziehungsart = 'istBestandteilVon' -- Namensnummer    >> Grundbuch
      AND bgs.beziehungsart = 'istBestandteilVon' -- Buchungs-Stelle >> Grundbuch
      AND bsf.beziehungsart = 'istGebucht'        -- Flurstueck      >> Buchungs-Stelle
+     AND p.endet IS NULL 
+     AND n.endet IS NULL
+     AND g.endet IS NULL
+     AND b.endet IS NULL
+     AND s.endet IS NULL
+     AND f.endet IS NULL
+     AND k.endet IS NULL
    ORDER BY   
          k.bezeichnung,
          f.flurnummer,
@@ -640,7 +675,7 @@ AS
 -- Wobei ">xxx>" = JOIN über die Verbindungs-Tabelle "alkis_beziehungen" mit der Beziehungsart "xxx".
 
 
-CREATE VIEW rechte_eines_eigentuemers 
+CREATE OR REPLACE VIEW rechte_eines_eigentuemers 
 AS
    SELECT 
       k.bezeichnung                AS gemarkung, 
@@ -686,6 +721,14 @@ AS
      AND bgs.beziehungsart = 'istBestandteilVon' -- B-Stelle herr   >> Grundbuch
      AND bss.beziehungsart in ('an','zu')        -- B-Stelle herr.  >> B-Stelle dien.
      AND bsf.beziehungsart = 'istGebucht'        -- Flurstueck      >> B-Stelle dien
+     AND p.endet IS NULL
+     AND n.endet IS NULL
+     AND g.endet IS NULL
+     AND b.endet IS NULL
+     AND sh.endet IS NULL
+     AND sd.endet IS NULL
+     AND f.endet IS NULL
+     AND k.endet IS NULL
    ORDER BY   
          k.bezeichnung,
          f.flurnummer,

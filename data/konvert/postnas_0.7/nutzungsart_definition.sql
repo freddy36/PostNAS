@@ -51,23 +51,31 @@ COMMENT ON COLUMN nutzung_meta.fldinfo        IS 'Name des Feldes aus "source_ta
 -- Sie sind dann mit einem gemeinsamen Geometrie-Index mit einer SQL-Abfrage auffindbar.
 -- Dies ist die Voraussetzung für eine performante Auskunft.
 
+--DROP TABLE nutzung;
 CREATE TABLE nutzung (
 	gml_id		character(16),
---	gml_id		character varying(32),
+	beginnt		character(20),	-- mehrfache gml_id eindeutig machen, Datenfehler?
 	nutz_id		integer,
 	class		integer,
 	info		integer,
 	zustand		integer,
-	"name"		character varying(50),
-	bezeichnung	character varying(50),
-	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id),
+	"name"		varchar,
+	bezeichnung	varchar,
+--	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id),		-- sollte so sein
+	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id, beginnt),	-- würg arround (gml_id mehrfach!)
 	CONSTRAINT	nutzung_meta_id FOREIGN KEY (nutz_id)
 		REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
 		ON UPDATE NO ACTION ON DELETE CASCADE
 )
 WITH (OIDS=FALSE);
 
+-- ALTER TABLE nutzung ADD COLUMN beginnt character(20);
+-- ALTER TABLE nutzung DROP CONSTRAINT nutzung_pk;
+-- ALTER TABLE nutzung ADD  CONSTRAINT nutzung_pk PRIMARY KEY(gml_id, beginnt);
+
+
 SELECT AddGeometryColumn('nutzung','wkb_geometry','25832','POLYGON',2);
+-- Vereinzelt vorkommende MULTIPOLYGON, zulässig?
 
 -- 'class' ist nur innerhalb einer Gruppe ein sinvoller Index
 CREATE INDEX idx_nutz_cls  ON nutzung USING btree (nutz_id, class);
@@ -76,7 +84,7 @@ CREATE INDEX idx_nutz_cls  ON nutzung USING btree (nutz_id, class);
 CREATE INDEX nutzung_geom_idx ON nutzung USING gist (wkb_geometry);
 
 -- Kommentare
-COMMENT ON TABLE  nutzung             IS 'Zusammenfassung von 26 einzelnen Tabellen des Objektbereiches "Tatsächliche Nutzung".';
+COMMENT ON TABLE  nutzung             IS 'Zusammenfassung von 26 Tabellen des Objektbereiches "Tatsächliche Nutzung".';
 COMMENT ON COLUMN nutzung.gml_id      IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN nutzung.nutz_id     IS 'Index fuer die Quell-Tabelle bei der Zusammenfassung in der Tabelle "nutzung".';
 COMMENT ON COLUMN nutzung.class       IS 'Klassifizierung innerhalb der Nutzung. Aus verschiedenen Feldern importiert. Siehe "nutzung_meta.fldclass".';
@@ -106,5 +114,37 @@ COMMENT ON COLUMN nutzung_class.nutz_id    IS 'Index fuer die Quell-Tabelle bei 
 COMMENT ON COLUMN nutzung_class.class      IS 'Key, Schlüsselwert.';
 COMMENT ON COLUMN nutzung_class.label      IS 'Entschlüsselung. Art der Nutzung, Dies Feld soll in der Auskunft angezeigt werden.';
 COMMENT ON COLUMN nutzung_class.blabla     IS 'Weitere Erläuterungen und Definitionen dazu.';
+
+
+-- Fehlersuche nach GDAL Patch #5444:
+-- Da nun gml_id nicht mehr PRIMARY KEY der Ausgangstabellen ist , kommt es auch zu Doppelbelegungen der Zusammenfassung.
+-- Diese Fälle suchen.
+
+-- SELECT a.gml_id, a.artderbebauung, a.ogc_fid, a.beginnt, b.ogc_fid , b.beginnt
+-- FROM ax_wohnbauflaeche a JOIN ax_wohnbauflaeche b ON a.gml_id = b.gml_id
+-- WHERE a.ogc_fid < b.ogc_fid LIMIT 100; 
+
+CREATE OR REPLACE VIEW nutzung_mehrfache_gml AS
+	SELECT	a.gml_id, 
+		a.nutz_id,
+		a.beginnt as beginnt1, 
+		b.beginnt as beginnt2
+	FROM nutzung a 
+	JOIN nutzung b 
+	  ON a.gml_id = b.gml_id
+	WHERE a.beginnt < b.beginnt
+	--LIMIT 100
+	;
+
+-- Vorkommende Geometry-Typen
+
+--  SELECT a.gml_id, st_geometrytype(a.wkb_geometry) as geomtype ,a.artderbebauung, a.zustand, a.name, a.beginnt
+--  FROM ax_wohnbauflaeche a WHERE geometrytype(wkb_geometry) <> 'POLYGON';
+
+--  SELECT a.gml_id, st_geometrytype(a.wkb_geometry) as geomtype ,a.artderbebauung, a.zustand, a.name, a.beginnt
+--  FROM ax_wohnbauflaeche a WHERE geometrytype(wkb_geometry) <> 'POLYGON';
+
+-- Ergebnis:    Ein MULTIPOLYGON
+-- Konsequenz:  nur Polygone kopieren.
 
 -- END --

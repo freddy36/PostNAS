@@ -1,5 +1,5 @@
 
--- ALKIS-Datenbank aus dem Konverter PostNAS 0.6
+-- ALKIS-Datenbank aus dem Konverter PostNAS 0.7
 
 -- Z u s a e t z l i c h e   S c h l u e s s e l t a b e l l e n
 
@@ -9,8 +9,7 @@
 
 -- Die Tabellen werden vom Buchwerk-Auskunftsprogramm benoetigt.
 
--- Dies Script kann nach dem Anlegen der Datenbank mit dem Script 'alkis_PostNAS_0.5_schema.sql'
--- verarbeitet werden.
+-- Dies Script kann nach dem Anlegen der Datenbank mit dem Script 'alkis_PostNAS_0.7_schema.sql' verarbeitet werden.
 
 -- Alternativ kann eine Template-Datenbbank bereits mit diesen Schluesseltabellen angelegt werden.
 
@@ -1240,4 +1239,5 @@ INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Bohrung verfüll
 INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Zollgrenze',9600);
 INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Belastung nach §7 Abs. 2 GBO',9700);
 INSERT INTO ax_sonstigesrecht_artdf (bezeichner, wert) VALUES ('Sonstiges',9999);
+
 -- ENDE --

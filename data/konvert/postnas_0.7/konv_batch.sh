@@ -21,6 +21,9 @@
 ##   2012-02-10 Umbennung nach 0.7
 ##   2012-02-17 Optimierung
 ##   2012-02-28 Neuer Parameter 4 um Post-Prozessing zu unterdrücken
+##   2012-04-25 Durch GDAL Patch #5444 werden die Löschungen als Trigger auf Tabelle 'delete' verarbeitet
+##
+## ToDo: Option "-skipfailures" nach Test entfernen ?
 ##
 ## Konverter:   /opt/gdal-1.9.1/bin/ = GDAL 1.9-DEV / PostNAS 0.7
 ## Koordinaten: EPSG:25832  UTM, Zone 32
@@ -70,88 +73,74 @@ else
 		exit 4
 	fi
 fi
-layer=""
-# leer = alle Layer
-## Fehlerprotokoll:
-errprot='/data/konvert/postnas_0.7/log/postnas_err_'$DBNAME'.prot'
+# Fehlerprotokoll:
+  errprot='/data/konvert/postnas_0.7/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
-con="-p 5432 -d ${DBNAME} "
-echo "Datenbank-Name . . = ${DBNAME}"
-echo "Ordner NAS-Daten . = ${ORDNER}"
-echo "Verarbeitungs-Modus= ${verarb}"
-echo " "
-cd ${ORDNER}
-rm ../temp/*.gfs
-echo "Dateien in " ${ORDNER} " (ls) :"
-ls
-# Alte delete-Eintraege (vorangegangener Abbruch?) loeschen, oder abarbeiten?
-echo 'TRUNCATE table "delete";' | psql $con 
-for zipfile in *.zip ; do 
+  con="-p 5432 -d ${DBNAME} "
+  echo "Datenbank-Name . . = ${DBNAME}"
+  echo "Ordner NAS-Daten . = ${ORDNER}"
+  echo "Verarbeitungs-Modus= ${verarb}"
   echo " "
-  echo "*********"
-  echo "* Archiv: " $zipfile
-  rm ../temp/*.xml
-  unzip ${zipfile}  -d ../temp
-  # Es sollte eigentlich immer geneu ein XML-File in jedem ZIP-File stecken,
-  # aber es geht auch anders.
-  for nasdatei in ../temp/*.xml ; do 
-    echo "* Datei:  " $nasdatei
-    # Zwischenueberschrift im Fehlerprotokoll
-    echo "* Datei: " $nasdatei >> $errprot
-    if [ $UPD == "e" ]
-    then
-      # E R S T L A D E N
-      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-         PG:"dbname=${DBNAME} host=localhost port=5432" \
-         -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
-      # Abbruch bei Fehler?
-      nasresult=$?
-      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
-    else
-      # A K T U A L I S I E R U N G
-      echo "- 1. Nur delete-Layer auswerten" 
-      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-         PG:"dbname=${DBNAME} host=localhost port=5432" \
-         -a_srs EPSG:25832  ${nasdatei}  delete  2>> $errprot
-      nasresult=$?
-      echo "* Resultat: " $nasresult " fuer delete aus " ${nasdatei}
-      #
-      # Durch die Funktion 'deleteFeature' in der Datenbank die delete-Objekte abarbeiten
-      echo "- 1a. delete-Layer abarbeiten:"
-      psql $con  < /data/konvert/postnas_0.7/delete.sql
-      #
-      echo "- 2. alle Layer auswerten"
-      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update}  -skipfailures \
-        PG:"dbname=${DBNAME} host=localhost port=5432" \
-        -a_srs EPSG:25832  ${nasdatei}  ${layer}  2>> $errprot
-      nasresult=$?
-      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
-      #
-      echo "- 2a. delete-Layer nochmals leoeschen:"
-      echo 'TRUNCATE table "delete";' | psql $con 
-    fi
-  done
-  # Ende Zipfile
-  echo "*********"
-done
-rm ../temp/*.xml
-echo " "
-echo "** Ende Konvertierung Ordner ${ORDNER}"
-##
-if [ $PP == "nopp" ]
-then
-  echo "** KEIN Post-Processing - Dies Spaeter nachholen."
-  # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem großen Bestand laufen
-  # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
-else
-  echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
-  echo "** - Optimierte Nutzungsarten neu Laden:"
-  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/nutzungsart_laden.sql
-  ##
-  echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
-  psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/pp_laden.sql
-fi
+# Alte delete-Eintraege in DB?
+  echo 'TRUNCATE table "delete";' | psql $con 
 #
-echo "Das Fehler-Protokoll wurde ausgegeben in die Datei '$errprot' "
-##
+# Ordner abarbeiten
+#
+  cd ${ORDNER}
+  rm ../temp/*.gfs
+  echo "Dateien in " ${ORDNER} " (ls) :"
+  ls
+  for zipfile in *.zip ; do 
+    echo " "
+    rm ../temp/*.xml
+    echo "*********"
+   #echo "* Archiv: " $zipfile
+    unzip ${zipfile}  -d ../temp
+    # Es sollte nur ein XML-File in jedem ZIP-File stecken, aber es geht auch anders.
+    for nasdatei in ../temp/*.xml ; do 
+      # echo "* Datei:  " $nasdatei
+      # Zwischenueberschrift im Fehlerprotokoll
+      echo "* Datei: " $nasdatei >> $errprot
+      #
+      # PostNAS Konverter-Aufruf
+      #
+      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures \
+         PG:"dbname=${DBNAME} host=localhost port=5432" -a_srs EPSG:25832 ${nasdatei} 2>> $errprot
+      nasresult=$?
+      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+    done # Ende Zipfile
+  done # Ende Ordner
+  rm ../temp/*.xml
+  echo " "
+  echo "** Ende Konvertierung Ordner ${ORDNER}"
+#
+# Post-Processing / Nacharbeiten
+#
+  if [ $PP == "nopp" ]
+  then
+    echo "** KEIN Post-Processing - Dies Spaeter nachholen."
+    # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem großen Bestand laufen
+    # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
+  else
+    echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
+    echo "** - Optimierte Nutzungsarten neu Laden:"
+    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/nutzungsart_laden.sql
+    ##
+    echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
+    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/pp_laden.sql
+  fi
+# Durch Einfuegen in Tabelle 'delete' werden Loeschungen anderer Tabellen getriggert
+  echo "** delete-Tabelle enthält:"
+  echo 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";' | psql $con
+  echo "   delete-Tabelle loeschen:"
+  echo 'TRUNCATE table "delete";' | psql $con
+#
+# Wenn die Datenbank MIT Historie angelegt wurde, man diese aber gar nicht braucht,
+# dann hinterher aufräumen der historischen Objekte 
+  echo "** geendete Objekte entfernen:"
+# Function :
+  echo 'SELECT alkis_delete_all_endet();' | psql $con
+#
+  echo "Das Fehler-Protokoll wurde ausgegeben in die Datei\n$errprot"
+#
