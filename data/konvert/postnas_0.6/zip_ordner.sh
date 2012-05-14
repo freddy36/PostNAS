@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 ## ------------------------------------------------------------------------------
 ## In einem Ordner wird jede NAS-Datei einzeln in ein Zip-Archiv komprimiert.
 ## Die ursprüngliche NAS-Datei wird dabei entfernt: Parameter "-m" (move).
