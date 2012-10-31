@@ -9,7 +9,9 @@
 --  2012-02-17 Optimierung
 --  2012-04-17 Flurstuecksnummern auf Standardposition
 --  2012-04-24 Generell Filter 'endet IS NULL' um historische Objekte auszublenden
-
+--  2012-04-25 Abstürze und Fehler (durch kaputte Geometrie?) beim Zusammenfassen der Flächen
+--             Mehr buffer, mehr simplify?
+--  2012-10-29 Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -19,18 +21,72 @@
 -- Die dynamische Aufbereitung über Views und Functions würde zu lange dauern und somit lange 
 -- Antwortzeiten in WMS, WFS, Buchauskunft oder Navigation (Suche) verursachen.
 
--- Im Rahmen eines "Post-Processing" werden diese Daten nach jeder Konvertierung (NBA-Aktialisierung) 
+-- Im Rahmen eines "Post-Processing" werden diese Daten nach jeder Konvertierung (NBA-Aktualisierung) 
 -- einmal komplett aufbereitet. Die benötigten Informationen stehen somit den Anwendungen mundgerecht zur Verfügung.
 
 -- Die per PostProcessing gefüllten Tabellen bekommen den Profix "pp_". 
 
 -- Die Ausführung dieses Scriptes auf einer Datenbank für eine 80T-Einwohner-Stadt dauert ca.: 500 Sek. !
 
+SET client_encoding = 'UTF-8';
 
 
--- ===========================
--- Flurstuecksnummern-Position
--- ===========================
+-- ============================================================================
+-- Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
+-- ============================================================================
+-- Work arround: alle Redundazen nach einem Lauf entfernen.
+-- Besser wäre: sofort im Trigger bei replace entfernen.
+-- Siehe Schema in FUNCTION delete_feature_kill
+
+DELETE 
+  FROM alkis_beziehungen AS bezalt        -- Beziehung Alt
+ WHERE EXISTS
+       (SELECT ogc_fid
+         FROM alkis_beziehungen AS bezneu -- Beziehung Neu
+        WHERE bezalt.beziehung_von = bezneu.beziehung_von
+          AND bezalt.beziehung_zu  = bezneu.beziehung_zu
+          AND bezalt.beziehungsart = bezneu.beziehungsart
+          AND bezalt.ogc_fid       < bezneu.ogc_fid
+        );
+-- Denkbar ist eine Variante für den Trigger, die zusätzlich
+-- auf eine bestimmte gml_id filtert.
+-- Damit wäre die DB schon während der Konvertierung konsistenter.
+
+
+-- SELECT *
+--  FROM alkis_beziehungen AS bezalt
+--  WHERE EXISTS
+--        (SELECT ogc_fid
+--          FROM alkis_beziehungen AS bezneu
+--         WHERE bezalt.beziehung_von = bezneu.beziehung_von
+--           AND bezalt.beziehung_zu  = bezneu.beziehung_zu
+--           AND bezalt.beziehungsart = bezneu.beziehungsart
+--           AND bezalt.ogc_fid       < bezneu.ogc_fid
+--         );
+
+-- SELECT *
+--  FROM alkis_beziehungen AS bezalt
+--  WHERE EXISTS
+--        (SELECT ogc_fid
+--          FROM alkis_beziehungen AS bezneu
+--         WHERE bezalt.beziehung_von = bezneu.beziehung_von
+--           AND bezalt.beziehung_zu  = bezneu.beziehung_zu
+--           AND bezalt.beziehungsart = bezneu.beziehungsart
+--           AND bezalt.ogc_fid       < bezneu.ogc_fid
+--         )
+--      -- mit dem Zusatz nur die Faelle aus dem letzten Durchlauf,
+--      -- die aktuell noch in der Delet-Tabelle stehen
+--      AND EXISTS
+--         (SELECT ogc_fid
+--          FROM delete
+--          WHERE bezalt.beziehung_von = substr(featureid, 1, 16)
+--             OR bezalt.beziehung_zu  = substr(featureid, 1, 16)
+--         );
+
+
+-- =================================
+-- Flurstuecksnummern-Label-Position
+-- =================================
 
 -- ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck"
 
@@ -72,14 +128,9 @@
 -- muss diese Information als (redundante) Tabelle nach dem Laden zwischengespeichert werden. 
 
 
-SET client_encoding = 'UTF-8';
+-- G E M A R K U N G
 
-
--- Alles auf Anfang!
-  DELETE FROM pp_gemeinde;
-  DELETE FROM pp_gemarkung;
-  DELETE FROM pp_flur;
-
+DELETE FROM pp_gemarkung;
 
 -- Vorkommende Paarungen Gemarkung <-> Gemeinde in ax_Flurstueck
 INSERT INTO pp_gemarkung
@@ -90,13 +141,29 @@ INSERT INTO pp_gemarkung
   ORDER BY        land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer 
 ;
 
--- daraus: Vorkommende Gemeinden
+-- Namen der Gemarkung dazu als Optimierung bei der Auskunft 
+UPDATE pp_gemarkung a
+   SET gemarkungsname =
+   ( SELECT b.bezeichnung 
+     FROM    ax_gemarkung b
+     WHERE a.land=b.land 
+       AND a.gemarkung=b.gemarkungsnummer
+       AND b.endet IS NULL
+   );
+
+
+-- G E M E I N D E
+
+DELETE FROM pp_gemeinde;
+
+-- Vorkommende Gemeinden aus den gemarkungen
 INSERT INTO pp_gemeinde
   (               land, regierungsbezirk, kreis, gemeinde)
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde
   FROM            pp_gemarkung
   ORDER BY        land, regierungsbezirk, kreis, gemeinde 
 ;
+
 
 -- Namen der Gemeinde dazu als Optimierung bei der Auskunft 
 UPDATE pp_gemeinde a
@@ -110,47 +177,52 @@ UPDATE pp_gemeinde a
        AND b.endet IS NULL
    );
 
--- Namen der Gemarkung dazu als Optimierung bei der Auskunft 
-UPDATE pp_gemarkung a
-   SET gemarkungsname =
-   ( SELECT b.bezeichnung 
-     FROM    ax_gemarkung b
-     WHERE a.land=b.land 
-       AND a.gemarkung=b.gemarkungsnummer
-       AND b.endet IS NULL
-   );
-
 
 -- ==============================================================================
 -- Geometrien der Flurstücke schrittweise zu groesseren Einheiten zusammen fassen
 -- ==============================================================================
 
--- Dies macht nur Sinn, wenn der Inhalt der Datenbenk einen ganzen Katasterbezirk enthält.
+-- Dies macht nur Sinn, wenn der Inhalt der Datenbank einen ganzen Katasterbezirk enthält.
 -- Wenn ein Gebiet durch geometrische Filter im NBA ausgegeben wurde, dann gibt es Randstreifen, 
 -- die zu Pseudo-Fluren zusammen gefasst werden. Fachlich falsch!
 
+-- Ausführungszeit: 1 mittlere Stadt mit ca. 14.000 Flurstücken > 100 Sek
+
 -- ToDo:
---   TopologyException: found non-noded intersection between   ...
 --   Nur "geprüfte Flurstücke" verwenden?  Filter?
+
+--   070: TopologyException: found non-noded intersection between   ...
+
+
+DELETE FROM pp_flur;
 
 INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
    SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
            count(gml_id) as anz_fs,
-           multi(st_union(st_buffer(f.wkb_geometry,0))) AS the_geom 
+           multi(st_union(st_buffer(f.wkb_geometry,0.05))) AS the_geom -- 5 cm Zugabe um Zwischenräume zu vermeiden
      FROM  ax_flurstueck f
      WHERE f.endet IS NULL
   GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer, f.flurnummer;
+
+-- Geometrie vereinfachen, auf 1 Meter glätten
+UPDATE pp_flur SET simple_geom = simplify(the_geom, 1.0);
 
 
 -- Fluren zu Gemarkungen zusammen fassen
 -- -------------------------------------
 
--- Flächen vereinigen
+-- FEHLER: 290 Absturz PG! Bei Verwendung der ungebufferten präzisen Geometrie.  
+-- bufferOriginalPrecision failed (TopologyException: unable to assign hole to a shell), trying with reduced precision
+-- UPDATE: ../../source/headers/geos/noding/SegmentString.h:175: void geos::noding::SegmentString::testInvariant() const: Zusicherung »pts->size() > 1« nicht erfüllt.
+
+
+-- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
 UPDATE pp_gemarkung a
   SET the_geom = 
-   ( SELECT multi(st_union(st_buffer(b.the_geom,0))) AS the_geom 
+   ( SELECT multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal 10 cm Zugabe
      FROM    pp_flur b
-     WHERE a.land=b.land AND a.gemarkung=b.gemarkung
+     WHERE a.land      = b.land 
+       AND a.gemarkung = b.gemarkung
    );
 
 -- Fluren zaehlen
@@ -158,7 +230,8 @@ UPDATE pp_gemarkung a
   SET anz_flur = 
    ( SELECT count(flurnummer) AS anz_flur 
      FROM    pp_flur b
-     WHERE a.land=b.land AND a.gemarkung=b.gemarkung
+     WHERE a.land      = b.land 
+       AND a.gemarkung = b.gemarkung
    ); -- Gemarkungsnummer ist je BundesLand eindeutig
 
 -- Geometrie vereinfachen (Wirkung siehe pp_gemarkung_analyse)
@@ -168,12 +241,13 @@ UPDATE pp_gemarkung SET simple_geom = simplify(the_geom, 8.0);
 -- Gemarkungen zu Gemeinden zusammen fassen
 -- ----------------------------------------
 
--- Flächen vereinigen
+-- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
 UPDATE pp_gemeinde a
   SET the_geom = 
-   ( SELECT multi(st_union(st_buffer(b.the_geom,0))) AS the_geom 
+   ( SELECT multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal Zugabe 10 cm
      FROM    pp_gemarkung b
-     WHERE a.land=b.land AND a.gemeinde=b.gemeinde
+     WHERE a.land     = b.land 
+       AND a.gemeinde = b.gemeinde
    );
 
 -- Gemarkungen zählen
@@ -181,7 +255,8 @@ UPDATE pp_gemeinde a
   SET anz_gemarkg = 
    ( SELECT count(gemarkung) AS anz_gemarkg 
      FROM    pp_gemarkung b
-     WHERE a.land=b.land AND a.gemeinde=b.gemeinde
+     WHERE a.land     = b.land 
+       AND a.gemeinde = b.gemeinde
    );
 
 -- Geometrie vereinfachen (Wirkung siehe pp_gemeinde_analyse)

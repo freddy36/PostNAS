@@ -7,7 +7,7 @@
 --  2012-02-25 PostNAS 07, Umbenennung
 --  2012-04-17 flstnr_ohne_position
 --  2012-04-24 pauschal Filter 'endet IS NULL' um historische Objekte auszublenden
-
+--  2012-10-29 Redundanzen in Beziehungen suchen (entstehen durch replace)
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -739,5 +739,43 @@ AS
          sh.laufendenummer 
 ;
 
--- END --
+CREATE OR REPLACE VIEW beziehungen_redundant 
+AS
+SELECT *
+ FROM alkis_beziehungen AS bezalt
+ WHERE EXISTS
+       (SELECT ogc_fid
+         FROM alkis_beziehungen AS bezneu
+        WHERE bezalt.beziehung_von = bezneu.beziehung_von
+          AND bezalt.beziehung_zu  = bezneu.beziehung_zu
+          AND bezalt.beziehungsart = bezneu.beziehungsart
+          AND bezalt.ogc_fid       < bezneu.ogc_fid
+        );
 
+COMMENT ON VIEW beziehungen_redundant IS 'alkis_beziehungen zu denen es eine identische neue Version gibt.';
+
+
+CREATE OR REPLACE VIEW beziehungen_redundant_in_delete
+AS
+SELECT *
+ FROM alkis_beziehungen AS bezalt
+ WHERE EXISTS
+       (SELECT ogc_fid
+         FROM alkis_beziehungen AS bezneu
+        WHERE bezalt.beziehung_von = bezneu.beziehung_von
+          AND bezalt.beziehung_zu  = bezneu.beziehung_zu
+          AND bezalt.beziehungsart = bezneu.beziehungsart
+          AND bezalt.ogc_fid       < bezneu.ogc_fid
+        )
+     -- mit dem Zusatz nur die Faelle aus dem letzten Durchlauf,
+     -- die aktuell noch in der Delet-Tabelle stehen
+     AND EXISTS
+        (SELECT ogc_fid
+         FROM delete
+         WHERE bezalt.beziehung_von = substr(featureid, 1, 16)
+            OR bezalt.beziehung_zu  = substr(featureid, 1, 16)
+        );
+
+COMMENT ON VIEW beziehungen_redundant_in_delete IS 'alkis_beziehungen zu denen es eine identische neue Version gibt und wo das Objekt noch in der delete-Tabelle vorkommt.';
+
+-- END --

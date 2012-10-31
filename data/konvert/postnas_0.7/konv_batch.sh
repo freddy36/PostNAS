@@ -1,4 +1,4 @@
-#!/bin/bash
+Ôªø#!/bin/bash
 ## -------------------------------------------------
 ## Konvertierung von ALKIS NAS-Format nach PosGIS  -
 ## NAS-Daten in einem Ordner konvertieren          -
@@ -12,25 +12,26 @@
 ##          usw.
 ##           /temp/
 ##   Auf der gleichen Ebene wie die Datenordner muss ein Ordner /temp/ existieren.
-##   Dort werden die NAS-Daten tempor‰r ausgepackt.
+##   Dort werden die NAS-Daten tempor√§r ausgepackt.
 ##   Relativ zum mitgegebenen Parameter ist das: '../temp/'
 ##   Parallel laufende Konvertierungen zum gleichen Mandanten 
-##   w¸rden hier durcheinander geraten. Vermeiden!
+##   w√ºrden hier durcheinander geraten. Vermeiden!
 ##
 ## Stand: 
 ##   2012-02-10 Umbennung nach 0.7
 ##   2012-02-17 Optimierung
-##   2012-02-28 Neuer Parameter 4 um Post-Prozessing zu unterdr¸cken
-##   2012-04-25 Durch GDAL Patch #5444 werden die Lˆschungen als Trigger auf Tabelle 'delete' verarbeitet
+##   2012-02-28 Neuer Parameter 4 um Post-Prozessing zu unterdr√ºcken
+##   2012-04-25 Durch GDAL Patch #5444 werden die L√∂schungen als Trigger auf Tabelle 'delete' verarbeitet
+##   2012-05-18 Umzug neue GDI, GDAL-Trunk unter Pfad 
+##   2012-10-30 Umgebungsvariable setzen, delete-Tabelle am Ende f√ºr Analyse gef√ºllt lassen.
+##              Test als 0.7a mit gepatchter gdal-Version (noch 2.0dev)
 ##
-## ToDo: Option "-skipfailures" nach Test entfernen ?
-##
-## Konverter:   /opt/gdal-1.9.1/bin/ = GDAL 1.9-DEV / PostNAS 0.7
+## Konverter:   /opt/gdal-2.0/bin/ = GDAL 2.0-DEV / PostNAS 0.7
 ## Koordinaten: EPSG:25832  UTM, Zone 32
 ##              -a_srs EPSG:25832   - bleibt im UTM-System (korrigierte Werte)
 ##
 echo "**************************************************"
-echo "**   K o n v e r t i e r u n g     PostNAS 0.7  **"
+echo "**   K o n v e r t i e r u n g     PostNAS 0.7a **"
 echo "**************************************************"
 ## Parameter:
 ORDNER=$1
@@ -74,7 +75,7 @@ else
 	fi
 fi
 # Fehlerprotokoll:
-  errprot='/data/konvert/postnas_0.7/log/postnas_err_'$DBNAME'.prot'
+  errprot='/data/konvert/postnas_0.7a/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
   con="-p 5432 -d ${DBNAME} "
@@ -82,7 +83,8 @@ fi
   echo "Ordner NAS-Daten . = ${ORDNER}"
   echo "Verarbeitungs-Modus= ${verarb}"
   echo " "
-# Alte delete-Eintraege in DB?
+# noch alte delete-Eintraege in DB?
+  echo "Leeren der delete-Tabelle"
   echo 'TRUNCATE table "delete";' | psql $con 
 #
 # Ordner abarbeiten
@@ -103,12 +105,20 @@ fi
       # Zwischenueberschrift im Fehlerprotokoll
       echo "* Datei: " $nasdatei >> $errprot
       #
+      # Umgebungsvariable setzen:
+        export GML_FIELDTYPES=ALWAYS_STRINGS    # PostNAS behandelt Zahlen wie Strings, PostgreSQL-Treiber macht daraus Zahlen
+        export OGR_SETFIELD_NUMERIC_WARNING=YES # Meldung abgeschnittene Zahlen?
+       #export CPL_DEBUG=ON                     # Meldung, wenn Attribute √ºberschrieben werden
+      #
       # PostNAS Konverter-Aufruf
       #
-      /opt/gdal-1.9.1/bin/ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures \
+      # -skipfailures    #
+      # -overwrite       #
+      /opt/gdal-2.0/bin/ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures  \
          PG:"dbname=${DBNAME} host=localhost port=5432" -a_srs EPSG:25832 ${nasdatei} 2>> $errprot
       nasresult=$?
       echo "* Resultat: " $nasresult " fuer " ${nasdatei}
+	  echo "* Resultat: " $nasresult " fuer " ${nasdatei}  >> $errprot
     done # Ende Zipfile
   done # Ende Ordner
   rm ../temp/*.xml
@@ -120,27 +130,32 @@ fi
   if [ $PP == "nopp" ]
   then
     echo "** KEIN Post-Processing - Dies Spaeter nachholen."
-    # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem groﬂen Bestand laufen
-    # Der Aufwand f¸r das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
+    # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem gro√üen Bestand laufen
+    # Der Aufwand f√ºr das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
   else
     echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
     echo "** - Optimierte Nutzungsarten neu Laden:"
-    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/nutzungsart_laden.sql
+    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7a/nutzungsart_laden.sql
     ##
     echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
-    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7/pp_laden.sql
+    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7a/pp_laden.sql
   fi
 # Durch Einfuegen in Tabelle 'delete' werden Loeschungen anderer Tabellen getriggert
-  echo "** delete-Tabelle enth‰lt:"
+  echo "** delete-Tabelle enth√§lt:"
   echo 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";' | psql $con
-  echo "   delete-Tabelle loeschen:"
-  echo 'TRUNCATE table "delete";' | psql $con
+ #echo "   delete-Tabelle loeschen:"
+ #echo 'TRUNCATE table "delete";' | psql $con
+ # Fuer Analyse-Zwecke sollten die Delete-Eintraege erhalten bleiben bis zum naechsten Lauf.
+ # TRUNCATE erfolgt VOR der Konnvertierung.
 #
 # Wenn die Datenbank MIT Historie angelegt wurde, man diese aber gar nicht braucht,
-# dann hinterher aufr‰umen der historischen Objekte 
-  echo "** geendete Objekte entfernen:"
+# dann hinterher aufr√§umen der historischen Objekte 
+ #echo "** geendete Objekte entfernen:"
 # Function :
-  echo 'SELECT alkis_delete_all_endet();' | psql $con
+ #echo 'SELECT alkis_delete_all_endet();' | psql $con
+ #echo "  ... geendete Objekte entfernen wurde fuer Test dektiviert."
+ #echo "  Bitte manuell ausfuehren:  SELECT alkis_delete_all_endet(); "
 #
-  echo "Das Fehler-Protokoll wurde ausgegeben in die Datei\n$errprot"
+  echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
+ #echo "HINWEIS: -skipfailures  fuer Produktion wieder einschalten."
 #

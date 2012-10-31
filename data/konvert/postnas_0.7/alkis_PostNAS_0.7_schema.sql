@@ -37,9 +37,13 @@
 --                Umschaltung mit/ohne Historie über Vernüpfung Trigger -> Function
 --                Typ 'GEOMETRY' bei Tabellen: AX_WegPfadSteig, AX_UntergeordnetesGewaesser
 
+-- 2012-10-31 FJ  Trigger fuer NAS-Replace-Saetze repariert: 
+--                siehe: FUNCTION delete_feature_kill() 
+--                ax_historischesflurstueck.buchungsart ist Text nicht integer.
+
 --  VERSIONS-NUMMER:
 
---  Dies Schema kann nicht mehr mit der installierbaren gdal-Version 1.9 verwendet werden.
+--  Dies Schema kann NICHT mehr mit der installierbaren gdal-Version 1.9 verwendet werden.
 --  Derzeit muss ogr2ogr (gdal) aus den Quellen compiliert werden, die o.g. Patch enthalten.
 --  Weiterführung dieses Zweiges als PostNAS 0.7
 
@@ -266,24 +270,21 @@ BEGIN
 			END IF;
 		END IF;
 
+		-- Das beginn-Datum des neuen Objektes ermitteln, der Satz ist kurz zuvor eingefuegt worden
+
+		-- Variante 1 funktioniert, wenn gml_id auch einen Timestamp enthaelt
 		sql := 'SELECT beginnt FROM ' || NEW.typename || ' WHERE identifier=''urn:adv:oid:' || NEW.replacedBy || '''';
 		-- RAISE NOTICE 'SQL: %', sql; 
-		
-		-- FEHLER: identifier enthält nur gml_id, aber nicht den Timestamp dahinter
-		--         Daher wird das zu ersetzende Obejkt nicht gefunden
-		
 		EXECUTE sql INTO endete;
 
-/*
 		IF endete IS NULL AND length(NEW.replacedBy)>16 THEN
-			RAISE NOTICE '%: Nachfolger % nicht gefunden - versuche ''%''', NEW.featureid, substr(NEW.replacedBy, 1, 16);
+			RAISE NOTICE '%: Nachfolger % nicht gefunden - versuche ''%''', NEW.featureid, NEW.replacedBy, substr(NEW.replacedBy, 1, 16);
 			sql := 'SELECT beginnt FROM ' || NEW.typename
 			    || ' WHERE gml_id=''' || substr(NEW.replacedBy, 1, 16) || ''''
 			    || ' AND endete IS NULL'
 			    || ' AND identifier<>''urn:adv:oid:'|| NEW.featureid || '''';
 			EXECUTE sql INTO endete;
 		END IF;
- */
 
 		IF endete IS NULL THEN
 			IF NEW.safetoignore = 'true' THEN
@@ -295,16 +296,17 @@ BEGIN
 			END IF;
 		END IF;
 
-		-- RAISE NOTICE '%: Nachfolgeobjekt beginnt um %.', NEW.featureid, endete;
+		RAISE NOTICE '%: Nachfolgeobjekt beginnt um %.', NEW.featureid, endete;
 	ELSE
 		RAISE EXCEPTION '%: Ungültiger Kontext % (''delete'' oder ''replace'' erwartet).', NEW.featureid, NEW.context;
 	END IF;
 
+	-- mit dem zuvor ermittelten Beginn-Datum des replace-Objektes das alte Objekt historisieren
 	sql := 'UPDATE ' || NEW.typename
 		|| ' SET endet=''' || endete || ''''
 		|| ' WHERE (identifier=''urn:adv:oid:' || NEW.featureid || ''' OR identifier=''urn:adv:oid:' || gml_id || ''')'
 		|| ' AND endet IS NULL';
-	-- RAISE NOTICE 'SQL: %', sql; 
+		RAISE NOTICE 'SQL: %', sql; 
 	EXECUTE sql;
 	GET DIAGNOSTICS n = ROW_COUNT;
 	IF n<>1 THEN
@@ -327,9 +329,12 @@ $$ LANGUAGE plpgsql;
 -- Löschsatz verarbeiten (OHNE Historie)
 -- historische Objekte werden sofort gelöscht.
 -- Siehe Mail W. Jacobs vom 23.03.2012 in PostNAS-Mailingliste
+-- geaendert krz FJ 2012-10-31
 CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
 DECLARE
 	query TEXT;
+	begsql TEXT;
+	aktbeg TEXT;
 	gml_id TEXT;
 BEGIN
 	NEW.typename := lower(NEW.typename);
@@ -341,16 +346,57 @@ BEGIN
 	END IF;
 
 	IF NEW.context='delete' THEN
-		query := 'DELETE FROM ' || NEW.typename || ' WHERE gml_id = ''' || gml_id || '''';
+		-- ersatzloses Loeschen eines Objektes
+
+		-- Tabelle der Objekt-Art
+		query := 'DELETE FROM ' || NEW.typename 
+			|| ' WHERE gml_id = ''' || gml_id || '''';
 		EXECUTE query;
 
-		query := 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id || ''' OR beziehung_zu = ''' || gml_id || '''';
+		-- Tabelle alkis_beziehungen
+		query := 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id 
+			|| ''' OR beziehung_zu = ''' || gml_id || '''';
 		EXECUTE query;
+		RAISE NOTICE 'Lösche gml_id % in % und Beziehungen', gml_id, NEW.typename;
+
 	ELSE
-		-- replace
-		query := 'DELETE FROM ' || NEW.typename || ' WHERE gml_id = ''' || gml_id || '''';
+		-- Ersetzen eines Objektes
+		-- In der objekt-Tabelle sind bereits 2 Objekte vorhanden (alt und neu).
+		-- Die 2 Datensätze unterscheiden sich nur in ogc_fid und beginnt
+
+		-- beginnt-Wert des aktuellen Objektes ermitteln 
+		-- RAISE NOTICE 'Suche beginnt von neuem gml_id % ', substr(NEW.replacedBy, 1, 16);
+		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id = ''' || substr(NEW.replacedBy, 1, 16) || ''' AND endet IS NULL';
+		EXECUTE begsql INTO aktbeg;
+
+		-- Nur alte Objekte entfernen
+		query := 'DELETE FROM ' || NEW.typename 
+			|| ' WHERE gml_id = ''' || gml_id || ''' AND beginnt < ''' || aktbeg || '''';
 		EXECUTE query;
-		-- alkis_beziehungen bleibt so
+
+		-- Tabelle alkis_beziehungen
+		IF gml_id = substr(NEW.replacedBy, 1, 16) THEN -- gml_id gleich
+			-- Beziehungen des Objektes wurden redundant noch einmal eingetragen
+			-- ToDo:         HIER sofort die Redundanzen zum aktuellen Objekt beseitigen.
+			-- Work-Arround: Nach der Konvertierung werden im Post-Processing 
+			--               ALLE Redundanzen mit einem SQL-Statemant beseitigt.
+		--	RAISE NOTICE 'Ersetze gleiche gml_id % in %', gml_id, NEW.typename;
+
+		-- ENTWURF ungetestet:
+		--query := 'DELETE FROM alkis_beziehungen AS bezalt 
+		--	WHERE (bezalt.beziehung_von = ' || gml_id || ' OR bezalt.beziehung_zu = ' || gml_id ||')
+		--	AND EXISTS (SELECT ogc_fid FROM alkis_beziehungen AS bezneu 
+		--		WHERE bezalt.beziehung_von = bezneu.beziehung_von 
+		--		AND bezalt.beziehung_zu = bezneu.beziehung_zu
+		--		AND bezalt.beziehungsart = bezneu.beziehungsart
+		--		AND bezalt.ogc_fid < bezneu.ogc_fid);'
+		--EXECUTE query;
+
+		ELSE
+			-- replace mit ungleicher gml_id
+			-- Falls dies vorkommt, die Function erweitern
+			RAISE EXCEPTION '%: neue gml_id % bei Replace in %. alkis_beziehungen muss aktualisiert werden!', gml_id, NEW.replacedBy, NEW.typename;
+		END IF;
 	END IF;
 
 	NEW.ignored := false;
@@ -360,7 +406,6 @@ $$ LANGUAGE plpgsql;
 
 -- Im Trigger 'delete_feature_trigger' muss eine dieser beiden Functions (_hist oder _kill) verlinkt werden, 
 -- je nachdem ob nur aktuelle oder auch historische Objekte in der Datenbank geführt werden sollen.
-
 
 -- Wenn die Datenbank MIT Historie angelegt wurde, aber eigentlich stört die nur.
 -- Dann kann nach dem Laden hiermit aufgeräumt werden.
@@ -376,14 +421,14 @@ BEGIN
 		ORDER BY table_name
 	LOOP
 		EXECUTE 'DELETE FROM ' || c.table_name || ' WHERE NOT endet IS NULL';
-		RAISE NOTICE 'Lösche ended in: %', c.table_name;
+		-- RAISE NOTICE 'Lösche ended in: %', c.table_name;
 	END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
 
--- Alle Tabellen löschen
--- SELECT alkis_drop();
+-- Alle Tabellen löschen:
+--  SELECT alkis_drop();
 
 
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
@@ -843,7 +888,8 @@ CREATE TABLE ax_historischesflurstueck (
 	vorgaengerflurstueckskennzeichen	varchar[],
 	nachfolgerflurstueckskennzeichen	varchar[],
 	blattart			integer,
-	buchungsart			integer,
+	--buchungsart			integer,  -- Aenderung krz FJ 2012-10-31: Meldung aus Konverter
+	buchungsart			varchar,
 	buchungsblattkennzeichen	double precision,
 	bezirk				integer,
 	buchungsblattnummermitbuchstabenerweiterung	character(20), -- hier länger als (7)!
@@ -1282,6 +1328,21 @@ COMMENT ON INDEX ax_flurstueck_kennz IS 'Suche nach Flurstückskennzeichen';
 --  gehoertAnteiligZu         --> AX_Flurstueck
 --  beziehtSichAufFlurstueck  --> AX_Flurstueck
 
+
+-- BEGIN - Nur fuer Test-Zwecke
+ CREATE OR REPLACE FUNCTION info_flurstueck() RETURNS TRIGGER AS $$
+ BEGIN
+ 	RAISE NOTICE 'Insert Flurstueck %', NEW.gml_id;
+ 	RETURN NEW;
+ END;
+ $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER neues_fs_trigger
+--        BEFORE INSERT ON ax_flurstueck 
+--        FOR EACH ROW 
+--           EXECUTE PROCEDURE info_flurstueck();
+
+-- ENDE - Nur fuer Test-Zwecke
 
 
 -- B e s o n d e r e   F l u r s t u e c k s g r e n z e
