@@ -1,5 +1,5 @@
 #!/bin/bash
-## ------------------------------------------------
+##
 ## Konvertierung von ALKIS NAS-Format nach PosGIS -
 ## Teil 1: Eine neue PostGIS-Datenbank anlegen    -
 ## ------------------------------------------------
