@@ -31,12 +31,12 @@ MAP
 		METADATA
 			wms_title "ALKIS Test"
 			ows_abstract "ALKIS - PostNAS Version 0.7" 
-			wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+			wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 			wms_encoding "UTF-8"
 			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
 			wms_feature_info_mime_type "text/html"
 			wfs_accessconstraints "none"
-			wfs_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+			wfs_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 			wfs_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
 			wfs_title "ALKIS"
 			wfs_feature_info_mime_type "text/html"
@@ -81,7 +81,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Gemeinde"
 		wms_abstract "Gemeindefläche (vereinfachte Geometrie)"
 		wms_group_title "Gebiete"
@@ -125,7 +125,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemarkungsname, simple_geom FROM pp_gemarkung) as foo using unique gid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Gemarkung"
 		wms_abstract "Gemarkungsfläche (vereinfachte Geometrie)"
 		gml_include_items "all"
@@ -167,7 +167,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Flur"
 		wms_abstract "Flur"
 		gml_include_items "all"
@@ -259,7 +259,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT gml_id, nutz_id, class, wkb_geometry FROM nutzung) as foo using unique gml_id using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "alle Nutzungsarten"
 		wms_abstract "Zusammenfassung aller Nutzungsarten-Flächen"
 		gml_include_items "all"
@@ -667,7 +667,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wohnbauflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Wohnbaufläche"
 		wms_abstract "'Wohnbaufläche' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient."
 		wms_group_title "Nutzung" # nur im ersten Layer der Gruppe
@@ -700,7 +700,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_industrieundgewerbeflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Industrie- und Gewerbefläche"
 		wms_abstract "'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient."
 		#gml_include_items "all"
@@ -733,7 +733,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_halde) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Halde"
 		wms_abstract "Halde"
 		#gml_include_items "all"
@@ -764,7 +764,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_bergbaubetrieb) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bergbaubetrieb"
 		wms_abstract "'Bergbaubetrieb' ist eine Fläche, die für die Förderung des Abbaugutes unter Tage genutzt wird."
 		#gml_include_items "all"
@@ -794,7 +794,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_tagebaugrubesteinbruch) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Tagebau, Grube, Steinbruch"
 		wms_abstract "Tagebau, Grube, Steinbruch"
 		#gml_include_items "all"
@@ -825,7 +825,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechegemischternutzung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Fläche gemischter Nutzung"
 		wms_abstract "'Fläche gemischter Nutzung' ist eine bebaute Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche (Hofraumfläche, Hausgarten), auf der keine Art
 der baulichen Nutzung vorherrscht. Solche Flächen sind insbesondere ländlich-dörflich geprägte Flächen mit land- und forstwirtschaftlichen Betrieben, Wohngebäuden u.a.
@@ -858,7 +858,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechebesondererfunktionalerpraegung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Fläche besonderer funktionaler Prägung"
 		wms_abstract "'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind."
 		#gml_include_items "all"
@@ -889,7 +889,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_sportfreizeitunderholungsflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Sport-, Freizeit- und Erholungsfläche"
 		wms_abstract "'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient."
 		#gml_include_items "all"
@@ -921,7 +921,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_friedhof) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Friedhof"
 		wms_abstract "Friedhof"
 		#gml_include_items "all"
@@ -956,7 +956,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_strassenverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Straßenverkehr"
 		wms_abstract "'Straßenverkehr' umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen."
 		#gml_include_items "all"
@@ -1020,7 +1020,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_weg) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Weg"
 		wms_abstract "Weg"
 		#gml_include_items "all"
@@ -1051,7 +1051,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_platz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Platz"
 		wms_abstract " 'Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen)."
 		#gml_include_items "all"
@@ -1090,7 +1090,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_bahnverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bahnverkehr"
 		wms_abstract "Bahnverkehr"
 		#gml_include_items "all"
@@ -1122,7 +1122,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flugverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Flugverkehr"
 		wms_abstract "Flugverkehr"
 		#gml_include_items "all"
@@ -1154,7 +1154,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_schiffsverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Schiffsverkehr"
 		wms_abstract "'Schiffsverkehr' umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient."
 		#gml_include_items "all"
@@ -1188,7 +1188,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, vegetationsmerkmal, wkb_geometry FROM ax_landwirtschaft) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Landwirtschaft"
 		wms_abstract "'Landwirtschaft' ist eine Fläche für den Anbau von Feldfrüchten sowie eine Fläche,
 die beweidet und gemäht werden kann, einschließlich der mit besonderen Pflanzen angebauten Fläche. 
@@ -1239,7 +1239,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wald) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Wald"
 		wms_abstract "'Wald' ist eine Fläche, die mit Forstpflanzen (Waldbäume und Waldsträucher) bestockt ist."
 	END
@@ -1269,7 +1269,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_gehoelz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Gehölz"
 		wms_abstract "Gehölz"
 	END
@@ -1299,7 +1299,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_heide) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Heide"
 		wms_abstract "Heide"
 	END
@@ -1329,7 +1329,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_moor) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Moor"
 		wms_abstract "Moor ist eine unkultivierte Fläche, deren obere Schicht aus vertorften oder zersetzten Pflanzenresten besteht. Torfstich bzw. Torfabbaufläche wird der Objektart 41005 'Tagebau, Grube, Steinbruch' mit AGT 'Torf' zugeordnet."
 	END
@@ -1359,7 +1359,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_sumpf) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Sumpf"
 		wms_abstract "Sumpf"
 	END
@@ -1391,7 +1391,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_unlandvegetationsloseflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Unland"
 		wms_abstract "Unland, vegetationslose Fläche"
 	END
@@ -1421,7 +1421,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_vegetationsmerkmal) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Vegetationsmerkmal"
 		wms_abstract "'Vegetationsmerkmal' beschreibt den zusätzlichen Bewuchs oder besonderen Zustand einer Grundfläche."
 	END
@@ -1453,7 +1453,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_fliessgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Fließgewässer"
 		wms_abstract "Fließgewässer"
 	END
@@ -1483,7 +1483,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_hafenbecken) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Hafenbecken"
 		wms_abstract "Hafenbecken' ist ein natürlicher oder künstlich angelegter oder abgetrennter Teil eines Gewässers, in dem Schiffe be- und entladen werden."
 	END
@@ -1513,7 +1513,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_stehendesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "stehendes Gewässer"
 		wms_abstract "stehendes Gewässer"
 	END
@@ -1552,7 +1552,7 @@ LAYER
 	# Feld funktion, Werte 1010, 1030, 1040
 	# Statt EXPRESSION filtern besser gleich als WHERE in SQL
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Untergeordnetes Gewässer (Flächen)"
 		#WMS_GROUP_TITLE "Untergeordnetes Gewässer"
 		wms_abstract "UntergeordnetesGewaesser' ist ein stehendes oder fließendes Gewässer mit untergeordneter Bedeutung."
@@ -1585,7 +1585,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	# Statt EXPRESSION filtern besser gleich als WHERE in SQL
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Untergeordnetes Gewässer (Line)"
 		wms_abstract "UntergeordnetesGewaesser' ist ein stehendes oder fließendes Gewässer mit untergeordneter Bedeutung."
 		gml_include_items "all"
@@ -1620,7 +1620,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_klassifizierungnachstrassenrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Klassifizierung nach Strassenrecht"
 		wms_abstract "Klassifizierung nach Straßenrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, straßenrechtlichen Vorschriften."
 		wms_group_title "Recht"
@@ -1666,7 +1666,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_naturumweltoderbodenschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Natur, Umwelt oder Bodenschutzrecht"
 		wms_abstract "'Natur-, Umwelt- oder Bodenschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche oder eines Gegenstandes nach öffentlichen, natur-, umwelt- oder bodenschutzrechtlichen Vorschriften."
 		gml_include_items "all"
@@ -1700,7 +1700,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_anderefestlegungnachwasserrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Andere Festlegung nach Wasserrecht"
 		wms_abstract "Die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, wasserrechtlichen Vorschriften."
 		gml_include_items "all"
@@ -1746,7 +1746,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
 
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bau-, Raum- oder Bodenordnungsrecht"
 		wms_abstract "'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften."
 		gml_include_items "all"
@@ -1973,7 +1973,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_denkmalschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Denkmalschutzrecht"
 		wms_abstract "'Denkmalschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche oder Gegenstand nach öffentlichen, denkmalschutzrechtlichen Vorschriften."
 		gml_include_items "all"
@@ -2003,7 +2003,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_sonstigesrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Sonstiges Recht"
 		wms_abstract "'Sonstiges Recht' sind die auf den Grund und Boden bezogenen Beschränkungen, Belastungen oder anderen Eigenschaften einer Fläche nach weiteren, nicht unter die Objektarten 71001 bis 71010 zu subsumierenden öffentlich - rechtlichen Vorschriften."
 		gml_include_items "all"
@@ -2050,7 +2050,7 @@ LAYER
 	# SQL:  ALTER TABLE ax_gebaeude ADD COLUMN ax_datenerhebung integer;
 
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Gebäude (Fläche)"
 		wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient."
 		wms_group_title "Gebäude" # beim 1.Layer d.Grp
@@ -2406,7 +2406,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Gebäude (Umring)"
 		wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient.
 		Alternativer Layer ohne Flächenfüllung. Hiermit ist allerdings keine Unterscheidung nach der Gebäudefunktion möglich."
@@ -2568,7 +2568,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauart, lagezurerdoberflaeche, wkb_geometry FROM ax_bauteil) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bauteil"
 		wms_abstract "'Bauteil' ist ein charakteristisches Merkmal eines Gebäudes mit gegenüber dem jeweiligen Objekt 'Gebäude' abweichenden bzw. besonderen Eigenschaften."
 		gml_include_items "all"
@@ -2637,7 +2637,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, beschaffenheit, wkb_geometry FROM ax_besonderegebaeudelinie) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Besondere Gebaeudelinie"
 		wms_abstract "'Besondere Gebäudelinie' ist der Teil der Geometrie des Objekts 'Gebäude' oder des Objekts 'Bauteil', der besondere Eigenschaften besitzt."
 		gml_include_items "all"
@@ -2673,7 +2673,7 @@ LAYER # Hausnummer
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel,hausnummer FROM s_hausnummer_gebaeude) as foo using unique ogc_fid using SRID=25832"
 
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Hausnummer"
 		wms_abstract "ALKIS Gebäude Hausnummer"
 		gml_include_items "all"
@@ -2722,7 +2722,7 @@ LAYER # Pseudonummer = Ausgestaltung Text Nebengebäude
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel, laufendenummer FROM s_nummer_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
 	# "s_nummer_nebengebaeude" = View
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "lfd. Nr Nebengebäude"
 		wms_abstract "ALKIS laufende Nummer Nebengebäude (Pseudonummer)"
 		gml_include_items "all"
@@ -2774,7 +2774,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_gebaeude) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Zuordnungspfeile Gebäude"
 		wms_abstract "ALKIS Gebäude Zuordnungspfeile für Hausnummer oder Nebengebäude-Nummer (nur Linie, Pfeilspitze fehlt noch)"
 		gml_include_items "all"
@@ -2807,7 +2807,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bauwerk im Verkehrsbereich (Füllung)"
 		wms_abstract "'Bauwerk im Verkehrsbereich' ist ein Bauwerk, das dem Verkehr dient."
 		wms_group_title "Bauwerke"
@@ -2840,7 +2840,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bauwerk im Verkehrsbereich (Umrandung)"
 		wms_abstract "'Bauwerk im Verkehrsbereich' ist ein Bauwerk, das dem Verkehr dient."
 		gml_include_items "all"
@@ -2873,7 +2873,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimgewaesserbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bauwerk im Gewässerbereich"
 		wms_abstract "Bauwerk im Gewässerbereich"
 		gml_include_items "all"
@@ -2905,7 +2905,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuerindustrieundgewerbe) as foo using unique ogc_fid using SRID=25832"
 	FILTER "st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bauwerk oder Anlage für Industrie und Gewerbe"
 		wms_abstract "'Bauwerk oder Anlage für Industrie und Gewerbe' ist ein Bauwerk oder eine Anlage, die überwiegend industriellen und gewerblichen Zwecken dient oder Einrichtung an Ver- und Entsorgungsleitungen ist."
 		gml_include_items "all"
@@ -2946,7 +2946,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuersportfreizeitunderholung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bauwerk oder Anlage für Sport, Freizeit und Erholung"
 		wms_abstract "'Bauwerk oder Anlage für Sport, Freizeit und Erholung' ist ein Bauwerk oder eine Anlage in Sport-, Freizeit- und Erholungsanlagen."
 		gml_include_items "all"
@@ -2977,7 +2977,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_vorratsbehaelterspeicherbauwerk) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Vorratsbehälter, Speicherbauwerk"
 		wms_abstract "'Vorratsbehälter, Speicherbauwerk' ist ein geschlossenes Bauwerk zum Aufbewahren von festen, flüssigen oder gasförmigen Stoffen."
 		gml_include_items "all"
@@ -3010,7 +3010,7 @@ LAYER
 	FILTER "bauwerksfunktion in (1610,1781) AND st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
 	# "name" ist ab und zu gefüllt
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Sonstiges Bauwerk oder sonstige Einrichtung"
 		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
 		gml_include_items "all"
@@ -3081,7 +3081,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, spannungsebene, wkb_geometry FROM ax_leitung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Leitung"
 		wms_abstract "'Leitung' ist eine aus Drähten oder Fasern hergestellte Leitung zum Transport von elektrischer Energie und zur Übertragung von elektrischen Signalen."
 		gml_include_items "all"
@@ -3122,7 +3122,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, lagezurerdoberflaeche, wkb_geometry  FROM ax_transportanlage) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Transportanlage"
 		wms_abstract "'Transportanlage' ist eine Anlage zur Förderung oder zum Transport von Flüssigkeiten, Gasen und Gütern."
 		gml_include_items "all"
@@ -3170,7 +3170,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_turm) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Turm"
 		wms_abstract "'Turm' ist ein hoch aufragendes, auf einer verhältnismäßig kleinen Fläche freistehendes Bauwerk."
 		gml_include_items "all"
@@ -3209,7 +3209,7 @@ LAYER
 	# reduzierte Felder: nur 'gml_id' fuer Inlay, und geometry fuer Karte
 	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, wkb_geometry FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Flurstück"
 		wms_abstract "'Flurstück' ist ein Teil der Erdoberfläche, der von einer im Liegenschaftskataster festgelegten Grenzlinie umschlossen und mit einer Nummer bezeichnet ist. Es ist die Buchungseinheit des Liegenschaftskatasters."
 		wms_group_title "Flurstück"
@@ -3252,7 +3252,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderflurstuecksgrenze, wkb_geometry FROM ax_besondereflurstuecksgrenze) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Besondere Flurstücksgrenze"
 		wms_abstract "'Besondere Flurstücksgrenze' ist ein Teil der Grenzlinie eines Flurstücks, der von genau zwei benachbarten Grenzpunkten begrenzt wird und für den besondere Informationen vorliegen."
 		gml_include_items "all"
@@ -3394,7 +3394,7 @@ LAYER
 #	DATA "wkb_geometry from (SELECT * FROM s_flurstueck_nr) as foo using unique ogc_fid using SRID=25832" # View
 	DATA "the_geom from (SELECT * FROM pp_flurstueck_nr) as foo using unique gid using SRID=25832" # Tabelle aus PostProcessing
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Flurstücksnummer"
 		wms_abstract "ALKIS Flurstück Flurstücksnummer"
 		gml_include_items "all"
@@ -3587,7 +3587,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Zuordnungspfeile Linie"
 		wms_abstract "Zuordnungspfeil Flurstücksnummer Linie"
 	END
@@ -3618,7 +3618,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_flurstueck) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Zuordnungspfeil Spitze"
 		wms_abstract "Zuordnungspfeil Flurstücksnummer Spitze"
 	END
@@ -3657,7 +3657,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Zugehörigkeitshaken Flurstueck"
 		wms_abstract "ALKIS Flurstück Zugehörigkeitshaken"
 	END
@@ -3702,7 +3702,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Grabloch der Bodenschätzung"
 		wms_abstract "Grabloch der Bodenschätzung"
 		wms_group_title "Bodenschätzung"
@@ -3735,7 +3735,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Muster Landesmuster und Vergleichsstück"
 		wms_abstract "Muster-, Landesmuster- und Vergleichsstück der Bodenschätzung"
 		gml_include_items "all"
@@ -3769,7 +3769,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortta) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Grenzpunkt"
 		wms_abstract "'PunktortTA' ist ein Punktort, der in der Flurstücksgrenze liegt und einen Grenzpunkt verortet."
 		wms_group_title "Vermessungspunkte"
@@ -3803,7 +3803,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortag) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Bes. Gebäudepunkt"
 		wms_abstract "'Punktort AG' ist ein Punktort mit redundanzfreier Geometrie (Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt) innerhalb eines Geometriethemas."
 		gml_include_items "all"
@@ -3834,7 +3834,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortau) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Punktort AU"
 		wms_abstract "'Punktort AU' ist ein Punktort mit unabhängiger Geometrie ohne Zugehörigkeit zu einem Geometriethema. 
 Er kann zu ZUSOs der folgenden Objektarten gehören: Grenzpunkt, Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt, Aufnahmepunkt, Sicherungspunkt,
@@ -3886,7 +3886,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT * FROM s_beschriftung) as foo using unique ogc_fid using SRID=25832"
 
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Beschriftung"
 		wms_abstract "ALKIS Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie PTO"
 		wms_group_title "Präsentation"
@@ -3985,7 +3985,7 @@ LAYER
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
 	METADATA
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Zuordnungspfeile"
 		wms_abstract "ALKIS Linienförmiges Präsentationsobjekt LPO"
 		gml_include_items "all"
@@ -4032,7 +4032,7 @@ LAYER
 		wms_group_abstract "Grenzen von Katasterbezirken und politische Grenzen"
 
 		wms_title "Politische Grenze"
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_abstract "ALKIS Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie PTO"
 		#gml_include_items "all"
 	END
@@ -4113,7 +4113,7 @@ LAYER
 	STATUS ON
 	METADATA
 		wms_title "Gemarkungsrenze"
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_abstract "ALKIS Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie PTO"
 		#gml_include_items "all"
 	END
@@ -4150,7 +4150,7 @@ LAYER
 	TYPE LINE
 	METADATA
 		wms_title "Flurgrenze"
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_abstract "ALKIS Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie PTO"
 		#gml_include_items "all"
 	END
@@ -4190,7 +4190,7 @@ LAYER
 		wms_title "Copyright"
 		wms_abstract "In der Karte sichtbare Angabe auf die Herkunft der Daten"
 		WMS_KEYWORDLIST "Katasteramt, Copyright, Quellenangabe"
-		wms_srs "epsg:31467 epsg:4326 epsg:25832 epsg:54004"
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 	END
 	FEATURE
 		POINTS 0 0 END
