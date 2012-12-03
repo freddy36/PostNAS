@@ -40,6 +40,9 @@ $ag_liste = "'2102','2105','2106','2107','2108','2110','2303','2307'";
 # "true" setzt voraus, dass die Hilfstabelle "gemeinde_person" gefuellt ist
 $persfilter=true;
 
+# hausnummernohnegebaeude - sollen Hausnummern ohne Gebäude ausgegeben werden? 1 ja / 0 nein
+$hausnummernohnegebaeude = 1;
+
 # Entwicklungsumgebung
 $debug=0; // 0=Produktion, 1=mit Fehlermeldungen, 2=mit Informationen, 3=mit SQL
 ?>
