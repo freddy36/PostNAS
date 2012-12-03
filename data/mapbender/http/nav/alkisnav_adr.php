@@ -4,6 +4,7 @@
 	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
 	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
 	09.12.2011 Sonderfall PostNAS 0.5 raus,
+    3.12.2012 Ausgabe von Hausnr ohne Gebaeude
 
 	ToDo:
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
@@ -56,11 +57,13 @@ function suchStrName() {
 		default: // kein Filter
 			break;
 	}
-	$sql.="ORDER BY k.bezeichnung, g.bezeichnung, k.lage LIMIT $2 ;"; 	$v=array($match,$linelimit);
+	$sql.="ORDER BY k.bezeichnung, g.bezeichnung, k.lage LIMIT $2 ;";
+ 	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {return "\n<p class='err'>Fehler bei Name</p>";}
-	$cnt = 0;	while($row = pg_fetch_array($res)) {
+	$cnt = 0;
+	while($row = pg_fetch_array($res)) {
 		$sname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");		
 		$gkey=$row["schluesselgesamt"]; // Land-Kreis-Gem-Strasse
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
@@ -121,11 +124,13 @@ function suchStrKey() {
 			break;
 	}
 
-	$sql.="ORDER BY k.lage, k.bezeichnung LIMIT $2 ;"; 	$v=array($match,$linelimit);
+	$sql.="ORDER BY k.lage, k.bezeichnung LIMIT $2 ;";
+ 	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {return "\n<p class='err'>Fehler bei Schl&uuml;ssel</p>";}
-	$cnt = 0;	while($row = pg_fetch_array($res)) {
+	$cnt = 0;
+	while($row = pg_fetch_array($res)) {
 		$sname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");		
 		$gkey=$row["schluesselgesamt"];
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
@@ -162,7 +167,7 @@ function suchStrKey() {
 
 function suchHausZurStr($showParent){
 	// Haeuser zu einer Strasse
-	global $con, $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $debug;
+	global $con, $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $hausnummernohnegebaeude, $debug;
 	// Strasse zum Strassenschluessel
 	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
@@ -172,7 +177,8 @@ function suchHausZurStr($showParent){
  	$v=array($str_schl);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
-	if($row = pg_fetch_array($res)) { // Strassenschluessel gefunden		$sname=$row["bezeichnung"];
+	if($row = pg_fetch_array($res)) { // Strassenschluessel gefunden
+		$sname=$row["bezeichnung"];
 		$land =$row["land"];
 		$regb =$row["regierungsbezirk"];
 		$kreis=$row["kreis"];
@@ -213,7 +219,8 @@ function suchHausZurStr($showParent){
 				echo "\n\t<a title='Positionieren 1:".$scalestr."' href='javascript:"; // mit Link
 						echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalestr."); ";
 						echo "parent.parent.showHighlight(".$x.",".$y."); ";
-						echo "document.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$str_schl."\"' ";					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
+						echo "document.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$str_schl."\"' ";
+					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
 					echo "\n\t\tonmouseout='parent.parent.hideHighlight()'";
 				echo ">\n\t\t".$sname." (".$nr.")\n\t</a>";
 			} else { // keine Koord. dazu gefunden
@@ -254,11 +261,13 @@ function suchHausZurStr($showParent){
 		$resh=pg_prepare("", $sql);
 		$resh=pg_execute("", $v);
 		$cnt=0;
-		$count=0;		echo "\n<table>";
-		// mehrere Hausnummern je Zeile ausgeben		while($rowh = pg_fetch_array($resh)) {
+		$count=0;
+		echo "\n<table>";
+		// mehrere Hausnummern je Zeile ausgeben
+		while($rowh = pg_fetch_array($resh)) {
 			if($count == 0){echo "\n<tr>";}
 			$gml=$rowh["gml_id"];			
-			$nr=$rowh["hsnr"];			
+			$hsnr=$rowh["hsnr"];			
 			$x=$rowh["x"];
 			$y=$rowh["y"];
 			echo "\n\t<td class='hsnr'>";
@@ -267,7 +276,7 @@ function suchHausZurStr($showParent){
 					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()";
-				echo "'>".$nr."</a>";
+				echo "'>".$hsnr."</a>";
 			echo "</td>";
 			$cnt++;
 			$count++;
@@ -279,6 +288,72 @@ function suchHausZurStr($showParent){
 		if($count > 0) {echo "\n</tr>";}
 		echo "\n</table>";
 		echo "\n<p class='hilfe'>".$cnt." Hausnummern</p>";
+
+		if($hausnummernohnegebaeude == 1){
+			#echo "Hausnummern ohne Geb&auml;ude:";
+			// Haeuser zum Strassenschluessel
+			$sql ="SELECT gml_id, replace (schriftinhalt, ' ','') AS hsnr, ";
+			if($epsg == "25832") { // Transform nicht notwendig
+				$sql.="x(wkb_geometry) AS x, ";
+				$sql.="y(wkb_geometry) AS y ";		
+			}
+			else {  
+				$sql.="x(st_transform(wkb_geometry), ".$epsg.")) AS x, ";
+				$sql.="y(st_transform(wkb_geometry), ".$epsg.")) AS y ";		
+			}		
+			$sql.="from ap_pto where ";
+			$sql.="gml_id IN (Select beziehung_von from alkis_beziehungen ";
+			$sql.="where beziehung_zu IN (";
+			$sql.="SELECT ";
+			$sql.="gml_id ";
+			$sql.="FROM ax_lagebezeichnungmithausnummer h ";
+			$sql.="WHERE h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 ";
+			$sql.="AND h.gemeinde= $4 AND h.lage= $5 ";
+			$sql.="AND replace (h.hausnummer, ' ','') NOT IN (";
+			$sql.="SELECT replace (h.hausnummer, ' ','') AS hsnr ";
+			$sql.="FROM ax_lagebezeichnungmithausnummer h ";
+			$sql.="JOIN alkis_beziehungen v ON h.gml_id=v.beziehung_zu ";
+			$sql.="JOIN ax_gebaeude g ON v.beziehung_von=g.gml_id ";
+			$sql.="WHERE h.land= $6 AND ";
+			$sql.="h.regierungsbezirk= $7 AND h.kreis= $8 AND h.gemeinde= $9 AND ";
+			$sql.=" h.lage= $10 ";
+			$sql.="AND v.beziehungsart='zeigtAuf' ";
+			$sql.=") ORDER BY lpad(split_part(h.hausnummer,' ',1), 4, '0'), split_part(h.hausnummer,' ',2) ";
+			$sql.=")) order by lpad(split_part(schriftinhalt,' ',1), 4, '0'), split_part(schriftinhalt,' ',2);";
+			$vw=array($land,$regb,$kreis,$gemnd,$nr,$land,$regb,$kreis,$gemnd,$nr);
+			#echo "SQL: ".$land." ".$regb." ".$kreis." ".$gemnd." ".$nr;
+			$resho=pg_prepare("", $sql);
+			$resho=pg_execute("", $vw);
+			$cnt=0;
+			$count=0;
+			#echo $sql;
+			echo "\n<table>";
+			// mehrere Hausnummern je Zeile ausgeben
+			while($rowh = pg_fetch_array($resho)) {
+				if($count == 0){echo "\n<tr>";}
+				$gml=$rowh["gml_id"];			
+				$nr=$rowh["hsnr"];			
+				$x=$rowh["x"];
+				$y=$rowh["y"];
+				echo "\n\t<td class='hsnr'>";
+					echo "<a href='";
+						echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalehs."); ";
+						echo "parent.parent.showHighlight(".$x.",".$y.");' ";
+					echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
+					echo "onmouseout='parent.parent.hideHighlight()";
+					echo "'>".$nr."</a>";
+				echo "</td>";
+				$cnt++;
+				$count++;
+				if($count == 6) {
+					echo "\n</tr>";
+					$count = 0;
+				}
+			}
+			if($count > 0) {echo "\n</tr>";}
+			echo "\n</table>";
+			if($cnt > 0) {echo "\n<p class='hilfe'>".$cnt." Hausnummern ohne Geb&auml;ude</p>";}
+		}
 	} else {
 		echo "\n<p class='err'>Keine Stra&szlig;e.</p>";
 	}
@@ -307,7 +382,8 @@ if ($gemeinde == "") {
 if (isset($str_schl)) { // aus Link
 	if ($debug >= 2) {echo "\n<p>Link Strassenschluessel '".$str_schl."'</p>";}
 	suchHausZurStr(true);
-} elseif(isset($street)) { // Eingabe in Form	if (trim($street, "*,0..9") == "") { // Zahl mit Wildcard
+} elseif(isset($street)) { // Eingabe in Form
+	if (trim($street, "*,0..9") == "") { // Zahl mit Wildcard
 		if ($debug >= 2) {echo "\n<p>Suche Key='".$street."'</p>";}
 		suchStrKey(); // Suche nach Schluessel
 	} else {
@@ -316,7 +392,8 @@ if (isset($str_schl)) { // aus Link
 	}
 	if(isset($str_schl)) { // Eindeutiges Ergebnis
 		if ($debug >= 2) {echo "\n<p>weitere Suche Haus zu ='".$str_schl."'</p>";}
-		suchHausZurStr(false);	}
+		suchHausZurStr(false);
+	}
 }
 ?>
 
