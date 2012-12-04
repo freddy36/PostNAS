@@ -209,11 +209,11 @@ function getFSbyGB($backlink) {
 	// SQL-Bausteine vorbereiten
 	$sql1 ="SELECT s1.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
 	if($epsg == "25832") { // Transform nicht notwendig
-		$sql1.="x(st_centroid(f.wkb_geometry)) AS x, ";
-		$sql1.="y(st_centroid(f.wkb_geometry)) AS y, ";
+		$sql1.="st_x(st_centroid(f.wkb_geometry)) AS x, ";
+		$sql1.="st_y(st_centroid(f.wkb_geometry)) AS y, ";
 	} else {  
-		$sql1.="x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-		$sql1.="y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
+		$sql1.="st_x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+		$sql1.="st_y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
 	}
 	$sql1.="g.gemarkungsnummer, g.bezeichnung ";
    $sql1.="FROM alkis_beziehungen vbg ";

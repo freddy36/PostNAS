@@ -452,11 +452,11 @@ function EinGrundstueck($showParent) {
 	// Buchungsstelle -> Flurstueck
 	$sql ="SELECT t.gemeinde, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
 	if($epsg == "25832") { // Transform nicht notwendig
-		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
-		$sql.="y(st_Centroid(f.wkb_geometry)) AS y ";
+		$sql.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
+		$sql.="st_y(st_Centroid(f.wkb_geometry)) AS y ";
 	} else {  
-		$sql.="x(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS x, ";
-		$sql.="y(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS y ";			
+		$sql.="st_x(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS x, ";
+		$sql.="st_y(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS y ";			
 	}
 	$sql.="FROM ax_gemarkung g ";
 	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
