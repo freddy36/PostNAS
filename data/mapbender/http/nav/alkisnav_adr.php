@@ -191,11 +191,11 @@ function suchHausZurStr($showParent){
 			// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
 			$sqlko ="SELECT ";		
 			if($epsg == "25832") { // Transform nicht notwendig
-				$sqlko.="x(st_Centroid(f.wkb_geometry)) AS x, ";
-				$sqlko.="y(st_Centroid(f.wkb_geometry)) AS y ";
+				$sqlko.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
+				$sqlko.="st_y(st_Centroid(f.wkb_geometry)) AS y ";
 			} else {  
-				$sqlko.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-				$sqlko.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
+				$sqlko.="st_x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
+				$sqlko.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 			}
 			$sqlko.="FROM ax_lagebezeichnungohnehausnummer o ";
 			$sqlko.="JOIN alkis_beziehungen v ON o.gml_id=v.beziehung_zu "; 
@@ -244,12 +244,12 @@ function suchHausZurStr($showParent){
 		$sql ="SELECT replace (h.hausnummer, ' ','') AS hsnr, ";
 		
 		if($epsg == "25832") { // Transform nicht notwendig
-			$sql.="x(st_Centroid(g.wkb_geometry)) AS x, ";
-			$sql.="y(st_Centroid(g.wkb_geometry)) AS y ";		
+			$sql.="st_x(st_Centroid(g.wkb_geometry)) AS x, ";
+			$sql.="st_y(st_Centroid(g.wkb_geometry)) AS y ";		
 		}
 		else {  
-			$sql.="x(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS x, ";
-			$sql.="y(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS y ";		
+			$sql.="st_x(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS x, ";
+			$sql.="st_y(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS y ";		
 		}		
 		$sql.="FROM ax_lagebezeichnungmithausnummer h ";
 		$sql.="JOIN alkis_beziehungen v ON h.gml_id=v.beziehung_zu ";
@@ -294,12 +294,12 @@ function suchHausZurStr($showParent){
 			// Haeuser zum Strassenschluessel
 			$sql ="SELECT gml_id, replace (schriftinhalt, ' ','') AS hsnr, ";
 			if($epsg == "25832") { // Transform nicht notwendig
-				$sql.="x(wkb_geometry) AS x, ";
-				$sql.="y(wkb_geometry) AS y ";		
+				$sql.="st_x(wkb_geometry) AS x, ";
+				$sql.="st_y(wkb_geometry) AS y ";		
 			}
 			else {  
-				$sql.="x(st_transform(wkb_geometry), ".$epsg.")) AS x, ";
-				$sql.="y(st_transform(wkb_geometry), ".$epsg.")) AS y ";		
+				$sql.="st_x(st_transform(wkb_geometry), ".$epsg.")) AS x, ";
+				$sql.="st_y(st_transform(wkb_geometry), ".$epsg.")) AS y ";		
 			}		
 			$sql.="from ap_pto where ";
 			$sql.="gml_id IN (Select beziehung_von from alkis_beziehungen ";
