@@ -1,6 +1,6 @@
-﻿#!/bin/bash
+#!/bin/bash
 ## -------------------------------------------------
-## Konvertierung von ALKIS NAS-Format nach PosGIS  -
+## Konvertierung von ALKIS NAS-Format nach PostGIS -
 ## NAS-Daten in einem Ordner konvertieren          -
 ## Batch-Teil, Aufruf mit geprueften Parametern    -
 ## -------------------------------------------------
@@ -12,24 +12,34 @@
 ##          usw.
 ##           /temp/
 ##   Auf der gleichen Ebene wie die Datenordner muss ein Ordner /temp/ existieren.
-##   Dort werden die NAS-Daten temporär ausgepackt.
+##   Dort werden die NAS-Daten temporaer ausgepackt.
 ##   Relativ zum mitgegebenen Parameter ist das: '../temp/'
 ##   Parallel laufende Konvertierungen zum gleichen Mandanten 
-##   würden hier durcheinander geraten. Vermeiden!
+##   wuerden hier durcheinander geraten. Vermeiden!
 ##
 ## Stand: 
 ##   2012-02-10 Umbennung nach 0.7
 ##   2012-02-17 Optimierung
-##   2012-02-28 Neuer Parameter 4 um Post-Prozessing zu unterdrücken
-##   2012-04-25 Durch GDAL Patch #5444 werden die Löschungen als Trigger auf Tabelle 'delete' verarbeitet
+##   2012-02-28 Neuer Parameter 4 um Post-Prozessing zu unterdruecken
+##   2012-04-25 Durch GDAL Patch #5444 werden die Loeschungen als Trigger auf Tabelle 'delete' verarbeitet
 ##   2012-05-18 Umzug neue GDI, GDAL-Trunk unter Pfad 
-##   2012-10-30 Umgebungsvariable setzen, delete-Tabelle am Ende für Analyse gefüllt lassen.
+##   2012-06-04 SQL-Skripte in deren Verzeichnis ausfuehren (Voraussetzung fuer \i Includes)
+##   2012-10-30 Umgebungsvariable setzen, delete-Tabelle am Ende fuer Analyse gefuellt lassen.
 ##              Test als 0.7a mit gepatchter gdal-Version (noch 2.0dev)
 ##
-## Konverter:   /opt/gdal-2.0/bin/ = GDAL 2.0-DEV / PostNAS 0.7
+## ToDo: Option "-skipfailures" nach Test entfernen ?
+##
 ## Koordinaten: EPSG:25832  UTM, Zone 32
 ##              -a_srs EPSG:25832   - bleibt im UTM-System (korrigierte Werte)
 ##
+
+POSTNAS_HOME=$(dirname $0)
+
+# Konverterpfad
+PATH=/opt/gdal-2.0/bin:$PATH
+EPSG=25832
+
+
 echo "**************************************************"
 echo "**   K o n v e r t i e r u n g     PostNAS 0.7a **"
 echo "**************************************************"
@@ -75,7 +85,7 @@ else
 	fi
 fi
 # Fehlerprotokoll:
-  errprot='/data/konvert/postnas_0.7a/log/postnas_err_'$DBNAME'.prot'
+  errprot='$POSTNAS_HOME/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
   con="-p 5432 -d ${DBNAME} "
@@ -108,17 +118,16 @@ fi
       # Umgebungsvariable setzen:
         export GML_FIELDTYPES=ALWAYS_STRINGS    # PostNAS behandelt Zahlen wie Strings, PostgreSQL-Treiber macht daraus Zahlen
         export OGR_SETFIELD_NUMERIC_WARNING=YES # Meldung abgeschnittene Zahlen?
-       #export CPL_DEBUG=ON                     # Meldung, wenn Attribute überschrieben werden
+       #export CPL_DEBUG=ON                     # Meldung, wenn Attribute ueberschrieben werden
       #
       # PostNAS Konverter-Aufruf
       #
       # -skipfailures    #
       # -overwrite       #
-      /opt/gdal-2.0/bin/ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures  \
-         PG:"dbname=${DBNAME} host=localhost port=5432" -a_srs EPSG:25832 ${nasdatei} 2>> $errprot
+      ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures \
+         PG:"dbname=${DBNAME} host=localhost port=5432" -a_srs EPSG:$EPSG ${nasdatei} 2>> $errprot
       nasresult=$?
-      echo "* Resultat: " $nasresult " fuer " ${nasdatei}
-	  echo "* Resultat: " $nasresult " fuer " ${nasdatei}  >> $errprot
+      echo "* Resultat: " $nasresult " fuer " ${nasdatei} | tee -a $errprot
     done # Ende Zipfile
   done # Ende Ordner
   rm ../temp/*.xml
@@ -129,33 +138,35 @@ fi
 #
   if [ $PP == "nopp" ]
   then
-    echo "** KEIN Post-Processing - Dies Spaeter nachholen."
-    # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem großen Bestand laufen
-    # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
+    echo "** KEIN Post-Processing - Dies spaeter nachholen."
+    # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem grossen Bestand laufen
+    # Der Aufwand fuer das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
   else
     echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
     echo "** - Optimierte Nutzungsarten neu Laden:"
-    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7a/nutzungsart_laden.sql
+    (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f nutzungsart_laden.sql)
     ##
     echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
-    psql -p 5432 -d ${DBNAME} < /data/konvert/postnas_0.7a/pp_laden.sql
+    (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_laden.sql)
   fi
+
+  if [ "$(readlink $POSTNAS_HOME/alkis-trigger.sql)" = "alkis-trigger-kill.sql" ]; then
 # Durch Einfuegen in Tabelle 'delete' werden Loeschungen anderer Tabellen getriggert
-  echo "** delete-Tabelle enthält:"
-  echo 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";' | psql $con
- #echo "   delete-Tabelle loeschen:"
- #echo 'TRUNCATE table "delete";' | psql $con
+    echo "** delete-Tabelle enthaelt:"
+    echo 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";' | psql $con
+    #echo "   delete-Tabelle loeschen:"
+    #echo 'TRUNCATE table "delete";' | psql $con
  # Fuer Analyse-Zwecke sollten die Delete-Eintraege erhalten bleiben bis zum naechsten Lauf.
  # TRUNCATE erfolgt VOR der Konnvertierung.
 #
 # Wenn die Datenbank MIT Historie angelegt wurde, man diese aber gar nicht braucht,
-# dann hinterher aufräumen der historischen Objekte 
- #echo "** geendete Objekte entfernen:"
-# Function :
- #echo 'SELECT alkis_delete_all_endet();' | psql $con
- #echo "  ... geendete Objekte entfernen wurde fuer Test dektiviert."
- #echo "  Bitte manuell ausfuehren:  SELECT alkis_delete_all_endet(); "
+# dann hinterher aufraeumen der historischen Objekte 
+    #echo "** geendete Objekte entfernen:"
+# Function:
+    #echo 'SELECT alkis_delete_all_endet();' | psql $con
+    #echo "  ... geendete Objekte entfernen wurde fuer Test dektiviert."
+    #echo "  Bitte manuell ausfuehren:  SELECT alkis_delete_all_endet(); "
 #
-  echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
- #echo "HINWEIS: -skipfailures  fuer Produktion wieder einschalten."
-#
+    echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
+    #echo "HINWEIS: -skipfailures  fuer Produktion wieder einschalten."
+  fi

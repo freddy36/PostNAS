@@ -17,10 +17,10 @@ Kommandos zum Konvertieren:
 --------------------------
 
 Packen:
- /data/konvert/postnas_0.7/zip_ordner.sh /data/nas_daten/290/0003
+ /pfad/zu/postnas/zip_ordner.sh /data/nas_daten/290/0003
 
 Neu-Laden:
- /data/konvert/postnas_0.7/konv_batch.sh /data/nas_daten/290/0000 alkis07290_neu e  pp
+ /pfad/zu/postnas/konv_batch.sh /data/nas_daten/290/0000 alkis07290_neu e  pp
 
 
 Datenbank-Tausch nach Neu-Laden (SQL):
@@ -28,8 +28,8 @@ Datenbank-Tausch nach Neu-Laden (SQL):
   ALTER Database alkis07290_neu  RENAME TO  alkis07290;
 
 Aktualisieren:
- /data/konvert/postnas_0.7/konv_batch.sh /data/nas_daten/290/0002 alkis07290 a  nopp
- /data/konvert/postnas_0.7/konv_batch.sh /data/nas_daten/290/0003 alkis07290 a  pp
+ /pfad/zu/postnas/konv_batch.sh /data/nas_daten/290/0002 alkis07290 a  nopp
+ /pfad/zu/postnas/konv_batch.sh /data/nas_daten/290/0003 alkis07290 a  pp
 
 Kontrolle:
- less /data/konvert/postnas_0.7/log/postnas_err.prot
+ less /pfad/zu/postnas/log/postnas_err.prot

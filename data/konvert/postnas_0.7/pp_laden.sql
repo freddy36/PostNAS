@@ -34,7 +34,7 @@ SET client_encoding = 'UTF-8';
 -- ============================================================================
 -- Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
 -- ============================================================================
--- Work arround: alle Redundazen nach einem Lauf entfernen.
+-- Workaround: alle Redundazen nach einem Lauf entfernen.
 -- Besser wäre: sofort im Trigger bei replace entfernen.
 -- Siehe Schema in FUNCTION delete_feature_kill
 

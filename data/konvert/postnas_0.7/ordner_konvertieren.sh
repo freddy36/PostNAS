@@ -9,6 +9,9 @@
 ##  2012-02-17  Parameter "DBUSER" raus
 ##  2012-02-28  Parameter 4 = 'pp' (mit Post-Processing)
 ## 
+
+POSTNAS_HOME=$(dirname $0)
+
 function get_db_config(){
 	#
 	# Name der zu ladenden ALKIS-Datenbank
@@ -72,10 +75,10 @@ then
 	exit 1
 fi
 # Protokolldatei ueberschreiben
-echo "** Konvertierung ALKIS **" > /data/konvert/postnas_0.7/log/postnas_err.prot
+echo "** Konvertierung ALKIS **" > $POSTNAS_HOME/log/postnas_err.prot
 echo "** Beginn Batch **"
 ##                                       1        2        3     4
-/data/konvert/postnas_0.7/konv_batch.sh  $ORDNER  $DBNAME  $UPD  pp
+$POSTNAS_HOME/konv_batch.sh  $ORDNER  $DBNAME  $UPD  pp
 result=$?
 if [ $result = 0 ]
 then
@@ -85,6 +88,6 @@ else
 fi
 echo " "
 echo " Kommando fuer Wiederholung:"
-echo " /data/konvert/postnas_0.7/konv_batch.sh  $ORDNER  $DBNAME  $UPD  pp"
+echo " $POSTNAS_HOME/konv_batch.sh  $ORDNER  $DBNAME  $UPD  pp"
 echo " "
 ###

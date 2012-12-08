@@ -1,12 +1,17 @@
 #!/bin/bash
-##
-## Konvertierung von ALKIS NAS-Format nach PosGIS -
-## Teil 1: Eine neue PostGIS-Datenbank anlegen    -
-## ------------------------------------------------
+## -------------------------------------------------
+## Konvertierung von ALKIS NAS-Format nach PostGIS -
+## Teil 1: Eine neue PostGIS-Datenbank anlegen     -
+## -------------------------------------------------
 ##
 ## Stand:
 ##  2012-02-10 PostNAS 07, Umbenennung
 ##
+
+POSTNAS_HOME=$(dirname $0)
+MANDANT_HOME=$PWD
+EPSG=25832
+
 ## Dialog mit Anwender
 function get_db_config(){
 	# welches Datenbank-Template?
@@ -42,6 +47,19 @@ then
 	echo "Abbruch"
 	exit 1
 fi
+
+cd $POSTNAS_HOME
+
+if ! [ -e alkis-trigger.sql ]; then
+	if ln -s alkis-trigger-kill.sql alkis-trigger.sql; then
+		echo "** Symlink zu alkis-trigger-kill.sql (KEINE HISTORIE) angelegt"
+	else
+		echo "** alkis-trigger.sql FEHLT!"
+		exit 1
+	fi
+fi
+	
+
 ## Datenbank-Connection:
 # -h localhost
 con="-p 5432 -d ${DBNAME} "
@@ -55,31 +73,31 @@ echo "** Loeschen Datenbank " ${DBNAME}
 echo  "DROP database ${DBNAME};" | psql -p 5432 -d ${DBUSER} -U ${DBUSER} 
 echo " "
 echo "** Anlegen (leere) PostGIS-Datenbank"
-createdb --port=5432 --username=${DBUSER} -E utf8  -T ${DBTEMPLATE}  ${DBNAME}
+createdb --port=5432 --username=${DBUSER} -E utf8  -T ${DBTEMPLATE} ${DBNAME}
 echo " "
 echo "** Anlegen der Datenbank-Struktur fuer PostNAS (alkis_PostNAS_0.7_schema.sql)"
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/alkis_PostNAS_0.7_schema.sql
+psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f alkis_PostNAS_0.7_schema.sql
 echo " "
 echo "** Anlegen der Datenbank-Struktur - zusaetzliche Schluesseltabellen"
 ## Nur die benoetigten Tabellen fuer die Buchauskunft
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/alkis_PostNAS_0.7_keytables.sql
+psql $con -U ${DBUSER} -f alkis_PostNAS_0.7_keytables.sql
 echo " "
 echo "** Anlegen Optimierung Nutzungsarten (nutzungsart_definition.sql)"
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/nutzungsart_definition.sql
+psql $con -U ${DBUSER} -f nutzungsart_definition.sql
 echo " "
 echo "** Laden NUA-Metadaten (nutzungsart_metadaten.sql) Protokoll siehe log"
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/nutzungsart_metadaten.sql 1> log/meta.log
+psql $con -U ${DBUSER} -f nutzungsart_metadaten.sql >$MANDANT_HOME/log/meta.log
 echo " "
 echo "** Anlegen Post Processing (pp_definition.sql)"
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/pp_definition.sql
+psql $con -U ${DBUSER} -f pp_definition.sql
 echo " "
 echo "** Definition von Views (sichten.sql)"
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/sichten.sql
+psql $con -U ${DBUSER} -f sichten.sql
 echo " "
 echo  "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7';" | psql -p 5432 -d ${DBNAME} -U ${DBUSER} 
 echo " "
 echo "** Berechtigung (grant.sql) Protokoll siehe log"
-psql $con -U ${DBUSER}  < /data/konvert/postnas_0.7/grant.sql 1> log/grant.log
+psql $con -U ${DBUSER} -f grant.sql >$MANDANT_HOME/log/grant.log
 echo " "
 echo "***************************"
 echo "**  Ende Neue Datenbank  **"
