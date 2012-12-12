@@ -298,8 +298,8 @@ function suchHausZurStr($showParent){
 				$sql.="st_y(wkb_geometry) AS y ";		
 			}
 			else {  
-				$sql.="st_x(st_transform(wkb_geometry), ".$epsg.")) AS x, ";
-				$sql.="st_y(st_transform(wkb_geometry), ".$epsg.")) AS y ";		
+				$sql.="st_x(st_transform(wkb_geometry, ".$epsg.")) AS x, ";
+				$sql.="st_y(st_transform(wkb_geometry, ".$epsg.")) AS y ";		
 			}		
 			$sql.="from ap_pto where ";
 			$sql.="gml_id IN (Select beziehung_von from alkis_beziehungen ";
