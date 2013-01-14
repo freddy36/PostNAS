@@ -253,18 +253,21 @@ COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungs
 
 -- Dazu notwendig: Feld "ax_besondereflurstuecksgrenze.artderflurstuecksgrenze" als Array "integer[]" !
 -- Anpassung DB-Schema erfolgte am 18.09.2011
+-- ap_lpo.signaturnummer = '2004' ist in 0.7 schema nun ein varchar
 
 
 CREATE OR REPLACE VIEW sk2004_zuordnungspfeil 
 AS
  SELECT ap.ogc_fid, ap.wkb_geometry 
  FROM ap_lpo ap 
- WHERE ((ap.signaturnummer = 2004) 
+ WHERE ((ap.signaturnummer = '2004') 
    AND ('DKKM1000'::text ~~ ANY ((ap.advstandardmodell)::text[])));
 
 COMMENT ON VIEW sk2004_zuordnungspfeil IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer"';
 -- krz: ap.signaturnummer is NULL in allen Sätzen
---      Siehe s_zuordungspfeil_flurstueck 
+--      Siehe s_zuordungspfeil_flurstueck
+
+-- ap_lpo.signaturnummer = '2004' ist in 0.7 schema nun ein varchar
 
 CREATE OR REPLACE VIEW sk2004_zuordnungspfeil_spitze 
 AS
@@ -272,7 +275,7 @@ AS
         st_pointn(ap.wkb_geometry, 2)) * (- (180)::double precision)) / pi()) + (90)::double precision) AS winkel, 
         st_startpoint(ap.wkb_geometry) AS wkb_geometry 
  FROM ap_lpo ap 
- WHERE ((ap.signaturnummer = 2004) 
+ WHERE ((ap.signaturnummer = '2004') 
    AND ('DKKM1000'::text ~~ ANY ((ap.advstandardmodell)::text[])));
 -- krz: ap.signaturnummer is NULL in allen Sätzen
 
