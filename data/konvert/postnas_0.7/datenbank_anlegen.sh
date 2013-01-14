@@ -76,11 +76,11 @@ echo "** Anlegen (leere) PostGIS-Datenbank"
 createdb --port=5432 --username=${DBUSER} -E utf8  -T ${DBTEMPLATE} ${DBNAME}
 echo " "
 echo "** Anlegen der Datenbank-Struktur fuer PostNAS (alkis_PostNAS_0.7_schema.sql)"
-psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f alkis_PostNAS_0.7_schema.sql
+psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f alkis_PostNAS_0.7_schema.sql >$MANDANT_HOME/log/schema.log
 echo " "
 echo "** Anlegen der Datenbank-Struktur - zusaetzliche Schluesseltabellen"
 ## Nur die benoetigten Tabellen fuer die Buchauskunft
-psql $con -U ${DBUSER} -f alkis_PostNAS_0.7_keytables.sql
+psql $con -U ${DBUSER} -f alkis_PostNAS_0.7_keytables.sql >$MANDANT_HOME/log/keytables.log
 echo " "
 echo "** Anlegen Optimierung Nutzungsarten (nutzungsart_definition.sql)"
 psql $con -U ${DBUSER} -f nutzungsart_definition.sql
@@ -89,15 +89,15 @@ echo "** Laden NUA-Metadaten (nutzungsart_metadaten.sql) Protokoll siehe log"
 psql $con -U ${DBUSER} -f nutzungsart_metadaten.sql >$MANDANT_HOME/log/meta.log
 echo " "
 echo "** Anlegen Post Processing (pp_definition.sql)"
-psql $con -U ${DBUSER} -f pp_definition.sql
+psql $con -U ${DBUSER} -f pp_definition.sql >$MANDANT_HOME/log/pp_definition.log
 echo " "
 echo "** Definition von Views (sichten.sql)"
-psql $con -U ${DBUSER} -f sichten.sql
+psql $con -U ${DBUSER} -f sichten.sql >$MANDANT_HOME/log/sichten.log
 echo " "
 echo  "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7';" | psql -p 5432 -d ${DBNAME} -U ${DBUSER} 
 echo " "
 echo "** Berechtigung (grant.sql) Protokoll siehe log"
-psql $con -U ${DBUSER} -f grant.sql >$MANDANT_HOME/log/grant.log
+psql $con -U ${DBUSER} -f grant.sql >$MANDANT_HOME/log/log_grant.log
 echo " "
 echo "***************************"
 echo "**  Ende Neue Datenbank  **"
