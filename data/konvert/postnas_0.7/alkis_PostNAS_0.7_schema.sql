@@ -46,6 +46,7 @@
 -- 2012-10-31 FJ  Trigger fuer NAS-Replace-Saetze repariert:
 --                siehe: FUNCTION delete_feature_kill()
 --                ax_historischesflurstueck.buchungsart ist Text nicht integer.
+-- 2012-10-31 AE  Tabellen löschen wurde auskommetiert, DB wird leer angelegt	SELECT alkis_drop();
 
 --  VERSIONS-NUMMER:
 
@@ -76,7 +77,7 @@
 \i alkis-functions.sql
 
 -- Alle Tabellen löschen
-SELECT alkis_drop();
+--SELECT alkis_drop();
 
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
 CREATE TABLE "delete"
