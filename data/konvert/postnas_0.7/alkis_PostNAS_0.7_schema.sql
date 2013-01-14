@@ -106,6 +106,49 @@ COMMENT ON COLUMN delete.safetoignore IS 'Attribut safeToIgnore von wfsext:Repla
 COMMENT ON COLUMN delete.replacedBy   IS 'gml_id des Objekts, das featureid ersetzt';
 COMMENT ON COLUMN delete.ignored      IS 'Löschsatz wurde ignoriert';
 
+-- B e z i e h u n g e n
+-- ----------------------------------------------
+-- Zentrale Tabelle fuer alle Relationen im Buchwerk.
+
+-- Statt Relationen und FOREIGN-KEY-CONSTRAINTS zwischen Tabellen direkt zu legen, gehen
+-- in der ALKIS-Datenstruktur alle Beziehungen zwischen zwei Tabellen über diese Verbindungstabelle.
+
+-- Die Fremdschlüssel 'beziehung_von' und 'beziehung_zu' verweisen auf die ID des Objekte (gml_id).
+-- Das Feld 'gml_id' sollte daher in allen Tabellen indiziert werden.
+
+-- Zusätzlich enthält 'beziehungsart' noch ein Verb für die Art der Beziehung.
+
+CREATE TABLE alkis_beziehungen (
+	ogc_fid			serial NOT NULL,
+	beziehung_von		character(16),         --> gml_id
+	beziehungsart		varchar,               --  Liste siehe unten
+	beziehung_zu		character(16),         --> gml_id
+	CONSTRAINT alkis_beziehungen_pk PRIMARY KEY (ogc_fid)
+);
+
+CREATE INDEX alkis_beziehungen_von_idx ON alkis_beziehungen USING btree (beziehung_von);
+CREATE INDEX alkis_beziehungen_zu_idx  ON alkis_beziehungen USING btree (beziehung_zu);
+CREATE INDEX alkis_beziehungen_art_idx ON alkis_beziehungen USING btree (beziehungsart);
+
+-- Dummy-Eintrag in Metatabelle
+SELECT AddGeometryColumn('alkis_beziehungen','dummy',:alkis_epsg,'POINT',2);
+
+COMMENT ON TABLE  alkis_beziehungen               IS 'zentrale Multi-Verbindungstabelle';
+COMMENT ON COLUMN alkis_beziehungen.beziehung_von IS 'Join auf Feld gml_id verschiedener Tabellen';
+COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf Feld gml_id verschiedener Tabellen';
+COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung zwischen der von- und zu-Tabelle';
+
+-- Beziehungsarten:
+--
+-- "an" "benennt" "bestehtAusRechtsverhaeltnissenZu" "beziehtSichAuchAuf" "dientZurDarstellungVon"
+-- "durch" "gehoertAnteiligZu" "gehoertZu" "hat" "hatAuch" "istBestandteilVon"
+-- "istGebucht" "istTeilVon" "weistAuf" "zeigtAuf" "zu"
+
+-- Hinweis:
+-- Diese Tabelle enthält für ein Kreisgebiet ca. 5 Mio. Zeilen und wird ständig benutzt.
+-- Optimierung z.B. über passende Indices ist wichtig.
+
+
 --
 -- Löschtrigger setzen
 --
@@ -148,48 +191,6 @@ SELECT AddGeometryColumn('ks_sonstigesbauwerk','wkb_geometry',:alkis_epsg,'GEOME
 CREATE INDEX ks_sonstigesbauwerk_geom_idx ON ks_sonstigesbauwerk USING gist (wkb_geometry);
 
 
-
--- B e z i e h u n g e n
--- ----------------------------------------------
--- Zentrale Tabelle fuer alle Relationen im Buchwerk.
-
--- Statt Relationen und FOREIGN-KEY-CONSTRAINTS zwischen Tabellen direkt zu legen, gehen
--- in der ALKIS-Datenstruktur alle Beziehungen zwischen zwei Tabellen über diese Verbindungstabelle.
-
--- Die Konnectoren 'beziehung_von' und 'beziehung_zu' verweisen auf die ID des Objekte (gml_id).
--- Das Feld 'gml_id' sollte daher in allen Tabellen indiziert werden.
-
--- Zusätzlich enthält 'beziehungsart' noch ein Verb für die Art der Beziehung.
-
-CREATE TABLE alkis_beziehungen (
-	ogc_fid			serial NOT NULL,
-	beziehung_von		character(16),         --> gml_id
-	beziehungsart		varchar,               --  Liste siehe unten
-	beziehung_zu		character(16),         --> gml_id
-	CONSTRAINT alkis_beziehungen_pk PRIMARY KEY (ogc_fid)
-);
-
-CREATE INDEX alkis_beziehungen_von_idx ON alkis_beziehungen USING btree (beziehung_von);
-CREATE INDEX alkis_beziehungen_zu_idx  ON alkis_beziehungen USING btree (beziehung_zu);
-CREATE INDEX alkis_beziehungen_art_idx ON alkis_beziehungen USING btree (beziehungsart);
-
--- Dummy-Eintrag in Metatabelle
-SELECT AddGeometryColumn('alkis_beziehungen','dummy',:alkis_epsg,'POINT',2);
-
-COMMENT ON TABLE  alkis_beziehungen               IS 'zentrale Multi-Verbindungstabelle';
-COMMENT ON COLUMN alkis_beziehungen.beziehung_von IS 'Join auf Feld gml_id verschiedener Tabellen';
-COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf Feld gml_id verschiedener Tabellen';
-COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung zwischen der von- und zu-Tabelle';
-
--- Beziehungsarten:
---
--- "an" "benennt" "bestehtAusRechtsverhaeltnissenZu" "beziehtSichAuchAuf" "dientZurDarstellungVon"
--- "durch" "gehoertAnteiligZu" "gehoertZu" "hat" "hatAuch" "istBestandteilVon"
--- "istGebucht" "istTeilVon" "weistAuf" "zeigtAuf" "zu"
-
--- Hinweis:
--- Diese Tabelle enthält für ein Kreisgebiet ca. 5 Mio. Zeilen und wird ständig benutzt.
--- Optimierung z.B. über passende Indices ist wichtig.
 
 
 -- A n d e r e   F e s t l e g u n g   n a c h   W a s s e r r e c h t
@@ -264,6 +265,25 @@ CREATE UNIQUE INDEX ax_besonderertopographischerpunkt_gml ON ax_besonderertopogr
 COMMENT ON TABLE  ax_besonderertopographischerpunkt        IS 'B e s o n d e r e r   T o p o g r a f i s c h e r   P u n k t';
 COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, global eindeutig';
 
+--
+--
+CREATE TABLE ax_soll (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	name			varchar,
+	CONSTRAINT ax_soll_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_soll','wkb_geometry',:alkis_epsg,'POLYGON',2);
+
+CREATE INDEX ax_soll_geom_idx ON ax_soll USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_soll_gml ON ax_soll USING btree (gml_id,beginnt);
+
 
 -- B e w e r t u n g
 -- ------------------
@@ -286,6 +306,24 @@ CREATE UNIQUE INDEX ax_bewertung_gml ON ax_bewertung USING btree (gml_id,beginnt
 
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
+
+-- Tagesabschnitt
+CREATE TABLE ax_tagesabschnitt (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	tagesabschnittsnummer	varchar,
+	CONSTRAINT ax_tagesabschnitt_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_tagesabschnitt','wkb_geometry',:alkis_epsg,'POLYGON',2);
+
+CREATE INDEX ax_tagesabschnitt_geom_idx   ON ax_tagesabschnitt USING gist  (wkb_geometry);
+CREATE UNIQUE INDEX ax_tagesabschnitt_gml ON ax_tagesabschnitt USING btree (gml_id,beginnt);
 
 
 -- D e n k m a l s c h u t z r e c h t
@@ -314,6 +352,27 @@ CREATE INDEX ax_denkmalschutzrecht_afs ON ax_denkmalschutzrecht(land,stelle);
 
 COMMENT ON TABLE  ax_denkmalschutzrecht        IS 'D e n k m a l s c h u t z r e c h t';
 COMMENT ON COLUMN ax_denkmalschutzrecht.gml_id IS 'Identifikator, global eindeutig';
+
+CREATE TABLE ax_forstrecht (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	artderfestlegung	integer,
+	besonderefunktion	integer,
+	land			integer,
+	stelle			varchar,
+	CONSTRAINT ax_forstrecht_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_forstrecht','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- POLYGON/MULTIPOLYGON
+
+CREATE INDEX ax_forstrecht_geom_idx   ON ax_forstrecht USING gist  (wkb_geometry);
+CREATE UNIQUE INDEX ax_forstrecht_gml ON ax_forstrecht USING btree (gml_id,beginnt);
+CREATE INDEX ax_forstrecht_afs ON ax_forstrecht(land,stelle);
 
 
 -- G e b a e u d e a u s g e s t a l t u n g
@@ -934,7 +993,7 @@ CREATE TABLE ax_flurstueck (
 	name				varchar[],   -- 03.11.2011: array, Buchauskunft anpassen!
 	regierungsbezirk		integer,
 	kreis				integer,
-	stelle				varchar,
+	stelle				varchar[],
 
 -- neu aus SVN-Version 28.02.2012 hinzugefuegt
 -- Dies ist noch zu ueberpruefen
@@ -1188,7 +1247,7 @@ COMMENT ON COLUMN ax_aufnahmepunkt.gml_id IS 'Identifikator, global eindeutig';
 -- DROP TABLE ax_sicherungspunkt;
 CREATE TABLE ax_sicherungspunkt (
 	ogc_fid			serial NOT NULL,
-	gml_id			varchar,
+	gml_id			character(16),
 	identifier              character(44),
 	beginnt			character(20),
 	endet			character(20),
@@ -1607,6 +1666,8 @@ CREATE TABLE ax_anschrift (
 	postfach			varchar,
 	ortsteil			varchar,
 	weitereAdressen			varchar,
+	telefon				varchar,
+	fax				varchar,
 	CONSTRAINT ax_anschrift_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -2855,7 +2916,7 @@ CREATE TABLE ax_transportanlage (
 	CONSTRAINT ax_transportanlage_pk PRIMARY KEY (ogc_fid)
 );
 
-SELECT AddGeometryColumn('ax_transportanlage','wkb_geometry',:alkis_epsg,'LINESTRING',2);
+SELECT AddGeometryColumn('ax_transportanlage','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- POINT/LINESTRING
 
 CREATE INDEX ax_transportanlage_geom_idx ON ax_transportanlage USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_transportanlage_gml ON ax_transportanlage USING btree (gml_id,beginnt);
@@ -2997,6 +3058,7 @@ CREATE TABLE ax_einrichtunginoeffentlichenbereichen (
 	identifier		character(44),
 	beginnt			character(20),
 	endet			character(20),
+	advstandardmodell	varchar,
 	sonstigesmodell		varchar,
 	anlass			varchar,
 	art			integer,
@@ -3004,13 +3066,34 @@ CREATE TABLE ax_einrichtunginoeffentlichenbereichen (
 	CONSTRAINT ax_einrichtunginoeffentlichenbereichen_pk PRIMARY KEY (ogc_fid)
 );
 
-SELECT AddGeometryColumn('ax_einrichtunginoeffentlichenbereichen','wkb_geometry',:alkis_epsg,'POINT',2);
+SELECT AddGeometryColumn('ax_einrichtunginoeffentlichenbereichen','wkb_geometry',:alkis_epsg,'GEOMETRY',2);
 
 CREATE INDEX ax_einrichtunginoeffentlichenbereichen_geom_idx ON ax_einrichtunginoeffentlichenbereichen USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_einrichtunginoeffentlichenbereichen_gml ON ax_einrichtunginoeffentlichenbereichen USING btree (gml_id,beginnt);
 
 COMMENT ON TABLE  ax_einrichtunginoeffentlichenbereichen        IS 'E i n r i c h t u n g   i n   O e f f e n t l i c h e n   B e r e i c h e n';
 COMMENT ON COLUMN ax_einrichtunginoeffentlichenbereichen.gml_id IS 'Identifikator, global eindeutig';
+
+
+-- Einrichtung für den Schiffsverkehr
+CREATE TABLE ax_einrichtungenfuerdenschiffsverkehr (
+	ogc_fid 		serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	art			integer,
+	kilometerangabe		varchar,
+	name			varchar,
+	CONSTRAINT ax_einrichtungfuerdenschiffsverkehr_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_einrichtungenfuerdenschiffsverkehr','wkb_geometry',:alkis_epsg,'POINT',2);
+
+CREATE INDEX ax_einrichtungenfuerdenschiffsverkehr_geom_idx ON ax_einrichtungenfuerdenschiffsverkehr USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_einrichtungenfuerdenschiffsverkehr_gml ON ax_einrichtungenfuerdenschiffsverkehr USING btree (gml_id,beginnt);
 
 
 -- B e s o n d e r e r   B a u w e r k s p u n k t
@@ -3074,6 +3157,7 @@ COMMENT ON COLUMN ax_bauwerkimverkehrsbereich.gml_id IS 'Identifikator, global e
 CREATE TABLE ax_strassenverkehrsanlage (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
+	identifier		character(44),
 	beginnt			character(20),
 	endet 			character(20),
 	advstandardmodell	varchar,
@@ -3124,6 +3208,7 @@ COMMENT ON COLUMN ax_wegpfadsteig.gml_id IS 'Identifikator, global eindeutig';
 CREATE TABLE ax_bahnverkehrsanlage (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
+	identifier		character(44),
 	beginnt			character(20),
 	endet 			character(20),
 	advstandardmodell	varchar,
@@ -3135,7 +3220,7 @@ CREATE TABLE ax_bahnverkehrsanlage (
 	CONSTRAINT ax_bahnverkehrsanlage_pk PRIMARY KEY (ogc_fid)
 );
 
-SELECT AddGeometryColumn('ax_bahnverkehrsanlage','wkb_geometry',:alkis_epsg,'POINT',2);
+SELECT AddGeometryColumn('ax_bahnverkehrsanlage','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- POINT/POLYGON
 
 CREATE INDEX ax_bahnverkehrsanlage_geom_idx ON ax_bahnverkehrsanlage USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_bahnverkehrsanlage_gml ON ax_bahnverkehrsanlage USING btree (gml_id,beginnt);
@@ -3144,8 +3229,30 @@ COMMENT ON TABLE  ax_bahnverkehrsanlage        IS 'B a h n v e r k e h r s a n l
 COMMENT ON COLUMN ax_bahnverkehrsanlage.gml_id IS 'Identifikator, global eindeutig';
 
 
---AX_SeilbahnSchwebebahn
--- ** Tabelle bisher noch nicht generiert
+-- S e i l b a h n, S c h w e b e b a h n
+-- --------------------------------------
+CREATE TABLE ax_seilbahnschwebebahn (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	sonstigesmodell		varchar[],
+	anlass			varchar,
+	bahnkategorie		integer,
+	name			varchar,
+	CONSTRAINT ax_seilbahnschwebebahn_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_seilbahnschwebebahn','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- LINESTRING/MULTILINESTRING
+
+CREATE INDEX ax_seilbahnschwebebahn_geom_idx ON ax_seilbahnschwebebahn USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_seilbahnschwebebahn_gml ON ax_seilbahnschwebebahn USING btree (gml_id,beginnt);
+
+COMMENT ON TABLE  ax_seilbahnschwebebahn        IS 'S e i l b a h n, S c h w e b e b a h n';
+COMMENT ON COLUMN ax_seilbahnschwebebahn.gml_id IS 'Identifikator, global eindeutig';
+
 
 
 -- G l e i s
@@ -3276,7 +3383,7 @@ CREATE TABLE ax_gewaessermerkmal (
 	CONSTRAINT ax_gewaessermerkmal_pk PRIMARY KEY (ogc_fid)
 );
 
-SELECT AddGeometryColumn('ax_gewaessermerkmal','wkb_geometry',:alkis_epsg,'POINT',2);
+SELECT AddGeometryColumn('ax_gewaessermerkmal','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- POINT/LINESTRING/POLYGON
 
 CREATE INDEX ax_gewaessermerkmal_geom_idx ON ax_gewaessermerkmal USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gewaessermerkmal_gml ON ax_gewaessermerkmal USING btree (gml_id,beginnt);
@@ -3318,10 +3425,43 @@ COMMENT ON COLUMN ax_untergeordnetesgewaesser.gml_id IS 'Identifikator, global e
 --   ===================================================================
 
 --AX_Wasserspiegelhoehe
--- ** Tabelle bisher noch nicht generiert
+--
+CREATE TABLE ax_wasserspiegelhoehe (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	hoehedeswasserspiegels	double precision,
+	CONSTRAINT ax_wasserspiegelhoehe_pk PRIMARY KEY (ogc_fid)
+);
 
---AX_SchifffahrtslinieFaehrverkehr
--- ** Tabelle bisher noch nicht generiert
+SELECT AddGeometryColumn('ax_wasserspiegelhoehe','wkb_geometry',:alkis_epsg,'POINT',2);
+
+CREATE INDEX ax_wasserspiegelhoehe_geom_idx ON ax_wasserspiegelhoehe USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_wasserspiegelhoehe_gml ON ax_wasserspiegelhoehe USING btree (gml_id,beginnt);
+
+--
+--
+CREATE TABLE ax_schifffahrtsliniefaehrverkehr (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	art			integer,
+	CONSTRAINT ax_schifffahrtsliniefaehrverkehr_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_schifffahrtsliniefaehrverkehr','wkb_geometry',:alkis_epsg,'LINESTRING',2);
+
+CREATE INDEX ax_schifffahrtsliniefaehrverkehr_geom_idx ON ax_schifffahrtsliniefaehrverkehr USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_schifffahrtsliniefaehrverkehr_gml ON ax_schifffahrtsliniefaehrverkehr USING btree (gml_id,beginnt);
+
 
 --*** ############################################################
 --*** Objektbereich: Relief
@@ -3341,7 +3481,9 @@ CREATE TABLE ax_boeschungkliff (
 	endet 			character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar[],
-	anlass			varchar
+	anlass			varchar,
+	objekthoehe		double precision,
+	CONSTRAINT ax_boeschungkliff_pk PRIMARY KEY (ogc_fid)
 );
 
 SELECT AddGeometryColumn('ax_boeschungkliff','dummy',:alkis_epsg,'POINT',2);
@@ -3388,6 +3530,7 @@ CREATE TABLE ax_dammwalldeich (
 	anlass			varchar,
 	art			integer,
 	name			varchar,
+	funktion		integer,
 	CONSTRAINT ax_dammwalldeich_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3400,8 +3543,24 @@ COMMENT ON TABLE  ax_dammwalldeich        IS 'D a m m  /  W a l l  /  D e i c h'
 COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
 
 
---AX_Hoehleneingang
--- ** Tabelle bisher noch nicht generiert
+--
+--
+CREATE TABLE ax_hoehleneingang (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	name			varchar,
+	CONSTRAINT ax_hoehleneingang_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_hoehleneingang','wkb_geometry',:alkis_epsg,'POINT',2);
+
+CREATE INDEX ax_hoehleneingang_geom_idx ON ax_hoehleneingang USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_fhoehleneingang_gml ON ax_hoehleneingang USING btree (gml_id,beginnt);
 
 
 -- F e l s e n ,  F e l s b l o c k ,   F e l s n a d e l
@@ -3428,12 +3587,43 @@ COMMENT ON TABLE  ax_felsenfelsblockfelsnadel        IS 'F e l s e n ,  F e l s 
 COMMENT ON COLUMN ax_felsenfelsblockfelsnadel.gml_id IS 'Identifikator, global eindeutig';
 
 
---AX_Duene
--- ** Tabelle bisher noch nicht generiert
+-- Düne
+CREATE TABLE ax_duene (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	name			varchar,
+	CONSTRAINT ax_duene_pk PRIMARY KEY (ogc_fid)
+);
 
+SELECT AddGeometryColumn('ax_duene','wkb_geometry',:alkis_epsg,'GEOMETRY',2);
 
---AX_Hoehenlinie
--- ** Tabelle bisher noch nicht generiert
+CREATE INDEX ax_duene_geom_idx ON ax_duene USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_duene_gml ON ax_duene USING btree (gml_id,beginnt);
+
+--
+--
+CREATE TABLE ax_hoehenlinie (
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet 			character(20),
+	advstandardmodell	varchar,
+	anlass			varchar,
+	hoehevonhoehenlinie	double precision,
+	CONSTRAINT ax_hoehenlinie_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_hoehenlinie','wkb_geometry',:alkis_epsg,'LINESTRING',2);
+
+CREATE INDEX ax_hoehenlinie_geom_idx ON ax_hoehenlinie USING gist (wkb_geometry);
+CREATE UNIQUE INDEX ax_hoehenlinie_gml ON ax_hoehenlinie USING btree (gml_id,beginnt);
+
 
 
 --** Objektartengruppe: Primäres DGM
@@ -3617,6 +3807,7 @@ CREATE TABLE ax_sonstigesrecht (
 	characterstring		varchar,
 	art			varchar,  --(15)
 	name			varchar,
+	funktion		integer,
 --	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" varchar,
 --	datetime		varchar,
 	CONSTRAINT ax_sonstigesrecht_pk PRIMARY KEY (ogc_fid)
@@ -4005,6 +4196,7 @@ COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.bezeichnung  IS 'Straßenname
 CREATE TABLE ax_kleinraeumigerlandschaftsteil (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
+	identifier		character(44),
 	beginnt			character(20),
 	endet 			character(20),
 	advstandardmodell	varchar,
@@ -4082,48 +4274,46 @@ COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig
 -- ** Tabelle bisher noch nicht generiert
 
 CREATE TABLE ax_vertretung (
-	ogc_fid serial NOT NULL,
-	gml_id varchar(16),
-	identifier varchar(28),
-	beginnt varchar(20),
-	endet character(20),
-	advstandardmodell varchar(4),
-	anlass varchar,
-	haengtan varchar,
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet			character(20),
+	advstandardmodell	varchar(4),
+	anlass			varchar,
 	CONSTRAINT ax_vertretung_pk PRIMARY KEY (ogc_fid)
 );
 
 SELECT AddGeometryColumn('ax_vertretung','dummy',:alkis_epsg,'POINT',2);
 
 CREATE TABLE ax_verwaltungsgemeinschaft (
-	ogc_fid serial NOT NULL,
-	gml_id varchar(16),
-	identifier varchar(28),
-	beginnt varchar(20),
-	endet character(20),
-	advstandardmodell varchar(4),
-	anlass varchar,
-	schluesselgesamt integer,
-	bezeichnung varchar,
-	bezeichnungart integer,
-	land integer,
-	regierungsbezirk integer,
-	kreis integer,
-	verwaltungsgemeinschaft integer,
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet			character(20),
+	advstandardmodell	varchar(4),
+	anlass			varchar,
+	schluesselgesamt	integer,
+	bezeichnung		varchar,
+	bezeichnungart		integer,
+	land			integer,
+	regierungsbezirk	integer,
+	kreis			integer,
+	verwaltungsgemeinschaft	integer,
 	CONSTRAINT ax_verwaltungsgemeinschaft_pk PRIMARY KEY (ogc_fid)
 );
 
 SELECT AddGeometryColumn('ax_verwaltungsgemeinschaft','dummy',:alkis_epsg,'POINT',2);
 
 CREATE TABLE ax_verwaltung (
-	ogc_fid serial NOT NULL,
-	gml_id varchar(16),
-	identifier varchar(28),
-	beginnt varchar(20),
-	endet character(20),
-	advstandardmodell varchar(4),
-	anlass varchar,
-	haengtan varchar,
+	ogc_fid			serial NOT NULL,
+	gml_id			character(16),
+	identifier		character(44),
+	beginnt			character(20),
+	endet			character(20),
+	advstandardmodell	varchar(4),
+	anlass			varchar,
 	CONSTRAINT ax_verwaltung_pk PRIMARY KEY (ogc_fid)
 );
 
