@@ -18,7 +18,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -271,12 +271,14 @@ echo "\n<hr>\n<table class='geb'>";
 }
 
 ?>
+
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<input type='button' name='back'  value='&lt;&lt;' title='Zur&uuml;ck'  onClick='javascript:history.back()'>&nbsp;
-		<input type='button' name='print' value='Druck' title='Seite Drucken' onClick='window.print()'>&nbsp;
-		<input type='button' name='close' value='X' title='Fenster schlie&szlig;en' onClick='window.close()'>
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
+<!--	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="16" height="16" alt="Export" /></a>&nbsp;
+		<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
 

@@ -3,10 +3,10 @@
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Flurstücks-Historie fuer ein Flurstückskennzeichen aus ALKIS PostNAS
-
 	Version:	2011-11-16 Zum aktuellen FS die Vorgänger suchen
 	2011-11-17 Parameter der Functions geändert
 	2011-11-30 import_request_variables
+	2012-11-27 Function split deprecated: explode
 */
 
 function fzerleg($fs) {
@@ -31,7 +31,8 @@ function vornach($dbarr) {
 		echo "(keine)";
 	} else {
 		$stri=trim($dbarr, "{}");
-		$arr = split(",",$stri);
+		//$arr = split(",",$stri);
+		$arr = explode(",",$stri);
 		foreach($arr AS $val){
 		   echo "Flurst&uuml;ck <a title=' zur Flurst&uuml;ck Historie' href='".$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;fskennz=".$val;
 		   	if ($idanzeige) {echo "&amp;id=j";}
@@ -115,7 +116,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -177,7 +178,8 @@ if ($parmtyp != "") { // einer der beiden erlaubten Fälle
 		$fskenn=$rowu["flurstueckskennzeichen"];
 		$flae=number_format($rowu["amtlicheflaeche"],0,",",".") . " m&#178;";
 		$name=$rowu["name"]; // in DB ein Array
-		$arrn = split(",", trim($name, "{}") ); // PHP-Array
+	//	$arrn=split(",", trim($name, "{}") ); // split ist deprecated!
+		$arrn=explode(",", trim($name, "{}") ); // PHP-Array 
 		$gemkname= gemkg_name($gmkgnr);
 		$entsteh=$rowu["zeitpunktderentstehung"];
 		$vor=$rowu["vor"];
@@ -303,9 +305,10 @@ if ($debug > 1) {
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<input type='button' name='back'  value='&lt;&lt;' title='Zur&uuml;ck'  onClick='javascript:history.back()'>&nbsp;
-		<input type='button' name='print' value='Druck' title='Seite Drucken' onClick='window.print()'>&nbsp;
-		<input type='button' name='close' value='X' title='Fenster schlie&szlig;en' onClick='window.close()'>
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
+<!--	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="16" height="16" alt="Export" /></a>&nbsp;
+		<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
 

@@ -7,6 +7,7 @@
 	Version:	17.11.2011  Parameter der Functions geändert
 	22.11.2011  Feldname land in ax_buchungsblattbezirk geändert
 	30.11.2011  import_request_variables
+	24.07.2012  Export CSV
 
 	ToDo:
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
@@ -24,7 +25,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -32,6 +33,10 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<title>ALKIS Bestandsnachweis</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Grundbuch.ico">
+	<script type="text/javascript">
+	function ALKISexportGB() {window.open(<?php echo "'alkisgbexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
+	function ALKISexportFS() {window.open(<?php echo "'alkisgbfsexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
+	</script>
 	<style type='text/css' media='print'>
 		.noprint {visibility: hidden;}
 	</style>
@@ -455,9 +460,11 @@ if ($i == 0) {
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<input type='button' name='back'  value='&lt;&lt;' title='Zur&uuml;ck'             onClick='javascript:history.back()'>&nbsp;
-		<input type='button' name='print' value='Druck'    title='Seite Drucken'           onClick='window.print()'>&nbsp;
-		<input type='button' name='close' value='X'        title='Fenster schlie&szlig;en' onClick='window.close()'>
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
+<!-- 	<a title="Export Flurst&uuml;cksdaten als CSV" href='javascript:ALKISexportFS()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp; -->
+		<a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp;
+<!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
 

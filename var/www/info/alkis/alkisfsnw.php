@@ -5,12 +5,16 @@
 	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
 	Version:
-	16.11.2011  Neuer Style class='dbg', Link Historie
-	17.11.2011  Parameter der Functions geändert
-	30.11.2011  import_request_variables, $dbvers PostNAS 0.5 entfernt
-	01.12.2011  Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
-	
+	2011-11-16 Neuer Style class='dbg', Link Historie
+	2011-11-17 Parameter der Functions geändert
+	2011-11-30 import_request_variables, $dbvers PostNAS 0.5 entfernt
+	2011-12-01 Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
+	2011-12-16 Zeilenumbruch in Nutzungsart, Spaltenbreite Link
+	2012-07-24 Export als CSV, pg_free_result(), pg_close()
+	2012-11-27 split deprecated, besser: explode
+
 	ToDo:
+	- Bodenschätzung anzeigen
 	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
@@ -26,7 +30,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -37,6 +41,10 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<style type='text/css' media='print'>
 		.noprint {visibility: hidden;}
 	</style>
+	<script type="text/javascript">
+	function ALKISexportFS() {window.open(<?php echo "'alkisfsexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
+	function ALKISexportGB() {window.open(<?php echo "'alkisfsgbexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
+	</script>
 </head>
 <body>
 <?php
@@ -73,11 +81,13 @@ if ($row = pg_fetch_array($res)) {
 	$fsgeomflaed=number_format($fsgeomflae,0,",",".") . " m&#178;";
 	$entsteh=$row["zeitpunktderentstehung"];
 	$name=$row["name"]; // Fortfuehrungsnummer(n)
-	$arrn = split(",", trim($name, "{}") ); // PHP-Array
+	//$arrn = split(",", trim($name, "{}") ); // deprecated
+	$arrn = explode(",", trim($name, "{}") ); // PHP-Array
 } else {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
+pg_free_result($res);
 // Balken
 if ($eig=="j") {
 	echo "<p class='fsei'>ALKIS Flurst&uuml;ck ".$gmkgnr."-".$flurnummer."-".$flstnummer."&nbsp;</p>\n";
@@ -141,7 +151,7 @@ echo "\n\t<td class='lr'>Gemeinde</td><td class='lr'>";
 if ($showkey) {
 	echo "<span class='key'>(".$gemeinde.")</span> ";
 }
-echo $gnam."</td><td>";
+echo $gnam."</td><td width='80'>";  // Mindest-Breite der Spalte fuer die Links 
 	// Link zur Flurstücks-Historie (passt nicht ganz in die Zeile "Gemeinde", aber gut unter "weitere Auskunft")
 	echo "\n<p class='nwlink noprint'>";
 		echo "\n\t<a href='alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
@@ -152,6 +162,7 @@ echo $gnam."</td><td>";
 		echo "</a>";
 	echo "\n</p>";
 echo "</td></tr>";
+pg_free_result($res);
 
 // K r e i s
 $sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2"; 
@@ -169,6 +180,7 @@ if ($showkey) {
 	echo "<span class='key'>(".$kreis.")</span> ";
 }
 echo $knam."</td><td>&nbsp;</td></tr>";
+pg_free_result($res);
 
 // R e g - B e z
 $sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk= $1 ";
@@ -186,6 +198,7 @@ if ($showkey) {
 	echo "<span class='key'>(".$bezirk.")</span> ";
 }
 echo $bnam."</td><td>&nbsp;</td></tr>";
+pg_free_result($res);
 // ENDE G e b i e t s z u g e h o e r i g k e i t
 
 // ** L a g e b e z e i c h n u n g **
@@ -235,6 +248,7 @@ while($row = pg_fetch_array($res)) {
 	echo "\n</tr>";
 	$j++;
 }
+pg_free_result($res);
 // Verbesserung: mehrere HsNr zur gleichen Straße als Liste?
 
 // L a g e b e z e i c h n u n g   O h n e   H a u s n u m m e r  (Gewanne oder nur Strasse)
@@ -291,13 +305,13 @@ while($row = pg_fetch_array($res)) {
 	}
 	$j++;
 }
+pg_free_result($res);
 // ENDE  L a g e b e z e i c h n u n g
 
 // ** N U T Z U N G **
 // Tabellenzeilen (3 Spalten) mit tats. Nutzung zu einem FS ausgeben
 $sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, c.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, ";
 // Gemeinsame Fläche von NUA und FS
-//$sql.="round(st_area(st_intersection(n.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae, ";
 $sql.="st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) AS schnittflae, ";
 $sql.="c.label, c.blabla ";
 $sql.="FROM ax_flurstueck f, nutzung n ";
@@ -330,7 +344,7 @@ while($row = pg_fetch_array($res)) {
 	$zus=$row["zustand"]; // im Bau
 	$nam=$row["name"]; // Eigenname
 	$bez=$row["bezeichnung"]; // weiterer Name (unverschl.)
-	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8");
+	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8");	$label=str_replace("/", "<br>", $label); // Ersetzen "/" durch Zeilenwechsel?
 
 	echo "\n<tr>\n\t";
 		if ($j == 0) {
@@ -400,10 +414,11 @@ while($row = pg_fetch_array($res)) {
 	echo "\n</tr>";
 	$j++;
 }
+pg_free_result($res);
 // ENDE  N U T Z U N G
 
 echo "\n<tr>"; // Summenzeile
-	echo "\n\t<td class='ll' title='amtliche Fl&auml;che (Buchfl&auml;che))'>Fl&auml;che:</td>";
+	echo "\n\t<td class='ll' title='amtliche Fl&auml;che (Buchfl&auml;che)'>Fl&auml;che:</td>";
 	echo "\n\t<td class='fla'>";
 	echo "<span title='geometrisch berechnete Fl&auml;che = ".$fsgeomflaed."' class='flae'>".$fsbuchflaed."</span></td>";
 
@@ -677,22 +692,27 @@ while($rows = pg_fetch_array($ress)) {
 		if ($eig == "j") {
 			$n = eigentuemer($con, $rowan["g_gml"], false, ""); // ohne Adresse
 		}
-		$an++;
+		$an++;	
 	}
+	pg_free_result($resan);
 	$bs++;
 }
+pg_free_result($resg);
 if ($bs == 0) {
 	echo "\n<p class='err'>Keine Buchungstelle gefunden.</p>";
 	linkgml($gkz, $gmlid, "Flurst&uuml;ck");
 }
+pg_close($con);
 ?>
 
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<input type='button' name='back'  value='&lt;&lt;' title='Zur&uuml;ck'  onClick='javascript:history.back()'>&nbsp;
-		<input type='button' name='print' value='Druck' title='Seite Drucken' onClick='window.print()'>&nbsp;
-		<input type='button' name='close' value='X' title='Fenster schlie&szlig;en' onClick='window.close()'>
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
+		<a title="Export Flurst&uuml;cksdaten als CSV" href='javascript:ALKISexportFS()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp;
+<!-- 	<a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp; -->
+<!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
 
