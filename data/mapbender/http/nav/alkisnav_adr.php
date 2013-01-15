@@ -1,16 +1,18 @@
 <?php
 /* Version vom 
-	11.04.2011 epsg in Link, transform nur wenn notwendig
-	25.07.2011 PostNAS 0.5/0.6 Versionen unterscheiden
-	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
-	09.12.2011 Sonderfall PostNAS 0.5 raus,
-    3.12.2012 Ausgabe von Hausnr ohne Gebaeude
+	2011-04-11 epsg in Link, transform nur wenn notwendig
+	2011-07-25 PostNAS 0.5/0.6 Versionen unterscheiden
+	2011-10-24 Nach Pos-Klick Highlight erneuern statt hideHighlight
+	2011-12-09 Sonderfall PostNAS 0.5 raus,
+	2012-12-03 A.E.: Ausgabe von Hausnr ohne Gebaeude
+	2013-01-15 F.J.: HsNr ohne Gebäude auf NRW/krz-Daten anpassen
 
 	ToDo:
+	-  auskommentierte Variante mit "subquery" entfernen
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
 		Analog zur Zerlegung des FS-Kennz in _fls
-	-	Mouse-Over in Straßenliste soll Position zeigen,
-		dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
+	-	Mouse-Over in Straßenliste soll Position zeigen.
+		Dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
 */
 import_request_variables("G");
 include("../../conf/alkisnav_conf.php");
@@ -149,7 +151,6 @@ function suchStrKey() {
 				default: // Einzelwert
 					break;
 			}
-
 		echo "</div>";
 		$cnt++;
 	}
@@ -173,8 +174,7 @@ function suchHausZurStr($showParent){
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.schluesselgesamt = $1 LIMIT 1"; 
- 
- 	$v=array($str_schl);
+  	$v=array($str_schl);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if($row = pg_fetch_array($res)) { // Strassenschluessel gefunden
@@ -185,23 +185,22 @@ function suchHausZurStr($showParent){
 		$gemnd=$row["gemeinde"];
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		$nr=$row["lage"];
-
 		if ($showParent) {
 			// eine Koordinate zur Strasse besorgen
 			// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
-			$sqlko ="SELECT ";		
+			$sqlko ="SELECT ";
 			if($epsg == "25832") { // Transform nicht notwendig
 				$sqlko.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
 				$sqlko.="st_y(st_Centroid(f.wkb_geometry)) AS y ";
-			} else {  
+			} else {
 				$sqlko.="st_x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
-				$sqlko.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
+				$sqlko.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";
 			}
 			$sqlko.="FROM ax_lagebezeichnungohnehausnummer o ";
 			$sqlko.="JOIN alkis_beziehungen v ON o.gml_id=v.beziehung_zu "; 
 			$sqlko.="JOIN ax_flurstueck f ON v.beziehung_von=f.gml_id ";
 			$sqlko.="WHERE o.land= $1 AND o.regierungsbezirk= $2 AND o.kreis= $3 AND o.gemeinde= $4 AND o.lage= $5 ";	
-			$sqlko.="AND v.beziehungsart='zeigtAuf' LIMIT 1;";  // die erstbeste beliebige Koordinate
+			$sqlko.="AND v.beziehungsart='zeigtAuf' LIMIT 1;"; // die erstbeste Koordinate
 			$v=array($land,$regb,$kreis,$gemnd,$nr);
 			$resko=pg_prepare("", $sqlko);
 			$resko=pg_execute("", $v);
@@ -212,8 +211,6 @@ function suchHausZurStr($showParent){
 			} else {		
 				echo "\n<p class='err'>Fehler bei Koordinate zur Stra&szlig;e</p>";
 			}
-			$sqlko.="";
-
 			echo "\n<div class='stu'>";		
 			if ($x > 0) { // Koord. bekommen?
 				echo "\n\t<a title='Positionieren 1:".$scalestr."' href='javascript:"; // mit Link
@@ -223,10 +220,9 @@ function suchHausZurStr($showParent){
 					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
 					echo "\n\t\tonmouseout='parent.parent.hideHighlight()'";
 				echo ">\n\t\t".$sname." (".$nr.")\n\t</a>";
-			} else { // keine Koord. dazu gefunden
+			} else { // keine Koord. gefunden
 				echo $sname." (".$nr.")"; // nur Anzeige, ohne Link
 			}
-
 			switch ($gfilter) {
 				case 0: // Kein Filter
 					echo " in ".$gemname;
@@ -240,42 +236,65 @@ function suchHausZurStr($showParent){
 			echo "\n</div>";
 		}
 		echo "\n<hr>";
+
 		// Haeuser zum Strassenschluessel
-		$sql ="SELECT replace (h.hausnummer, ' ','') AS hsnr, ";
-		
+	//	$sql="SELECT replace(h.hausnummer,' ','') AS hsnr, subq.geb, "; // Subquery
+		$sql="SELECT replace(h.hausnummer,' ','') AS hsnr, ";
 		if($epsg == "25832") { // Transform nicht notwendig
-			$sql.="st_x(st_Centroid(g.wkb_geometry)) AS x, ";
-			$sql.="st_y(st_Centroid(g.wkb_geometry)) AS y ";		
+			$sql.="st_x(p.wkb_geometry) AS x, ";
+			$sql.="st_y(p.wkb_geometry) AS y ";		
+		} else {  
+			$sql.="st_x(st_transform(p.wkb_geometry,".$epsg.")) AS x, ";
+			$sql.="st_y(st_transform(p.wkb_geometry,".$epsg.")) AS y ";		
 		}
-		else {  
-			$sql.="st_x(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS x, ";
-			$sql.="st_y(st_transform(st_Centroid(g.wkb_geometry), ".$epsg.")) AS y ";		
-		}		
-		$sql.="FROM ax_lagebezeichnungmithausnummer h ";
-		$sql.="JOIN alkis_beziehungen v ON h.gml_id=v.beziehung_zu ";
-		$sql.="JOIN ax_gebaeude g ON v.beziehung_von=g.gml_id ";
-		$sql.="WHERE h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 "; // integer
-		$sql.="AND v.beziehungsart='zeigtAuf' ";
+
+/* Version mit // Subquery
+Liefert Informationen über Gebäude zur Hausnummer. Läuft aber spürbar langsamer.
+
+		$sql.="FROM ap_pto p JOIN alkis_beziehungen v ON p.gml_id = v.beziehung_von ";
+		$sql.="JOIN ax_lagebezeichnungmithausnummer h ON v.beziehung_zu = h.gml_id ";
+		$sql.="LEFT JOIN (SELECT b.beziehung_zu AS zu, g.gml_id AS geb FROM alkis_beziehungen b ";
+		$sql.="JOIN ax_gebaeude g ON b.beziehung_von=g.gml_id WHERE b.beziehungsart='zeigtAuf') subq ";
+		$sql.="ON h.gml_id = subq.zu WHERE v.beziehungsart='dientZurDarstellungVon' AND p.art = 'HNR' ";
+		$sql.="AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
 		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
+*/
+		// Version ohne Subquery
+		$sql.="FROM ap_pto p JOIN alkis_beziehungen v ON p.gml_id = v.beziehung_von ";
+		$sql.="JOIN ax_lagebezeichnungmithausnummer h ON v.beziehung_zu = h.gml_id ";
+		$sql.="WHERE v.beziehungsart='dientZurDarstellungVon' AND p.art = 'HNR' ";
+		$sql.="AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
+		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
+
  		$v=array($land,$regb,$kreis,$gemnd,$nr);
 		$resh=pg_prepare("", $sql);
 		$resh=pg_execute("", $v);
 		$cnt=0;
 		$count=0;
 		echo "\n<table>";
-		// mehrere Hausnummern je Zeile ausgeben
-		while($rowh = pg_fetch_array($resh)) {
-			if($count == 0){echo "\n<tr>";}
-			$gml=$rowh["gml_id"];			
-			$hsnr=$rowh["hsnr"];			
+		while($rowh = pg_fetch_array($resh)) { // mehrere HsNr je Zeile
+			if($count == 0){echo "\n<tr>";}	
+			$hsnr=$rowh["hsnr"];
+		//	$geb=$rowh["geb"]; // Subquery
 			$x=$rowh["x"];
 			$y=$rowh["y"];
+		/* // Subquery
+			if ($geb == "") { // kein Gebäude
+				$cls=" class='hsnro'";
+				$ttl="kein Haus";
+			} else {
+				$cls="";
+				$ttl="Haus ".$geb;
+			}
+		*/		
 			echo "\n\t<td class='hsnr'>";
+			//	echo "<a".$cls." href='";
 				echo "<a href='";
 					echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalehs."); ";
 					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()";
+			//	echo "' title='".$ttl."'>".$hsnr."</a>"; // Subquery
 				echo "'>".$hsnr."</a>";
 			echo "</td>";
 			$cnt++;
@@ -288,72 +307,6 @@ function suchHausZurStr($showParent){
 		if($count > 0) {echo "\n</tr>";}
 		echo "\n</table>";
 		echo "\n<p class='hilfe'>".$cnt." Hausnummern</p>";
-
-		if($hausnummernohnegebaeude == 1){
-			#echo "Hausnummern ohne Geb&auml;ude:";
-			// Haeuser zum Strassenschluessel
-			$sql ="SELECT gml_id, replace (schriftinhalt, ' ','') AS hsnr, ";
-			if($epsg == "25832") { // Transform nicht notwendig
-				$sql.="st_x(wkb_geometry) AS x, ";
-				$sql.="st_y(wkb_geometry) AS y ";		
-			}
-			else {  
-				$sql.="st_x(st_transform(wkb_geometry, ".$epsg.")) AS x, ";
-				$sql.="st_y(st_transform(wkb_geometry, ".$epsg.")) AS y ";		
-			}		
-			$sql.="from ap_pto where ";
-			$sql.="gml_id IN (Select beziehung_von from alkis_beziehungen ";
-			$sql.="where beziehung_zu IN (";
-			$sql.="SELECT ";
-			$sql.="gml_id ";
-			$sql.="FROM ax_lagebezeichnungmithausnummer h ";
-			$sql.="WHERE h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 ";
-			$sql.="AND h.gemeinde= $4 AND h.lage= $5 ";
-			$sql.="AND replace (h.hausnummer, ' ','') NOT IN (";
-			$sql.="SELECT replace (h.hausnummer, ' ','') AS hsnr ";
-			$sql.="FROM ax_lagebezeichnungmithausnummer h ";
-			$sql.="JOIN alkis_beziehungen v ON h.gml_id=v.beziehung_zu ";
-			$sql.="JOIN ax_gebaeude g ON v.beziehung_von=g.gml_id ";
-			$sql.="WHERE h.land= $6 AND ";
-			$sql.="h.regierungsbezirk= $7 AND h.kreis= $8 AND h.gemeinde= $9 AND ";
-			$sql.=" h.lage= $10 ";
-			$sql.="AND v.beziehungsart='zeigtAuf' ";
-			$sql.=") ORDER BY lpad(split_part(h.hausnummer,' ',1), 4, '0'), split_part(h.hausnummer,' ',2) ";
-			$sql.=")) order by lpad(split_part(schriftinhalt,' ',1), 4, '0'), split_part(schriftinhalt,' ',2);";
-			$vw=array($land,$regb,$kreis,$gemnd,$nr,$land,$regb,$kreis,$gemnd,$nr);
-			#echo "SQL: ".$land." ".$regb." ".$kreis." ".$gemnd." ".$nr;
-			$resho=pg_prepare("", $sql);
-			$resho=pg_execute("", $vw);
-			$cnt=0;
-			$count=0;
-			#echo $sql;
-			echo "\n<table>";
-			// mehrere Hausnummern je Zeile ausgeben
-			while($rowh = pg_fetch_array($resho)) {
-				if($count == 0){echo "\n<tr>";}
-				$gml=$rowh["gml_id"];			
-				$nr=$rowh["hsnr"];			
-				$x=$rowh["x"];
-				$y=$rowh["y"];
-				echo "\n\t<td class='hsnr'>";
-					echo "<a href='";
-						echo "javascript:parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalehs."); ";
-						echo "parent.parent.showHighlight(".$x.",".$y.");' ";
-					echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
-					echo "onmouseout='parent.parent.hideHighlight()";
-					echo "'>".$nr."</a>";
-				echo "</td>";
-				$cnt++;
-				$count++;
-				if($count == 6) {
-					echo "\n</tr>";
-					$count = 0;
-				}
-			}
-			if($count > 0) {echo "\n</tr>";}
-			echo "\n</table>";
-			if($cnt > 0) {echo "\n<p class='hilfe'>".$cnt." Hausnummern ohne Geb&auml;ude</p>";}
-		}
 	} else {
 		echo "\n<p class='err'>Keine Stra&szlig;e.</p>";
 	}

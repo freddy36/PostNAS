@@ -10,6 +10,10 @@
 -- werden in dem das Skript liegt. Z.B. per
 -- (cd /pfad/zu/postnas; psql -f alkis_PostNAS_0.7_schema.sql)
 
+-- Systemvariable vorher setzen für das Koordinatensystem, z.B.
+-- EPSG=25832
+
+
 -- Stand
 -- -----
 
@@ -46,7 +50,15 @@
 -- 2012-10-31 FJ  Trigger fuer NAS-Replace-Saetze repariert:
 --                siehe: FUNCTION delete_feature_kill()
 --                ax_historischesflurstueck.buchungsart ist Text nicht integer.
--- 2012-10-31 AE  Tabellen löschen wurde auskommetiert, DB wird leer angelegt	SELECT alkis_drop();
+
+-- 2012-10-31 AE  Tabellen löschen wurde auskommetiert, DB wird leer angelegt SELECT alkis_drop();
+
+-- ** zwischenzeitliche Änderungen: siehe Kommentare im SVN
+
+-- 2013-01-15 FJ  Kommentare zu den letztlich hinzugekommenen Tabellen.
+--                Darüber können Tabellen aus diesem Script unterschieden werden 
+--                von Tabellen, die PostNAS selbst generiert hat.
+
 
 --  VERSIONS-NUMMER:
 
@@ -191,7 +203,7 @@ SELECT AddGeometryColumn('ks_sonstigesbauwerk','wkb_geometry',:alkis_epsg,'GEOME
 
 CREATE INDEX ks_sonstigesbauwerk_geom_idx ON ks_sonstigesbauwerk USING gist (wkb_geometry);
 
-
+COMMENT ON TABLE  ks_sonstigesbauwerk IS 'Sonstiges Bauwerk';
 
 
 -- A n d e r e   F e s t l e g u n g   n a c h   W a s s e r r e c h t
@@ -266,8 +278,9 @@ CREATE UNIQUE INDEX ax_besonderertopographischerpunkt_gml ON ax_besonderertopogr
 COMMENT ON TABLE  ax_besonderertopographischerpunkt        IS 'B e s o n d e r e r   T o p o g r a f i s c h e r   P u n k t';
 COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, global eindeutig';
 
---
---
+
+-- S o l l 
+-- -------
 CREATE TABLE ax_soll (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -284,6 +297,8 @@ SELECT AddGeometryColumn('ax_soll','wkb_geometry',:alkis_epsg,'POLYGON',2);
 
 CREATE INDEX ax_soll_geom_idx ON ax_soll USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_soll_gml ON ax_soll USING btree (gml_id,beginnt);
+
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
 
 -- B e w e r t u n g
@@ -308,7 +323,11 @@ CREATE UNIQUE INDEX ax_bewertung_gml ON ax_bewertung USING btree (gml_id,beginnt
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
 
--- Tagesabschnitt
+-- COMMENT ON TABLE ax___  IS 'XXXX';
+
+
+-- T a g e s a b s c h n i t t
+-- ---------------------------
 CREATE TABLE ax_tagesabschnitt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -325,6 +344,8 @@ SELECT AddGeometryColumn('ax_tagesabschnitt','wkb_geometry',:alkis_epsg,'POLYGON
 
 CREATE INDEX ax_tagesabschnitt_geom_idx   ON ax_tagesabschnitt USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_tagesabschnitt_gml ON ax_tagesabschnitt USING btree (gml_id,beginnt);
+
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
 
 -- D e n k m a l s c h u t z r e c h t
@@ -354,6 +375,9 @@ CREATE INDEX ax_denkmalschutzrecht_afs ON ax_denkmalschutzrecht(land,stelle);
 COMMENT ON TABLE  ax_denkmalschutzrecht        IS 'D e n k m a l s c h u t z r e c h t';
 COMMENT ON COLUMN ax_denkmalschutzrecht.gml_id IS 'Identifikator, global eindeutig';
 
+
+-- F o r s t r e c h t
+-- -------------------
 CREATE TABLE ax_forstrecht (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -375,8 +399,9 @@ CREATE INDEX ax_forstrecht_geom_idx   ON ax_forstrecht USING gist  (wkb_geometry
 CREATE UNIQUE INDEX ax_forstrecht_gml ON ax_forstrecht USING btree (gml_id,beginnt);
 CREATE INDEX ax_forstrecht_afs ON ax_forstrecht(land,stelle);
 
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
--- G e b a e u d e a u s g e s t a l t u n g
+-- G e b ä u d e a u s g e s t a l t u n g
 -- -----------------------------------------
 CREATE TABLE ax_gebaeudeausgestaltung (
 	ogc_fid			serial NOT NULL,
@@ -396,7 +421,7 @@ SELECT AddGeometryColumn('ax_gebaeudeausgestaltung','wkb_geometry',:alkis_epsg,'
 CREATE INDEX ax_gebaeudeausgestaltung_geom_idx ON ax_gebaeudeausgestaltung USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gebaeudeausgestaltung_gml ON ax_gebaeudeausgestaltung USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_gebaeudeausgestaltung        IS 'G e b a e u d e a u s g e s t a l t u n g';
+COMMENT ON TABLE  ax_gebaeudeausgestaltung        IS 'G e b ä u d e a u s g e s t a l t u n g';
 COMMENT ON COLUMN ax_gebaeudeausgestaltung.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -444,7 +469,7 @@ COMMENT ON TABLE  ax_georeferenziertegebaeudeadresse        IS 'Georeferenzierte
 COMMENT ON COLUMN ax_georeferenziertegebaeudeadresse.gml_id IS 'Identifikator, global eindeutig';
 
 
--- G r a b l o c h   d e r   B o d e n s c h a e t z u n g
+-- G r a b l o c h   d e r   B o d e n s c h ä t z u n g
 -- -------------------------------------------------------
 CREATE TABLE ax_grablochderbodenschaetzung (
 	ogc_fid			serial NOT NULL,
@@ -469,7 +494,7 @@ SELECT AddGeometryColumn('ax_grablochderbodenschaetzung','wkb_geometry',:alkis_e
 CREATE INDEX ax_grablochderbodenschaetzung_geom_idx   ON ax_grablochderbodenschaetzung USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_grablochderbodenschaetzung_gml ON ax_grablochderbodenschaetzung USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_grablochderbodenschaetzung        IS 'G r a b l o c h   d e r   B o d e n s c h a e t z u n g';
+COMMENT ON TABLE  ax_grablochderbodenschaetzung        IS 'G r a b l o c h   d e r   B o d e n s c h ä t z u n g';
 COMMENT ON COLUMN ax_grablochderbodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -740,7 +765,7 @@ COMMENT ON COLUMN ax_schutzgebietnachnaturumweltoderbodenschutzrecht.gml_id IS '
 
 
 -- S c h u t z z o n e
--- ----------------------------------------------
+-- -------------------
 CREATE TABLE ax_schutzzone (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -764,7 +789,7 @@ COMMENT ON COLUMN ax_schutzzone.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- T o p o g r a p h i s c h e   L i n i e
--- ---------------------------------------------------
+-- ---------------------------------------
 CREATE TABLE ax_topographischelinie (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -1245,11 +1270,10 @@ COMMENT ON COLUMN ax_aufnahmepunkt.gml_id IS 'Identifikator, global eindeutig';
 
 -- S i c h e r u n g s p u n k t
 -- ----------------------------------------------
--- DROP TABLE ax_sicherungspunkt;
 CREATE TABLE ax_sicherungspunkt (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
-	identifier              character(44),
+	identifier		character(44),
 	beginnt			character(20),
 	endet			character(20),
 	advstandardmodell	varchar,
@@ -1266,6 +1290,7 @@ CREATE TABLE ax_sicherungspunkt (
 
 SELECT AddGeometryColumn('ax_sicherungspunkt','dummy',:alkis_epsg,'POINT',2);
 
+COMMENT ON TABLE  ax_sicherungspunkt        IS 'S i c h e r u n g s p u n k t';
 
 -- s o n s t i g e r   V e r m e s s u n g s p u n k t
 -- ---------------------------------------------------
@@ -1481,8 +1506,11 @@ CREATE TABLE ax_reservierung (
 
 SELECT AddGeometryColumn('ax_reservierung','dummy',:alkis_epsg,'POINT',2);
 
--- P u n k t k e n n u n g  U n t e r g e g a n g e n
--- --------------------------------------------------
+COMMENT ON TABLE  ax_reservierung IS 'R e s e r v i e r u n g';
+
+
+-- P u n k t k e n n u n g   U n t e r g e g a n g e n
+-- ---------------------------------------------------
 CREATE TABLE ax_punktkennunguntergegangen (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -1499,6 +1527,7 @@ CREATE TABLE ax_punktkennunguntergegangen (
 
 SELECT AddGeometryColumn('ax_punktkennunguntergegangen','dummy',:alkis_epsg,'POINT',2);
 
+COMMENT ON TABLE  ax_punktkennunguntergegangen IS 'P u n k t k e n n u n g, untergegangen';
 
 
 --** Objektartengruppe: Angaben zur Historie
@@ -1784,7 +1813,7 @@ COMMENT ON COLUMN ax_buchungsstelle.gml_id IS 'Identifikator, global eindeutig';
 
 --AX_Gebaeude
 
--- G e b a e u d e
+-- G e b ä u d e
 -- ---------------
 -- Kennung 31001
 -- Abgleich 2011-11-15 mit
@@ -1901,7 +1930,7 @@ COMMENT ON TABLE  ax_bauteil        IS 'B a u t e i l';
 COMMENT ON COLUMN ax_bauteil.gml_id IS 'Identifikator, global eindeutig';
 
 
--- B e s o n d e r e   G e b a e u d e l i n i e
+-- B e s o n d e r e   G e b ä u d e l i n i e
 -- ----------------------------------------------
 CREATE TABLE ax_besonderegebaeudelinie (
 	ogc_fid			serial NOT NULL,
@@ -1920,7 +1949,7 @@ SELECT AddGeometryColumn('ax_besonderegebaeudelinie','wkb_geometry',:alkis_epsg,
 CREATE INDEX ax_besonderegebaeudelinie_geom_idx ON ax_besonderegebaeudelinie USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_besonderegebaeudelinie_gml ON ax_besonderegebaeudelinie USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE ax_besonderegebaeudelinie IS 'B e s o n d e r e   G e b a e u d e l i n i e';
+COMMENT ON TABLE ax_besonderegebaeudelinie IS 'B e s o n d e r e   G e b ä u d e l i n i e';
 COMMENT ON COLUMN ax_besonderegebaeudelinie.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -1949,7 +1978,7 @@ COMMENT ON TABLE  ax_firstlinie        IS 'F i r s t l i n i e';
 COMMENT ON COLUMN ax_firstlinie.gml_id IS 'Identifikator, global eindeutig';
 
 
--- B e s o n d e r e r   G e b a e u d e p u n k t
+-- B e s o n d e r e r   G e b ä u d e p u n k t
 -- -----------------------------------------------
 CREATE TABLE ax_besonderergebaeudepunkt (
 	ogc_fid			serial NOT NULL,
@@ -1972,7 +2001,7 @@ SELECT AddGeometryColumn('ax_besonderergebaeudepunkt','dummy',:alkis_epsg,'POINT
 
 CREATE UNIQUE INDEX ax_besonderergebaeudepunkt_gml ON ax_besonderergebaeudepunkt USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_besonderergebaeudepunkt        IS 'B e s o n d e r e r   G e b a e u d e p u n k t';
+COMMENT ON TABLE  ax_besonderergebaeudepunkt        IS 'B e s o n d e r e r   G e b ä u d e p u n k t';
 COMMENT ON COLUMN ax_besonderergebaeudepunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -1992,7 +2021,7 @@ COMMENT ON COLUMN ax_besonderergebaeudepunkt.gml_id IS 'Identifikator, global ei
 --** Objektartengruppe: Siedlung (in Objektbereich:Tatsächliche Nutzung)
 --   ===================================================================
 
--- W o h n b a u f l a e c h e
+-- W o h n b a u f l ä c h e
 -- ----------------------------------------------
 -- 'Wohnbaufläche' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang
 -- stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen),
@@ -2017,14 +2046,14 @@ CREATE INDEX ax_wohnbauflaeche_geom_idx ON ax_wohnbauflaeche USING gist (wkb_geo
 
 CREATE UNIQUE INDEX ax_wohnbauflaeche_gml ON ax_wohnbauflaeche USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_wohnbauflaeche                 IS 'W o h n b a u f l a e c h e  ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient.';
+COMMENT ON TABLE  ax_wohnbauflaeche                 IS 'W o h n b a u f l ä c h e  ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient.';
 COMMENT ON COLUMN ax_wohnbauflaeche.gml_id          IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_wohnbauflaeche.artderbebauung  IS 'BEB "Art der Bebauung" differenziert nach offener und geschlossener Bauweise aus topographischer Sicht und nicht nach gesetzlichen Vorgaben (z.B. BauGB).';
 COMMENT ON COLUMN ax_wohnbauflaeche.zustand         IS 'ZUS "Zustand" beschreibt, ob "Wohnbaufläche" ungenutzt ist oder ob eine Fläche als Wohnbaufläche genutzt werden soll.';
 COMMENT ON COLUMN ax_wohnbauflaeche.name            IS 'NAM "Name" ist der Eigenname von "Wohnbaufläche" insbesondere bei Objekten außerhalb von Ortslagen.';
 
 
--- Objektart: I n d u s t r i e -   u n d   G e w e r b e f l a e c h e
+-- Objektart: I n d u s t r i e -   u n d   G e w e r b e f l ä c h e
 -- --------------------------------------------------------------------
 -- Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient.
 CREATE TABLE ax_industrieundgewerbeflaeche (
@@ -2050,7 +2079,7 @@ CREATE INDEX ax_industrieundgewerbeflaeche_geom_idx ON ax_industrieundgewerbefla
 
 CREATE UNIQUE INDEX ax_industrieundgewerbeflaeche_gml ON ax_industrieundgewerbeflaeche USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_industrieundgewerbeflaeche            IS 'I n d u s t r i e -   u n d   G e w e r b e f l a e c h e';
+COMMENT ON TABLE  ax_industrieundgewerbeflaeche            IS 'I n d u s t r i e -   u n d   G e w e r b e f l ä c h e';
 COMMENT ON COLUMN ax_industrieundgewerbeflaeche.gml_id     IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_industrieundgewerbeflaeche.name       IS 'NAM "Name" ist der Eigenname von "Industrie- und Gewerbefläche" insbesondere außerhalb von Ortslagen.';
 COMMENT ON COLUMN ax_industrieundgewerbeflaeche.zustand    IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Industrie- und Gewerbefläche".';
@@ -2149,7 +2178,7 @@ COMMENT ON COLUMN ax_tagebaugrubesteinbruch.abbaugut IS 'AGT "Abbaugut" gibt an,
 COMMENT ON COLUMN ax_tagebaugrubesteinbruch.zustand  IS 'ZUS "Zustand" beschreibt die Betriebsbereitschaft von "Tagebau, Grube, Steinbruch".';
 
 
--- F l a e c h e n   g e m i s c h t e r   N u t z u n g
+-- F l ä c h e n   g e m i s c h t e r   N u t z u n g
 -- -----------------------------------------------------
 CREATE TABLE ax_flaechegemischternutzung (
 	ogc_fid			serial NOT NULL,
@@ -2180,7 +2209,7 @@ COMMENT ON COLUMN ax_flaechegemischternutzung.name           IS 'NAM "Name" ist 
 COMMENT ON COLUMN ax_flaechegemischternutzung.zustand        IS 'ZUS "Zustand" beschreibt, ob "Fläche gemischter Nutzung" ungenutzt ist.';
 
 
--- F l a e c h e   b e s o n d e r e r   f u n k t i o n a l e r   P r a e g u n g
+-- F l ä c h e   b e s o n d e r e r   f u n k t i o n a l e r   P r ä g u n g
 -- -------------------------------------------------------------------------------
 CREATE TABLE ax_flaechebesondererfunktionalerpraegung (
 	ogc_fid			serial NOT NULL,
@@ -2534,7 +2563,7 @@ COMMENT ON COLUMN ax_wald.name        IS 'NAM "Name" ist der Eigenname von "Wald
 COMMENT ON COLUMN ax_wald.bezeichnung IS 'BEZ "Bezeichnung" ist die von einer Fachstelle vergebene Kennziffer (Forstabteilungsnummer, Jagenzahl) von "Wald".';
 
 
--- G e h o e l z
+-- G e h ö l z
 -- ----------------------------------------------
 CREATE TABLE ax_gehoelz (
 	ogc_fid			serial NOT NULL,
@@ -2555,7 +2584,7 @@ SELECT AddGeometryColumn('ax_gehoelz','wkb_geometry',:alkis_epsg,'GEOMETRY',2);
 CREATE INDEX ax_gehoelz_geom_idx ON ax_gehoelz USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gehoelz_gml ON ax_gehoelz USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_gehoelz        IS '"G e h o e l z" ist eine Fläche, die mit einzelnen Bäumen, Baumgruppen, Büschen, Hecken und Sträuchern bestockt ist.';
+COMMENT ON TABLE  ax_gehoelz        IS '"G e h ö l z" ist eine Fläche, die mit einzelnen Bäumen, Baumgruppen, Büschen, Hecken und Sträuchern bestockt ist.';
 COMMENT ON COLUMN ax_gehoelz.gml_id IS 'Identifikator, global eindeutig';
 
 COMMENT ON COLUMN ax_gehoelz.vegetationsmerkmal IS 'VEG "Vegetationsmerkmal" beschreibt den Bewuchs von "Gehölz".';
@@ -2636,7 +2665,7 @@ COMMENT ON COLUMN ax_sumpf.gml_id IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_sumpf.name   IS 'NAM "Name" ist der Eigenname von "Sumpf".';
 
 
--- U n l a n d  /  V e g e t a t i o n s f l a e c h e
+-- U n l a n d  /  V e g e t a t i o n s f l ä c h e
 -- ---------------------------------------------------
 CREATE TABLE ax_unlandvegetationsloseflaeche (
 	ogc_fid			serial NOT NULL,
@@ -2669,7 +2698,7 @@ COMMENT ON COLUMN ax_unlandvegetationsloseflaeche.funktion             IS 'FKT "
 --   ===================================================================
 
 
--- F l i e s s g e w a e s s e r
+-- F l i e s s g e w ä s s e r
 -- ----------------------------------------------
 -- 'Fließgewässer' ist ein geometrisch begrenztes, oberirdisches, auf dem Festland fließendes Gewässer,
 -- das die Wassermengen sammelt, die als Niederschläge auf die Erdoberfläche fallen oder in Quellen austreten,
@@ -2699,7 +2728,7 @@ SELECT AddGeometryColumn('ax_fliessgewaesser','wkb_geometry',:alkis_epsg,'GEOMET
 CREATE INDEX ax_fliessgewaesser_geom_idx ON ax_fliessgewaesser USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_fliessgewaesser_gml ON ax_fliessgewaesser USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_fliessgewaesser          IS '"F l i e s s g e w a e s s e r" ist ein geometrisch begrenztes, oberirdisches, auf dem Festland fließendes Gewässer, das die Wassermengen sammelt, die als Niederschläge auf die Erdoberfläche fallen oder in Quellen austreten, und in ein anderes Gewässer, ein Meer oder in einen See transportiert';
+COMMENT ON TABLE  ax_fliessgewaesser          IS '"F l i e s s g e w ä s s e r" ist ein geometrisch begrenztes, oberirdisches, auf dem Festland fließendes Gewässer, das die Wassermengen sammelt, die als Niederschläge auf die Erdoberfläche fallen oder in Quellen austreten, und in ein anderes Gewässer, ein Meer oder in einen See transportiert';
 COMMENT ON COLUMN ax_fliessgewaesser.gml_id   IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_fliessgewaesser.funktion IS 'FKT "Funktion" ist die Art von "Fließgewässer".';
 COMMENT ON COLUMN ax_fliessgewaesser.name     IS 'NAM "Name" ist die Bezeichnung oder der Eigenname von "Fließgewässer".';
@@ -2735,7 +2764,7 @@ COMMENT ON COLUMN ax_hafenbecken.name     IS 'NAM "Name" ist der Eigenname von "
 COMMENT ON COLUMN ax_hafenbecken.nutzung  IS 'NTZ "Nutzung" gibt den Nutzerkreis von "Hafenbecken" an.';
 
 
--- s t e h e n d e s   G e w a e s s e r
+-- s t e h e n d e s   G e w ä s s e r
 -- ----------------------------------------------
 -- 'Stehendes Gewässer' ist eine natürliche oder künstliche mit Wasser gefüllte,
 -- allseitig umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit 'Meer'.
@@ -2759,7 +2788,7 @@ SELECT AddGeometryColumn('ax_stehendesgewaesser','wkb_geometry',:alkis_epsg,'GEO
 CREATE INDEX ax_stehendesgewaesser_geom_idx ON ax_stehendesgewaesser USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_stehendesgewaesser_gml ON ax_stehendesgewaesser USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_stehendesgewaesser           IS 's t e h e n d e s   G e w a e s s e r  ist eine natürliche oder künstliche mit Wasser gefüllte, allseitig umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit "Meer".';
+COMMENT ON TABLE  ax_stehendesgewaesser           IS 's t e h e n d e s   G e w ä s s e r  ist eine natürliche oder künstliche mit Wasser gefüllte, allseitig umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit "Meer".';
 COMMENT ON COLUMN ax_stehendesgewaesser.gml_id    IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_stehendesgewaesser.funktion  IS 'FKT "Funktion" ist die Art von "Stehendes Gewässer".';
 COMMENT ON COLUMN ax_stehendesgewaesser.name      IS 'NAM "Name" ist der Eigenname von "Stehendes Gewässer".';
@@ -2873,7 +2902,7 @@ COMMENT ON TABLE ax_bauwerkoderanlagefuerindustrieundgewerbe         IS 'Bauwerk
 COMMENT ON COLUMN ax_bauwerkoderanlagefuerindustrieundgewerbe.gml_id IS 'Identifikator, global eindeutig';
 
 
--- V o r r a t s b e h a e l t e r  /  S p e i c h e r b a u w e r k
+-- V o r r a t s b e h ä l t e r  /  S p e i c h e r b a u w e r k
 -- -----------------------------------------------------------------
 CREATE TABLE ax_vorratsbehaelterspeicherbauwerk (
 	ogc_fid			serial NOT NULL,
@@ -2895,7 +2924,7 @@ SELECT AddGeometryColumn('ax_vorratsbehaelterspeicherbauwerk','wkb_geometry',:al
 CREATE INDEX ax_vorratsbehaelterspeicherbauwerk_geom_idx ON ax_vorratsbehaelterspeicherbauwerk USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_vorratsbehaelterspeicherbauwerk_gml ON ax_vorratsbehaelterspeicherbauwerk USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_vorratsbehaelterspeicherbauwerk        IS 'V o r r a t s b e h a e l t e r  /  S p e i c h e r b a u w e r k';
+COMMENT ON TABLE  ax_vorratsbehaelterspeicherbauwerk        IS 'V o r r a t s b e h ä l t e r  /  S p e i c h e r b a u w e r k';
 COMMENT ON COLUMN ax_vorratsbehaelterspeicherbauwerk.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -3051,7 +3080,7 @@ COMMENT ON TABLE  ax_sonstigesbauwerkodersonstigeeinrichtung        IS 'sonstige
 COMMENT ON COLUMN ax_sonstigesbauwerkodersonstigeeinrichtung.gml_id IS 'Identifikator, global eindeutig';
 
 
--- E i n r i c h t u n g  i n  O e f f e n t l i c h e n  B e r e i c h e n
+-- E i n r i c h t u n g  i n  Ö f f e n t l i c h e n  B e r e i c h e n
 -- ------------------------------------------------------------------------
 CREATE TABLE ax_einrichtunginoeffentlichenbereichen (
 	ogc_fid			serial NOT NULL,
@@ -3072,7 +3101,7 @@ SELECT AddGeometryColumn('ax_einrichtunginoeffentlichenbereichen','wkb_geometry'
 CREATE INDEX ax_einrichtunginoeffentlichenbereichen_geom_idx ON ax_einrichtunginoeffentlichenbereichen USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_einrichtunginoeffentlichenbereichen_gml ON ax_einrichtunginoeffentlichenbereichen USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_einrichtunginoeffentlichenbereichen        IS 'E i n r i c h t u n g   i n   O e f f e n t l i c h e n   B e r e i c h e n';
+COMMENT ON TABLE  ax_einrichtunginoeffentlichenbereichen        IS 'E i n r i c h t u n g   i n   Ö f f e n t l i c h e n   B e r e i c h e n';
 COMMENT ON COLUMN ax_einrichtunginoeffentlichenbereichen.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -3313,7 +3342,7 @@ COMMENT ON COLUMN ax_flugverkehrsanlage.gml_id      IS 'Identifikator, global ei
 -- ** Tabelle bisher noch nicht generiert
 
 
--- B a u w e r k   i m   G e w a e s s e r b e r e i c h
+-- B a u w e r k   i m   G e w ä s s e r b e r e i c h
 -- -----------------------------------------------------
 CREATE TABLE ax_bauwerkimgewaesserbereich (
 	ogc_fid			serial NOT NULL,
@@ -3334,7 +3363,7 @@ SELECT AddGeometryColumn('ax_bauwerkimgewaesserbereich','wkb_geometry',:alkis_ep
 CREATE INDEX ax_bauwerkimgewaesserbereich_geom_idx ON ax_bauwerkimgewaesserbereich USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_bauwerkimgewaesserbereich_gml ON ax_bauwerkimgewaesserbereich USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_bauwerkimgewaesserbereich        IS 'B a u w e r k   i m   G e w a e s s e r b e r e i c h';
+COMMENT ON TABLE  ax_bauwerkimgewaesserbereich        IS 'B a u w e r k   i m   G e w ä s s e r b e r e i c h';
 COMMENT ON COLUMN ax_bauwerkimgewaesserbereich.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -3369,7 +3398,7 @@ COMMENT ON COLUMN ax_vegetationsmerkmal.gml_id IS 'Identifikator, global eindeut
 --** Objektartengruppe: Besondere Eigenschaften von Gewässern
 --   ===================================================================
 
--- G e w a e s s e r m e r k m a l
+-- G e w ä s s e r m e r k m a l
 -- ----------------------------------------------
 CREATE TABLE ax_gewaessermerkmal (
 	ogc_fid			serial NOT NULL,
@@ -3389,11 +3418,11 @@ SELECT AddGeometryColumn('ax_gewaessermerkmal','wkb_geometry',:alkis_epsg,'GEOME
 CREATE INDEX ax_gewaessermerkmal_geom_idx ON ax_gewaessermerkmal USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gewaessermerkmal_gml ON ax_gewaessermerkmal USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_gewaessermerkmal        IS 'G e w a e s s e r m e r k m a l';
+COMMENT ON TABLE  ax_gewaessermerkmal        IS 'G e w ä s s e r m e r k m a l';
 COMMENT ON COLUMN ax_gewaessermerkmal.gml_id IS 'Identifikator, global eindeutig';
 
 
--- u n t e r g e o r d n e t e s   G e w a e s s e r
+-- u n t e r g e o r d n e t e s   G e w ä s s e r
 -- -------------------------------------------------
 CREATE TABLE ax_untergeordnetesgewaesser (
 	ogc_fid			serial NOT NULL,
@@ -3415,7 +3444,7 @@ SELECT AddGeometryColumn('ax_untergeordnetesgewaesser','wkb_geometry',:alkis_eps
 CREATE INDEX ax_untergeordnetesgewaesser_geom_idx ON ax_untergeordnetesgewaesser USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_untergeordnetesgewaesser_gml ON ax_untergeordnetesgewaesser USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_untergeordnetesgewaesser        IS 'u n t e r g e o r d n e t e s   G e w a e s s e r';
+COMMENT ON TABLE  ax_untergeordnetesgewaesser        IS 'u n t e r g e o r d n e t e s   G e w ä s s e r';
 COMMENT ON COLUMN ax_untergeordnetesgewaesser.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -3425,8 +3454,8 @@ COMMENT ON COLUMN ax_untergeordnetesgewaesser.gml_id IS 'Identifikator, global e
 --** Objektartengruppe: Besondere Angaben zum Gewässer
 --   ===================================================================
 
---AX_Wasserspiegelhoehe
---
+-- W a s s e r s p i e g e l h ö h e
+-- ---------------------------------
 CREATE TABLE ax_wasserspiegelhoehe (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -3444,8 +3473,11 @@ SELECT AddGeometryColumn('ax_wasserspiegelhoehe','wkb_geometry',:alkis_epsg,'POI
 CREATE INDEX ax_wasserspiegelhoehe_geom_idx ON ax_wasserspiegelhoehe USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_wasserspiegelhoehe_gml ON ax_wasserspiegelhoehe USING btree (gml_id,beginnt);
 
---
---
+COMMENT ON TABLE  ax_wasserspiegelhoehe  IS 'W a s s e r s p i e g e l h ö h e';
+
+
+-- S c h i f f f a h r t s l i n i e  /  F ä h r v e r k e h r
+-- -----------------------------------------------------------
 CREATE TABLE ax_schifffahrtsliniefaehrverkehr (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -3463,6 +3495,7 @@ SELECT AddGeometryColumn('ax_schifffahrtsliniefaehrverkehr','wkb_geometry',:alki
 CREATE INDEX ax_schifffahrtsliniefaehrverkehr_geom_idx ON ax_schifffahrtsliniefaehrverkehr USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_schifffahrtsliniefaehrverkehr_gml ON ax_schifffahrtsliniefaehrverkehr USING btree (gml_id,beginnt);
 
+COMMENT ON TABLE  ax_schifffahrtsliniefaehrverkehr  IS 'S c h i f f f a h r t s l i n i e  /  F ä h r v e r k e h r';
 
 --*** ############################################################
 --*** Objektbereich: Relief
@@ -3472,7 +3505,7 @@ CREATE UNIQUE INDEX ax_schifffahrtsliniefaehrverkehr_gml ON ax_schifffahrtslinie
 --   ===================================================================
 
 
--- B o e s c h u n g s k l i f f
+-- B ö s c h u n g s k l i f f
 -- -----------------------------
 CREATE TABLE ax_boeschungkliff (
 	ogc_fid			serial NOT NULL,
@@ -3491,11 +3524,11 @@ SELECT AddGeometryColumn('ax_boeschungkliff','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_boeschungkliff_gml ON ax_boeschungkliff USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_boeschungkliff        IS 'B o e s c h u n g s k l i f f';
+COMMENT ON TABLE  ax_boeschungkliff        IS 'B ö s c h u n g s k l i f f';
 COMMENT ON COLUMN ax_boeschungkliff.gml_id IS 'Identifikator, global eindeutig';
 
 
--- B o e s c h u n g s f l a e c h e
+-- B ö s c h u n g s f l ä c h e
 -- ---------------------------------
 --AX_Boeschungsflaeche Geändert (Revisionsnummer: 1623)
 CREATE TABLE ax_boeschungsflaeche (
@@ -3515,7 +3548,7 @@ SELECT AddGeometryColumn('ax_boeschungsflaeche','wkb_geometry',:alkis_epsg,'GEOM
 CREATE INDEX ax_boeschungsflaeche_geom_idx ON ax_boeschungsflaeche USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_boeschungsflaeche_gml ON ax_boeschungsflaeche USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_boeschungsflaeche        IS 'B o e s c h u n g s f l a e c h e';
+COMMENT ON TABLE  ax_boeschungsflaeche        IS 'B ö s c h u n g s f l ä c h e';
 COMMENT ON COLUMN ax_boeschungsflaeche.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -3544,8 +3577,8 @@ COMMENT ON TABLE  ax_dammwalldeich        IS 'D a m m  /  W a l l  /  D e i c h'
 COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
 
 
---
---
+-- H ö h l e n e i n g a n g
+-- ------------------------- 
 CREATE TABLE ax_hoehleneingang (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -3555,13 +3588,17 @@ CREATE TABLE ax_hoehleneingang (
 	advstandardmodell	varchar,
 	anlass			varchar,
 	name			varchar,
+	ax_datenerhebung	integer,
 	CONSTRAINT ax_hoehleneingang_pk PRIMARY KEY (ogc_fid)
 );
 
 SELECT AddGeometryColumn('ax_hoehleneingang','wkb_geometry',:alkis_epsg,'POINT',2);
 
 CREATE INDEX ax_hoehleneingang_geom_idx ON ax_hoehleneingang USING gist (wkb_geometry);
-CREATE UNIQUE INDEX ax_fhoehleneingang_gml ON ax_hoehleneingang USING btree (gml_id,beginnt);
+CREATE UNIQUE INDEX ax_hoehleneingang_gml ON ax_hoehleneingang USING btree (gml_id,beginnt);
+
+COMMENT ON TABLE  ax_hoehleneingang        IS 'Höhleneingang';
+COMMENT ON COLUMN ax_hoehleneingang.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- F e l s e n ,  F e l s b l o c k ,   F e l s n a d e l
@@ -3588,7 +3625,8 @@ COMMENT ON TABLE  ax_felsenfelsblockfelsnadel        IS 'F e l s e n ,  F e l s 
 COMMENT ON COLUMN ax_felsenfelsblockfelsnadel.gml_id IS 'Identifikator, global eindeutig';
 
 
--- Düne
+-- D ü n e
+-- -------
 CREATE TABLE ax_duene (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -3606,8 +3644,10 @@ SELECT AddGeometryColumn('ax_duene','wkb_geometry',:alkis_epsg,'GEOMETRY',2);
 CREATE INDEX ax_duene_geom_idx ON ax_duene USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_duene_gml ON ax_duene USING btree (gml_id,beginnt);
 
---
---
+COMMENT ON TABLE  ax_duene IS 'D ü n e';
+
+-- H ö h e n l i n i e
+-- --------------------
 CREATE TABLE ax_hoehenlinie (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -3638,7 +3678,7 @@ CREATE UNIQUE INDEX ax_hoehenlinie_gml ON ax_hoehenlinie USING btree (gml_id,beg
 -- ** Tabelle bisher noch nicht generiert
 
 
--- G e l a e n d e k a n t e
+-- G e l ä n d e k a n t e
 -- ----------------------------------------------
 CREATE TABLE ax_gelaendekante (
 	ogc_fid			serial NOT NULL,
@@ -3662,7 +3702,7 @@ SELECT AddGeometryColumn('ax_gelaendekante','wkb_geometry',:alkis_epsg,'LINESTRI
 CREATE INDEX ax_gelaendekante_geom_idx ON ax_gelaendekante USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gelaendekante_gml ON ax_gelaendekante USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_gelaendekante        IS 'G e l a e n d e k a n t e';
+COMMENT ON TABLE  ax_gelaendekante        IS 'G e l ä n d e k a n t e';
 COMMENT ON COLUMN ax_gelaendekante.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -3670,7 +3710,7 @@ COMMENT ON COLUMN ax_gelaendekante.gml_id IS 'Identifikator, global eindeutig';
 -- ** Tabelle bisher noch nicht generiert
 
 
--- B e s o n d e r e r   H o e h e n p u n k t
+-- B e s o n d e r e r   H ö h e n p u n k t
 -- -------------------------------------------------------------
 CREATE TABLE ax_besondererhoehenpunkt (
 	ogc_fid			serial NOT NULL,
@@ -3827,7 +3867,7 @@ COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
 --   ===================================================================
 
 
--- B o d e n s c h a e t z u n g
+-- B o d e n s c h ä t z u n g
 -- ----------------------------------------------
 CREATE TABLE ax_bodenschaetzung (
 	ogc_fid				serial NOT NULL,
@@ -3855,7 +3895,7 @@ SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry',:alkis_epsg,'GEOMET
 CREATE INDEX ax_bodenschaetzung_geom_idx ON ax_bodenschaetzung USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_bodenschaetzung_gml ON ax_bodenschaetzung USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_bodenschaetzung        IS 'B o d e n s c h a e t z u n g';
+COMMENT ON TABLE  ax_bodenschaetzung        IS 'B o d e n s c h ä t z u n g';
 COMMENT ON COLUMN ax_bodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -4192,7 +4232,7 @@ COMMENT ON COLUMN ax_lagebezeichnungkatalogeintrag.bezeichnung  IS 'Straßenname
 --** Objektartengruppe: Geographische Gebietseinheiten
 --   ===================================================================
 
--- k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l
+-- k l e i n r ä u m i g e r   L a n d s c h a f t s t e i l
 -- -----------------------------------------------------------
 CREATE TABLE ax_kleinraeumigerlandschaftsteil (
 	ogc_fid			serial NOT NULL,
@@ -4212,7 +4252,7 @@ SELECT AddGeometryColumn('ax_kleinraeumigerlandschaftsteil','wkb_geometry',:alki
 CREATE INDEX ax_kleinraeumigerlandschaftsteil_geom_idx   ON ax_kleinraeumigerlandschaftsteil USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_kleinraeumigerlandschaftsteil_gml ON ax_kleinraeumigerlandschaftsteil USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_kleinraeumigerlandschaftsteil        IS 'k l e i n r a e u m i g e r   L a n d s c h a f t s t e i l';
+COMMENT ON TABLE  ax_kleinraeumigerlandschaftsteil        IS 'k l e i n r ä u m i g e r   L a n d s c h a f t s t e i l';
 COMMENT ON COLUMN ax_kleinraeumigerlandschaftsteil.gml_id IS 'Identifikator, global eindeutig';
 
 
@@ -4274,6 +4314,8 @@ COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig
 --AX_Gebiet
 -- ** Tabelle bisher noch nicht generiert
 
+-- V e r t r e t u n g
+-- -------------------
 CREATE TABLE ax_vertretung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4287,6 +4329,11 @@ CREATE TABLE ax_vertretung (
 
 SELECT AddGeometryColumn('ax_vertretung','dummy',:alkis_epsg,'POINT',2);
 
+COMMENT ON TABLE  ax_vertretung IS 'V e r t r e t u n g';
+
+
+-- V e r w a l t u n g s g e m e i n s c h a f t
+-- ---------------------------------------------
 CREATE TABLE ax_verwaltungsgemeinschaft (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4307,6 +4354,11 @@ CREATE TABLE ax_verwaltungsgemeinschaft (
 
 SELECT AddGeometryColumn('ax_verwaltungsgemeinschaft','dummy',:alkis_epsg,'POINT',2);
 
+COMMENT ON TABLE  ax_verwaltungsgemeinschaft  IS 'V e r w a l t u n g s g e m e i n s c h a f t';
+
+
+-- V e r w a l t u n g
+-- -------------------
 CREATE TABLE ax_verwaltung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4319,6 +4371,9 @@ CREATE TABLE ax_verwaltung (
 );
 
 SELECT AddGeometryColumn('ax_verwaltung','dummy',:alkis_epsg,'POINT',2);
+
+COMMENT ON TABLE  ax_verwaltung  IS 'V e r w a l t u n g';
+
 
 --*** ############################################################
 --*** Objektbereich: Nutzerprofile
@@ -4362,8 +4417,8 @@ SELECT AddGeometryColumn('ax_verwaltung','dummy',:alkis_epsg,'POINT',2);
 
 
 -- wenn schon, dann auch alle Tabellen mit Kommentaren versehen:
--- COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
--- COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
+COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
+COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 
 -- Schema aktualisieren (setzt auch die Indizes neu)
 -- SELECT alkis_update_schema();

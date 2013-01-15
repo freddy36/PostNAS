@@ -6,10 +6,12 @@
 ##
 ## Stand:
 ##  2012-02-10 PostNAS 07, Umbenennung
-##
+##  2013-01-15 Zwischenstopp um Meldungen lesen zu können bevor, sie aus dem Scrollbereich verschwinden
 
 POSTNAS_HOME=$(dirname $0)
 MANDANT_HOME=$PWD
+
+# Koordinatensystem fuer Geometriefelder:
 EPSG=25832
 
 ## Dialog mit Anwender
@@ -58,7 +60,6 @@ if ! [ -e alkis-trigger.sql ]; then
 		exit 1
 	fi
 fi
-	
 
 ## Datenbank-Connection:
 # -h localhost
@@ -77,6 +78,19 @@ createdb --port=5432 --username=${DBUSER} -E utf8  -T ${DBTEMPLATE} ${DBNAME}
 echo " "
 echo "** Anlegen der Datenbank-Struktur fuer PostNAS (alkis_PostNAS_0.7_schema.sql)"
 psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f alkis_PostNAS_0.7_schema.sql >$MANDANT_HOME/log/schema.log
+
+# Zwischenstopp. Die Ausgabe-Zeilen sind sonst nicht mehr lesbar.
+until [ "$CHECK" = "j" -o "$CHECK" = "n" ]
+do
+    echo " "
+	echo "    Weiter?  'j' (weiter) oder 'n' (Abbruch)"
+	read CHECK
+done
+if test $CHECK != "j"; then
+	echo " Abbruch!"
+	exit 1
+fi
+
 echo " "
 echo "** Anlegen der Datenbank-Struktur - zusaetzliche Schluesseltabellen"
 ## Nur die benoetigten Tabellen fuer die Buchauskunft
