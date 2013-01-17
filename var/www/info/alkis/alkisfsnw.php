@@ -12,6 +12,7 @@
 	2011-12-16 Zeilenumbruch in Nutzungsart, Spaltenbreite Link
 	2012-07-24 Export als CSV, pg_free_result(), pg_close()
 	2012-11-27 split deprecated, besser: explode
+	2013-01-17 FS-Kennzeichen (ALB-Format) als Parameter statt gmlid möglich
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -51,14 +52,58 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
+// Ein (ALB- ?) Flurstücks-Kennzeichen wurde alternativ zur gml_id übermittelt
+if ($gmlid == '' and $fskennz != '') {
+	// Übergabe Format z.B. "llgggg-fff-nnnn/zz.nn" oder "gggg-ff-nnn/zz"
+	$arr=explode("-", $fskennz, 4);
+	$zgemkg=trim($arr[0]);
+	if (strlen($zgemkg) == 20 and $arr[1] == "") { // Oh, ist wohl schon das Datenbank-Feldformat 
+		$fskzdb=$zgemkg;
+	} else { // Nö, ist wohl eher ALB-Format
+		// Das Kennzeichen auseinander nehmen. 
+		if (strlen($zgemkg) == 6) {
+			$land=substr($zgemkg, 0, 2);
+			$zgemkg=substr($zgemkg, 2, 4);
+		} else { // kein schöner Land ..
+			$land='05'; // NRW, ToDo: Default-Land aus config
+		}
+		$zflur=str_pad($arr[1], 3 , "0", STR_PAD_LEFT); // Flur-Nr
+		$zfsnr=trim($arr[2]); // Flurstücke-Nr
+		$zn=explode("/", $zfsnr, 2); // Bruch?
+		$zzaehler=str_pad(trim($zn[0]), 5 , "0", STR_PAD_LEFT);	
+		$znenner=trim($zn[1]);
+		if (trim($znenner, " 0.") == "") { // kein Bruch oder nur Nullen
+			$znenner="____"; // in DB-Spalte mit Tiefstrich aufgefüllt
+		} else {
+			$zn=explode(".", $znenner, 2); // .00 wegwerfen
+			$znenner=str_pad($zn[0], 4 , "0", STR_PAD_LEFT);
+		}
+		// nun die Teile stellengerecht wieder zusammen setzen		
+		$fskzdb=$land.$zgemkg.$zflur.$zzaehler.$znenner.'__'; // FS-Kennz. Format Datenbank
+	}
+	// Feld flurstueckskennzeichen ist in DB indiziert  
+	// Format z.B.'052647002001910013__' oder '05264700200012______'
+	$sql ="SELECT gml_id FROM ax_flurstueck WHERE flurstueckskennzeichen= $1 ;";
+
+	$v = array($fskzdb);
+	$res = pg_prepare("", $sql);
+	$res = pg_execute("", $v);
+	if ($row = pg_fetch_array($res)) {
+		$gmlid=$row["gml_id"];
+	} else {
+		echo "<p class='err'>Fehler! Kein Treffer f&uuml;r Flurst&uuml;ckskennzeichen='".$fskennz."' (".$fskzdb.")</p>";
+	}
+	pg_free_result($res);
+}
+
 // F L U R S T U E C K
 $sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, st_area(f.wkb_geometry) AS fsgeomflae, f.zeitpunktderentstehung, ";
 $sql.="g.gemarkungsnummer, g.bezeichnung ";
 $sql.="FROM ax_flurstueck f ";
-$sql.="LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sql.="WHERE f.gml_id= $1";
 
-$v = array($gmlid);
+$v = array($gmlid); // mit gml_id suchen
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
 if (!$res) {
@@ -81,10 +126,9 @@ if ($row = pg_fetch_array($res)) {
 	$fsgeomflaed=number_format($fsgeomflae,0,",",".") . " m&#178;";
 	$entsteh=$row["zeitpunktderentstehung"];
 	$name=$row["name"]; // Fortfuehrungsnummer(n)
-	//$arrn = split(",", trim($name, "{}") ); // deprecated
 	$arrn = explode(",", trim($name, "{}") ); // PHP-Array
 } else {
-	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
+	echo "<p class='err'>Fehler! Kein Treffer f&uuml;r gml_id=".$gmlid."</p>";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 pg_free_result($res);
@@ -711,7 +755,7 @@ pg_close($con);
 		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
 		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
 		<a title="Export Flurst&uuml;cksdaten als CSV" href='javascript:ALKISexportFS()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-<!-- 	<a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp; -->
+	 	<a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp;
 <!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
