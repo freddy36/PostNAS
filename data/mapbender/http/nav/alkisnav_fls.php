@@ -455,7 +455,7 @@ function EinFlurstueck() {
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
-		$sql.="y(st_Centroid(f.wkb_geometry)) AS y, ";
+		$sql.="y(st_Centroid(f.wkb_geometry)) AS y ";
 	}
 	else {  
 		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
