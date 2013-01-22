@@ -560,7 +560,8 @@ CREATE INDEX idx_histfsalb_vor
   COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
 
 CREATE INDEX idx_histfsalb_nach
-   ON ax_historischesflurstueckalb USING btree (vorgaengerflurstueckskennzeichen /* ASC */);
+   ON ax_historischesflurstueckalb USING btree (nachfolgerflurstueckskennzeichen /* ASC */);
+
   COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
   COMMENT ON TABLE  ax_historischesflurstueckalb        IS 'Historisches Flurstück ALB';
   COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global eindeutig';
@@ -640,7 +641,7 @@ CREATE UNIQUE INDEX ax_historischesflurstueck_gml ON ax_historischesflurstueck U
 -- ++ Welche Methode für ein Array?
 -- Wirkt das überhaupt bei der Suche nach einem einzelnen Wert aus dem Array?
 CREATE INDEX idx_histfs_vor ON ax_historischesflurstueck (vorgaengerflurstueckskennzeichen /* ASC */);
-CREATE INDEX idx_histfs_nach ON ax_historischesflurstueck (vorgaengerflurstueckskennzeichen /* ASC */);
+CREATE INDEX idx_histfs_nach ON ax_historischesflurstueck (nachfolgerflurstueckskennzeichen /* ASC */);
 
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
@@ -1611,7 +1612,7 @@ COMMENT ON INDEX ax_hist_fs_ohne_kennz IS 'Suche nach Flurstückskennzeichen';
 CREATE INDEX idx_histfsor_vor ON ax_historischesflurstueckohneraumbezug (vorgaengerflurstueckskennzeichen /* ASC */);
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
 
-CREATE INDEX idx_histfsor_nach ON ax_historischesflurstueckohneraumbezug (vorgaengerflurstueckskennzeichen /* ASC */);
+CREATE INDEX idx_histfsor_nach ON ax_historischesflurstueckohneraumbezug (nachfolgerflurstueckskennzeichen /* ASC */);
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
 
 
@@ -4244,7 +4245,8 @@ CREATE TABLE ax_kleinraeumigerlandschaftsteil (
 	sonstigesmodell		varchar[],
 	anlass			varchar,
 	landschaftstyp		integer,
-	name			varchar
+	name			varchar,
+	CONSTRAINT ax_kleinraeumigerlandschaftsteil_pk PRIMARY KEY (ogc_fid)
 );
 
 SELECT AddGeometryColumn('ax_kleinraeumigerlandschaftsteil','wkb_geometry',:alkis_epsg,'POINT',2);
