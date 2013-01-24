@@ -4,6 +4,8 @@
 
 set serveroutput on
 set autocommit on
+set feedback off
+set verify off
 
 define alkis_epsg=&1
 whenever sqlerror exit 1
@@ -152,6 +154,7 @@ ALTER TABLE AX_SOLL ADD ORA_GEOMETRY MDSYS.SDO_GEOMETRY;
 INSERT INTO user_sdo_geom_metadata(table_name,column_name,srid,diminfo) VALUES ('AX_SOLL','ORA_GEOMETRY',&&alkis_epsg,mdsys.sdo_dim_array(mdsys.sdo_dim_element('X',200000,800000,0.001),mdsys.sdo_dim_element('Y',5200000,6100000,0.001)));
 CREATE INDEX ALKIS_18 ON AX_SOLL(ORA_GEOMETRY) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
 CREATE UNIQUE INDEX ALKIS_19 ON ax_soll (gml_id,beginnt);
+COMMENT ON TABLE ax_soll IS '''Soll'' ist eine runde, oft steilwandige Vertiefung in den norddeutschen Grundmoränenlandschaften; kann durch Abschmelzen von überschütteten Toteisblöcken (Toteisloch) oder durch Schmelzen periglazialer Eislinsen entstanden sein.';
 DELETE FROM user_sdo_geom_metadata WHERE upper(table_name)='AX_BEWERTUNG';
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE AX_BEWERTUNG CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
@@ -172,6 +175,7 @@ CREATE INDEX ALKIS_21 ON AX_BEWERTUNG(ORA_GEOMETRY) INDEXTYPE IS MDSYS.SPATIAL_I
 CREATE UNIQUE INDEX ALKIS_22 ON ax_bewertung (gml_id,beginnt);
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
+COMMENT ON TABLE ax_bewertung  IS '''Bewertung'' ist die Klassifizierung einer Fläche nach dem Bewertungsgesetz (Bewertungsfläche).';
 DELETE FROM user_sdo_geom_metadata WHERE upper(table_name)='AX_TAGESABSCHNITT';
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE AX_TAGESABSCHNITT CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
@@ -190,6 +194,7 @@ ALTER TABLE AX_TAGESABSCHNITT ADD ORA_GEOMETRY MDSYS.SDO_GEOMETRY;
 INSERT INTO user_sdo_geom_metadata(table_name,column_name,srid,diminfo) VALUES ('AX_TAGESABSCHNITT','ORA_GEOMETRY',&&alkis_epsg,mdsys.sdo_dim_array(mdsys.sdo_dim_element('X',200000,800000,0.001),mdsys.sdo_dim_element('Y',5200000,6100000,0.001)));
 CREATE INDEX ALKIS_24 ON AX_TAGESABSCHNITT(ORA_GEOMETRY) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
 CREATE UNIQUE INDEX ALKIS_25 ON ax_tagesabschnitt (gml_id,beginnt);
+COMMENT ON TABLE ax_tagesabschnitt  IS '''Tagesabschnitt'' ist ein Ordnungskriterium der Schätzungsarbeiten für eine Bewertungsfläche. Innerhalb der Tagesabschnitte sind die Grablöcher eindeutig zugeordnet.';
 DELETE FROM user_sdo_geom_metadata WHERE upper(table_name)='AX_DENKMALSCHUTZRECHT';
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE AX_DENKMALSCHUTZRECHT CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
@@ -237,6 +242,7 @@ INSERT INTO user_sdo_geom_metadata(table_name,column_name,srid,diminfo) VALUES (
 CREATE INDEX ALKIS_31 ON AX_FORSTRECHT(ORA_GEOMETRY) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
 CREATE UNIQUE INDEX ALKIS_32 ON ax_forstrecht (gml_id,beginnt);
 CREATE INDEX ALKIS_33 ON ax_forstrecht(land,stelle);
+COMMENT ON TABLE ax_forstrecht IS '''Forstrecht'' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, forstrechtlichen Vorschriften.';
 DELETE FROM user_sdo_geom_metadata WHERE upper(table_name)='AX_GEBAEUDEAUSGESTALTUNG';
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE AX_GEBAEUDEAUSGESTALTUNG CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
@@ -3419,7 +3425,5 @@ CREATE TABLE AX_VERWALTUNG (
 ALTER TABLE AX_VERWALTUNG ADD DUMMY MDSYS.SDO_GEOMETRY;
 INSERT INTO user_sdo_geom_metadata(table_name,column_name,srid,diminfo) VALUES ('AX_VERWALTUNG','DUMMY',&&alkis_epsg,mdsys.sdo_dim_array(mdsys.sdo_dim_element('X',200000,800000,0.001),mdsys.sdo_dim_element('Y',5200000,6100000,0.001)));
 COMMENT ON TABLE  ax_verwaltung  IS 'V e r w a l t u n g';
-COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
-COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 purge recyclebin;
 QUIT;

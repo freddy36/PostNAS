@@ -47,16 +47,16 @@
 --                Umschaltung mit/ohne Historie über Verknüpfung Trigger -> Function
 --                Typ 'GEOMETRY' bei Tabellen: AX_WegPfadSteig, AX_UntergeordnetesGewaesser
 
--- 2012-10-31 FJ  Trigger fuer NAS-Replace-Saetze repariert:
+-- 2012-10-31 FJ  Trigger fuer NAS-Replace-Sätze repariert:
 --                siehe: FUNCTION delete_feature_kill()
 --                ax_historischesflurstueck.buchungsart ist Text nicht integer.
 
--- 2012-10-31 AE  Tabellen löschen wurde auskommetiert, DB wird leer angelegt SELECT alkis_drop();
+-- 2012-10-31 AE  Tabellen löschen wurde auskommentiert, DB wird leer angelegt SELECT alkis_drop();
 
 -- ** zwischenzeitliche Änderungen: siehe Kommentare im SVN
 
 -- 2013-01-15 FJ  Kommentare zu den letztlich hinzugekommenen Tabellen.
---                Darüber können Tabellen aus diesem Script unterschieden werden 
+--                Darüber können Tabellen aus diesem Script unterschieden werden
 --                von Tabellen, die PostNAS selbst generiert hat.
 
 
@@ -89,7 +89,7 @@
 \i alkis-functions.sql
 
 -- Alle Tabellen löschen
---SELECT alkis_drop();
+-- SELECT alkis_drop();
 
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
 CREATE TABLE "delete"
@@ -279,7 +279,7 @@ COMMENT ON TABLE  ax_besonderertopographischerpunkt        IS 'B e s o n d e r e
 COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
--- S o l l 
+-- S o l l
 -- -------
 CREATE TABLE ax_soll (
 	ogc_fid			serial NOT NULL,
@@ -298,7 +298,7 @@ SELECT AddGeometryColumn('ax_soll','wkb_geometry',:alkis_epsg,'POLYGON',2);
 CREATE INDEX ax_soll_geom_idx ON ax_soll USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_soll_gml ON ax_soll USING btree (gml_id,beginnt);
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE ax_soll IS '''Soll'' ist eine runde, oft steilwandige Vertiefung in den norddeutschen Grundmoränenlandschaften; kann durch Abschmelzen von überschütteten Toteisblöcken (Toteisloch) oder durch Schmelzen periglazialer Eislinsen entstanden sein.';
 
 
 -- B e w e r t u n g
@@ -323,7 +323,7 @@ CREATE UNIQUE INDEX ax_bewertung_gml ON ax_bewertung USING btree (gml_id,beginnt
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE ax_bewertung  IS '''Bewertung'' ist die Klassifizierung einer Fläche nach dem Bewertungsgesetz (Bewertungsfläche).';
 
 
 -- T a g e s a b s c h n i t t
@@ -345,7 +345,7 @@ SELECT AddGeometryColumn('ax_tagesabschnitt','wkb_geometry',:alkis_epsg,'POLYGON
 CREATE INDEX ax_tagesabschnitt_geom_idx   ON ax_tagesabschnitt USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_tagesabschnitt_gml ON ax_tagesabschnitt USING btree (gml_id,beginnt);
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE ax_tagesabschnitt  IS '''Tagesabschnitt'' ist ein Ordnungskriterium der Schätzungsarbeiten für eine Bewertungsfläche. Innerhalb der Tagesabschnitte sind die Grablöcher eindeutig zugeordnet.';
 
 
 -- D e n k m a l s c h u t z r e c h t
@@ -399,7 +399,7 @@ CREATE INDEX ax_forstrecht_geom_idx   ON ax_forstrecht USING gist  (wkb_geometry
 CREATE UNIQUE INDEX ax_forstrecht_gml ON ax_forstrecht USING btree (gml_id,beginnt);
 CREATE INDEX ax_forstrecht_afs ON ax_forstrecht(land,stelle);
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE ax_forstrecht IS '''Forstrecht'' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, forstrechtlichen Vorschriften.';
 
 -- G e b ä u d e a u s g e s t a l t u n g
 -- -----------------------------------------
@@ -3579,7 +3579,7 @@ COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- H ö h l e n e i n g a n g
--- ------------------------- 
+-- -------------------------
 CREATE TABLE ax_hoehleneingang (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),

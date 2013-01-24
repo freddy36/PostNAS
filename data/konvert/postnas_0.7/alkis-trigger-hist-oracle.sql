@@ -27,7 +27,7 @@ BEGIN
 END alkis_beziehung_inserted;
 /
 
-show errors trigger alkis_beziehung_ins;
+-- show errors trigger alkis_beziehung_ins;
 
 CREATE OR REPLACE TRIGGER alkis_beziehungen_a_ins
 	AFTER INSERT ON alkis_beziehungen
@@ -39,7 +39,7 @@ BEGIN
 END alkis_beziehungen_a_ins;
 /
 
-show errors trigger alkis_beziehungen_a_ins
+-- show errors trigger alkis_beziehungen_a_ins
 
 CREATE OR REPLACE TRIGGER delete_feature_trigger
 	BEFORE INSERT ON "DELETE"
@@ -50,8 +50,9 @@ DECLARE
 	endete varchar2(20);
 	n INTEGER;
 BEGIN
-	:NEW.context := lower(:NEW.context);
-	gml_id       := substr(:NEW.featureid, 1, 16);
+	:NEW.typename := upper(substr(:NEW.typename, 1, 30));
+	:NEW.context  := lower(:NEW.context);
+	gml_id        := substr(:NEW.featureid, 1, 16);
 
 	IF :NEW.context IS NULL THEN
 		:NEW.context := 'delete';
@@ -131,4 +132,4 @@ BEGIN
 END delete_feature_trigger;
 /
 
-show errors trigger delete_feature_trigger;
+-- show errors trigger delete_feature_trigger;

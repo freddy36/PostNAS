@@ -7,7 +7,7 @@ DECLARE
 	aktbeg varchar2(2047);
 	gml_id varchar2(2047);
 BEGIN
-	:NEW.typename := lower(:NEW.typename);
+	:NEW.typename := upper(substr(:NEW.typename,1,30));
 	:NEW.context  := lower(:NEW.context);
 	gml_id        := substr(:NEW.featureid, 1, 16);
 
@@ -71,7 +71,7 @@ BEGIN
 END delete_feature_trigger;
 /
 
-show errors trigger delete_feature_trigger;
+-- show errors trigger delete_feature_trigger;
 
 QUIT;
 

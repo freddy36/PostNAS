@@ -40,7 +40,7 @@ while(<I>) {
 	s/;\s*--.*$/;/;
 	s/\s*--.*$//;
 
-	s/^\s+SET client_encoding = 'UTF8';/set serveroutput on\nset autocommit on\n/;
+	s/^\s+SET client_encoding = 'UTF8';/set serveroutput on\nset autocommit on\nset feedback off\nset verify off\n/;
 	s/^\s+SET default_with_oids = false;/define alkis_epsg=\&1/;
 	s/\\set ON_ERROR_STOP/whenever sqlerror exit 1/;
 
@@ -102,6 +102,8 @@ while(<I>) {
 
 	# Überlange Bezeichner kürzen und in Großbuchstaben wandeln
 	s/([A-Z_]{30})[A-Z_]+/\U$1/gi;
+
+	next if /^COMMENT ON TABLE (geometry_columns|spatial_ref_sys)/;
 
 	next if /^\s*$/;
 
