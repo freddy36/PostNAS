@@ -33,11 +33,11 @@ MAP
 			ows_abstract "ALKIS - PostNAS Version 0.7" 
 			wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 			wms_encoding "UTF-8"
-			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
+			wms_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis/alkis*gkz*.map"
 			wms_feature_info_mime_type "text/html"
 			wfs_accessconstraints "none"
 			wfs_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-			wfs_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis07/alkis07*gkz*.map"
+			wfs_onlineresource "http://wms.krz.de/cgi-bin/mapserv6?map=/data/umn/alkis/alkis*gkz*.map"
 			wfs_title "ALKIS"
 			wfs_feature_info_mime_type "text/html"
 			wfs_encoding "UTF-8"
@@ -47,7 +47,7 @@ MAP
 			ows_fees "none"
 			ows_accessconstraints "für den Dienstgebrauch"
 			ows_enable_request "*"
-			include "meta_contact.map"
+			include "./include/meta_contact.map"
 		END
 	END
 
