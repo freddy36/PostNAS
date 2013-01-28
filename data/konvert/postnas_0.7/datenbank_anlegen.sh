@@ -6,7 +6,7 @@
 ##
 ## Stand:
 ##  2012-02-10 PostNAS 07, Umbenennung
-##  2013-01-15 Zwischenstopp um Meldungen lesen zu können bevor, sie aus dem Scrollbereich verschwinden
+##  2013-01-15 Zwischenstopp um Meldungen lesen zu kï¿½nnen bevor, sie aus dem Scrollbereich verschwinden
 
 POSTNAS_HOME=$(dirname $0)
 MANDANT_HOME=$PWD
@@ -77,7 +77,7 @@ echo "** Anlegen (leere) PostGIS-Datenbank"
 createdb --port=5432 --username=${DBUSER} -E utf8  -T ${DBTEMPLATE} ${DBNAME}
 echo " "
 echo "** Anlegen der Datenbank-Struktur fuer PostNAS (alkis_PostNAS_0.7_schema.sql)"
-psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f alkis_PostNAS_0.7_schema.sql >$MANDANT_HOME/log/schema.log
+psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f alkis_PostNAS_schema.sql >$MANDANT_HOME/log/schema.log
 
 # Zwischenstopp. Die Ausgabe-Zeilen sind sonst nicht mehr lesbar.
 until [ "$CHECK" = "j" -o "$CHECK" = "n" ]
@@ -94,7 +94,7 @@ fi
 echo " "
 echo "** Anlegen der Datenbank-Struktur - zusaetzliche Schluesseltabellen"
 ## Nur die benoetigten Tabellen fuer die Buchauskunft
-psql $con -U ${DBUSER} -f alkis_PostNAS_0.7_keytables.sql >$MANDANT_HOME/log/keytables.log
+psql $con -U ${DBUSER} -f alkis_PostNAS_keytables.sql >$MANDANT_HOME/log/keytables.log
 echo " "
 echo "** Anlegen Optimierung Nutzungsarten (nutzungsart_definition.sql)"
 psql $con -U ${DBUSER} -f nutzungsart_definition.sql
