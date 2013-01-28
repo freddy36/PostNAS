@@ -2,17 +2,16 @@ Diese ReadMe-Datei soll Sie auf die zu ändernden Parameter
 hinweisen die umgebungsspezifisch gesetzt werden müssen.
 
 Anmerkung:
-Voraussetzung ist ein UMN MapServer ab der Version 5.0  
+Voraussetzung ist ein UMN MapServer ab der Version 6.2 
 
 Umgebungsanpassungen:
 
 #######################
-# umn/alkis/alkis.map #
+# /data/umn/alkis/alkis_muster.map #
 #######################
 
 1. Die ONLINERESOURCEN müssen auf das eigene System umgestellt werden. 
 - wms_onlineresource "..."
-- wfs_onlineresource "..."
 
 2. Der EXTENT (Ausdehnung) ist auf die Geodaten anzupassen, 
 ggf. muss auch der Parameter UNIT verändert werden.   
@@ -21,7 +20,7 @@ ggf. muss auch der Parameter UNIT verändert werden.
 
 
 ####################################################################################
-# Layer-Dateien (umn/alkis/layerax_flurstueck.map, umn/alkis/layerap_pto.map, ...) #
+# Layer
 ####################################################################################
 
 1.  Der CONNECTION-String zu der Datenbank ist anzupassen.
@@ -30,7 +29,7 @@ ggf. muss auch der Parameter UNIT verändert werden.
 
   
 ######################################################
-# umn/alkis/cgi-bin/alkis.xml #
+# /data/umn/alkis/cgi-bin/alkis.xml #
 ######################################################
 1. Die Datei ist ausführbar zu machen
 2. In der Datei ist der Pfad zum Mapfile und UMN-MapServer zu setzen:
