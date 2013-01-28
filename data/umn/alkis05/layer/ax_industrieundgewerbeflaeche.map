@@ -1,0 +1,41 @@
+##########################################################################################
+# Layer: ax_industrieundgewerbeflaeche
+# ----------------------------------------------------------------------------------------
+# 'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder 
+# gewerblichen Zwecken dient.
+##########################################################################################
+LAYER   
+	NAME "ax_industrieundgewerbeflaeche"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_industrieundgewerbeflaeche) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Industrie- und Gewerbefläche"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'funktion'
+   
+   	CLASS
+		NAME "Industrie- und Gewerbefläche" #sn1305_sn2515
+		#EXPRESSION (999 < [funktion])
+		STYLE
+			COLOR 237 237 237
+			OUTLINECOLOR 153 153 153
+		END
+	END
+
+END        

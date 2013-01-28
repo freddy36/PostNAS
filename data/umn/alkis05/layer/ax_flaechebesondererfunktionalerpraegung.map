@@ -1,0 +1,39 @@
+##########################################################################################
+# Layer: ax_flaechebesondererfunktionalerpraegung
+# ----------------------------------------------------------------------------------------
+# 'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich 
+# der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder 
+# Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind.
+##########################################################################################
+LAYER   
+	NAME "ax_flaechebesondererfunktionalerpraegung"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_flaechebesondererfunktionalerpraegung) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Fläche besonderer funktionaler Prägung"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+   
+	CLASS
+		NAME "Fläche besonderer funktionaler Prägung" # sn1401_sn2515
+		STYLE
+			COLOR 255 235 245
+			OUTLINECOLOR 153 153 153
+		END
+	END
+
+END      

@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_stehendesgewaesser
+# ----------------------------------------------------------------------------------------
+#'Stehendes Gewässer' ist eine natürliche oder künstliche mit Wasser gefüllte, allseitig
+# umschlossene Hohlform der Landoberfläche ohne unmittelbaren Zusammenhang mit 'Meer'.
+##########################################################################################
+
+LAYER   
+	NAME "ax_stehendesgewaesser"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_stehendesgewaesser) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Stehendes Gewässer"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Stehendes Gewässer" # sn1410_sn2518 sn3490 als Symbol fehlt
+		STYLE
+			COLOR 230 255 255
+			OUTLINECOLOR 0 204 204
+		END
+	END   
+END

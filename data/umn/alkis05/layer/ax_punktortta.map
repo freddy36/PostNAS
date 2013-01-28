@@ -1,0 +1,41 @@
+##########################################################################################
+#Layer: ax_punktortta
+#------------------------------------------------------------------------------------------
+#Beschreibung: 'PunktortTA' ist ein Punktort, der in der Flurstücksgrenze liegt und 
+#einen Grenzpunkt verortet.
+##########################################################################################
+LAYER
+
+	NAME "ax_punktortta"
+	TYPE POINT
+	DUMP TRUE
+
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_punktortta) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "PunktortTA"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	MINSCALEDENOM 0
+	MAXSCALEDENOM 1000 #5000
+
+	CLASS
+		NAME "PunktortTA" 
+		STYLE
+			SYMBOL "sn3020"	#sn3020
+			SIZE 7
+			COLOR 255 255 255
+			OUTLINECOLOR 0 0 0
+		END
+	END
+
+END

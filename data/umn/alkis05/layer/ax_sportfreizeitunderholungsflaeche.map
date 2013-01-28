@@ -1,0 +1,40 @@
+##########################################################################################
+# Layer: ax_sportfreizeitunderholungsflaeche
+# ----------------------------------------------------------------------------------------
+# 'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, 
+# die dem Sport, der Freizeitgestaltung oder der Erholung dient.
+##########################################################################################
+LAYER   
+	NAME "ax_sportfreizeitunderholungsflaeche"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_sportfreizeitunderholungsflaeche) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Sport-, Freizeit- und Erholungsfläche"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'funktion'
+   
+   	CLASS
+		NAME "Sport-, Freizeit- und Erholungsfläche" # sn1405_sn2515
+		STYLE
+			COLOR 224 255 217
+			OUTLINECOLOR 153 153 153
+		END
+	END
+
+END        

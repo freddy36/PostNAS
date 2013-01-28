@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_turm
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Turm' ist ein hoch aufragendes, auf einer verhältnismäßig kleinen Fläche
+# freistehendes Bauwerk.
+##########################################################################################
+
+LAYER      
+	NAME "ax_turm"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_turm) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Turm"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+	
+	CLASS
+		NAME "Turm" # sn_1501
+		STYLE
+			COLOR 204 204 204
+			OUTLINECOLOR 0 0 0
+		END
+	END	
+END

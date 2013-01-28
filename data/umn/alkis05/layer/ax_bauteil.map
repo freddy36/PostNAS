@@ -1,0 +1,72 @@
+##########################################################################################
+# Layer: ax_bauteil
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Bauteil' ist ein charakteristisches Merkmal eines Gebäudes mit gegenüber 
+# dem jeweiligen Objekt 'Gebäude' abweichenden bzw. besonderen Eigenschaften.
+##########################################################################################
+
+LAYER      
+	NAME "ax_bauteil"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_bauteil) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Bauteil(Gebäude)"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'bauart'
+  
+   	CLASS
+		NAME "Bauteil"
+		EXPRESSION ([bauart] = 1100 OR [bauart] = 1200 OR [bauart] = 1400 OR [bauart] = 2000 OR [bauart] = 2100 OR [bauart] = 2300 OR [bauart] = 2350 OR [bauart] = 2400 OR [bauart] = 2500 OR [bauart] = 2510 OR [bauart] = 2520 OR [bauart] = 2610 OR [bauart] = 26200 OR [bauart] = 9999)
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 0 0 0
+		END
+	END
+	
+ 	CLASS
+		NAME "Bauteil-Schornstein"
+		EXPRESSION ([bauart] = 2710)
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 0 0 0
+			WIDTH 2
+		END
+	END
+		
+ 	CLASS
+		NAME "Bauteil-Turm"
+		EXPRESSION ([bauart] = 2720)
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 0 0 0
+			WIDTH 3
+		END
+	END
+
+ 	CLASS
+		NAME "Bauteil-Hochhausgebäudeteil"
+		EXPRESSION ([bauart] = 1300)
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 0 0 0
+			WIDTH 4
+		END
+	END
+		
+END

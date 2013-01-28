@@ -1,0 +1,38 @@
+##########################################################################################
+# Layer: ax_sumpf
+# ----------------------------------------------------------------------------------------
+#'Sumpf' ist ein wassergesättigtes, zeitweise unter Wasser stehendes Gelände. Nach
+# Regenfällen kurzzeitig nasse Stellen im Boden werden nicht als 'Sumpf' erfasst.
+##########################################################################################
+
+LAYER   
+	NAME "ax_sumpf"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_sumpf) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Sumpf"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Sumpf" # sn1404_sn2515
+		STYLE
+			COLOR 242 235 232
+			OUTLINECOLOR 153 153 153
+		END
+	END   
+END

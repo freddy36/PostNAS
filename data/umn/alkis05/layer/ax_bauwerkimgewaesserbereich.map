@@ -1,0 +1,42 @@
+##########################################################################################
+# Layer: ax_bauwerkimgewaesserbereich
+# ----------------------------------------------------------------------------------------
+#'Bahnverkehr' umfasst alle für den Schienenverkehr erforderlichen Flächen. Flächen von 
+# Bahnverkehr sind - der Bahnkörper (Unterbau für Gleise; bestehend aus Dämmen oder 
+# Einschnitten und deren kleineren Böschungen, Durchlässen, schmalen Gräben zur
+# Entwässerung, Stützmauern, Unter- und Überführung, Seiten und Schutzstreifen) mit seinen
+# Bahnstrecken - an den Bahnkörper angrenzende bebaute und unbebaute Flächen (z.B. größere
+# Böschungsflächen).
+##########################################################################################
+
+LAYER   
+	NAME "ax_bauwerkimgewaesserbereich"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_bauwerkimgewaesserbereich) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Bauwerk im Gewässerbereich"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Bauwerk im Gewässerbereich" # sn1551
+		STYLE
+			OUTLINECOLOR 82 0 0
+			COLOR -1 -1 -1
+		END
+	END   
+END

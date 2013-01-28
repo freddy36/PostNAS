@@ -1,0 +1,51 @@
+##########################################################################################
+# Layer: ax_unlandvegetationsloseflaeche
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Unland/Vegetationslose Fläche' ist eine Fläche, die dauerhaft
+# landwirtschaftlich nicht genutzt wird, wie z.B. nicht aus dem Geländerelief
+# herausragende Felspartien, Sand- oder Eisflächen, Uferstreifen längs von Gewässern und
+# Sukzessionsflächen.
+##########################################################################################
+
+LAYER      
+	NAME "ax_unlandvegetationsloseflaeche"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_unlandvegetationsloseflaeche) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Unland/ Vegetationslose Fläche"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+	
+	CLASSITEM 'funktion'
+ 
+ 	 	CLASS
+		NAME "Gewässerbegleitfläche" # sn_1406
+		EXPRESSION ([funktion] = 1100)
+		STYLE
+			COLOR 235 255 212
+			OUTLINECOLOR 153 153 153
+		END
+	END	
+	
+   	CLASS
+		NAME "Unland/ Vegetationslose Fläche" # sn2515_sn3480_sn3481_sn3484 Symbole fehlen
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 153 153 153
+		END
+	END
+END

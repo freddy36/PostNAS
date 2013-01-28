@@ -1,0 +1,39 @@
+##########################################################################################
+# Layer: ax_denkmalschutzrecht
+# ----------------------------------------------------------------------------------------
+#'Denkmalschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung
+# oder andere Eigenschaft einer Fläche oder Gegenstand nach öffentlichen,
+# denkmalschutzrechtlichen Vorschriften.
+##########################################################################################
+
+LAYER   
+	NAME "ax_denkmalschutzrecht"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_denkmalschutzrecht) as foo using unique ogc_fid using SRID=25832"
+	
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Denkmalschutzrecht"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END	
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+   	CLASS
+		NAME "Denkmalschutzrecht" # sn1330_sn3532 Symbol fehlt
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 153 153 153
+		END
+	END   
+END

@@ -1,0 +1,36 @@
+##########################################################################################
+# Layer: ax_friedhof
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Friedhof' ist eine Fläche, auf der Tote bestattet sind. 
+##########################################################################################
+LAYER   
+	NAME "ax_friedhof"
+	TYPE POLYGON
+	DUMP TRUE
+   
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_friedhof) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Friedhof"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+	
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+   
+   	CLASS
+		NAME "Friedhof" # sn1405
+		STYLE
+			COLOR 224 255 217
+		END
+	END
+
+END          

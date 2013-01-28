@@ -1,0 +1,45 @@
+##########################################################################################
+# Layer: ax_bauraumoderbodenordnungsrecht_umrandung
+# ----------------------------------------------------------------------------------------
+# Beschreibung: 'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes
+# Gebiet von Flächen mit bodenbezogenen Beschränkungen, Belastungen oder anderen
+# Eigenschaften nach öffentlichen Vorschriften.
+##########################################################################################
+
+LAYER      
+	NAME "ax_bauraumoderbodenordnungsrecht_umrandung"
+	GROUP "ax_bauraumoderbodenordnungsrecht"
+	TYPE POLYGON
+	DUMP TRUE
+	
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=localhost dbname=alkis user=admin"
+	DATA "wkb_geometry from (SELECT * FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
+
+	METADATA
+		"WMS_SRS" "epsg:25832"
+		"WMS_TITLE" "Bau-, Raum- oder Bodenordnungsrecht (Umrandung)"
+		"WMS_GROUP_TITLE" "Bau-, Raum- oder Bodenordnungsrecht"
+		"WMS_ENCODING" "UTF-8"
+		"gml_include_items" "all"
+	END
+
+	PROJECTION
+		"init=epsg:25832"
+	END
+
+	#MINSCALEDENOM 0
+	#MAXSCALEDENOM 5000
+
+	CLASSITEM 'artderfestlegung'
+  
+   	CLASS
+		NAME "Bau-, Raum oder Bodenordnungsrecht" # sn1704 sn7865 Schriftzusatz fehlt für Baulast
+		STYLE
+			COLOR -1 -1 -1
+			OUTLINECOLOR 255 128 128
+			SYMBOL "sn_1704"	
+			SIZE 2.8346456693
+		END
+	END	
+END
