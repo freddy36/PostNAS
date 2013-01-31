@@ -30,6 +30,16 @@
 
 open I, "alkis_PostNAS_keytables.sql";
 open O, ">alkis_PostNAS_ORACLE_keytables.sql";
+#open I, "nutzungsart_definition.sql";
+#open O, ">nutzungsart_definition_ORACLE.sql";
+#open I, "nutzungsart_laden.sql";
+#open O, ">nutzungsart_laden_ORACLE.sql";
+#open I, "pp_definition.sql";
+#open O, ">pp_definition_ORACLE.sql";
+#open I, "pp_laden.sql";
+#open O, ">pp_laden_ORACLE.sql";
+#open I, "sichten.sql";
+#open O, ">sichten_ORACLE.sql";
 
 $i = 0;
 print O "-- Automatisch mit pg-to-oci_keytables.pl konvertiert.\n---\n---\n\n";
@@ -105,6 +115,12 @@ while(<I>) {
 
 	# Insert Tabellennamen in uppercase
 	s/INSERT INTO (\S+)/INSERT INTO \U$1\E/;
+
+	# View Tabellennamen in uppercase
+	s/CREATE OR REPLACE VIEW (\S+)/CREATE OR REPLACE VIEW \U$1\E/;
+
+	# View Comment in uppercase
+	s/COMMENT ON VIEW (\S+)/COMMENT ON VIEW \U$1\E/; 
 
 	next if /^COMMENT ON TABLE (geometry_columns|spatial_ref_sys)/;
 
