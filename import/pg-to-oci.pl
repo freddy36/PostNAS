@@ -28,8 +28,8 @@
 #                                                                         
 #############################################################################
 
-open I, "alkis_PostNAS_0.7_schema.sql";
-open O, ">alkis_PostNAS_0.7_ORACLE_schema.sql";
+open I, "alkis_PostNAS_schema.sql";
+open O, ">alkis_PostNAS_ORACLE_schema.sql";
 
 $i = 0;
 print O "-- Automatisch mit pg-to-oci.pl konvertiert.\n---\n---\n\n";
