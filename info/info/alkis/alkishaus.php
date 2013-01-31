@@ -2,14 +2,15 @@
 /*	alkishaus.php - Daten zum ALKIS-Geb&auml;ude-Objekt
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
-	Version:	30.11.2011  NEU! Variante von alkisgebaeudenw: Aufruf f&uuml;r EIN Haus, nicht f&uuml;r ein FS
+	Version:	2011-11-30 NEU! Variante von alkisgebaeudenw: Aufruf für EIN Haus, nicht für ein FS
+	2011-01-31 ax_gebaeude.weiteregebaeudefunktion ist jetzt Array, JOIN mit any()
 
 	ToDo:
 	- sinnvolle Sortierung und Gruppierung der Felder
-	- ToDo: geometrische Suche nach Flurst&uuml;cken, auf denen das Haus steht
-	- Template im WMS auf Ebene Geb&auml;ude hierhin verkn&uuml;pfen.
+	- geometrische Suche nach FS, auf denen das Haus steht
+	- Template im WMS auf Ebene Gebäude hierhin verknüpfen.
 	- Auch diese Relationen abbilden:
-		ax_gebaeude >gehoertZu> ax_gebaeude  (ringf&ouml;rmige Verbindung Geb&auml;udekomplex)
+		ax_gebaeude >gehoertZu> ax_gebaeude  (ringförmige Verbindung Gebäudekomplex)
 		ax_gebaeude (umschliesst) ax_bauteil
 		ax_gebaeude >gehoert> ax_person  (Ausnahme)*/
 session_start();
@@ -45,14 +46,16 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 // // G e b a e u d e 
 $sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, g.anzahlderunterirdischengeschosse AS aug, ";
 $sqlg.="g.lagezurerdoberflaeche, g.dachgeschossausbau, g.zustand, g.weiteregebaeudefunktion, g.dachform, g.hochhaus, g.objekthoehe, g.geschossflaeche, g.grundflaeche, g.umbauterraum, g.baujahr, g.dachart, g.qualitaetsangaben, ";
-$sqlg.="h.bauweise_beschreibung, u.bezeichner AS bfunk, z.bezeichner AS bzustand, w.bezeichner AS bweitfunk, d.bezeichner AS bdach, ";
-$sqlg.="round(area(g.wkb_geometry)::numeric,2) AS gebflae ";$sqlg.="FROM ax_gebaeude g ";
+$sqlg.="h.bauweise_beschreibung, u.bezeichner AS bfunk, z.bezeichner AS bzustand, ";
+// "w.bezeichner AS bweitfunk, ";
+$sqlg.="d.bezeichner AS bdach, round(area(g.wkb_geometry)::numeric,2) AS gebflae ";$sqlg.="FROM ax_gebaeude g ";
 
 // Entschluesseln
 $sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
 $sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
 $sqlg.="LEFT JOIN ax_gebaeude_zustand z ON g.zustand = z.wert ";
-$sqlg.="LEFT JOIN ax_gebaeude_weiterefunktion w ON g.weiteregebaeudefunktion = w.wert ";
+//$sqlg.="LEFT JOIN ax_gebaeude_weiterefunktion w ON g.weiteregebaeudefunktion = w.wert "; // Alt
+//$sqlg.="LEFT JOIN ax_gebaeude_weiterefunktion w ON g.weiteregebaeudefunktion = any(w.wert) "; // Vorschlag 
 $sqlg.="LEFT JOIN ax_gebaeude_dachform d ON g.dachform = d.wert ";
 
 $sqlg.="WHERE g.gml_id= $1 "; // ID des Hauses
@@ -89,7 +92,7 @@ echo "</a></p>";
 	$aog=$rowg["aog"];
 	$aug=$rowg["aug"];
 	$hoh=$rowg["hochhaus"];
-	$nam=$rowg["name"]; // Gebbaeude-Name
+	$nam=$rowg["name"]; // Gebaeude-Name
 	$bfunk=$rowg["bfunk"];
 	$baw=$rowg["bauweise"];
 	$bbauw=$rowg["bauweise_beschreibung"];
@@ -99,7 +102,7 @@ echo "</a></p>";
 	$zustand=$rowg["bzustand"];
 	$wgf=$rowg["weiteregebaeudefunktion"];
 	$daf=$rowg["dachform"];
-	$weitfunk=$rowg["bweitfunk"];
+//	$weitfunk=$rowg["bweitfunk"];
 	$dach=$rowg["bdach"];
 	$hho=$rowg["objekthoehe"];
 	$gfl=$rowg["geschossflaeche"];
@@ -246,10 +249,31 @@ echo "</a></p>";
 
 	if ($wgf != "" OR $allefelder) {
 		echo "\n<tr>";
-			echo "\n\t<td title='\"Weitere Geb&auml;udefunktion\" ist die Funktion, die ein Geb&auml;ude neben der dominierenden Geb&auml;udefunktion hat.'>Weitere Geb&auml;udefunktion</td>";
+			echo "\n\t<td title='\"Weitere Geb&auml;udefunktion\" ist die Funktion, die ein Geb&auml;ude neben der dominierenden Geb&auml;udefunktion hat.'>Weitere Geb&auml;udefunktionen</td>";
 			echo "\n\t<td>";
-			if ($showkey) {echo "<span class='key'>".$wgf."</span>&nbsp;";}
-			echo $weitfunk."</td>";
+
+			// weiteregebaeudefunktion ist jetzt ein Array
+			$wgflist=trim($wgf, "{}"); // kommagetrennte(?) Liste der Schluesselwerte
+			//$wgfarr=explode(",", $wgflist);
+			//for each ...
+			$sqlw.="SELECT wert, bezeichner FROM ax_gebaeude_weiterefunktion WHERE wert in ( $1 ) ORDER BY wert;";
+			$v = array($wgflist);
+			$resw = pg_prepare("", $sqlw);
+			$resw = pg_execute("", $v);
+			if (!$resw) {
+				echo "\n<p class='err'>Fehler bei Geb&auml;ude - weitere Funktion.</p>\n";
+				if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sqlw."<br>$1 = Werteliste = '".$wgflist."'</p>";}
+			}
+			$zw=0;
+			while($roww = pg_fetch_array($resw)) { // LOOP: w.Funktion
+				$wwert=$roww["wert"];
+				$wbez=$roww["bezeichner"];
+				if ($zw > 0) {echo ", ";} // Liste oder Zeile? echo "<br>"; 
+				if ($showkey) {echo "<span class='key'>".$wwert."</span>&nbsp;";}
+				echo $wbez;
+				$zw++;
+		   }
+			echo "</td>";
 		echo "\n</tr>";
 	}
 
