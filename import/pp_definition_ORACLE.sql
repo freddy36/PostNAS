@@ -11,15 +11,19 @@ CREATE TABLE PP_GEMEINDE (
     regierungsbezirk	integer,
     kreis		integer,
     gemeinde		integer NOT NULL,
-    gemeindename	character varying(80),
+    gemeindename	varchar2(80),
     anz_gemarkg		integer,
-    CONSTRAINT ALKIS_KEY_0 PRIMARY KEY (land, gemeinde)
+    CONSTRAINT ALKIS_KEYPP_0 PRIMARY KEY (land, gemeinde)
   );
-CREATE UNIQUE INDEX ALKIS_KEY_1 ON pp_gemeinde (gid);
-SELECT AddGeometryColumn('pp_gemeinde','the_geom','25832','MULTIPOLYGON',2);
-CREATE INDEX ALKIS_KEY_2 ON PP_GEMEINDE(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
-SELECT AddGeometryColumn('pp_gemeinde','simple_geom','25832','MULTIPOLYGON',2);
-CREATE INDEX ALKIS_KEY_3 ON PP_GEMEINDE(SIMPLE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
+CREATE UNIQUE INDEX ALKIS_KEYPP_1 ON pp_gemeinde (gid);
+
+--TODO SELECT AddGeometryColumn('pp_gemeinde','the_geom','25832','MULTIPOLYGON',2);
+
+CREATE INDEX ALKIS_KEYPP_2 ON PP_GEMEINDE(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
+
+--TODO SELECT AddGeometryColumn('pp_gemeinde','simple_geom','25832','MULTIPOLYGON',2);
+
+CREATE INDEX ALKIS_KEYPP_3 ON PP_GEMEINDE(SIMPLE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
   COMMENT ON TABLE  pp_gemeinde                IS 'Post-Processing: Gemeinde';
   COMMENT ON COLUMN pp_gemeinde.gemeinde       IS 'Gemeindenummer';
   COMMENT ON COLUMN pp_gemeinde.the_geom       IS 'präzise Geometrie aus Summe aller Gemarkungen';
@@ -35,15 +39,15 @@ CREATE TABLE PP_GEMARKUNG (
     kreis		integer,
     gemeinde		integer NOT NULL,
     gemarkung		integer NOT NULL,
-    gemarkungsname	character varying(80),
+    gemarkungsname	varchar2(80),
     anz_flur		integer,
-    CONSTRAINT ALKIS_KEY_4 PRIMARY KEY (land, gemarkung)
+    CONSTRAINT ALKIS_KEYPP_4 PRIMARY KEY (land, gemarkung)
   );
-CREATE UNIQUE INDEX ALKIS_KEY_5 ON pp_gemarkung (gid);
-SELECT AddGeometryColumn('pp_gemarkung','the_geom','25832','MULTIPOLYGON',2);
-CREATE INDEX ALKIS_KEY_6 ON PP_GEMARKUNG(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
-SELECT AddGeometryColumn('pp_gemarkung','simple_geom','25832','MULTIPOLYGON',2);
-CREATE INDEX ALKIS_KEY_7 ON PP_GEMARKUNG(SIMPLE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
+CREATE UNIQUE INDEX ALKIS_KEYPP_5 ON pp_gemarkung (gid);
+--TODO SELECT AddGeometryColumn('pp_gemarkung','the_geom','25832','MULTIPOLYGON',2);
+CREATE INDEX ALKIS_KEYPP_6 ON PP_GEMARKUNG(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
+--TODO SELECT AddGeometryColumn('pp_gemarkung','simple_geom','25832','MULTIPOLYGON',2);
+CREATE INDEX ALKIS_KEYPP_7 ON PP_GEMARKUNG(SIMPLE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
 COMMENT ON TABLE  pp_gemarkung               IS 'Post-Processing: Gemarkung. u.a. liegt in welcher Gemeinde';
 COMMENT ON COLUMN pp_gemarkung.gemeinde      IS 'Gemeindenummer';
 COMMENT ON COLUMN pp_gemarkung.gemarkung     IS 'Gemarkungsnummer';
@@ -61,11 +65,11 @@ CREATE TABLE PP_FLUR (
     gemarkung		integer NOT NULL,
     flurnummer		integer NOT NULL,
     anz_fs		integer,
-    CONSTRAINT ALKIS_KEY_8 PRIMARY KEY (land, gemarkung, flurnummer)
+    CONSTRAINT ALKIS_KEYPP_8 PRIMARY KEY (land, gemarkung, flurnummer)
   );
-CREATE UNIQUE INDEX ALKIS_KEY_9 ON pp_flur (gid);
-SELECT AddGeometryColumn('pp_flur','the_geom','25832','MULTIPOLYGON',2);
-CREATE INDEX ALKIS_KEY_10 ON PP_FLUR(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
+CREATE UNIQUE INDEX ALKIS_KEYPP_9 ON pp_flur (gid);
+--TODO SELECT AddGeometryColumn('pp_flur','the_geom','25832','MULTIPOLYGON',2);
+CREATE INDEX ALKIS_KEYPP_10 ON PP_FLUR(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
 COMMENT ON TABLE  pp_flur                IS 'Post-Processing: Flur';
 COMMENT ON COLUMN pp_flur.gemarkung      IS 'Gemarkungsnummer';
 COMMENT ON COLUMN pp_flur.the_geom       IS 'Geometrie aus Summe aller Flurstücke';
@@ -78,15 +82,15 @@ CREATE TABLE GEMEINDE_PERSON (
     regierungsbezirk	integer,
     kreis		integer,
     gemeinde		integer,
-    person		character varying(16),
+    person		varchar2(16),
     buchtyp		integer,
-    CONSTRAINT ALKIS_KEY_11 PRIMARY KEY (gemeinde, person)
+    CONSTRAINT ALKIS_KEYPP_11 PRIMARY KEY (gemeinde, person)
   );
 COMMENT ON TABLE  gemeinde_person            IS 'Person ist Eigentümer von mindestens einem Flurstück in der Gemeinde';
 COMMENT ON COLUMN gemeinde_person.gemeinde   IS 'Gemeindenummer';
 COMMENT ON COLUMN gemeinde_person.buchtyp    IS 'Typ der Buchung 1=direkt, 2=Recht einer Buchungsstele an andere Buchungsstelle';
 COMMENT ON COLUMN gemeinde_person.person     IS 'gml_id von Person';
-CREATE INDEX ALKIS_KEY_12  ON gemeinde_person (person, gemeinde);
+CREATE INDEX ALKIS_KEYPP_12  ON gemeinde_person (person, gemeinde);
   
 DELETE FROM user_sdo_geom_metadata WHERE upper(table_name)='PP_FLURSTUECK_NR';
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE PP_FLURSTUECK_NR CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
@@ -94,12 +98,12 @@ BEGIN EXECUTE IMMEDIATE 'DROP TABLE PP_FLURSTUECK_NR CASCADE CONSTRAINTS'; EXCEP
 CREATE TABLE PP_FLURSTUECK_NR (
     gid		integer,
     fsgml	character(16),
-    fsnum	character varying(10),
-    CONSTRAINT ALKIS_KEY_13  PRIMARY KEY (gid)
+    fsnum	varchar2(10),
+    CONSTRAINT ALKIS_KEYPP_13  PRIMARY KEY (gid)
   );
 SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom','25832','POINT',2);
-CREATE INDEX ALKIS_KEY_14 ON PP_FLURSTUECK_NR(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
-CREATE INDEX ALKIS_KEY_15 ON pp_flurstueck_nr(fsgml);
+CREATE INDEX ALKIS_KEYPP_14 ON PP_FLURSTUECK_NR(THE_GEOM) INDEXTYPE IS MDSYS.SPATIAL_INDEX PARALLEL;
+CREATE INDEX ALKIS_KEYPP_15 ON pp_flurstueck_nr(fsgml);
 COMMENT ON TABLE  pp_flurstueck_nr           IS 'Post-Processing: Position der Flurstücksnummer in der Karte';
 COMMENT ON COLUMN pp_flurstueck_nr.fsgml     IS 'gml_id des zugehörigen Flurstücks-Objektes';
 COMMENT ON COLUMN pp_flurstueck_nr.fsnum     IS 'Label, Darzustellende FS-Nummer als Bruch';
