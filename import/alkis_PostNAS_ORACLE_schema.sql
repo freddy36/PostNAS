@@ -52,7 +52,23 @@ COMMENT ON TABLE  alkis_beziehungen               IS 'zentrale Multi-Verbindungs
 COMMENT ON COLUMN alkis_beziehungen.beziehung_von IS 'Join auf Feld gml_id verschiedener Tabellen';
 COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf Feld gml_id verschiedener Tabellen';
 COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung zwischen der von- und zu-Tabelle';
+
+--
+-- Löschtrigger setzen
+--
+-- Option (A) ohne Historie:
+--  - Symlink von alkis-trigger-kill.sql auf alkis-trigger.sql setzen (Default; macht datenbank_anlegen.sh
+--    ggf. automatisch)
+--  - Lösch- und Änderungssätze werden ausgeführt und die alten Objekte werden sofort entfernt
+--
+-- Option (B) mit Historie:
+--  - Symlink von alkis-trigger-hist.sql auf alkis-trigger.sql setzen
+--  - Bei Lösch- und Änderungssätzen werden die Objekte nicht gelöscht, sondern
+--    im Feld 'endet' als ungegangen markiert (die den aktuellen gilt: WHERE endet
+--    IS NULL)
+--
 @@ alkis-trigger-oracle.sql
+
 DELETE FROM user_sdo_geom_metadata WHERE upper(table_name)='KS_SONSTIGESBAUWERK';
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE KS_SONSTIGESBAUWERK CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
