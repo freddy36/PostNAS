@@ -1,0 +1,215 @@
+SYMBOLSET
+
+SYMBOL
+    NAME 'track' 
+    TYPE ellipse 
+    FILLED true 
+    POINTS
+        1 1 
+    END 
+END
+SYMBOL
+    NAME 'tie' 
+    TYPE Ellipse 
+    FILLED TRUE 
+    POINTS 1 1 END 
+    STYLE 1 3 END 
+
+END
+
+SYMBOL
+  NAME "friedhof"
+  TYPE truetype
+  FONT "wesseling"
+  GAP 2
+  CHARACTER "A"
+  ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+
+
+SYMBOL
+  NAME "schutzhuette"
+  TYPE truetype
+  FONT "kartosymbols"
+  #GAP 2
+  CHARACTER "C"
+ # ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+SYMBOL
+  NAME "strommast"
+  TYPE truetype
+  FONT "natural_resources"
+  #GAP 2
+  CHARACTER "_"
+ # ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+SYMBOL
+  NAME "bergbau"
+  TYPE truetype
+  FONT "natural_resources"
+  GAP 4
+  CHARACTER "L"
+ # ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+
+
+SYMBOL
+  NAME "laubwald"
+  TYPE truetype
+  FONT "zvaut-folie021"
+  GAP 3
+  CHARACTER "H"
+  ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+SYMBOL
+  NAME "nadelwald"
+  TYPE truetype
+  FONT "zvaut-folie021"
+  GAP 3
+  CHARACTER "I"
+  ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+SYMBOL
+  NAME "mischwald"
+  TYPE truetype
+  FONT "zvaut-folie021"
+  GAP 3
+  CHARACTER "R"
+  ANTIALIAS true
+END # SYMBOL
+
+SYMBOL
+  NAME "weingarten"
+  TYPE truetype
+  FONT "zvaut-folie021"
+  GAP 1
+  CHARACTER "7"
+  ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+SYMBOL
+  NAME "obstplantage"
+  TYPE truetype
+  FONT "zvaut-folie021"
+  GAP 3
+  CHARACTER "M"
+  ANTIALIAS true
+  #FILLED true
+END # SYMBOL
+
+
+SYMBOL
+  NAME 'schraffur'
+  TYPE HATCH
+END
+
+SYMBOL
+  NAME 'punkt'
+  TYPE ELLIPSE
+  POINTS 1 1 END
+  FILLED true
+END
+
+SYMBOL
+  NAME 'quadrat'
+  TYPE VECTOR
+  POINTS 
+   0 0
+   0 1
+   1 1
+   1 0
+   0 0 
+  END
+  FILLED true
+END
+
+SYMBOL
+  NAME "grenze"
+  TYPE ellipse
+  POINTS 2 2 END
+  FILLED TRUE
+  #STYLE 2 2 2 2 END
+END
+
+SYMBOL
+  NAME 'windrad'
+  TYPE PIXMAP
+  IMAGE "windrad.gif"
+END
+
+SYMBOL
+  NAME 'baum'
+  TYPE PIXMAP
+  IMAGE "baum.gif"
+END
+
+SYMBOL
+  NAME 'turm'
+  TYPE PIXMAP
+  IMAGE "turm.gif"
+END
+
+SYMBOL
+  NAME 'denkmal'
+  TYPE PIXMAP
+  IMAGE "denkmal.gif"
+END
+
+SYMBOL
+  NAME 'felsen'
+  TYPE PIXMAP
+  IMAGE "felsen.gif"
+END
+
+
+
+#SYMBOL
+ # NAME 'gestrichelt'
+ # TYPE ELLIPSE
+ # POINTS 1 1 END
+ # STYLE
+  #  20 20 20 20
+ # END
+#END
+
+SYMBOL
+  NAME 'gestrichelt'
+  TYPE ELLIPSE
+  POINTS 1 1 END
+  STYLE
+    4 2 4 2
+  END
+END
+
+
+
+SYMBOL
+  NAME 'bahn'
+  TYPE VECTOR
+  POINTS
+    0 0
+    0 0.6
+    1 0.6
+    1 0
+    0 0
+  END
+  FILLED TRUE
+ # STYLE
+ #   8 12 8 12
+ # END
+END
+
+END
