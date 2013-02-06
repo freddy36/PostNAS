@@ -47,6 +47,7 @@ MAP
 			ows_fees "none"
 			ows_accessconstraints "für den Dienstgebrauch"
 			ows_enable_request "*"
+                        WMS_BOX_EXTENDED "true"
 			include "./include/meta_contact.map"
 		END
 	END
