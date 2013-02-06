@@ -11,6 +11,7 @@
 --  2012-04-17 Flurstuecksnummern auf Standardposition
 --  2012-04-23 ax_flurstueck hat keinen Unique Index mahr auf gml_id,
 --             ForeignKey vorübergehend ausgeschaltet.
+--  2012-04-25 simple_geom fuer pp_flur
 
 
 -- ============================
@@ -140,9 +141,15 @@ CREATE UNIQUE INDEX pp_flur_gid_ix ON pp_flur (gid);
 SELECT AddGeometryColumn('pp_flur','the_geom','25832','MULTIPOLYGON',2);
 CREATE INDEX pp_flur_gidx ON pp_flur USING gist(the_geom);
 
+-- vereinfachte Gesamtflaeche
+SELECT AddGeometryColumn('pp_flur','simple_geom','25832','MULTIPOLYGON',2);
+CREATE INDEX pp_flur_sgidx ON pp_flur USING gist(simple_geom);
+
+
 COMMENT ON TABLE  pp_flur                IS 'Post-Processing: Flur';
 COMMENT ON COLUMN pp_flur.gemarkung      IS 'Gemarkungsnummer';
 COMMENT ON COLUMN pp_flur.the_geom       IS 'Geometrie aus Summe aller Flurstücke';
+COMMENT ON COLUMN pp_flur.simple_geom    IS 'vereinfachte Geometrie für die Suche und die Anzeige von Übersichten in kleinen Maßstäben.';
 
 
 -- =======================================================
