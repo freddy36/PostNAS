@@ -10,7 +10,7 @@
 --  2012-04-17 Flurstuecksnummern auf Standardposition
 --  2012-04-24 Generell Filter 'endet IS NULL' um historische Objekte auszublenden
 --  2012-04-25 Abstürze und Fehler (durch kaputte Geometrie?) beim Zusammenfassen der Flächen
---             Mehr buffer, mehr simplify?
+--             Mehr buffer, mehr st_simplify?
 --  2012-10-29 Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
 
 -- ============================
@@ -199,13 +199,13 @@ DELETE FROM pp_flur;
 INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
    SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
            count(gml_id) as anz_fs,
-           multi(st_union(st_buffer(f.wkb_geometry,0.05))) AS the_geom -- 5 cm Zugabe um Zwischenräume zu vermeiden
+           st_multi(st_union(st_buffer(f.wkb_geometry,0.05))) AS the_geom -- 5 cm Zugabe um Zwischenräume zu vermeiden
      FROM  ax_flurstueck f
      WHERE f.endet IS NULL
   GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer, f.flurnummer;
 
 -- Geometrie vereinfachen, auf 1 Meter glätten
-UPDATE pp_flur SET simple_geom = simplify(the_geom, 1.0);
+UPDATE pp_flur SET simple_geom = st_simplify(the_geom, 1.0);
 
 
 -- Fluren zu Gemarkungen zusammen fassen
@@ -219,7 +219,7 @@ UPDATE pp_flur SET simple_geom = simplify(the_geom, 1.0);
 -- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
 UPDATE pp_gemarkung a
   SET the_geom = 
-   ( SELECT multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal 10 cm Zugabe
+   ( SELECT st_multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal 10 cm Zugabe
      FROM    pp_flur b
      WHERE a.land      = b.land 
        AND a.gemarkung = b.gemarkung
@@ -235,7 +235,7 @@ UPDATE pp_gemarkung a
    ); -- Gemarkungsnummer ist je BundesLand eindeutig
 
 -- Geometrie vereinfachen (Wirkung siehe pp_gemarkung_analyse)
-UPDATE pp_gemarkung SET simple_geom = simplify(the_geom, 8.0);
+UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 8.0);
 
 
 -- Gemarkungen zu Gemeinden zusammen fassen
@@ -244,7 +244,7 @@ UPDATE pp_gemarkung SET simple_geom = simplify(the_geom, 8.0);
 -- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
 UPDATE pp_gemeinde a
   SET the_geom = 
-   ( SELECT multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal Zugabe 10 cm
+   ( SELECT st_multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal Zugabe 10 cm
      FROM    pp_gemarkung b
      WHERE a.land     = b.land 
        AND a.gemeinde = b.gemeinde
@@ -260,7 +260,7 @@ UPDATE pp_gemeinde a
    );
 
 -- Geometrie vereinfachen (Wirkung siehe pp_gemeinde_analyse)
-UPDATE pp_gemeinde SET simple_geom = simplify(the_geom, 20.0);
+UPDATE pp_gemeinde SET simple_geom = st_simplify(the_geom, 20.0);
 
 
 -- =======================================================
