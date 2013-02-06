@@ -1761,10 +1761,10 @@ LAYER
 	SYMBOLSCALEDENOM 1000
 	TOLERANCEUNITS pixels
 	TOLERANCE 1
-	HEADER   "/data/umn/templates/alkisrechtbauh.html"
-	#TEMPLATE "/data/umn/templates/alkisrechtbau.html" # konventionell
-	TEMPLATE "/data/umn/templates/alkisrechtbau_inl*gkz*.html" # mit Inlay, gkz-spezifisch
-	FOOTER   "/data/umn/templates/footer.html"
+	HEADER   "./templates/alkisrechtbauh.html"
+	#TEMPLATE "./templates/alkisrechtbau.html" # konventionell
+	TEMPLATE "./templates/alkisrechtbau_inl*gkz*.html" # mit Inlay, gkz-spezifisch
+	FOOTER   "./templates/footer.html"
 
 	CLASSITEM "artderfestlegung" # integer
 
@@ -3228,12 +3228,12 @@ LAYER
 	TOLERANCEUNITS pixels
 	TOLERANCE 1
 	# klassische Variante mit Schaltflaeche fuer Weiterleitung zur Auskunft
-#	HEADER   "/data/umn/templates/alkis*gkz*fsh.html" # gkz = mandant
-#	TEMPLATE "/data/umn/templates/alkis_fs.html"
+#	HEADER   "./templates/alkis*gkz*fsh.html" # gkz = mandant
+#	TEMPLATE "./templates/alkis_fs.html"
 	# Variante mit Inlay (ein iframe enthaelt einen php-Aufruf) 
-	HEADER   "/data/umn/templates/alkisausk_inlh.html" 
-	TEMPLATE "/data/umn/templates/alkisausk_inl*gkz*.html" # gkz = mandant
-	FOOTER   "/data/umn/templates/footer.html"
+	HEADER   "./templates/alkisausk_inlh.html" 
+	TEMPLATE "./templates/alkisausk_inl*gkz*.html" # gkz = mandant
+	FOOTER   "./templates/footer.html"
 	CLASS
 		NAME "Flurstück"
 		STYLE
