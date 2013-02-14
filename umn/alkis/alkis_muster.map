@@ -3549,6 +3549,7 @@ END
 #END
 
 #LAYER
+
 #	NAME "sk4111_Bruchstrich_N"
 #	GROUP "ALKIS" 
 #	TYPE ANNOTATION
@@ -4288,8 +4289,9 @@ LAYER
 		LABEL
 			TYPE TRUETYPE
 			FONT arial
-			SIZE 8
+			SIZE 7
 			POSITION ul
+			OFFSET 4 4
 			COLOR 50 50 50
 			FORCE TRUE
 			STYLE # bbox ms 6.0
