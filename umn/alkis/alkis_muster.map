@@ -72,44 +72,59 @@ MAP
 # Wenn ein Gebiet durch geometrische Filter im NBA ausgegeben wurde, dann gibt es Randstreifen, 
 # die zu Pseudo-Fluren zusammen gefasst werden. Fachlich falsch!
 
+
 LAYER
-	NAME "pp_gemeinde"
+	NAME "pp_flur"
 	GROUP "pp_gebiete"
 	TYPE POLYGON
 	DUMP true
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
+	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Gemeinde"
-		wms_abstract "Gemeindefläche (vereinfachte Geometrie)"
-		wms_group_title "Gebiete"
-		wms_group_abstract "Zusammenfassung der Flurstücke mit gleichen Schlüssel: Fluren, Gemarkungen und Gemeinden"
+		wms_title "Flur"
+		wms_abstract "Flur"
 		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM   8000
-	MAXSCALEDENOM 400000
-	LABELITEM gemeindename
+	MINSCALEDENOM  1600
+	MAXSCALEDENOM 20000
+	
+	SIZEUNITS meters
+	
 	CLASS
-		NAME "Gemeinde"
+		NAME "Flur"
+		TEXT "Flur [flurnummer]" 
 		STYLE
-			OUTLINECOLOR 10 10 200
-			WIDTH 7
-			PATTERN 8 22 END
+			OUTLINECOLOR 254 254 254
+			WIDTH 2
+	        MINWIDTH 1.5
+			MAXWIDTH 2	
+		END		
+		STYLE
+			OUTLINECOLOR 100 150 10
+			WIDTH 2
+	        MINWIDTH 1.5
+			MAXWIDTH 2
+			PATTERN 10 4 3 4 3 4 3 4 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter
 		END
+
 		LABEL
 			TYPE TRUETYPE
-			COLOR 10 10 200
+			COLOR 100 150 10
 			FONT "arial"
-			SIZE 20
+			SIZE 14
+			MINSIZE 10
+			MAXSIZE 16
 			POSITION cc
-			OFFSET 0 -20
 			PARTIALS FALSE
 			FORCE FALSE
 		END
@@ -141,13 +156,25 @@ LAYER
 	CLASS
 		NAME "Gemarkung"
 		STYLE
-			OUTLINECOLOR 140 80 0
-			WIDTH 5
-			PATTERN 3 12 END
+			OUTLINECOLOR 254 254 254
+			WIDTH 2
+	        MINWIDTH 2
+			MAXWIDTH 3 	
+		END			
+		STYLE
+			OUTLINECOLOR 242 128 255 #140 80 0
+			WIDTH 2
+	        MINWIDTH 2
+			MAXWIDTH 3 				
+			#PATTERN 3 12 END
+			PATTERN 10 5 3 5 3 5 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter
 		END
 		LABEL
 			TYPE TRUETYPE
-			COLOR 140 80 0
+			COLOR  242 128 255  #140 80 0
 			FONT "arial"
 			SIZE 16
 			POSITION cc
@@ -159,53 +186,60 @@ LAYER
 END
 
 LAYER
-	NAME "pp_flur"
+	NAME "pp_gemeinde"
 	GROUP "pp_gebiete"
 	TYPE POLYGON
 	DUMP true
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
+	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Flur"
-		wms_abstract "Flur"
+		wms_title "Gemeinde"
+		wms_abstract "Gemeindefläche (vereinfachte Geometrie)"
+		wms_group_title "Gebiete"
+		wms_group_abstract "Zusammenfassung der Flurstücke mit gleichen Schlüssel: Fluren, Gemarkungen und Gemeinden"
 		gml_include_items "all"
 	END
 	PROJECTION
 		"init=epsg:25832"
 	END
 	EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM  1600
-	MAXSCALEDENOM 20000
+	MINSCALEDENOM   8000
+	MAXSCALEDENOM 400000
+	LABELITEM gemeindename
 	CLASS
-		NAME "Flur"
-		TEXT "Flur [flurnummer]" 
+		NAME "Gemeinde"
 		STYLE
-			OUTLINECOLOR 100 150 10
+			OUTLINECOLOR 254 254 254
 			WIDTH 3
-			PATTERN 1 8 END
+	        MINWIDTH 3
+			MAXWIDTH 4 	
+		END			
+		STYLE
+			OUTLINECOLOR 10 10 200
+			WIDTH 3
+	        MINWIDTH 3
+			MAXWIDTH 4				
+			#PATTERN 8 22 END
+			PATTERN 3 5 10 5 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter			
 		END
-
-		#STYLE # fuer TEST Flaechendeckung?
-		#	COLOR 100 150 10
-		#	SYMBOL "sn3631"
-		#	SIZE 10
-		#END
-
 		LABEL
 			TYPE TRUETYPE
-			COLOR 100 150 10
+			COLOR 10 10 200
 			FONT "arial"
-			SIZE 14
+			SIZE 20
 			POSITION cc
+			OFFSET 0 -20
 			PARTIALS FALSE
 			FORCE FALSE
 		END
 	END
 END
-
 
 # ALKIS tatsaechliche Nutzung (Siedlung, Verkehr, Gewässer, Vegetation)
 # alle Layer von GROUP "ax_nutzungen"
@@ -468,7 +502,7 @@ LAYER
 	END
 	CLASS
 		EXPRESSION '18'
-		NAME "Gehoelz"
+		NAME "Gehölz"
 		STYLE
 			COLOR 187 222 201
 			OUTLINECOLOR  153 153 153
@@ -500,7 +534,7 @@ LAYER
 	END
 	CLASS
 		EXPRESSION '22'
-		NAME "Unland, vegetationslose Flaeche"
+		NAME "Unland, vegetationslose Fläche"
 		STYLE
 			COLOR 255 255 255
 			OUTLINECOLOR 153 153 153
@@ -516,7 +550,7 @@ LAYER
 	# ** Gewässer **
 	CLASS
 		EXPRESSION '24'
-		NAME "Fliessgewaesser"
+		NAME "Fließgewässer"
 		STYLE
 			COLOR 190 233 250
 			OUTLINECOLOR 153 153 153
@@ -532,7 +566,7 @@ LAYER
 	END
 	CLASS
 		EXPRESSION '26'
-		NAME "stehendes Gewaesser"
+		NAME "stehendes Gewässer"
 		STYLE
 			COLOR 190 233 250
 			OUTLINECOLOR 153 153 153
@@ -1281,7 +1315,7 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 10000
 	CLASS
-		NAME "Gehoelz" #sn1414_sn2517
+		NAME "Gehölz" #sn1414_sn2517
 		STYLE
 			COLOR 187 222 201 # 217 255 217
 			OUTLINECOLOR  153 153 153 # 0 255 0
@@ -1403,7 +1437,7 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 10000
 	CLASS
-		NAME "Unland, vegetationslose Flaeche"
+		NAME "Unland, vegetationslose Fläche"
 		STYLE
 			COLOR 255 255 255
 			OUTLINECOLOR 153 153 153
@@ -1465,7 +1499,7 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 10000
 	CLASS
-		NAME "Fliessgewaesser" #sn2515
+		NAME "Fließgewässer" #sn2515
 		STYLE
 			COLOR 190 233 250
 			OUTLINECOLOR 153 153 153
@@ -1525,7 +1559,7 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 10000
 	CLASS
-		NAME "stehendes Gewaesser" #sn2515
+		NAME "stehendes Gewässer" #sn2515
 		STYLE
 			COLOR 190 233 250
 			OUTLINECOLOR 153 153 153
@@ -2072,7 +2106,7 @@ LAYER
 
 	# Classes ohne Flächenfüllung
 	CLASS
-		NAME "Gebäude,unterirdisch"
+		NAME "Gebäude, unterirdisch"
 		EXPRESSION ([lagezurerdoberflaeche] = 1200)
 		STYLE # Dummy-Füllung. Legende zeigt Fläche, Fläche bleibt transparent
 			COLOR 255 255 255
@@ -2083,10 +2117,11 @@ LAYER
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 1 2 END
+			LINECAP butt			
 		END
 	END
 	CLASS
-		NAME "Hochhaus,verfallen"
+		NAME "Hochhaus, verfallen"
 		EXPRESSION ([hochhaus]="true" AND [zustand] > 2199)
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
@@ -2097,10 +2132,11 @@ LAYER
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt			
 		END
 	END
 	CLASS
-		NAME "Gebäude,verfallen"
+		NAME "Gebäude, verfallen"
 		EXPRESSION ([zustand] > 2199)
 		STYLE # Dummy-Füllung
 			COLOR 255 255 255
@@ -2111,12 +2147,13 @@ LAYER
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 2
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt			
 		END
 	END
 
 	# mit Flächenfüllung
 	CLASS
-		NAME "Wohngebäude,Hochhaus graphisch"
+		NAME "Wohngebäude, Hochhaus graphisch"
 		EXPRESSION ([hochhaus]="true" AND [ax_datenerhebung] = 4300 AND [gebaeudefunktion] < 2000)
 		STYLE
 			COLOR 153 153 153
@@ -2136,7 +2173,7 @@ LAYER
 		END
 	END
 	CLASS
-		NAME "Wohngebäude,Hochhaus aufgeständert" # sn2030_sn1301
+		NAME "Wohngebäude, Hochhaus aufgeständert" # sn2030_sn1301
 		EXPRESSION ([hochhaus]="true" AND [gebaeudefunktion] < 2000 AND [lagezurerdoberflaeche] = 1400)
 		STYLE
 			COLOR 153 153 153
@@ -2146,6 +2183,7 @@ LAYER
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2155,8 +2193,9 @@ LAYER
 			COLOR 153 153 153
 		END
 		STYLE
-			SYMBOL 'quadrate'
-			SIZE 2 MINSIZE 2 MAXSIZE 4
+			#SYMBOL 'quadrate'
+			#SIZE 2 MINSIZE 2 MAXSIZE 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
@@ -2178,6 +2217,7 @@ LAYER
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 6 4 2 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2191,6 +2231,7 @@ LAYER
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2220,6 +2261,7 @@ LAYER
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 			PATTERN 6 4 2 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2242,8 +2284,9 @@ LAYER
 			COLOR 204 204 204
 		END
 		STYLE
-			SYMBOL 'quadrate'
-			SIZE 2 MINSIZE 2 MAXSIZE 4
+			#SYMBOL 'quadrate'
+			#SIZE 2 MINSIZE 2 MAXSIZE 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
@@ -2285,8 +2328,11 @@ LAYER
 		EXPRESSION /^2/
 		STYLE
 			COLOR 204 204 204
+		END
+		STYLE
 			OUTLINECOLOR 0 0 0
-			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
+			#WIDTH 2 MINWIDTH 2 MAXWIDTH 4
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 		END
 	END
 	CLASS
@@ -2307,10 +2353,11 @@ LAYER
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 			PATTERN 6 4 2 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
-		NAME "Gebäude für öffentliche Zwecke,Hochhaus, aufgeständert"
+		NAME "Gebäude für öffentliche Zwecke, Hochhaus, aufgeständert"
 		EXPRESSION ([gebaeudefunktion] > 2999 AND [gebaeudefunktion] < 4000 AND "[hochhaus]"="true" AND [lagezurerdoberflaeche] = 1400)
 		STYLE
 			COLOR 255 128 128
@@ -2320,6 +2367,7 @@ LAYER
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2329,13 +2377,15 @@ LAYER
 			COLOR 255 128 128
 		END
 		STYLE
-			SYMBOL 'quadrate'
+			#SYMBOL 'quadrate'
+			#SIZE 2 MINSIZE 2 MAXSIZE 4
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			SIZE 2 MINSIZE 2 MAXSIZE 4
 			OUTLINECOLOR 0 0 0
 		END
 	END
 	CLASS
-		NAME "Gebäude für öffentliche Zwecke,graphisch"
+		NAME "Gebäude für öffentliche Zwecke, graphisch"
 		EXPRESSION ([gebaeudefunktion] > 2999 AND [gebaeudefunktion] < 4000 AND [ax_datenerhebung] = 4300)
 		STYLE
 			COLOR 255 128 128
@@ -2352,6 +2402,7 @@ LAYER
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 6 4 2 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2365,6 +2416,7 @@ LAYER
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt
 		END
 	END
 	CLASS
@@ -2373,7 +2425,8 @@ LAYER
 		STYLE
 			COLOR 255 128 128
 			OUTLINECOLOR 0 0 0
-			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
+			#WIDTH 2 MINWIDTH 2 MAXWIDTH 4
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 		END
 	END
 	CLASS
@@ -2422,7 +2475,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 	SYMBOLSCALEDENOM 1000
 	CLASSITEM 'gebaeudefunktion' #'zustand'
 	CLASS
-		NAME "Gebäude,unterirdisch" # z.B. Tiefgarage
+		NAME "Gebäude, unterirdisch" # z.B. Tiefgarage
 		EXPRESSION ([lagezurerdoberflaeche] = 1200)
 		STYLE # Dummy-Füllung. Legende zeigt Fläche, Fläche bleibt transparent
 			COLOR 255 255 255
@@ -2433,6 +2486,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 			OUTLINECOLOR 0 0 0
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			PATTERN 1 2 END
+			LINECAP butt	
 		END
 	END
 	#CLASS
@@ -2463,6 +2517,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt			
 		END
 	END
 
@@ -2497,6 +2552,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 			WIDTH 2 MINWIDTH 2 MAXWIDTH 4
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt			
 		END
 	END
 	CLASS
@@ -2528,6 +2584,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 6 4 2 4 END
+			LINECAP butt			
 		END
 	END
 	CLASS
@@ -2543,6 +2600,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 			OUTLINECOLOR 0 0 0
 			PATTERN 8 4 END
+			LINECAP butt			
 		END
 	END
 	CLASS
@@ -2650,7 +2708,7 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 4000
 	CLASS
-		NAME "Besondere Gebaeudelinie"
+		NAME "Besondere Gebäudelinie"
 		STYLE
 			SYMBOL 0
 			COLOR 0 0 0
@@ -2698,16 +2756,18 @@ LAYER # Hausnummer
 		LABEL
 			TYPE TRUETYPE
 			FONT 'arialnarrow'
-			SIZE 5.1
+			SIZE 9
+			MINSIZE 8
+			MAXSIZE 12
 			POSITION uc
 			OFFSET 0 -3
-			ANGLE [drehwinkel]
+			ANGLE [drehwinkel] 
 			COLOR 0 0 0
-			OUTLINECOLOR 254 254 254
-			#ANTIALIAS TRUE
+			ANTIALIAS TRUE
 			PARTIALS FALSE
-			#FORCE True
+			FORCE True
 			BUFFER 1
+			OUTLINECOLOR 254 254 254
 		END
 	END
 END
@@ -2748,16 +2808,18 @@ LAYER # Pseudonummer = Ausgestaltung Text Nebengebäude
 		LABEL
 			TYPE TRUETYPE
 			FONT 'arialnarrow'
-			SIZE 4 #MINSIZE 3 MAXSIZE 7
+			SIZE 8
+			MINSIZE 7
+			MAXSIZE 11
 			POSITION uc
 			OFFSET 0 -3
-			ANGLE [drehwinkel]
+			ANGLE [drehwinkel] 
 			COLOR 50 50 50
-			OUTLINECOLOR 254 254 254
 			ANTIALIAS TRUE
 			PARTIALS FALSE
 			FORCE True
 			BUFFER 1
+			OUTLINECOLOR 254 254 254			
 		END
 	END
 END
@@ -3359,7 +3421,7 @@ LAYER
 	END
 	CLASS
 		EXPRESSION /2100/
-		NAME "Topographische Gewaesserbegrenzung"
+		NAME "Topographische Gewässerbegrenzung"
 		STYLE
 			SYMBOL 0
 			COLOR 254 254 254 # Hintergrund
@@ -3421,16 +3483,14 @@ LAYER
 		LABEL
 			TYPE TRUETYPE
 			FONT 'arialnarrowkursiv'
-			SIZE 7.1
-			#MINSIZE 5
-			#MAXSIZE 10
+			SIZE 10
+			MINSIZE 7
+			MAXSIZE 10
 			POSITION cc
 			OFFSET 0 -3.5433
-			MINDISTANCE -1
 			COLOR 255 0 0
-			OUTLINECOLOR 255 255 255
+			OUTLINECOLOR 254 254 254
 			FORCE True
-			BUFFER 1
 		END
 	END
 END
@@ -3612,7 +3672,7 @@ LAYER
 	NAME "sk2004_zuordnungspfeil_spitze"
 	GROUP "flurstueck"
 	REQUIRES "[ag_l_flurstueck]" # nur beides
-	TYPE Annotation
+	TYPE POINT
 	STATUS ON
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=localhost dbname=alkis07*gkz* user=ms6 port=5432"
@@ -3959,7 +4019,7 @@ LAYER
 			TYPE TRUETYPE
 			ANGLE [winkel]
 			FONT "arial"
-			POSITION uc
+			POSITION cc
 			#OFFSET 0 -4.96
 			#FORCE True
 			COLOR 0 0 0
@@ -4057,10 +4117,12 @@ LAYER
 			WIDTH 7 MINWIDTH 7 MAXWIDTH 7
 		END
 		STYLE #sn2018
-			SYMBOL 'point'
 			COLOR 242 128 255
-			SIZE 7 MINSIZE 7 MAXSIZE 7
+			WIDTH 7 MINWIDTH 7 MAXWIDTH 7
 			PATTERN 5 15 5 15 27 12 27 15 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter					
 		END
 	END
 	CLASS
@@ -4070,11 +4132,13 @@ LAYER
 			COLOR 255 255 255
 			WIDTH 5 MINWIDTH 5 MAXWIDTH 5
 		END
-		STYLE #sn2020 Kreisgrenze
-			SYMBOL 'point' 
+		STYLE
 			COLOR 242 128 255
-			SIZE 5 MINSIZE 5 MAXSIZE 5
+			WIDTH 5 MINWIDTH 5 MAXWIDTH 5
 			PATTERN 4 15 4 15 25 10 25 13 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter					
 		END
 	END
 	CLASS
@@ -4085,10 +4149,12 @@ LAYER
 			WIDTH 5 MINWIDTH 5 MAXWIDTH 5
 		END
 		STYLE
-			SYMBOL 'point' #sn2010 Kreisgrenze
 			COLOR 242 128 255 
-			SIZE 5 MINSIZE 5 MAXSIZE 5
+			WIDTH 5 MINWIDTH 5 MAXWIDTH 5
 			PATTERN 23.33 12.5 5 15 5 12.5 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter					
 		END
 	END
 	CLASS
@@ -4099,10 +4165,12 @@ LAYER
 			WIDTH 4 MINWIDTH 4 MAXWIDTH 4
 		END
 		STYLE
-			SYMBOL 'point' #sn2022 Gemeindegrenze
 			COLOR 242 128 255
-			SIZE 4 MINSIZE 4 MAXSIZE 4
+			WIDTH 4 MINWIDTH 4 MAXWIDTH 4
 			PATTERN 16.67 8.33 3.33 8.33 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter					
 		END
 	END
 END
@@ -4132,15 +4200,16 @@ LAYER
 	CLASS
 		NAME 'Gemarkungsgrenze'
 		STYLE
-			SYMBOL 'point'
 			COLOR 254 254 254 # heller Untergrund (Flurstücksgrenze übermalen)
-			SIZE 4 MINSIZE 3 MAXSIZE 6
+			WIDTH 4 MINWIDTH 3 MAXWIDTH 6
 		END
 		STYLE
-			SYMBOL 'point' #sn2014
 			COLOR 242 128 255
-			SIZE 4 MINSIZE 3 MAXSIZE 6
+			WIDTH 4 MINWIDTH 3 MAXWIDTH 6
 			PATTERN 16.67 8.33 3.33 10 3.33 8.33 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter					
 		END
 	END
 END
@@ -4169,15 +4238,16 @@ LAYER
 	CLASS
 		NAME 'Flurgrenze'
 		STYLE
-			SYMBOL 'point'
-			COLOR 254 254 254 # heller Untergrund
-			SIZE 4 MINSIZE 3 MAXSIZE 5
+			COLOR 254 254 254
+			WIDTH 4 MINWIDTH 3 MAXWIDTH 5
 		END
-		STYLE #sn2012
-			SYMBOL 'point'
+		STYLE
 			COLOR 242 128 255
-			SIZE 4 MINSIZE 3 MAXSIZE 5
+			WIDTH 4 MINWIDTH 3 MAXWIDTH 5
 			PATTERN 16.67 8.33 3.33 10 3.33 10 3.33 8.33 END
+			LINECAP butt
+			LINEJOINMAXSIZE 20
+			LINEJOIN miter			
 		END
 	END
 END
@@ -4197,11 +4267,13 @@ LAYER
 		POINTS 0 0 END
 		# hier die individuelle Vertragsnummer einsetzen!
 	#	TEXT 'Copyright Geobasisdaten Liegenschaftskataster Kreis Lippe, JJ-NZR-???'
-		TEXT 'Copyright Geobasisdaten Liegenschaftskataster Kreis __'
+		TEXT '©  Geobasisdaten Liegenschaftskataster Kreis __'
 	END
 	CLASS
 		LABEL
-			SIZE small
+			TYPE TRUETYPE
+			FONT arial
+			SIZE 8
 			POSITION ul
 			COLOR 50 50 50
 			FORCE TRUE
