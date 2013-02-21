@@ -10,8 +10,9 @@
 --  2012-04-17 Flurstuecksnummern auf Standardposition
 --  2012-04-24 Generell Filter 'endet IS NULL' um historische Objekte auszublenden
 --  2012-04-25 Abstürze und Fehler (durch kaputte Geometrie?) beim Zusammenfassen der Flächen
---             Mehr buffer, mehr st_simplify?
---  2012-10-29 Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
+--  2012-10-29 F.J. Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
+--  2013-02-06 A.E. Function-Name an PostGIS 2 angepasst: multi() -> st_multi(), simplify() -> st_simplify()
+--  2013-02-21 F.J. doppelte Buchungen zum Flurstück aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -51,6 +52,77 @@ DELETE
 -- Denkbar ist eine Variante für den Trigger, die zusätzlich
 -- auf eine bestimmte gml_id filtert.
 -- Damit wäre die DB schon während der Konvertierung konsistenter.
+-- Nachtrag 2013-02-20:
+-- Diese provisorische Lösung korrigiert nur die Fälle, wo ein Replace eine redundante Beziehung
+-- einträgt. Wenn ein Objekt und seine Beziehung gleichzeitig geändert wird, wird der alte
+-- Eintrag nicht gefunden und verbleibt in den Beziehungen.
+-- Siehe z.B. in Datei "sichten.sql" die Abfrage "mehrfache_buchung_zu_fs" 
+
+
+-- Mehrfache Buchungen zu einem Flurstück korrigieren.
+-- Neu 2013-02-21
+-- Dieser Fehler enststeht, wenn ein Replace zu "ax_flurstueck" gleichzeitig die
+-- Beziehung 'istGebucht' zu "ax_buchungsStelle" ändert.
+-- Kann entfallen, sobald PostNAS bei Replace die "alkis_beziehungen" richtig fortführt.
+
+-- Version Marvin Brandt, Unna
+--	DELETE
+--	--  SELECT *
+--	FROM alkis_beziehungen a1
+--	WHERE a1.beziehung_von = ANY(SELECT gml_id FROM (
+--				SELECT f.*,
+--						(SELECT count(f2.gml_id) as anzahl
+--						FROM ax_flurstueck f2
+--						JOIN alkis_beziehungen a1 ON f2.gml_id = a1.beziehung_von AND a1.beziehungsart = 'istGebucht'
+--						WHERE f2.gml_id = f.gml_id
+--						) as anzahl
+--					FROM ax_flurstueck f
+--					) as sub
+--				WHERE sub.anzahl > 1 )
+--	AND a1.beziehungsart = 'istGebucht'
+--	AND a1.ogc_fid = (SELECT min(sub.ogc_fid) as ogc_fid FROM (
+--		SELECT a1.*,
+--			(SELECT count(f2.gml_id) as anzahl
+--				FROM ax_flurstueck f2
+--				JOIN alkis_beziehungen a1 ON f2.gml_id = a1.beziehung_von AND a1.beziehungsart = 'istGebucht'
+--				WHERE f2.gml_id = f.gml_id
+--			) as anzahl
+--		FROM ax_flurstueck f
+--		JOIN alkis_beziehungen a1 
+--		ON f.gml_id = a1.beziehung_von AND a1.beziehungsart = 'istGebucht'
+--		) as sub
+--	WHERE sub.beziehung_von = a1.beziehung_von);
+
+
+-- Version Frank Jäger, Lemgo 
+DELETE
+-- SELECT *   -- TEST: erst mal schauen, was gelöscht würde, wenn ...
+FROM alkis_beziehungen b
+WHERE b.beziehungsart = 'istGebucht'
+  -- Die erste subquery zählt die Buchungen zu einer (Flurstücks-) gml_id.
+  -- Es wird nur dort gelöscht, wo mehrerer Buchungen existieren.
+  AND 1 < 
+     ( SELECT count(f1.ogc_fid) AS anzfs
+        FROM ax_flurstueck f1
+        JOIN alkis_beziehungen z
+          ON f1.gml_id = z.beziehung_von
+       WHERE f1.gml_id = b.beziehung_von
+         AND z.beziehungsart = 'istGebucht'
+       GROUP BY f1.gml_id )
+  -- Die zweite Subquery liefert die letzte (= aktuelle) Beziehung.
+  -- Diese aktuelle Buchung wird vom Löschen ausgeschlossen.
+  AND b.ogc_fid <
+     ( SELECT max(a.ogc_fid) AS maxi
+        FROM ax_flurstueck f2
+        JOIN alkis_beziehungen a
+          ON f2.gml_id = a.beziehung_von
+       WHERE f2.gml_id = b.beziehung_von
+         AND a.beziehungsart = 'istGebucht'
+       GROUP BY a.beziehung_von )
+-- bei Test mit SELECT darf man sortieren:
+--  ORDER BY b.beziehung_von, b.ogc_fid
+;
+
 
 
 -- SELECT *

@@ -8,6 +8,7 @@
 --  2012-04-17 flstnr_ohne_position
 --  2012-04-24 pauschal Filter 'endet IS NULL' um historische Objekte auszublenden
 --  2012-10-29 Redundanzen in Beziehungen suchen (entstehen durch replace)
+--  2013-02-20 Mehrfache Buchungsstellen zum FS suchen, dies sind Auswirkungen eines Fehlers bei Replace
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -780,5 +781,50 @@ SELECT *
         );
 
 COMMENT ON VIEW beziehungen_redundant_in_delete IS 'alkis_beziehungen zu denen es eine identische neue Version gibt und wo das Objekt noch in der delete-Tabelle vorkommt.';
+
+
+-- Suche nach Fehler durch "Replace"
+-- Wenn ax_flurstueck über "replace" ausgetauscht wird und dabei gleichzeitig eine andere 
+-- Buchungsstelle bekommt, dann bleibt die alte Buchungsstelle in den alkis_beziehungen.
+-- Mail PostNAS Mailingliste von 2013-02-20
+
+-- Version Marvin Brandt, Unna:
+
+-- CREATE OR REPLACE VIEW mehrfache_buchung_zu_fs
+-- AS
+--  SELECT gml_id, anzahl FROM 
+--  ( SELECT f.*, 
+--     ( SELECT count(f2.gml_id) as anzahl 
+--       FROM ax_flurstueck f2 
+--       JOIN alkis_beziehungen a1 
+--          ON f2.gml_id = a1.beziehung_von 
+--         AND a1.beziehungsart = 'istGebucht' 
+--       WHERE f2.gml_id = f.gml_id 
+--     ) as anzahl 
+--     FROM ax_flurstueck f
+--  ) as sub 
+--  WHERE sub.anzahl > 1;
+
+-- Version Frank Jäger, Lemgo (keep it simple)
+CREATE OR REPLACE VIEW mehrfache_buchung_zu_fs
+AS
+  SELECT f.gml_id, count(b.ogc_fid) AS anzahl
+    FROM ax_flurstueck f
+    JOIN alkis_beziehungen b
+      ON f.gml_id = b.beziehung_von 
+  WHERE b.beziehungsart = 'istGebucht'
+  GROUP BY f.gml_id
+  HAVING count(b.ogc_fid) > 1;
+
+-- Noch einfacher? - Auch ohne JOIN wird das selbe Ergebnis geliefert.
+-- Doppelte Verweise zählen ohne zu prüfen, ob die gml_id in ax_flurstueck existiert.
+--  SELECT b.beziehung_von, count(b.ogc_fid) AS anzahl
+--    FROM alkis_beziehungen b
+--   WHERE b.beziehungsart = 'istGebucht'
+--  GROUP BY b.beziehung_von
+--  HAVING count(b.ogc_fid) > 1;
+
+COMMENT ON VIEW mehrfache_buchung_zu_fs IS 'Nach replace von ax_flurtstueck mit einer neuen ax_buchungsstelle bleibt die alte Verbindung in alkis_beziehungen';
+
 
 -- END --
