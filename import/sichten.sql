@@ -239,30 +239,108 @@ COMMENT ON VIEW beschriftung_was_kommt_vor IS 'Analyse der vorkommenden Kombinat
 -- Layer NAME "ap_pto_stra" (Straße) GROUP "praesentation"
 -- -------------------------------------------------------
 -- NEU 2013-03-01
+-- Problem: Wenn ein Text paarweise auftritt mit verschiedenen Inhalten im 
+-- Feld "advstandardmodell", dann wird das mehrfach gezeichnet.
+--	CREATE OR REPLACE VIEW ap_pto_stra 
+--	AS 
+--	  SELECT ogc_fid, 
+--			 schriftinhalt, 
+--			 art,
+--			 horizontaleausrichtung AS hor,    -- Verfeinern der Text-Position 
+--			 vertikaleausrichtung   AS ver,    -- Durch Klassifizierung hor/ver
+--			 drehwinkel * 57.296    AS winkel, -- * 180 / Pi
+--			 wkb_geometry 
+--		FROM ap_pto 
+--	   WHERE not schriftinhalt IS NULL 
+--		 AND endet IS NULL
+--	  -- Je nach Vorlieben des Katasteramtes die folgende Zeile auskommentieren:
+--	  -- AND advstandardmodell IS NULL -- doppelte Darstellungen unterdrücken (simple Zwischenlösung)
+--		 AND art IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse');
+--	COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße","Weg","Platz"';
+--	GRANT SELECT ON TABLE ap_pto_stra TO ms6;
+
+-- Verbesserte Version: von doppelten Textpositionen nur das passendere Modell Anzeigen.
+-- Für den folgenden View einen neuen Index definieren: ap_pto_txt_idx (siehe Schema)
+
+--	CREATE OR REPLACE VIEW ap_pto_stra 
+--	AS 
+--	  SELECT p.ogc_fid,
+--		--   p.advstandardmodell       AS modell,    -- TEST
+--			 p.schriftinhalt,                        -- WMS: LABELITEM
+--			 p.art,                                  -- WMS: CLASSITEM
+--			 p.horizontaleausrichtung  AS hor,       -- Verfeinern der Text-Position ..
+--			 p.vertikaleausrichtung    AS ver,       --  .. durch Klassifizierung hor/ver
+--			 p.drehwinkel * 57.296     AS winkel,    -- * 180 / Pi
+--			 p.wkb_geometry
+--		FROM ap_pto p
+--	   WHERE not p.schriftinhalt IS NULL 
+--		 AND  p.endet IS NULL                        -- nichts historisches
+--		 AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- CLASSES in LAYER
+--		 AND ('DKKM1000' = ANY (p.advstandardmodell) -- "Lika 1000" bevorzugen
+--			   -- Ersatzweise auch "keine Angabe", aber nur wenn es keine weitere gibt
+--			   OR (     p.advstandardmodell IS NULL
+--				   AND (SELECT ogc_fid FROM ap_pto s
+--						WHERE p.schriftinhalt = s.schriftinhalt
+--						  AND p.art = s.art
+--						  AND NOT s.advstandardmodell IS NULL LIMIT 1
+--						) IS NULL
+--				  )
+--			 )
+--	;
+
+-- ToDo: Diese Version gruppiert alle gleichen Straßennamen (p.schriftinhalt = s.schriftinhalt).
+-- In einer kreisweiten Datenbank können verschiedene Straßen mit gleichem Namen vorkommen.
+-- Um die Vermischung zu verhindern sollte man die Texte noch über ihre Lage "in der Nähe" verpaaren.
+-- Wenn der View dann Subquery UND Entfernungsberechnung enthält, könnte man überlegen,
+-- diesen nicht zur Laufzeit abzuarbeiten sondern im PostProzessing als Tabelle zu speichern.
+
+-- Auch noch fehlerhaft sind die Fälle, wo für unterschiedliche Kartentypen unterschiedliche
+-- Schreibweisen benutzt werden, z.B. die Abkürzung "_str.".
+
+-- Layer NAME "ap_pto_stra" (Straße) GROUP "praesentation"
+-- -------------------------------------------------------
+-- NEU 2013-03-06
+-- Noch mals verbesserte Version: von doppelten Textpositionen nur das passendere Modell Anzeigen.
+-- Statt "Namensgleichheit" im textfeld wird nun eine Relation fuer die Gruppierung verwendet.
+-- * ap_pto >dientZurDarstellungVon> ax_lagebezeichnungohnehausnummer *
 CREATE OR REPLACE VIEW ap_pto_stra 
 AS 
-  SELECT ogc_fid, 
-         schriftinhalt, 
-         art,
-         horizontaleausrichtung AS hor,    -- Verfeinern der Text-Position 
-         vertikaleausrichtung   AS ver,    -- Durch Klassifizierung hor/ver
-         drehwinkel * 57.296    AS winkel, -- * 180 / Pi
-         wkb_geometry 
-    FROM ap_pto 
-   WHERE not schriftinhalt IS NULL 
-     AND endet IS NULL
-  -- Je nach Vorlieben des Katasteramtes die folgende Zeile auskommentieren:
-  -- AND advstandardmodell IS NULL -- doppelte Darstellungen unterdrücken (simple Zwischenlösung)
-     AND art IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse');
-
-COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße","Weg","Platz"';
---GRANT SELECT ON TABLE ap_pto_stra TO ms6;
-
--- ToDo: Doppelte Straßennamen eindeutig machen.
--- z.B.  advstandardmodell = '{DKKM1000}', signatur = 4107
---       advstandardmodell = ''          , signatur = 8113
--- Wie?  DISTICT und Subquery? 
---       Post-Processing: nah beieinander und gleicher Name 
+  SELECT p.ogc_fid,
+	  -- p.advstandardmodell       AS modell,    -- TEST
+      -- l.gml_id, l.unverschluesselt, l.lage AS schluessel, -- zur Lage  TEST
+         p.schriftinhalt,                        -- WMS: LABELITEM
+         p.art,                                  -- WMS: CLASSITEM
+         p.horizontaleausrichtung  AS hor,       -- Verfeinern der Text-Position ..
+         p.vertikaleausrichtung    AS ver,       --  .. durch Klassifizierung hor/ver
+         p.drehwinkel * 57.296     AS winkel,    -- * 180 / Pi
+         p.wkb_geometry
+    FROM ap_pto p
+    JOIN alkis_beziehungen v   -- Relation zur Lagebezeichnung o. HsNr.
+      ON p.gml_id = v.beziehung_von
+    JOIN ax_lagebezeichnungohnehausnummer l
+      ON v.beziehung_zu = l.gml_id
+   WHERE NOT p.schriftinhalt IS NULL 
+     AND  p.endet IS NULL                            -- nichts historisches
+     AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- CLASSES in LAYER
+     AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+     AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
+           -- Ersatzweise auch "keine Angabe", aber nur wenn es keinen besseren Text zur Lage gibt
+           OR (p.advstandardmodell IS NULL
+               AND (SELECT s.ogc_fid                -- irgend ein Feld
+					  FROM ap_pto s                 -- eines anderen Textes (suchen)
+                      JOIN alkis_beziehungen vs     -- zur gleichen Lage o.HsNr
+                        ON s.gml_id = vs.beziehung_von
+                      JOIN ax_lagebezeichnungohnehausnummer ls
+                        ON vs.beziehung_zu = ls.gml_id
+                     WHERE ls.gml_id = l.gml_id
+                       AND vs.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+                       AND NOT s.advstandardmodell IS NULL 
+                     LIMIT 1  -- einer reicht als Beweis
+					) IS NULL 
+              ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
+         )
+;
+COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
 
 -- Layer NAME "ap_pto" GROUP "praesentation"
 -- ----------------------------------------
@@ -280,10 +358,8 @@ AS
      AND p.endet IS NULL
      AND p.art NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG');
      -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
-
 -- 'PNR' kommt nicht mehr vor?
 COMMENT ON VIEW ap_pto_rest IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
---GRANT SELECT ON TABLE ap_pto_rest  TO ms6;
 
 -- Layer NAME "ap_pto" GROUP "praesentation"
 -- ----------------------------------------
@@ -321,10 +397,9 @@ AS
     AND v.beziehungsart = 'dientZurDarstellungVon'
     AND g.endet IS NULL
     AND l.endet IS NULL;
-
 COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
 
--- TEST
+-- Grenzpunkte
 --  ax_punktortta  >zeigtAuf?> AX_Grenzpunkt
 -- Zum Punktort des Grenzpunktes auch eine Information zur Vermarkung holen
 CREATE OR REPLACE VIEW grenzpunkt 
@@ -343,8 +418,6 @@ AS
      AND g.endet IS NULL
      AND g.endet IS NULL;
 COMMENT ON VIEW grenzpunkt IS 'Zusammenführung von Punktort (Geometrie) und AX_Grenzpunkt (Eigenschaften)';
---GRANT SELECT ON TABLE grenzpunkt TO ms6;
-
 
 -- Sichten vom OBK (Oberbergischer Kreis)
 -- --------------------------------------
@@ -437,7 +510,6 @@ COMMENT ON VIEW sk201x_politische_grenze IS 'fuer Kartendarstellung: besondere F
 --  ------------------------------------------
 --  Sichten fuer Fehlersuche und Daten-Analyse
 --  ------------------------------------------
-
 
 -- Flurstücke mit Anzeige der Flurstücksnummer an der "Standardposition"
 
