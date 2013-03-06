@@ -9,18 +9,16 @@
 --  2012-04-24 pauschal Filter 'endet IS NULL' um historische Objekte auszublenden
 --  2012-10-29 Redundanzen in Beziehungen suchen (entstehen durch replace)
 --  2013-02-20 Mehrfache Buchungsstellen zum FS suchen, dies sind Auswirkungen eines Fehlers bei Replace
+--  2013-03-05 Beschriftungen aus ap_pto auseinander sortieren, neuer View "grenzpunkt"
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
 --  -----------------------------------------
 
-
 -- WMS-Layer "ag_t_flurstueck"
 -- ---------------------------
-
 -- Die Geometrie befindet sich in "ap_pto", der Label in "ax_flurstueck"
 -- Die Verbindung erfolgt über "alkis_beziehungen"
-
 
 -- Bruchnummerierung erzeugen
 -- ALT 2012-04-17: Diese Version zeigt nur die manuell gesetzten Positionen
@@ -34,21 +32,17 @@ AS
    JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
   WHERE v.beziehungsart = 'dientZurDarstellungVon' 
     AND p.endet IS NULL
-    AND f.endet IS NULL
-  --AND p."art" = 'ZAE_NEN'
-  ;
+    AND f.endet IS NULL;
+COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück (nur manuell gesetzte Positionen)';
 
-COMMENT ON VIEW s_flurstueck_nr IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück';
-
--- NEU 2012-04-17
 -- Wenn keine manuelle Position gesetzt ist, wird die Flaechenmitte verwendet
 
 -- ACHTUNG: Dieser View kann nicht direkt im Mapserver-WMS verwendet werden.
 -- Die Anzeige ist zu langsam. Filterung über BBOX kann nicht funktionieren, da zunächst ALLE Standardpositionen 
 -- berechnet werden müssen, bevor darüber gefiltert werden kann.
 
--- FAZIT: In einer Hilfstabelle mit geometrischem Index zwischenspeichern.
---        Siehe PostProcessing Tabelle "pp_flurstueck_nr"
+-- In einer Hilfstabelle mit geometrischem Index zwischenspeichern.
+-- Siehe PostProcessing Tabelle "pp_flurstueck_nr"
 
 CREATE OR REPLACE VIEW s_flurstueck_nr2
 AS 
@@ -61,7 +55,6 @@ AS
    WHERE v.beziehungsart = 'dientZurDarstellungVon' 
      AND p.endet IS NULL
      AND f.endet IS NULL
-   --AND p."art" = 'ZAE_NEN'
  UNION 
   SELECT f.ogc_fid,
          ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry,  -- Flaechenmitte als Position des Textes
@@ -69,20 +62,16 @@ AS
     FROM      ax_flurstueck     f 
     LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
    WHERE v.beziehungsart is NULL
-     AND f.endet IS NULL
-  ;
+     AND f.endet IS NULL;
 
-COMMENT ON VIEW s_flurstueck_nr2 IS 'Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden';
+COMMENT ON VIEW s_flurstueck_nr2 IS 'Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden!';
 
 
 -- Layer "ag_t_gebaeude"
 -- ---------------------
-
 -- Problem: Zu einigen Gebäuden gibt es mehrere Hausnummern.
--- Diese unterscheiden sich im Feld ap-pto.advstandardmodell
+-- Diese unterscheiden sich im Feld ap_pto.advstandardmodell
 -- z.B. 3 verschiedene Einträge mit <NULL>, {DKKM500}, {DKKM1000}, (Beispiel; Lage, Lange Straße 15 c)
-
-
 CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 AS 
  SELECT p.ogc_fid, 
@@ -100,34 +89,47 @@ AS
 
 COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
 
-
 -- Layer "ag_t_nebengeb"
 -- ---------------------
+-- 2013-03-05: Diese Abfrage liefert keine Daten mehr (PostNAS 0.7)
+--	CREATE OR REPLACE VIEW s_nummer_nebengebaeude 
+--	AS 
+--	 SELECT p.ogc_fid, 
+--			p.wkb_geometry, 
+--			p.drehwinkel * 57.296 AS drehwinkel,	-- umn: ANGLE [drehwinkel]
+--		 -- l.pseudonummer,			-- die HsNr des zugehoerigen Hauptgebaeudes
+--			l.laufendenummer		-- umn: LABELITEM - die laufende Nummer des Nebengebaeudes
+--	   FROM ap_pto p
+--	   JOIN alkis_beziehungen v 
+--		 ON p.gml_id = v.beziehung_von
+--	   JOIN ax_lagebezeichnungmitpseudonummer l
+--		 ON v.beziehung_zu  = l.gml_id
+--	  WHERE v.beziehungsart = 'dientZurDarstellungVon'
+--		AND p.endet IS NULL
+--		AND l.endet IS NULL;
+--	COMMENT ON VIEW s_nummer_nebengebaeude IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
 
-CREATE OR REPLACE VIEW s_nummer_nebengebaeude 
+-- Suche nach einem Ersatz:
+-- ax_gebaeude  >hat>  ax_lagebezeichnungmitpseudonummer, kein Drehwinkel.
+CREATE OR REPLACE VIEW lfdnr_nebengebaeude 
 AS 
- SELECT p.ogc_fid, 
-        p.wkb_geometry, 
-        p.drehwinkel * 57.296 AS drehwinkel,	-- umn: ANGLE [drehwinkel]
-     -- v.beziehungsart,		-- TEST
-     -- l.pseudonummer,			-- die HsNr des zugehoerigen Hauptgebaeudes
+ SELECT g.ogc_fid, 
+        g.wkb_geometry, 
+    --  l.pseudonummer,			-- TEST die HsNr des zugehoerigen Hauptgebaeudes
         l.laufendenummer		-- umn: LABELITEM - die laufende Nummer des Nebengebaeudes
-   FROM ap_pto p
+   FROM ax_gebaeude g
    JOIN alkis_beziehungen v 
-     ON p.gml_id = v.beziehung_von
+     ON g.gml_id = v.beziehung_von
    JOIN ax_lagebezeichnungmitpseudonummer l
      ON v.beziehung_zu  = l.gml_id
-  WHERE v.beziehungsart = 'dientZurDarstellungVon'
-    AND p.endet IS NULL
-    AND l.endet IS NULL
-;
-
-COMMENT ON VIEW s_nummer_nebengebaeude IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
-
+   WHERE v.beziehungsart = 'hat'
+     AND g.endet IS NULL
+     AND g.endet IS NULL;
+COMMENT ON VIEW lfdnr_nebengebaeude IS 'Laufende Nummer des Nebengebäudes zu einer Lagebezeichnung mit der Flächengeometrie des Gebäudes';
+--GRANT SELECT ON TABLE lfdnr_nebengebaeude TO ms6;
 
 -- Layer "ag_p_flurstueck"
 -- -----------------------
-
 CREATE OR REPLACE VIEW s_zugehoerigkeitshaken_flurstueck 
 AS 
  SELECT p.ogc_fid, 
@@ -146,10 +148,8 @@ AS
 
 COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck IS 'fuer Kartendarstellung';
 
-
 -- Layer "s_zuordungspfeil_flurstueck"
 -- -----------------------------------
-
 CREATE OR REPLACE VIEW s_zuordungspfeil_flurstueck 
 AS 
  SELECT l.ogc_fid, 
@@ -188,12 +188,87 @@ AS
 COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
 
 
+-- Zur Steuerung der nachfolgenden Views
+
+-- Ermittlung der vorkommenden Arten
+-- ersetzt "ap_pto_arten"
+CREATE OR REPLACE VIEW beschriftung_was_kommt_vor 
+AS 
+  SELECT DISTINCT art, horizontaleausrichtung, vertikaleausrichtung 
+    FROM ap_pto 
+   WHERE not schriftinhalt is null 
+  ORDER BY art;
+COMMENT ON VIEW beschriftung_was_kommt_vor IS 'Analyse der vorkommenden Kombinationen in ap_pto (Beschriftung)';
+
+-- 2013: PostNAS 0.7  (aus 150,260,340)
+-- ------------------
+--	"AOG_AUG"				"zentrisch";"Basis"  - Schriftinhalkt immer nur "I" ?
+--	"BWF"					"zentrisch";"Basis"/"zentrisch";"Mitte"
+--	"BWF_ZUS"				"zentrisch";"Basis"
+--	"FKT"					"zentrisch";"Basis"/"linksbündig";"Basis"/"zentrisch";"Mitte"
+--	"FKT_TEXT"				"zentrisch";"Mitte"
+--	"FreierText"			"zentrisch";"Basis"/"zentrisch";"Mitte"/"linksbündig";"Basis"
+--	"FreierTextHHO"			"zentrisch";"Mitte"
+--	"Friedhof"				"zentrisch";"Basis"
+--	"Gewanne"				"zentrisch";"Basis"/"zentrisch";"Mitte"
+--	"GFK"					"zentrisch";"Basis"/"zentrisch";"Mitte"
+--	"HNR"					"zentrisch";"Basis"/"linksbündig";"Basis"/"zentrisch";"Mitte"  --> Hausnummer, group gebaeude
+--	"HHO"					"zentrisch";"Mitte"  -- HHO = objekthoehe zu ax_gebaeude?
+--	"NAM"					"zentrisch";"Basis"/"zentrisch";"Mitte"/"linksbündig";"Basis"
+--	"SPO"					"zentrisch";"Basis"/
+--	"Vorratsbehaelter"		"zentrisch";"Basis"
+--	"WeitereHoehe"			"zentrisch";"Mitte"
+--	"ZAE_NEN"				"zentrisch";"Basis"
+--	"ZNM"					"zentrisch";"Basis"/"linksbündig";"Basis"
+
+--* Layer "ap_pto_stra"
+--                          hor ; ver / hor ; ver 
+--	"BezKlassifizierungStrasse" "zent.";"Basis"	/ "linksbündig";"Basis"
+--	"Platz"					"zentrisch";"Basis" / "zentrisch";"Mitte"
+--	"Strasse"				"zentrisch";"Basis" / "zentrisch";"Mitte" / "linksbündig";"Basis"
+--	"Weg"					"zentrisch";"Basis" / "zentrisch";"Mitte" / "linksbündig";"Basis"
+
+--* geplanter layer "ap_pto_wasser"
+--	"StehendesGewaesser"	"zentrisch";"Basis"
+--	"Fliessgewaesser"		"zentrisch";"Basis"/"linksbündig";"Basis"
+
+
+-- Drehwinkel in Bogenmass, wird vom mapserver in Grad benötigt.
+-- Umrechnung durch Faktor (180 / Pi)
+
+-- Layer NAME "ap_pto_stra" (Straße) GROUP "praesentation"
+-- -------------------------------------------------------
+-- NEU 2013-03-01
+CREATE OR REPLACE VIEW ap_pto_stra 
+AS 
+  SELECT ogc_fid, 
+         schriftinhalt, 
+         art,
+         horizontaleausrichtung AS hor,    -- Verfeinern der Text-Position 
+         vertikaleausrichtung   AS ver,    -- Durch Klassifizierung hor/ver
+         drehwinkel * 57.296    AS winkel, -- * 180 / Pi
+         wkb_geometry 
+    FROM ap_pto 
+   WHERE not schriftinhalt IS NULL 
+     AND endet IS NULL
+  -- Je nach Vorlieben des Katasteramtes die folgende Zeile auskommentieren:
+  -- AND advstandardmodell IS NULL -- doppelte Darstellungen unterdrücken (simple Zwischenlösung)
+     AND art IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse');
+
+COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße","Weg","Platz"';
+--GRANT SELECT ON TABLE ap_pto_stra TO ms6;
+
+-- ToDo: Doppelte Straßennamen eindeutig machen.
+-- z.B.  advstandardmodell = '{DKKM1000}', signatur = 4107
+--       advstandardmodell = ''          , signatur = 8113
+-- Wie?  DISTICT und Subquery? 
+--       Post-Processing: nah beieinander und gleicher Name 
 
 -- Layer NAME "ap_pto" GROUP "praesentation"
 -- ----------------------------------------
--- Texte, die nicht schon in einem anderen Layer ausgegeben werden
-
-CREATE OR REPLACE VIEW s_beschriftung 
+-- REST: Texte, die nicht schon in einem anderen Layer ausgegeben werden
+-- NEU 2013-03-01
+CREATE OR REPLACE VIEW ap_pto_rest 
 AS 
   SELECT p.ogc_fid, 
          p.schriftinhalt, 
@@ -203,33 +278,34 @@ AS
     FROM ap_pto p
    WHERE not p.schriftinhalt IS NULL 
      AND p.endet IS NULL
-     AND p.art NOT IN ('HNR', 'PNR');
+     AND p.art NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG');
+     -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
 
--- Feb. 2012 PostNAS 0.6: 'ZAE_NEN' kommt nicht mehr vor!
+-- 'PNR' kommt nicht mehr vor?
+COMMENT ON VIEW ap_pto_rest IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
+--GRANT SELECT ON TABLE ap_pto_rest  TO ms6;
 
--- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
--- Wenn ein Text zum fachlich passenden Layer angezeigt wird, dann hier ausblenden,
--- d.h. die Kennung in die Klammer eintragen.
+-- Layer NAME "ap_pto" GROUP "praesentation"
+-- ----------------------------------------
+-- 2013-03: Wird ersetzt durch ap_pto_rest 
+-- CREATE OR REPLACE VIEW s_beschriftung 
+-- AS 
+--   SELECT p.ogc_fid, 
+--          p.schriftinhalt, 
+--          p.art, 
+--          p.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
+--          p.wkb_geometry 
+--     FROM ap_pto p
+--    WHERE not p.schriftinhalt IS NULL 
+--      AND p.endet IS NULL
+--      AND p.art NOT IN ('HNR','AOG_AUG');  -- 'PNR' kommt nicht mehr vor?
+-- COMMENT ON VIEW s_beschriftung IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
+-- GRANT SELECT ON TABLE s_beschriftung  TO ms6;
 
--- Werte in ap_pto.art:
--- 'HNR'  = Hausnummer
--- 'PNR'  = Pseudo-Nummer = laufende Nummer Nebengebäude
-
--- Ermittlung der vorkommenden Arten mit:
---   SELECT DISTINCT art FROM ap_pto ORDER BY art;
-
--- Noch nicht berücksichtigt:
-   
---"AGT""ART""ATP""BBD""BezKlassifizierungStrasse""BSA""BWF""BWF_ZUS""FKT""Fliessgewaesser""FreierText"
---"Friedhof""Gewanne""GFK""Halde_LGT""HHO""NAM""PKN""Platz""PRO""SPG""SPO""StehendesGewaesser"
---"Strasse""VEG""Vorratsbehaelter""Weg""Weitere Höhe""ZNM""<NULL>"
-
-COMMENT ON VIEW s_beschriftung IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
-
+-- ENDE BESCHRIFTUNG
 
 -- Layer "s_zuordungspfeil_gebaeude"
 -- -----------------------------------
-
 CREATE OR REPLACE VIEW s_zuordungspfeil_gebaeude 
 AS 
  SELECT l.ogc_fid, 
@@ -248,27 +324,37 @@ AS
 
 COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
 
+-- TEST
+--  ax_punktortta  >zeigtAuf?> AX_Grenzpunkt
+-- Zum Punktort des Grenzpunktes auch eine Information zur Vermarkung holen
+CREATE OR REPLACE VIEW grenzpunkt 
+AS 
+ SELECT o.ogc_fid, 
+        o.wkb_geometry, 
+     -- g.punktkennung,    -- ggf später als labelitem "rrrrrhhhhAnnnnn" "32483 5751 0 02002"
+        g.abmarkung_marke, -- steuert die Darstellung >9000 = unvermarkt
+        v.beziehungsart
+   FROM ax_punktortta o
+   JOIN alkis_beziehungen v 
+     ON o.gml_id = v.beziehung_von
+   JOIN ax_grenzpunkt g
+     ON v.beziehung_zu  = g.gml_id
+   WHERE v.beziehungsart = 'istTeilVon'
+     AND g.endet IS NULL
+     AND g.endet IS NULL;
+COMMENT ON VIEW grenzpunkt IS 'Zusammenführung von Punktort (Geometrie) und AX_Grenzpunkt (Eigenschaften)';
+--GRANT SELECT ON TABLE grenzpunkt TO ms6;
+
 
 -- Sichten vom OBK (Oberbergischer Kreis)
 -- --------------------------------------
-
--- Dazu notwendig: Feld "ax_besondereflurstuecksgrenze.artderflurstuecksgrenze" als Array "integer[]" !
--- Anpassung DB-Schema erfolgte am 18.09.2011
--- ap_lpo.signaturnummer = '2004' ist in 0.7 schema nun ein varchar
-
-
 CREATE OR REPLACE VIEW sk2004_zuordnungspfeil 
 AS
  SELECT ap.ogc_fid, ap.wkb_geometry 
  FROM ap_lpo ap 
  WHERE ((ap.signaturnummer = '2004') 
    AND ('DKKM1000'::text ~~ ANY ((ap.advstandardmodell)::text[])));
-
 COMMENT ON VIEW sk2004_zuordnungspfeil IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer"';
--- krz: ap.signaturnummer is NULL in allen Sätzen
---      Siehe s_zuordungspfeil_flurstueck
-
--- ap_lpo.signaturnummer = '2004' ist in 0.7 schema nun ein varchar
 
 CREATE OR REPLACE VIEW sk2004_zuordnungspfeil_spitze 
 AS
@@ -280,16 +366,13 @@ AS
    AND ('DKKM1000'::text ~~ ANY ((ap.advstandardmodell)::text[])));
 -- krz: ap.signaturnummer is NULL in allen Sätzen
 
-
 CREATE OR REPLACE VIEW sk2012_flurgrenze 
 AS 
  SELECT fg.ogc_fid, fg.wkb_geometry
    FROM ax_besondereflurstuecksgrenze fg
   WHERE (3000 = ANY (fg.artderflurstuecksgrenze)) 
     AND fg.advstandardmodell ~~ 'DLKM'::text;
-
 COMMENT ON VIEW sk2012_flurgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Flurgrenze"';
-
 
 CREATE OR REPLACE VIEW sk2014_gemarkungsgrenze 
 AS 
@@ -297,9 +380,7 @@ AS
    FROM ax_besondereflurstuecksgrenze gemag
   WHERE (7003 = ANY (gemag.artderflurstuecksgrenze)) 
     AND gemag.advstandardmodell ~~ 'DLKM'::text;
-
 COMMENT ON VIEW sk2014_gemarkungsgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemarkungsgrenze"';
-
 
 CREATE OR REPLACE VIEW sk2018_bundeslandgrenze 
 AS 
@@ -307,9 +388,7 @@ AS
    FROM ax_besondereflurstuecksgrenze blg
   WHERE (7102 = ANY (blg.artderflurstuecksgrenze)) 
     AND blg.advstandardmodell ~~ 'DLKM'::text;
-
 COMMENT ON VIEW sk2018_bundeslandgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Bundeslandgrenze"';
-
 
 CREATE OR REPLACE VIEW sk2020_regierungsbezirksgrenze 
 AS 
@@ -317,9 +396,7 @@ AS
    FROM ax_besondereflurstuecksgrenze rbg
   WHERE (7103 = ANY (rbg.artderflurstuecksgrenze)) 
     AND rbg.advstandardmodell ~~ 'DLKM'::text;
-
 COMMENT ON VIEW sk2020_regierungsbezirksgrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Regierungsbezirksgrenze"';
-
 
 CREATE OR REPLACE VIEW sk2022_gemeindegrenze 
 AS 
@@ -327,27 +404,24 @@ AS
    FROM ax_besondereflurstuecksgrenze gemg
   WHERE (7106 = ANY (gemg.artderflurstuecksgrenze)) 
     AND gemg.advstandardmodell ~~ 'DLKM'::text;
-
 COMMENT ON VIEW sk2022_gemeindegrenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemeindegrenze"';
 
 
 -- Zusammenfassung "Politische Grenzen"  Art= 7102, 7103, 7104, 7106
 
 -- Grenze der Bundesrepublik Deutschland 7101 (G)
--- Grenze des Bundeslandes 7102 (G)
--- Grenze des Regierungsbezirks 7103 (G)
--- Grenze des Landkreises 7104 (G)
--- Grenze der Gemeinde 7106
--- Grenze des Gemeindeteils 7107
--- Grenze der Verwaltungsgemeinschaft 7108
+-- .. des Bundeslandes 7102 (G)
+-- .. des Regierungsbezirks 7103 (G)
+-- .. des Landkreises 7104 (G)
+-- .. der Gemeinde 7106
+-- .. des Gemeindeteils 7107
+-- .. der Verwaltungsgemeinschaft 7108
 
 CREATE OR REPLACE VIEW sk201x_politische_grenze 
 AS 
  SELECT ogc_fid, artderflurstuecksgrenze as art, wkb_geometry
    FROM ax_besondereflurstuecksgrenze
-
--- WHERE ( ANY (artderflurstuecksgrenze) IN (7102,7103,7104,7106) ) 
-
+--WHERE ( ANY (artderflurstuecksgrenze) IN (7102,7103,7104,7106) ) 
   WHERE (7102 = ANY (artderflurstuecksgrenze) 
      OR  7102 = ANY (artderflurstuecksgrenze) 
      OR  7103 = ANY (artderflurstuecksgrenze) 
@@ -357,8 +431,7 @@ AS
     AND advstandardmodell ~~ 'DLKM'::text;
 
 COMMENT ON VIEW sk201x_politische_grenze IS 'fuer Kartendarstellung: besondere Flurstücksgrenze Politische Grenzen (Bund, Land, Kreis, Gemeinde)';
--- Gefällt mir nicht!
--- Array-Felder eignen sich nicht als Filter. Optimierung: in Tabelle speichern
+-- Gefällt mir nicht! Array-Felder eignen sich nicht als Filter. Optimierung: in Tabelle speichern
 
 
 --  ------------------------------------------
@@ -389,38 +462,9 @@ AS
     AND f.endet IS NULL
 --ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler
   ;
-
 COMMENT ON VIEW flstnr_ohne_position IS 'Flurstücke ohne manuell gesetzte Position für die Präsentation der FS-Nr';
 
-
--- Zeigt die Texte an, die nicht in einem der Mapfile-Views verarbeitet werden
-CREATE OR REPLACE VIEW s_allgemeine_texte 
-AS 
- SELECT p.ogc_fid, 
-      --p.wkb_geometry, 
-      --p.gml_id,
-        p.art, 
-        p.drehwinkel * 57.296 AS drehwinkel,   -- * 180 / Pi
-        p.schriftinhalt
-   FROM ap_pto p
-  WHERE NOT p.art = 'ZAE_NEN' 
-    AND NOT p.art = 'HNR' 
-    AND NOT p.art = 'FKT' 
-    AND NOT p.art = 'Friedhof' 
-    AND p.schriftinhalt IS NOT NULL
-    AND p.endet IS NULL;
-
-
--- Analyse zu o.g. Fehler:
---  Welche Inhalte kommen im Feld ap_pto.art vor?
-CREATE OR REPLACE VIEW ap_pto_arten 
-AS 
-  SELECT DISTINCT art 
-    FROM ap_pto;
-
-
--- Umbruch im Label?
--- z.B. "Schwimm-/nbecken"
+-- Umbruch im Label? z.B. "Schwimm-/nbecken"
 -- Sind 2 Buchstaben in Mapfile bei "WRAP" möglich?
 CREATE OR REPLACE VIEW texte_mit_umbruch 
 AS 
@@ -429,24 +473,8 @@ AS
   WHERE not schriftinhalt is null
     AND schriftinhalt like '%/n%';
 
--- ... schriftinhalt like '%/%';
--- RLP: Flurstücks-Bruchnummer art='ZAE_NEN' als Schriftinhalt (2 Fälle)
-
-
-
-CREATE OR REPLACE VIEW s_allgemeine_texte_arten
-AS 
- SELECT DISTINCT art 
-   FROM s_allgemeine_texte;
-
--- dies liefert die Werte:
---  Bahnverkehr, BWF, FKT_LGT, Fliessgewaesser, FreierText, Gewanne, NAM, Platz,
---  StehendesGewaesser, Strasse, urn:adv:fachdatenv, Weg, ZNM
-
-
 
 -- EXTENT für das Mapfile eines Mandanten ermitteln
-
 CREATE OR REPLACE VIEW flurstuecks_minmax AS 
  SELECT min(st_xmin(wkb_geometry)) AS r_min, 
         min(st_ymin(wkb_geometry)) AS h_min, 
@@ -454,16 +482,9 @@ CREATE OR REPLACE VIEW flurstuecks_minmax AS
         max(st_ymax(wkb_geometry)) AS h_max
    FROM ax_flurstueck f
    WHERE f.endet IS NULL;
-
 COMMENT ON VIEW flurstuecks_minmax IS 'Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile';
 
-
-
 -- Nach Laden der Keytables:
-
--- MAP ALT:
--- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, name, bezeichnung, stelle, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
-
 CREATE OR REPLACE VIEW baurecht
 AS
   SELECT r.ogc_fid, 
@@ -483,18 +504,10 @@ AS
       ON r.land   = d.land 
      AND r.stelle = d.stelle 
   WHERE r.endet IS NULL
-    AND d.endet IS NULL
- ;
-
--- MAP NEU:
--- DATA "wkb_geometry from (SELECT ogc_fid, gml_id, adfkey, name, stelle, rechtbez, adfbez, stellbez, wkb_geometry FROM baurecht) as foo using unique ogc_fid using SRID=25832" # gespeicherter View
-
+    AND d.endet IS NULL ;
 
 -- Man glaubt es kaum, aber im ALKIS haben Gemeinde und Gemarkung keinerlei Beziehung miteinander
 -- Nur durch Auswertung der Flurstücke kann man ermitteln, in welcher Gemeinde eine Gemarkung liegt.
-
--- 2011-12-08 umbenannt
-
 CREATE OR REPLACE VIEW gemarkung_in_gemeinde
 AS
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
@@ -507,7 +520,6 @@ COMMENT ON VIEW gemarkung_in_gemeinde IS 'Welche Gemarkung liegt in welcher Geme
 
 
 -- Untersuchen, welche Geometrie-Typen vorkommen
-
 CREATE OR REPLACE VIEW arten_von_flurstuecksgeometrie
 AS
  SELECT   count(gml_id) as anzahl,
@@ -787,25 +799,6 @@ COMMENT ON VIEW beziehungen_redundant_in_delete IS 'alkis_beziehungen zu denen e
 -- Wenn ax_flurstueck über "replace" ausgetauscht wird und dabei gleichzeitig eine andere 
 -- Buchungsstelle bekommt, dann bleibt die alte Buchungsstelle in den alkis_beziehungen.
 -- Mail PostNAS Mailingliste von 2013-02-20
-
--- Version Marvin Brandt, Unna:
-
--- CREATE OR REPLACE VIEW mehrfache_buchung_zu_fs
--- AS
---  SELECT gml_id, anzahl FROM 
---  ( SELECT f.*, 
---     ( SELECT count(f2.gml_id) as anzahl 
---       FROM ax_flurstueck f2 
---       JOIN alkis_beziehungen a1 
---          ON f2.gml_id = a1.beziehung_von 
---         AND a1.beziehungsart = 'istGebucht' 
---       WHERE f2.gml_id = f.gml_id 
---     ) as anzahl 
---     FROM ax_flurstueck f
---  ) as sub 
---  WHERE sub.anzahl > 1;
-
--- Version Frank Jäger, Lemgo (keep it simple)
 CREATE OR REPLACE VIEW mehrfache_buchung_zu_fs
 AS
   SELECT f.gml_id, count(b.ogc_fid) AS anzahl

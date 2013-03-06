@@ -1,22 +1,24 @@
 base: ../base.yaml
 
-# 2011-09-19 F.J.
+# 2012-08-28 neue GDI: MapProxy 1.4
+# 2013-01-24 neue ALKIS-grids in base.yaml, Verschiebung level +1
+# 2013-03-05 neues Mapfile "_a.map", Layernamen anpassen, Mapserver 6.2
 
+# http://map.krz.de/mapproxy/alkisrlp/service?REQUEST=GetCapabilities&SERVICE=WMS&VERSION=1.1.1
 services:
   demo:
   #kml:
   #tms:
   wms:
-    #srs: ['EPSG:4326', 'EPSG:25832', 'EPSG:31467', 'EPSG:54004']
     srs: ['EPSG:4326', 'EPSG:25832', 'EPSG:54004']
     #attribution:
-    #  text: "© Geobasisdaten Liegenschaftskataster Kreis ...."
+    #  text: "© Geobasisdaten Liegenschaftskataster Kreis ___"
     md:
       title: "c: ALKIS"
-      abstract: Liegenschaftskataster ALKIS Demokarte RLP Mustermonzel. Beschleunigt ueber MapProxy
+      abstract: Liegenschaftskataster ALKIS Demokarte RLP Mustermonzel. Konverter PostNAS 0.7, Über MapProxy 1.4 Cache
       online_resource: http://mapproxy.org/
       contact:
-        person: Frank Jaeger
+        person: Frank Jäger
         position: GIS-Administrator
         organization: Kommunales Rechenzentrum Minden-Ravensberg/Lippe 
         address: Am Lindenhaus 21
@@ -26,27 +28,37 @@ services:
         phone: +49(0)5261-252-185
         fax: +49(0)5261-932-185
         email: f.jaeger@krz.de
-      access_constraints: 'Nur fuer den Dienstgebrauch'
+      access_constraints: 'Nur für den Dienstgebrauch'
       fees: 'None'
 
 layers:
   - name: alkis_nutzung
     title: Nutzungsarten
-    sources: [alkisrlp_nutzg_c]
-  - name: alkis
+    sources: [alkisrlp_nua_c]
+    min_scale: 100
+    max_scale: 35000
+  - name: alkis_lieka
     title: ALKIS
-    sources: [alkisrlp_c]
-    
-caches:
-  alkisrlp_c:
-    grids: [alkis_rlp_grid]
-    #sources: ["alkis:ax_klassifizierungnachstrassenrecht,ax_naturumweltoderbodenschutzrecht,ax_anderefestlegungnachwasserrecht,ax_bauraumoderbodenordnungsrecht_umrandung,ax_denkmalschutzrecht,ax_sonstigesrecht,ax_gebaeude,ax_bauteil,ax_besonderegebaeudelinie,ag_t_gebaeude,ax_flurstueck,ax_besondereflurstuecksgrenze,ag_l_flurstueck,ag_p_flurstueck,ag_t_flurstueck,ax_punktortta,ap_pto,ap_lpo","alkis_fi:ax_flurstueck"]
-    # ohne Gruppe 'recht'
-    sources: ["alkis:ax_gebaeude,ax_bauteil,ax_besonderegebaeudelinie,ag_t_gebaeude,ax_flurstueck,ax_besondereflurstuecksgrenze,ag_l_flurstueck,ag_p_flurstueck,ag_t_flurstueck,ax_punktortta,ap_pto,ap_lpo","alkis_fi:ax_flurstueck"]
+    sources: [alkisrlp_lie_c]
+    min_scale: 100
+    max_scale: 35000
+  - name: alkis_bezirke
+    title: Bezirke
+    sources: [alkisrlp_bez_c]
+    min_res: 74.08 # 1:210.000
+    max_res: 1.76
 
-  alkisrlp_nutzg_c:
+caches:
+  # Sonderversionen grid _rlp_ ausserhalb krz-Gebiet
+  alkisrlp_lie_c:
+    grids: [alkis_rlp_lie_grid]
+    sources: ["alkis:ax_gebaeude_umr,ax_bauteil,ax_besonderegebaeudelinie,ag_t_gebaeude,ag_l_gebaeude,ax_flurstueck,ax_besondereflurstuecksgrenze,ag_l_flurstueck,sk2004_zuordnungspfeil_spitze,ag_t_flurstueck,ag_p_flurstueck,ax_punktortta,ap_pto_stra,ap_pto","alkis_fi:ax_flurstueck"]
+  alkisrlp_nua_c:
     grids: [alkis_rlp_nua_grid]
-    sources: ["alkis:ax_wohnbauflaeche,ax_industrieundgewerbeflaeche,ax_halde,ax_bergbaubetrieb,ax_tagebaugrubesteinbruch,ax_flaechegemischternutzung,ax_flaechebesondererfunktionalerpraegung,ax_sportfreizeitunderholungsflaeche,ax_friedhof,ax_strassenverkehr,ax_weg,ax_platz,ax_bahnverkehr,ax_flurverkehr,ax_schiffsverkehr,ax_landwirtschaft,ax_wald,ax_gehoelz,ax_heide,ax_moor,ax_sumpf,ax_unlandvegetationsloseflaeche,ax_vegetationsmerkmal,ax_fliessgewaesser,ax_hafenbecken,ax_stehendesgewaesser"]
+    sources: ["alkis:nutzung_alle"]
+  alkisrlp_bez_c:
+    grids: [alkis_rlp_bez_grid]
+    sources: ["alkis:pp_flur,pp_gemarkung,pp_gemeinde"]
 
 sources:
   # fuer Karte
@@ -54,14 +66,13 @@ sources:
     type: wms
     wms_opts:
       legendgraphic: true
-    # rlp
+    # rlp, eng um das Testgebiet:
     coverage:
       bbox: "349550,5529460,355140,5532210"
       bbox_srs: "EPSG:25832"
     req:
-      #url: http://wms.krz.de/cgi-bin/mapserv5?
-      #map: /data/wms/alkis/alkis05rlp.map
-      url: http://wms.krz.de/cgi-bin/alkis05rlp.xml?
+      url: http://10.0.100.72/cgi-bin/mapserv62?
+      map: /opt/gdi/alkis07/alkis07rlpa.map
       transparent: true
       format: image/png
   # fuer Feature-Info
@@ -71,8 +82,7 @@ sources:
       featureinfo: true
       map: false
     req:
-      #url: http://wms.krz.de/cgi-bin/mapserv5?
-      #map: /data/wms/alkis/alkis05rlp.map
-      url: http://wms.krz.de/cgi-bin/alkis05rlp.xml?
+      url: http://10.0.100.72/cgi-bin/mapserv62?
+      map: /opt/gdi/alkis07/alkis07rlpa.map
   debug:
     type: debug
