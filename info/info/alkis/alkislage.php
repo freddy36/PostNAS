@@ -4,13 +4,14 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Kann die 3 Arten von Lagebezeichnung anzeigen und verbundene Objekte verlinken
 
-	Version:	22.11.2011
+	Version:	2011-11-22
 		Felder ax_gebaeude.description und .individualname sind entfallen
 		Gebäude als Tabelle
 		Link auf neues Modul "alkishaus". 
 		Sonderfall PostNAS-Vers. 05 entfernt.
 		Kennzeichen im Balken verkürzt.
-	30.11.2011  import_request_variables
+	2011-11-30  import_request_variables
+	2013-03-06  Korrektur URL des Link im Abs. Lage bei eingeschalteten Test-Optionen
 
 	ToDo:
 	- Entschluesseln Kreis usw.
@@ -268,9 +269,11 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 	echo "\n\n<a name='lage'></a><h3><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Lage</h3>\n";
 	echo "\n<p>andere Lagebezeichnungen zur gleichen Hausnummer.</p>";
 	$whereclaus="WHERE land= $1 AND regierungsbezirk= $2 AND kreis= $3 AND gemeinde= $4 AND lage= $5 ";
-	$url=$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;id=".$id."&amp;gmlid="; // Basis
+
+	$url=$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;id=".$id; // Basis
 	if ($idanzeige) {$url.="&amp;id=j";}
 	if ($showkey)   {$url.="&amp;showkey=j";}
+	$url.="&amp;gmlid=";
 
 	switch ($ltyp) {
 		case "m": // aktuell Hausnummer gefunden
@@ -366,13 +369,10 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 				if ($idanzeige) {linkgml($gkz, $ggml, "Geb&auml;ude");}
 				// +++ Hausnummer / Adresse ???
 			echo $row["name"]."</td>";
-
-		//	echo "<td class='fla'>".$row["grundflaeche"]."</td>";			echo "<td class='fla'>".$gfla." m&#178;</td>";
-
+			echo "<td class='fla'>".$gfla." m&#178;</td>";
 			echo "<td>";
-				if ($showkey) {echo "<span class='key'>".$row["gebaeudefunktion"]."</span> ";}
+			if ($showkey) {echo "<span class='key'>".$row["gebaeudefunktion"]."</span> ";}
 			echo $row["bezeichner"]."</td>";
-
 			echo "<td>";
 				if ($showkey) {echo "<span class='key'>".$row["bauweise"]."</span> ";}
 			echo $row["bauweise_beschreibung"]."</td>";
