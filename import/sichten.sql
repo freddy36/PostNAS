@@ -10,6 +10,7 @@
 --  2012-10-29 Redundanzen in Beziehungen suchen (entstehen durch replace)
 --  2013-02-20 Mehrfache Buchungsstellen zum FS suchen, dies sind Auswirkungen eines Fehlers bei Replace
 --  2013-03-05 Beschriftungen aus ap_pto auseinander sortieren, neuer View "grenzpunkt"
+--  2013-03-12 Optimierung Hausnummern, View "gebaeude_txt" (Funktion und Name)
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -72,26 +73,74 @@ COMMENT ON VIEW s_flurstueck_nr2 IS 'Bruchnummerierung Flurstück, auch Standard
 -- Problem: Zu einigen Gebäuden gibt es mehrere Hausnummern.
 -- Diese unterscheiden sich im Feld ap_pto.advstandardmodell
 -- z.B. 3 verschiedene Einträge mit <NULL>, {DKKM500}, {DKKM1000}, (Beispiel; Lage, Lange Straße 15 c)
+
+ --   DROP VIEW s_hausnummer_gebaeude;
+ --	CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
+ --	AS 
+ --	 SELECT p.ogc_fid, 
+ --			p.wkb_geometry,				         -- Point
+ --			p.drehwinkel * 57.296 AS drehwinkel, -- umn: ANGLE [drehwinkel]
+ --			l.hausnummer				         -- umn: LABELITEM
+ --	   FROM ap_pto p
+ --	   JOIN alkis_beziehungen v
+ --		 ON p.gml_id = v.beziehung_von
+ --	   JOIN ax_lagebezeichnungmithausnummer l
+ --		 ON v.beziehung_zu  = l.gml_id
+ --	  WHERE v.beziehungsart = 'dientZurDarstellungVon'
+ --		AND p.endet IS NULL
+ --		AND l.endet IS NULL;
+ --	COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
+
+-- Verbesserte Version 2013-03-07
+-- Nimmt nun vorzugsweise den Text der Darstellung aus ap_pto (bei ibR immer gefüllt).
+-- Wenn der nicht gefüllt ist, wird statt dessen die Nummer aus der verknüpften Labebezeichnung 
+-- verwendet (der häufigste Fall bei AED). 
+DROP VIEW s_hausnummer_gebaeude;
 CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 AS 
  SELECT p.ogc_fid, 
-        p.wkb_geometry,				-- Point
-        p.drehwinkel * 57.296 AS drehwinkel,	-- umn: ANGLE [drehwinkel]
-        l.hausnummer				-- umn: LABELITEM
+        p.wkb_geometry,			              -- Point
+        p.drehwinkel * 57.296 AS drehwinkel,  -- umn: ANGLE
+    --  p.art,
+    --  p.advstandardmodell       AS modell,  -- TEST
+    --  p.horizontaleausrichtung  AS hor,     -- = 'zentrisch'
+    --  p.vertikaleausrichtung    AS ver,     -- = 'Basis' (oft), "Mitte" (selten)
+    --  p.schriftinhalt,                      -- WMS: das bessere LABELITEM, kann aber leer sein
+    --  l.hausnummer,                         -- WMS: LABELITEM default/native
+        COALESCE(p.schriftinhalt, l.hausnummer) AS hausnummer
    FROM ap_pto p
    JOIN alkis_beziehungen v
      ON p.gml_id = v.beziehung_von
    JOIN ax_lagebezeichnungmithausnummer l
-     ON v.beziehung_zu  = l.gml_id
-  WHERE v.beziehungsart = 'dientZurDarstellungVon'
-    AND p.endet IS NULL
-    AND l.endet IS NULL;
-
+	 ON v.beziehung_zu  = l.gml_id
+  WHERE p.art = 'HNR'
+    AND 'DKKM1000' = ANY (p.advstandardmodell) -- erste Näherungslösung um Redundanzen zu unterdrücken
+    AND v.beziehungsart = 'dientZurDarstellungVon'
+	AND p.endet IS NULL
+	AND l.endet IS NULL
+-- LIMIT 200 -- TEST
+;
 COMMENT ON VIEW s_hausnummer_gebaeude IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
+
+-- Welche Karten-Typen ?
+--   SELECT DISTINCT advstandardmodell FROM ap_pto p WHERE p.art = 'HNR';
+-- Liefert:
+--   "{DKKM1000}"
+--   "{DKKM1000,DKKM500}"
+--   "{DKKM500}"
+--   ""    (IS NULL)
+
+-- ibR (Mi-Lk): darzustellender Text steht immer in ap_pto.schriftinhalt 
+-- AED (Lippe): ap_pto.schriftinhalt ist meist leer, nur selten ein Eintrag
+
+-- ToDo: Wie bei ap_pto_stra von mehren ap_pto zu einer Hausnummer die geeignete auswählen
+
+-- ToDo: In PostProcessing die Hausnummer von l.hausnummer in p.schriftinhalt kopieren, wenn leer
+--   Das würde die COALESCE-Trickserei ersparen
 
 -- Layer "ag_t_nebengeb"
 -- ---------------------
--- 2013-03-05: Diese Abfrage liefert keine Daten mehr (PostNAS 0.7)
+-- 2013-03-05: Diese Abfrage liefert keine Daten mehr??
 --	CREATE OR REPLACE VIEW s_nummer_nebengebaeude 
 --	AS 
 --	 SELECT p.ogc_fid, 
@@ -126,7 +175,22 @@ AS
      AND g.endet IS NULL
      AND g.endet IS NULL;
 COMMENT ON VIEW lfdnr_nebengebaeude IS 'Laufende Nummer des Nebengebäudes zu einer Lagebezeichnung mit der Flächengeometrie des Gebäudes';
---GRANT SELECT ON TABLE lfdnr_nebengebaeude TO ms6;
+
+
+-- Gebäude-Text
+-- ------------
+CREATE OR REPLACE VIEW gebaeude_txt 
+AS 
+ SELECT g.ogc_fid, 
+        g.wkb_geometry,
+        g.name,                    -- selten gefüllt 
+        f.bezeichner AS funktion   -- umn: LABELITEM
+   FROM ax_gebaeude g
+   JOIN ax_gebaeude_funktion f 
+     ON g.gebaeudefunktion = f.wert
+  WHERE g.endet IS NULL 
+    AND g.gebaeudefunktion < 9998; -- "Nach Quellenlage nicht zu spezifizieren" braucht man nicht anzeigen
+COMMENT ON VIEW gebaeude_txt IS 'Entschlüsselung der Gebäude-Funktion (Ersatz für Symbole)';
 
 -- Layer "ag_p_flurstueck"
 -- -----------------------
@@ -187,122 +251,15 @@ AS
 
 COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
 
-
--- Zur Steuerung der nachfolgenden Views
-
--- Ermittlung der vorkommenden Arten
--- ersetzt "ap_pto_arten"
-CREATE OR REPLACE VIEW beschriftung_was_kommt_vor 
-AS 
-  SELECT DISTINCT art, horizontaleausrichtung, vertikaleausrichtung 
-    FROM ap_pto 
-   WHERE not schriftinhalt is null 
-  ORDER BY art;
-COMMENT ON VIEW beschriftung_was_kommt_vor IS 'Analyse der vorkommenden Kombinationen in ap_pto (Beschriftung)';
-
--- 2013: PostNAS 0.7  (aus 150,260,340)
--- ------------------
---	"AOG_AUG"				"zentrisch";"Basis"  - Schriftinhalkt immer nur "I" ?
---	"BWF"					"zentrisch";"Basis"/"zentrisch";"Mitte"
---	"BWF_ZUS"				"zentrisch";"Basis"
---	"FKT"					"zentrisch";"Basis"/"linksbündig";"Basis"/"zentrisch";"Mitte"
---	"FKT_TEXT"				"zentrisch";"Mitte"
---	"FreierText"			"zentrisch";"Basis"/"zentrisch";"Mitte"/"linksbündig";"Basis"
---	"FreierTextHHO"			"zentrisch";"Mitte"
---	"Friedhof"				"zentrisch";"Basis"
---	"Gewanne"				"zentrisch";"Basis"/"zentrisch";"Mitte"
---	"GFK"					"zentrisch";"Basis"/"zentrisch";"Mitte"
---	"HNR"					"zentrisch";"Basis"/"linksbündig";"Basis"/"zentrisch";"Mitte"  --> Hausnummer, group gebaeude
---	"HHO"					"zentrisch";"Mitte"  -- HHO = objekthoehe zu ax_gebaeude?
---	"NAM"					"zentrisch";"Basis"/"zentrisch";"Mitte"/"linksbündig";"Basis"
---	"SPO"					"zentrisch";"Basis"/
---	"Vorratsbehaelter"		"zentrisch";"Basis"
---	"WeitereHoehe"			"zentrisch";"Mitte"
---	"ZAE_NEN"				"zentrisch";"Basis"
---	"ZNM"					"zentrisch";"Basis"/"linksbündig";"Basis"
-
---* Layer "ap_pto_stra"
---                          hor ; ver / hor ; ver 
---	"BezKlassifizierungStrasse" "zent.";"Basis"	/ "linksbündig";"Basis"
---	"Platz"					"zentrisch";"Basis" / "zentrisch";"Mitte"
---	"Strasse"				"zentrisch";"Basis" / "zentrisch";"Mitte" / "linksbündig";"Basis"
---	"Weg"					"zentrisch";"Basis" / "zentrisch";"Mitte" / "linksbündig";"Basis"
-
---* geplanter layer "ap_pto_wasser"
---	"StehendesGewaesser"	"zentrisch";"Basis"
---	"Fliessgewaesser"		"zentrisch";"Basis"/"linksbündig";"Basis"
-
-
 -- Drehwinkel in Bogenmass, wird vom mapserver in Grad benötigt.
 -- Umrechnung durch Faktor (180 / Pi)
 
--- Layer NAME "ap_pto_stra" (Straße) GROUP "praesentation"
--- -------------------------------------------------------
--- NEU 2013-03-01
--- Problem: Wenn ein Text paarweise auftritt mit verschiedenen Inhalten im 
--- Feld "advstandardmodell", dann wird das mehrfach gezeichnet.
---	CREATE OR REPLACE VIEW ap_pto_stra 
---	AS 
---	  SELECT ogc_fid, 
---			 schriftinhalt, 
---			 art,
---			 horizontaleausrichtung AS hor,    -- Verfeinern der Text-Position 
---			 vertikaleausrichtung   AS ver,    -- Durch Klassifizierung hor/ver
---			 drehwinkel * 57.296    AS winkel, -- * 180 / Pi
---			 wkb_geometry 
---		FROM ap_pto 
---	   WHERE not schriftinhalt IS NULL 
---		 AND endet IS NULL
---	  -- Je nach Vorlieben des Katasteramtes die folgende Zeile auskommentieren:
---	  -- AND advstandardmodell IS NULL -- doppelte Darstellungen unterdrücken (simple Zwischenlösung)
---		 AND art IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse');
---	COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße","Weg","Platz"';
---	GRANT SELECT ON TABLE ap_pto_stra TO ms6;
-
--- Verbesserte Version: von doppelten Textpositionen nur das passendere Modell Anzeigen.
--- Für den folgenden View einen neuen Index definieren: ap_pto_txt_idx (siehe Schema)
-
---	CREATE OR REPLACE VIEW ap_pto_stra 
---	AS 
---	  SELECT p.ogc_fid,
---		--   p.advstandardmodell       AS modell,    -- TEST
---			 p.schriftinhalt,                        -- WMS: LABELITEM
---			 p.art,                                  -- WMS: CLASSITEM
---			 p.horizontaleausrichtung  AS hor,       -- Verfeinern der Text-Position ..
---			 p.vertikaleausrichtung    AS ver,       --  .. durch Klassifizierung hor/ver
---			 p.drehwinkel * 57.296     AS winkel,    -- * 180 / Pi
---			 p.wkb_geometry
---		FROM ap_pto p
---	   WHERE not p.schriftinhalt IS NULL 
---		 AND  p.endet IS NULL                        -- nichts historisches
---		 AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- CLASSES in LAYER
---		 AND ('DKKM1000' = ANY (p.advstandardmodell) -- "Lika 1000" bevorzugen
---			   -- Ersatzweise auch "keine Angabe", aber nur wenn es keine weitere gibt
---			   OR (     p.advstandardmodell IS NULL
---				   AND (SELECT ogc_fid FROM ap_pto s
---						WHERE p.schriftinhalt = s.schriftinhalt
---						  AND p.art = s.art
---						  AND NOT s.advstandardmodell IS NULL LIMIT 1
---						) IS NULL
---				  )
---			 )
---	;
-
--- ToDo: Diese Version gruppiert alle gleichen Straßennamen (p.schriftinhalt = s.schriftinhalt).
--- In einer kreisweiten Datenbank können verschiedene Straßen mit gleichem Namen vorkommen.
--- Um die Vermischung zu verhindern sollte man die Texte noch über ihre Lage "in der Nähe" verpaaren.
--- Wenn der View dann Subquery UND Entfernungsberechnung enthält, könnte man überlegen,
--- diesen nicht zur Laufzeit abzuarbeiten sondern im PostProzessing als Tabelle zu speichern.
-
--- Auch noch fehlerhaft sind die Fälle, wo für unterschiedliche Kartentypen unterschiedliche
--- Schreibweisen benutzt werden, z.B. die Abkürzung "_str.".
 
 -- Layer NAME "ap_pto_stra" (Straße) GROUP "praesentation"
 -- -------------------------------------------------------
--- NEU 2013-03-06
--- Noch mals verbesserte Version: von doppelten Textpositionen nur das passendere Modell Anzeigen.
--- Statt "Namensgleichheit" im textfeld wird nun eine Relation fuer die Gruppierung verwendet.
--- * ap_pto >dientZurDarstellungVon> ax_lagebezeichnungohnehausnummer *
+-- Von doppelten Textpositionen nur das passendere Modell anzeigen.
+-- Eine Relation wird fuer die Gruppierung verwendet:
+--  ap_pto >dientZurDarstellungVon> ax_lagebezeichnungohnehausnummer
 CREATE OR REPLACE VIEW ap_pto_stra 
 AS 
   SELECT p.ogc_fid,
@@ -342,10 +299,11 @@ AS
 ;
 COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
 
+
 -- Layer NAME "ap_pto" GROUP "praesentation"
 -- ----------------------------------------
 -- REST: Texte, die nicht schon in einem anderen Layer ausgegeben werden
--- NEU 2013-03-01
+-- Ersetzt den View "s_beschriftung"
 CREATE OR REPLACE VIEW ap_pto_rest 
 AS 
   SELECT p.ogc_fid, 
@@ -358,25 +316,8 @@ AS
      AND p.endet IS NULL
      AND p.art NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG');
      -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
--- 'PNR' kommt nicht mehr vor?
+-- 'PNR' (Pseudonummer, lfd.-Nr.-Nebengebäude) kommt nicht mehr vor?
 COMMENT ON VIEW ap_pto_rest IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
-
--- Layer NAME "ap_pto" GROUP "praesentation"
--- ----------------------------------------
--- 2013-03: Wird ersetzt durch ap_pto_rest 
--- CREATE OR REPLACE VIEW s_beschriftung 
--- AS 
---   SELECT p.ogc_fid, 
---          p.schriftinhalt, 
---          p.art, 
---          p.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
---          p.wkb_geometry 
---     FROM ap_pto p
---    WHERE not p.schriftinhalt IS NULL 
---      AND p.endet IS NULL
---      AND p.art NOT IN ('HNR','AOG_AUG');  -- 'PNR' kommt nicht mehr vor?
--- COMMENT ON VIEW s_beschriftung IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
--- GRANT SELECT ON TABLE s_beschriftung  TO ms6;
 
 -- ENDE BESCHRIFTUNG
 
@@ -400,6 +341,7 @@ AS
 COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
 
 -- Grenzpunkte
+-- -----------
 --  ax_punktortta  >zeigtAuf?> AX_Grenzpunkt
 -- Zum Punktort des Grenzpunktes auch eine Information zur Vermarkung holen
 CREATE OR REPLACE VIEW grenzpunkt 
@@ -665,6 +607,49 @@ AS
            f.zaehler,
            f.nenner;
 
+-- Punktförmige  P r ä s e n t a t i o n s o b j k t e  (ap_pto)
+-- Ermittlung der vorkommenden Arten
+CREATE OR REPLACE VIEW beschriftung_was_kommt_vor 
+AS 
+  SELECT DISTINCT art, horizontaleausrichtung, vertikaleausrichtung 
+    FROM ap_pto 
+   WHERE not schriftinhalt is null 
+  ORDER BY art;
+COMMENT ON VIEW beschriftung_was_kommt_vor IS 'Analyse der vorkommenden Kombinationen in ap_pto (Beschriftung)';
+
+-- Ergebnis:
+-- 2013: PostNAS 0.7  (aus 150,260,340)
+-- ------------------
+--	"AOG_AUG"				"zentrisch";"Basis"  - Schriftinhalkt immer nur "I" ?
+--	"BWF"					"zentrisch";"Basis"/"zentrisch";"Mitte"
+--	"BWF_ZUS"				"zentrisch";"Basis"
+--	"FKT"					"zentrisch";"Basis"/"linksbündig";"Basis"/"zentrisch";"Mitte"
+--	"FKT_TEXT"				"zentrisch";"Mitte"
+--	"FreierText"			"zentrisch";"Basis"/"zentrisch";"Mitte"/"linksbündig";"Basis"
+--	"FreierTextHHO"			"zentrisch";"Mitte"
+--	"Friedhof"				"zentrisch";"Basis"
+--	"Gewanne"				"zentrisch";"Basis"/"zentrisch";"Mitte"
+--	"GFK"					"zentrisch";"Basis"/"zentrisch";"Mitte"
+--	"HNR"					"zentrisch";"Basis"/"linksbündig";"Basis"/"zentrisch";"Mitte"  --> Hausnummer, group gebaeude
+--	"HHO"					"zentrisch";"Mitte"  -- HHO = objekthoehe zu ax_gebaeude?
+--	"NAM"					"zentrisch";"Basis"/"zentrisch";"Mitte"/"linksbündig";"Basis"
+--	"SPO"					"zentrisch";"Basis"/
+--	"Vorratsbehaelter"		"zentrisch";"Basis"
+--	"WeitereHoehe"			"zentrisch";"Mitte"
+--	"ZAE_NEN"				"zentrisch";"Basis"
+--	"ZNM"					"zentrisch";"Basis"/"linksbündig";"Basis"
+
+--* Layer "ap_pto_stra"
+--                          hor ; ver / hor ; ver 
+--	"BezKlassifizierungStrasse" "zent.";"Basis"	/ "linksbündig";"Basis"
+--	"Platz"					"zentrisch";"Basis" / "zentrisch";"Mitte"
+--	"Strasse"				"zentrisch";"Basis" / "zentrisch";"Mitte" / "linksbündig";"Basis"
+--	"Weg"					"zentrisch";"Basis" / "zentrisch";"Mitte" / "linksbündig";"Basis"
+
+--* geplanter layer "ap_pto_wasser"
+--	"StehendesGewaesser"	"zentrisch";"Basis"
+--	"Fliessgewaesser"		"zentrisch";"Basis"/"linksbündig";"Basis"
+
 
 -- Flurstücke eines Eigentümers
 -- ----------------------------
@@ -746,7 +731,6 @@ AS
 
 -- Rechte eines Eigentümers
 -- ------------------------
-
 -- Dieser View sucht speziell die Fälle wo eine Buchungsstelle ein Recht "an" einer anderen Buchungsstelle hat.
 --  - "Erbbaurecht *an* Grundstück" 
 --  - "Wohnungs-/Teileigentum *an* Aufgeteiltes Grundstück"
@@ -758,7 +742,6 @@ AS
 -- Übersicht der Tabellen:
 --
 -- Person <benennt< NamNum. >istBestandteilVon> Blatt <istBestandteilVon< Stelle-h >an> Stelle-d >istGebucht> Flurstueck
--- 
 
 -- Wobei ">xxx>" = JOIN über die Verbindungs-Tabelle "alkis_beziehungen" mit der Beziehungsart "xxx".
 
@@ -890,6 +873,5 @@ AS
 --  HAVING count(b.ogc_fid) > 1;
 
 COMMENT ON VIEW mehrfache_buchung_zu_fs IS 'Nach replace von ax_flurtstueck mit einer neuen ax_buchungsstelle bleibt die alte Verbindung in alkis_beziehungen';
-
 
 -- END --

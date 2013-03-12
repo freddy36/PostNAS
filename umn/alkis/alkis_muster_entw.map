@@ -1,4 +1,4 @@
-# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant
+# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant - Entwickler-Version
 #
 # Stand / Historie:
 # 2012-02-09 F.J. krz  Branch 0.7 aus Version 0.6
@@ -7,17 +7,14 @@
 # 2012-04-17 F.J. krz  Tabelle pp_flurstueck_nr ersetzt View s_flurstueck_nr.
 #                      Auch Standard-Position vom Flurstuecksnummern anzeigen
 # 2013-01-23 F.J. krz  ax_flurstueck bis 1:25.000 (für MapProxy)
-# 2013-03-05 F.J. krz  Abgleich mit SVN-Version, z.B. kein "SYMBOL 0" mehr in Pol. Grenz.
+# 2013-03-05 F.J. krz  Umstellung auf Mapserver 6.2
+#                      Abgleich mit SVN-Version, z.B. kein "SYMBOL 0" mehr in Pol. Grenz.
 #                      Gruppe "Recht" verschoben hinter "Flurstueck" und "Gebiete" hinter "Nutzungsarten"
+#                      Layer Flurstücksnummer hinter Zuordnungspfeil.
 #                      Logical Expression: [column] und Wert in '' einschließen (Log-Meldung).
 #                      Keine Schraffur auf "Gebäude, graphisch".
 #                      "Laufende Nummer Nebengebäude": kein Präsentationsobjekt mehr, Anzeige mittig in Geb.-Fläche 
-#
-# ToDo:
-# - Straßennamen doppelt/fehlend je nach Filter im View
-# - Hausnummern doppelt oder mehrfach (z.B. 070: Bürgermeister-Brinkmann-Weg 3)
-# - Template auf Gebäude-Objekt, Auskunft aufrufen?
-# - Zuordnungspfeil Flurstueck ist doppelt: in "Flurstück" und in "Präsentation/Zuordnungspfeile"
+# 2013-03-11 F.J. krz  Neuer Layer "ax_gebaeude_txt" (Funktion und Name zum Gebäude)
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -1793,6 +1790,7 @@ LAYER
 			OUTLINECOLOR 0 0 0
 			WIDTH 1 MINWIDTH 1 MAXWIDTH 3
 		END
+		#LABEL = name ?
 	END
 	CLASS
 		NAME "Nach Quellenlage nicht zu spezifizieren"
@@ -1977,6 +1975,57 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 		END
 	END
 END
+# ToDo: evtl. getrennt schaltbare Layer?
+LAYER
+	NAME "ax_gebaeude_txt" # Gebäude-Texte: Funktion und Name
+	GROUP "gebaeude"
+	TYPE POLYGON
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from (SELECT * FROM gebaeude_txt) as foo using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Funktion und Name"
+		wms_abstract "Funktion zum 'Gebäude'. In amtlicher Karte teilweise als Symbole dargestellt, hier ersatzweise als Text."
+	END
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 2000
+	SYMBOLSCALEDENOM 1000
+	LABELITEM 'funktion'
+	CLASSITEM 'name'
+	CLASS
+		NAME "Name und Funktion"
+		EXPRESSION /./
+		LABEL
+			TYPE TRUETYPE FONT 'arialnarrow'
+			SIZE 9 MINSIZE 7 MAXSIZE 12
+			POSITION cc OFFSET 0 12 # tiefer
+			COLOR 0 0 0 OUTLINECOLOR 254 254 254
+			ANTIALIAS true PARTIALS false FORCE false
+			WRAP " " MAXLENGTH 10
+		END
+		LABEL # 2. Label
+			TEXT '[name]'
+			TYPE TRUETYPE FONT 'arialbold'
+			SIZE 9 MINSIZE 6 MAXSIZE 10
+			POSITION cc OFFSET 0 -10 # höher
+			COLOR 180 0 0 OUTLINECOLOR 254 254 254
+			ANTIALIAS true PARTIALS false FORCE true
+		END
+	END
+	CLASS
+		NAME "Funktion" # nur ..
+		LABEL
+			TYPE TRUETYPE FONT 'arialnarrow'
+			SIZE 9 MINSIZE 7 MAXSIZE 12
+			POSITION auto # Kollision mit HsNr vermeiden
+			COLOR 0 0 0 OUTLINECOLOR 254 254 254
+			ANTIALIAS true PARTIALS false FORCE false
+			WRAP " " MAXLENGTH 10
+		END
+	END
+END
 LAYER
 	NAME "ax_bauteil"
 	GROUP "gebaeude"
@@ -2060,11 +2109,9 @@ LAYER
 	CLASS
 		NAME "Besondere Gebäudelinie"
 		STYLE
-		#	SYMBOL 0
 			COLOR 0 0 0
 		END
 		STYLE
-		#	SYMBOL 'point'
 			COLOR 254 254 254
 			PATTERN 3 6 END
 		END
@@ -2111,7 +2158,9 @@ LAYER # Hausnummer
 		END
 	END
 END
-# alte Version: Präsentationsobjekt aus ap_pto mit Drehwinkel. Dies Daten sind in ALKIS nicht mehr vorhanden.
+# alte Version: Präsentationsobjekt aus ap_pto mit Drehwinkel. 
+# Dies Daten sind in ALKIS bei einigen Katasterämtern nicht mehr vorhanden.
+# Klären: Fehler in NBA?
 #LAYER # Pseudonummer = Ausgestaltung Text Nebengebäude
 #	NAME "ag_t_nebengeb"
 #	GROUP "gebaeude"
@@ -2154,6 +2203,8 @@ END
 #	END
 #END
 # Neue Version Text lfd-Nr. zur Gebäude-Geometrie
+# Diese Version funktioniert unabhängig von der NBA-Abgabe der Pseudonummern-Präsentationsobjekte.
+# Allerdings ohne die manuelle Positionierung und Drehwinkel.
 LAYER # Lagebezeichnung mit Pseudonummer, Anzeige der lfd-Nr.
 	NAME "ag_t_nebengeb"
 	GROUP "gebaeude"
@@ -2186,12 +2237,13 @@ LAYER # Lagebezeichnung mit Pseudonummer, Anzeige der lfd-Nr.
 		END
 	END
 END
-
 # Zuordnungspfeile Gebäude
-# siehe auch Layer "ap_lpo"
+# Der Layer entfällt zukünftig.
+# 18: Die Zuordnungspfeile der ALK wurden bei Vormigration nach ALKIS gelöscht.
 LAYER
 	NAME "ag_l_gebaeude"
 	GROUP "gebaeude"
+	REQUIRES "[ag_t_nebengeb]" # nur beides
 	TYPE LINE
 	DUMP TRUE
 	CONNECTIONTYPE POSTGIS
@@ -2204,8 +2256,6 @@ LAYER
 		wms_abstract "Gebäude Zuordnungspfeile für Hausnummer oder Nebengebäude-Nummer (nur Linie, Pfeilspitze fehlt noch)"
 		gml_include_items "all"
 	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 2500
 	CLASS
@@ -3393,41 +3443,6 @@ LAYER
 	END
 END
 # ALKIS Punktort (Vermessungspunkte)
-# Grenzpunkt: alte Version. Ausschließlich aus Punktort, keine Info über Vermarkung
-#LAYER
-#	NAME "ax_punktortta"
-#	GROUP "punktort" # Der Layer könnte auch zur Gruppe Flurstück
-#	TYPE POINT
-#	DUMP TRUE
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-#	PROCESSING "CLOSE_CONNECTION=DEFER"
-#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortta) as foo using unique ogc_fid using SRID=25832"
-#	METADATA
-#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-#		wms_title "Grenzpunkt"
-#		wms_abstract "'PunktortTA' ist ein Punktort, der in der Flurstücksgrenze liegt und einen Grenzpunkt verortet."
-#		wms_group_title "Vermessungspunkte"
-#		wms_group_abstract "ALKIS Punktorte"
-#		gml_include_items "all"
-#	END
-#	#PROJECTION "init=epsg:25832" END
-#	#EXTENT 349000 5529000 356000 5533000
-#	MINSCALEDENOM 50
-#	MAXSCALEDENOM 2000
-#	SYMBOLSCALEDENOM 1000
-#	CLASS
-#		NAME "Grenzpunkt"
-#		STYLE
-#			SYMBOL 'point'
-#			SIZE 5 MINSIZE 4 MAXSIZE 10
-#			WIDTH 1 MINWIDTH 1 MAXWIDTH 2
-#			COLOR 255 255 255
-#			OUTLINECOLOR 0 0 0
-#		END
-#	END
-#END
-# Grenzpunkt: alte Version. Ausschließlich aus Punktort, keine Info über Vermarkung
 LAYER
 	NAME "ax_punktortta"
 	GROUP "punktort" # Der Layer könnte auch zur Gruppe Flurstück
@@ -3657,7 +3672,7 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 12 MINSIZE 8 MAXSIZE 24
+			SIZE 10 MINSIZE 7 MAXSIZE 22
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION cc # zentrisch/Mitte
 			COLOR 0 0 90
@@ -3672,7 +3687,7 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 12 MINSIZE 8 MAXSIZE 24
+			SIZE 10 MINSIZE 7 MAXSIZE 22
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION uc # zentrisch/Basis
 			COLOR 0 0 90

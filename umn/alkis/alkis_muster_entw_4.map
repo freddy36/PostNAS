@@ -1,5 +1,5 @@
-# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant - Druckversion
-# 2013-03-04 F.J. krz  manueller Abgleich mit .map ohne _4
+# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant - Druckversion zur Entwickler-Version
+# 2013-03-11 F.J. krz  manueller Abgleich mit .map ohne _4
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -1725,6 +1725,56 @@ LAYER
 	END
 END
 LAYER
+	NAME "ax_gebaeude_txt" # Gebäude - Texte
+	GROUP "gebaeude"
+	TYPE POLYGON
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from (SELECT * FROM gebaeude_txt) as foo using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Funktion und Name)"
+		wms_abstract "Funktion zum 'Gebäude'. In amtlicher Karte teilweise als Symbole dargestellt, hier ersatzweise als Text."
+	END
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 2000
+	SYMBOLSCALEDENOM 1000
+	LABELITEM 'funktion'
+	CLASSITEM 'name'
+	CLASS
+		NAME "Name und Funktion"
+		EXPRESSION /./
+		LABEL
+			TYPE TRUETYPE FONT 'arialnarrow'
+			SIZE 24 MINSIZE 20 MAXSIZE 36 # 9 7 12
+			POSITION cc OFFSET 0 40 # 0 12
+			COLOR 0 0 0 OUTLINECOLOR 254 254 254
+			ANTIALIAS true PARTIALS false FORCE false
+			WRAP " " MAXLENGTH 10
+		END
+		LABEL # 2. Label
+			TEXT '[name]'
+			TYPE TRUETYPE FONT 'arialbold'
+			SIZE 34 MINSIZE 22 MAXSIZE 40 # 9 6 10
+			POSITION cc OFFSET 0 -36 # 0 -10
+			COLOR 180 0 0 OUTLINECOLOR 254 254 254
+			ANTIALIAS true PARTIALS false FORCE true
+		END
+	END
+	CLASS
+		NAME "Funktion" # nur ..
+		LABEL
+			TYPE TRUETYPE FONT 'arialnarrow'
+			SIZE 24 MINSIZE 20 MAXSIZE 36 # 9 7 12
+			POSITION auto #cc
+			COLOR 0 0 0 OUTLINECOLOR 254 254 254
+			ANTIALIAS true PARTIALS false FORCE false
+			WRAP " " MAXLENGTH 10
+		END
+	END
+END
+LAYER
 	NAME "ax_bauteil"
 	GROUP "gebaeude"
 	TYPE POLYGON
@@ -1837,11 +1887,11 @@ LAYER # Hausnummer
 	CLASS
 		NAME "Hausnummer"
 		STYLE
-			SYMBOL "point" SIZE 4 #1
+			SYMBOL "point" SIZE 1
 		END
 		LABEL
 			TYPE TRUETYPE FONT 'arialnarrow'
-			SIZE 32 MINSIZE 20 MAXSIZE 48 # 8 5 12
+			SIZE 28 MINSIZE 16 MAXSIZE 40 # (8 5 12) *4 = (32 20 48) also nicht proportional zur Bildscheirm-Version
 			POSITION uc
 			OFFSET 0 -12 # 0 -3
 			ANGLE [drehwinkel] 
@@ -1927,6 +1977,7 @@ END
 LAYER
 	NAME "ag_l_gebaeude"
 	GROUP "gebaeude"
+	REQUIRES "[ag_t_nebengeb]" # nur beides
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
@@ -2490,7 +2541,7 @@ LAYER
 	CLASS
 		NAME "Flurstuecknummer"
 		STYLE
-			SYMBOL "point" SIZE 4 #1
+			SYMBOL "point" SIZE 1
 		END
 		LABEL
 			TYPE TRUETYPE FONT 'arialnarrowkursiv'
@@ -2825,37 +2876,6 @@ LAYER
 	END
 END
 # ALKIS Punktort (Vermessungspunkte)
-#LAYER
-#	NAME "ax_punktortta"
-#	GROUP "punktort"
-#	TYPE POINT
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-#	PROCESSING "CLOSE_CONNECTION=DEFER"
-#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortta) as foo using unique ogc_fid using SRID=25832"
-#	METADATA
-#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-#		wms_title "Grenzpunkt"
-#		wms_abstract "'PunktortTA' ist ein Punktort, der in der Flurstücksgrenze liegt und einen Grenzpunkt verortet."
-#		wms_group_title "Vermessungspunkte"
-#		wms_group_abstract "ALKIS Punktorte"
-#	END
-#	#PROJECTION "init=epsg:25832" END
-#	#EXTENT 349000 5529000 356000 5533000
-#	MINSCALEDENOM 12 # 50
-#	MAXSCALEDENOM 500 # 2000
-#	SYMBOLSCALEDENOM 250 # 1000
-#	CLASS
-#		NAME "Grenzpunkt"
-#		STYLE
-#			SYMBOL 'point'
-#			SIZE 20 MINSIZE 16 MAXSIZE 40 # 5 4 10
-#			WIDTH 4 MINWIDTH 4 MAXWIDTH 8 # 1 1 2
-#			COLOR 255 255 255
-#			OUTLINECOLOR 0 0 0
-#		END
-#	END
-#END
 LAYER
 	NAME "ax_punktortta"
 	GROUP "punktort"
@@ -2884,21 +2904,21 @@ LAYER
 		STYLE # Kringel
 			SYMBOL 'point'
 			COLOR 255 255 255
-			SIZE 12 MINSIZE 8 MAXSIZE 24
+			SIZE 11 MINSIZE 7 MAXSIZE 20 # Füllung 4 2 7 
 			OUTLINECOLOR 0 0 0
-			WIDTH 3 MINWIDTH 3 MAXWIDTH 6
+			WIDTH 2 MINWIDTH 2 MAXWIDTH 5 # Rand 1 1 2
 		END
 	END
 	CLASS # 9500=Ohne Marke, 9600=Abmarkung zeitweilig ausgesetzt, 9998=Nach Quellenlage nicht zu spezifizieren
 		NAME "unvermarkt"
 		STYLE
 			SYMBOL 'point'
-			SIZE 12 MINSIZE 8 MAXSIZE 24 
+			SIZE 10 MINSIZE 6 MAXSIZE 18 # Freistellung 4 2 6
 			COLOR 255 255 255
 		END
 		STYLE
 			SYMBOL 'point'
-			SIZE 5 MINSIZE 2 MAXSIZE 10
+			SIZE 4 MINSIZE 2 MAXSIZE 8 # Pünktchen 1.25 1 3
 			COLOR 0 0 0
 		END
 	END
@@ -3078,7 +3098,7 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 48 MINSIZE 32 MAXSIZE 96 # 12 8 24
+			SIZE 40 MINSIZE 28 MAXSIZE 88 # 10 7 22
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION cc # zentrisch/Mitte
 			COLOR 0 0 90
@@ -3093,7 +3113,7 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 48 MINSIZE 32 MAXSIZE 96 # 12 8 24
+			SIZE 40 MINSIZE 28 MAXSIZE 88 # 10 7 22
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION uc # zentrisch/Basis
 			COLOR 0 0 90
