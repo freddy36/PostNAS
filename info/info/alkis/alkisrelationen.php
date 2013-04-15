@@ -8,10 +8,11 @@
 
 	Version:	10.11.2011  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
 	30.11.2011  import_request_variables
+	2013-04-08  deprecated "import_request_variables" ersetzt
 */
-//ini_set('error_reporting', 'E_ALL');
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 $otyp=htmlentities($otyp, ENT_QUOTES, "UTF-8");
@@ -19,7 +20,7 @@ $otyp=htmlentities($otyp, ENT_QUOTES, "UTF-8");
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">

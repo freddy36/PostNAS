@@ -12,13 +12,15 @@
 		Kennzeichen im Balken verkürzt.
 	2011-11-30  import_request_variables
 	2013-03-06  Korrektur URL des Link im Abs. Lage bei eingeschalteten Test-Optionen
+	2013-04-08  deprecated "import_request_variables" ersetzt
 
 	ToDo:
 	- Entschluesseln Kreis usw.
 	- Das Balken-Kennzeichen noch kompatibel machen mit der Eingabe der Navigation für Adresse 
 */
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");

@@ -8,12 +8,14 @@
 	02.11.2011  $sqla, $sqlg, Meldungen mit $debug steuern
 	17.11.2011  Parameter der Functions geändert
 	30.11.2011  import_request_variables
+	2013-04-08  deprecated "import_request_variables" ersetzt
 
 	ToDo: 
 	Sortierung der Grundbücher zum Namen
 */
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");

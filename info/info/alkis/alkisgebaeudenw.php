@@ -6,9 +6,11 @@
 	30.11.2011
 		Fehlerkorrektur Gebaeude mit mehreren Adressen nicht mehrfach
 		Sonderfall lage aus PostNAS 05 entfernt, import_request_variables
+	2013-04-08  deprecated "import_request_variables" ersetzt
 */
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}

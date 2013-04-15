@@ -47,17 +47,19 @@
 --                Umschaltung mit/ohne Historie über Verknüpfung Trigger -> Function
 --                Typ 'GEOMETRY' bei Tabellen: AX_WegPfadSteig, AX_UntergeordnetesGewaesser
 
--- 2012-10-31 FJ  Trigger fuer NAS-Replace-Sätze repariert:
+-- 2012-10-31 FJ  Trigger fuer NAS-Replace-Saetze repariert:
 --                siehe: FUNCTION delete_feature_kill()
 --                ax_historischesflurstueck.buchungsart ist Text nicht integer.
 
--- 2012-10-31 AE  Tabellen löschen wurde auskommentiert, DB wird leer angelegt SELECT alkis_drop();
+-- 2012-10-31 AE  Tabellen löschen wurde auskommetiert, DB wird leer angelegt SELECT alkis_drop();
 
 -- ** zwischenzeitliche Änderungen: siehe Kommentare im SVN
 
 -- 2013-01-15 FJ  Kommentare zu den letztlich hinzugekommenen Tabellen.
---                Darüber können Tabellen aus diesem Script unterschieden werden
+--                Darüber können Tabellen aus diesem Script unterschieden werden 
 --                von Tabellen, die PostNAS selbst generiert hat.
+
+-- 2013-04-15 FJ  Tabelle ax_wirtschaftlicheeinheit
 
 
 --  VERSIONS-NUMMER:
@@ -69,6 +71,10 @@
 
 -- Zur Datenstruktur siehe Dokument:
 -- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
+-- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/ALKIS_NRW/Pflichtenheft/Anlage03/Anlage3_ALKIS-OK-NRW_MAX.html
+
+-- Übersicht "Landesspezifische Festlegungen zu ALKIS in NRW":
+-- http://www.bezreg-koeln.nrw.de/extra/33alkis/alkis_nrw.htm
 
   SET client_encoding = 'UTF8';
   SET default_with_oids = false;
@@ -89,7 +95,7 @@
 \i alkis-functions.sql
 
 -- Alle Tabellen löschen
--- SELECT alkis_drop();
+--SELECT alkis_drop();
 
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
 CREATE TABLE "delete"
@@ -233,7 +239,7 @@ COMMENT ON COLUMN ax_anderefestlegungnachwasserrecht.gml_id IS 'Identifikator, g
 
 
 -- B a u b l o c k
--- ----------------------------------------------
+-- ---------------------------------------------- Objektartengruppe: Administrative Gebietseinheiten
 CREATE TABLE ax_baublock (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -279,7 +285,7 @@ COMMENT ON TABLE  ax_besonderertopographischerpunkt        IS 'B e s o n d e r e
 COMMENT ON COLUMN ax_besonderertopographischerpunkt.gml_id IS 'Identifikator, global eindeutig';
 
 
--- S o l l
+-- S o l l 
 -- -------
 CREATE TABLE ax_soll (
 	ogc_fid			serial NOT NULL,
@@ -298,7 +304,7 @@ SELECT AddGeometryColumn('ax_soll','wkb_geometry',:alkis_epsg,'POLYGON',2);
 CREATE INDEX ax_soll_geom_idx ON ax_soll USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_soll_gml ON ax_soll USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE ax_soll IS '''Soll'' ist eine runde, oft steilwandige Vertiefung in den norddeutschen Grundmoränenlandschaften; kann durch Abschmelzen von überschütteten Toteisblöcken (Toteisloch) oder durch Schmelzen periglazialer Eislinsen entstanden sein.';
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
 
 -- B e w e r t u n g
@@ -323,7 +329,7 @@ CREATE UNIQUE INDEX ax_bewertung_gml ON ax_bewertung USING btree (gml_id,beginnt
 COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
 
-COMMENT ON TABLE ax_bewertung  IS '''Bewertung'' ist die Klassifizierung einer Fläche nach dem Bewertungsgesetz (Bewertungsfläche).';
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
 
 -- T a g e s a b s c h n i t t
@@ -345,7 +351,7 @@ SELECT AddGeometryColumn('ax_tagesabschnitt','wkb_geometry',:alkis_epsg,'POLYGON
 CREATE INDEX ax_tagesabschnitt_geom_idx   ON ax_tagesabschnitt USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_tagesabschnitt_gml ON ax_tagesabschnitt USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE ax_tagesabschnitt  IS '''Tagesabschnitt'' ist ein Ordnungskriterium der Schätzungsarbeiten für eine Bewertungsfläche. Innerhalb der Tagesabschnitte sind die Grablöcher eindeutig zugeordnet.';
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
 
 -- D e n k m a l s c h u t z r e c h t
@@ -399,7 +405,7 @@ CREATE INDEX ax_forstrecht_geom_idx   ON ax_forstrecht USING gist  (wkb_geometry
 CREATE UNIQUE INDEX ax_forstrecht_gml ON ax_forstrecht USING btree (gml_id,beginnt);
 CREATE INDEX ax_forstrecht_afs ON ax_forstrecht(land,stelle);
 
-COMMENT ON TABLE ax_forstrecht IS '''Forstrecht'' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, forstrechtlichen Vorschriften.';
+-- COMMENT ON TABLE ax___  IS 'XXXX';
 
 -- G e b ä u d e a u s g e s t a l t u n g
 -- -----------------------------------------
@@ -560,8 +566,7 @@ CREATE INDEX idx_histfsalb_vor
   COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
 
 CREATE INDEX idx_histfsalb_nach
-   ON ax_historischesflurstueckalb USING btree (nachfolgerflurstueckskennzeichen /* ASC */);
-
+   ON ax_historischesflurstueckalb USING btree (vorgaengerflurstueckskennzeichen /* ASC */);
   COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
   COMMENT ON TABLE  ax_historischesflurstueckalb        IS 'Historisches Flurstück ALB';
   COMMENT ON COLUMN ax_historischesflurstueckalb.gml_id IS 'Identifikator, global eindeutig';
@@ -641,7 +646,7 @@ CREATE UNIQUE INDEX ax_historischesflurstueck_gml ON ax_historischesflurstueck U
 -- ++ Welche Methode für ein Array?
 -- Wirkt das überhaupt bei der Suche nach einem einzelnen Wert aus dem Array?
 CREATE INDEX idx_histfs_vor ON ax_historischesflurstueck (vorgaengerflurstueckskennzeichen /* ASC */);
-CREATE INDEX idx_histfs_nach ON ax_historischesflurstueck (nachfolgerflurstueckskennzeichen /* ASC */);
+CREATE INDEX idx_histfs_nach ON ax_historischesflurstueck (vorgaengerflurstueckskennzeichen /* ASC */);
 
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
@@ -903,6 +908,7 @@ CREATE UNIQUE INDEX ap_pto_gml ON ap_pto USING btree (gml_id,beginnt);
 CREATE INDEX art_idx           ON ap_pto USING btree (art);
 CREATE INDEX ap_pto_endet_idx  ON ap_pto USING btree (endet);
 CREATE INDEX ap_pto_sn_idx     ON ap_pto USING btree (signaturnummer);
+--CREATE INDEX ap_pto_txt_idx    ON ap_pto USING btree (schriftinhalt);
 
 COMMENT ON TABLE  ap_pto               IS 'PTO: Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie ';
 COMMENT ON COLUMN ap_pto.gml_id        IS 'Identifikator, global eindeutig';
@@ -1612,7 +1618,7 @@ COMMENT ON INDEX ax_hist_fs_ohne_kennz IS 'Suche nach Flurstückskennzeichen';
 CREATE INDEX idx_histfsor_vor ON ax_historischesflurstueckohneraumbezug (vorgaengerflurstueckskennzeichen /* ASC */);
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Vorgänger-Flurstück';
 
-CREATE INDEX idx_histfsor_nach ON ax_historischesflurstueckohneraumbezug (nachfolgerflurstueckskennzeichen /* ASC */);
+CREATE INDEX idx_histfsor_nach ON ax_historischesflurstueckohneraumbezug (vorgaengerflurstueckskennzeichen /* ASC */);
 -- COMMENT ON INDEX idx_histfsalb_vor IS 'Suchen nach Nachfolger-Flurstück';
 
 
@@ -3579,7 +3585,7 @@ COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- H ö h l e n e i n g a n g
--- -------------------------
+-- ------------------------- 
 CREATE TABLE ax_hoehleneingang (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4245,8 +4251,7 @@ CREATE TABLE ax_kleinraeumigerlandschaftsteil (
 	sonstigesmodell		varchar[],
 	anlass			varchar,
 	landschaftstyp		integer,
-	name			varchar,
-	CONSTRAINT ax_kleinraeumigerlandschaftsteil_pk PRIMARY KEY (ogc_fid)
+	name			varchar
 );
 
 SELECT AddGeometryColumn('ax_kleinraeumigerlandschaftsteil','wkb_geometry',:alkis_epsg,'POINT',2);
@@ -4284,6 +4289,27 @@ COMMENT ON COLUMN ax_wohnplatz.gml_id IS 'Identifikator, global eindeutig';
 --** Objektartengruppe: Administrative Gebietseinheiten
 --   ===================================================================
 
+-- ax_baublock
+
+
+-- w i r t s c h a f t l i c h e   E i n h e i t
+-- ---------------------------------------------
+-- neu 2013-04-15
+CREATE TABLE ax_wirtschaftlicheeinheit (
+  ogc_fid			serial NOT NULL,
+  gml_id			character varying(16),
+  identifier		character varying(28),
+  beginnt			character varying(20),
+  advstandardmodell	character varying(4),
+  sonstigesmodell	character varying[],
+  anlass			integer,
+  CONSTRAINT		ax_wirtschaftlicheeinheit_pk PRIMARY KEY (ogc_fid)
+);
+
+SELECT AddGeometryColumn('ax_wirtschaftlicheeinheit','dummy',:alkis_epsg,'POINT',2);
+
+COMMENT ON TABLE  ax_wirtschaftlicheeinheit  IS 'w i r t s c h a f t l i c h e   E i n h e i t';
+
 
 -- K o m m u n a l e s   G e b i e t
 -- ----------------------------------------------
@@ -4316,8 +4342,11 @@ COMMENT ON COLUMN ax_kommunalesgebiet.gml_id IS 'Identifikator, global eindeutig
 --AX_Gebiet
 -- ** Tabelle bisher noch nicht generiert
 
+-- ENDE Objektartengruppe  Administrative Gebietseinheiten
+
+
 -- V e r t r e t u n g
--- -------------------
+-- -------------------  Objektartengruppe: Personen- und Bestandsdaten
 CREATE TABLE ax_vertretung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4335,7 +4364,7 @@ COMMENT ON TABLE  ax_vertretung IS 'V e r t r e t u n g';
 
 
 -- V e r w a l t u n g s g e m e i n s c h a f t
--- ---------------------------------------------
+-- ---------------------------------------------  Objektartengruppe: Kataloge
 CREATE TABLE ax_verwaltungsgemeinschaft (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4360,7 +4389,7 @@ COMMENT ON TABLE  ax_verwaltungsgemeinschaft  IS 'V e r w a l t u n g s g e m e 
 
 
 -- V e r w a l t u n g
--- -------------------
+-- -------------------   Objektartengruppe: Personen- und Bestandsdaten
 CREATE TABLE ax_verwaltung (
 	ogc_fid			serial NOT NULL,
 	gml_id			character(16),
@@ -4416,6 +4445,11 @@ COMMENT ON TABLE  ax_verwaltung  IS 'V e r w a l t u n g';
 -- DigitalesGelaendemodell5    = DGM5
 -- DigitalesGelaendemodell25   = DGM25
 -- Digitales Gelaendemodell50  = DGM50
+
+
+-- wenn schon, dann auch alle Tabellen mit Kommentaren versehen:
+COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
+COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 
 -- Schema aktualisieren (setzt auch die Indizes neu)
 -- SELECT alkis_update_schema();

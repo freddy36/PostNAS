@@ -2,8 +2,10 @@
 /*	Modul alkisgbexp.php
 	CSV-Export von Grundbuch-Daten (Blatt)
 	2012-07-24 krz f.j.
+	2013-04-08  deprecated "import_request_variables" ersetzt
 */
-import_request_variables("G"); // gmlid
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET); // gmlid
 header('Content-type: application/octet-stream');
 header('Content-Disposition: attachment; filename="alkis_grundbuch_'.$gmlid.'.csv"');
 require_once("alkis_conf_location.php");

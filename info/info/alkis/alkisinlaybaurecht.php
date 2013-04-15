@@ -5,19 +5,19 @@
 	Version:
 	26.07.2011  debug
 	28.11.2011  import_request_variables
+	14.12.2011  function imFenster
+	2013-04-08  deprecated "import_request_variables" ersetzt
 */
-//ini_set('error_reporting', 'E_ALL & ~ E_NOTICE');
 session_start();
-import_request_variables("G");
-//$gkz=urldecode($_REQUEST["gkz"]);
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
-// $gmlid=urldecode($_REQUEST["gmlid"]);
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -25,7 +25,12 @@ if ($auth == "mapbender") {require_once($mapbender);}
 	<title>ALKIS Bau-, Raum- oder Bodenordnungsrecht</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Gericht.ico">
-	<base target="_blank">
+	<script type="text/javascript">
+	function imFenster(dieURL) {
+		var link = encodeURI(dieURL);
+		window.open(link,'','left=10,top=10,width=680,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+	}
+	</script>
 </head>
 <body>
 
@@ -104,10 +109,8 @@ $sql.="FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r  ";
 $sql.="WHERE r.gml_id= $1 "; 
 $sql.="AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true ";
 $sql.="AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 ";  // > 0.0 ist gemeint, Ungenauigkeit durch st_simplify
-$sql.="AND isvalid(r.wkb_geometry) AND isvalid(f.wkb_geometry) "; 
 $sql.="ORDER BY schnittflae DESC ";
-// Limit: Flurbereinigungsgebiete koennen sehr gross werden!
-$sql.="LIMIT 40;";
+$sql.="LIMIT 40;"; // Limit: Flurbereinig. kann gross werden!
 // Trotz Limit lange Antwortzeit, wegen OrderBy -> intersection
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -139,7 +142,7 @@ echo "\n<table class='fs'>";
 			echo "\n\t<td class='fla'>".$row["schnittflae"]." m&#178;</td>"; 
 			echo "\n\t<td class='fla'>".$row["amtlicheflaeche"]." m&#178;</td>";
 			echo "\n\t<td class='nwlink noprint'>";
-				echo "\n\t\t<a target='_blank' href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$row["gml_id"]."&amp;eig=n";					echo "' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck ";
+				echo "\n\t\t<a href='javascript:imFenster(\"alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$row["gml_id"]."&amp;eig=n\")' " ;					echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck ";
 					echo "\n\t\t\t<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
 				echo "\n\t\t</a>";
 			echo "\n\t</td>";
@@ -148,7 +151,7 @@ echo "\n<table class='fs'>";
 echo "\n</table>";
 
 if ($fscnt == 40) {
-	echo "<p>... und weitere Flurst&uuml;cke (Limit 40 erreicht).</0>";
+	echo "<p>... und weitere Flurst&uuml;cke (Limit 40 erreicht).</p>";
 }
 
 ?>

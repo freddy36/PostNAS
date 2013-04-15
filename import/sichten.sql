@@ -11,6 +11,7 @@
 --  2013-02-20 Mehrfache Buchungsstellen zum FS suchen, dies sind Auswirkungen eines Fehlers bei Replace
 --  2013-03-05 Beschriftungen aus ap_pto auseinander sortieren, neuer View "grenzpunkt"
 --  2013-03-12 Optimierung Hausnummern, View "gebaeude_txt" (Funktion und Name)
+--  2013-04-15 Unterdrücken doppelter Darstellung in den Views 'ap_pto_stra', 'ap_pto_nam', 'ap_pto_rest'
 
 --  -----------------------------------------
 --  Sichten fuer Verwendung im mapfiles (wms)
@@ -278,7 +279,7 @@ AS
       ON v.beziehung_zu = l.gml_id
    WHERE NOT p.schriftinhalt IS NULL 
      AND  p.endet IS NULL                            -- nichts historisches
-     AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- CLASSES in LAYER
+     AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- Diese Werte als CLASSES in LAYER behandeln. 
      AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
      AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
            -- Ersatzweise auch "keine Angabe", aber nur wenn es keinen besseren Text zur Lage gibt
@@ -297,14 +298,118 @@ AS
               ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
          )
 ;
-COMMENT ON VIEW ap_pto_stra IS 'Beschriftung für ap_pto mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
+COMMENT ON VIEW ap_pto_stra IS 'Beschriftung aus ap_pto für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
+
+
+-- Layer NAME "ap_pto_nam" GROUP "praesentation"
+-- -------------------------------------------------------
+-- 'NAM' = Name (Eigenname) und 'ZNM' = Zweitname (touristischer oder volkstümlicher Name) zu ...
+--   -- AX_Strassenverkehr oder AX_Platz usw.
+--  ap_pto >dientZurDarstellungVon> ?irgendwas?
+
+-- Dieser View wird bisher nicht verwendet. Dazu müsste ein neuer Layer erzeugt werden und die 
+-- Arten 'NAM' und 'ZNM' dann aus den View 'ap_pto_rest' heraus genommen werden.
+
+-- Entweder Layer trennen nach Text-Typen "NAM"+"ZNM" und dem Rest
+-- ODER           trennen nach fachlichen Ebenen wie "Nutzung" und "Gebäude" und ....
+
+CREATE OR REPLACE VIEW ap_pto_nam 
+AS 
+  SELECT p.ogc_fid,
+	  -- p.advstandardmodell       AS modell,    -- TEST
+         p.schriftinhalt,                        -- WMS: LABELITEM
+         p.art,                                  -- WMS: CLASSITEM
+         p.horizontaleausrichtung  AS hor,       -- Verfeinern der Text-Position ..
+         p.vertikaleausrichtung    AS ver,       --  .. durch Klassifizierung hor/ver
+         p.drehwinkel * 57.296     AS winkel,    -- * 180 / Pi
+         p.wkb_geometry
+    FROM ap_pto p
+    JOIN alkis_beziehungen v       
+      ON p.gml_id = v.beziehung_von
+  --JOIN nutzung l                      -- Im PostProcessing zusammen gefasste Nutzungsarten-Abschnitte
+  --  ON v.beziehung_zu = l.gml_id
+   WHERE NOT p.schriftinhalt IS NULL 
+     AND  p.endet IS NULL                            -- nichts historisches
+     AND  p.art   IN ('NAM','ZNM') -- Diese Werte als CLASSES in LAYER behandeln. 
+     AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+     AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
+           -- Ersatzweise auch "keine Angabe", aber nur wenn es keinen besseren Text zur Lage gibt
+           OR (p.advstandardmodell IS NULL
+               AND (SELECT vs.beziehung_zu          -- irgend ein Feld
+					  FROM ap_pto s                 -- eines anderen Textes (suchen)
+                      JOIN alkis_beziehungen vs     -- zur gleichen ?irgendwas?
+                        ON s.gml_id = vs.beziehung_von
+                     WHERE vs.beziehung_zu = v.beziehung_zu
+                       AND vs.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+                       AND NOT s.advstandardmodell IS NULL 
+                     LIMIT 1  -- einer reicht als Beweis
+					) IS NULL 
+              ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
+         )
+;
+COMMENT ON VIEW ap_pto_nam IS 'Beschriftung mit Art = Name/Zweitname. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
 
 
 -- Layer NAME "ap_pto" GROUP "praesentation"
 -- ----------------------------------------
 -- REST: Texte, die nicht schon in einem anderen Layer ausgegeben werden
 -- Ersetzt den View "s_beschriftung"
+
+-- alte Version bis 2013-04-15
+-- Nachteil: es werden mehrere Texte zum gleichen Objekt angezeigt die für verschiedene Maßstäbe gedacht sind.
+--CREATE OR REPLACE VIEW ap_pto_rest 
+--AS 
+--  SELECT p.ogc_fid, 
+--         p.schriftinhalt, 
+--         p.art, 
+--         p.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
+--         p.wkb_geometry 
+--    FROM ap_pto p
+--   WHERE not p.schriftinhalt IS NULL 
+--     AND p.endet IS NULL
+--     AND p.art NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG');
+
+
+-- 2013-04-15 Doppelte Darstellung aufgrund verschiedener "advstandardmodell" zum Objekt unterdrücken analog ap_pto_stra und ap_pto_nam
 CREATE OR REPLACE VIEW ap_pto_rest 
+AS 
+  SELECT p.ogc_fid, 
+         p.schriftinhalt, 
+         p.art, 
+         p.drehwinkel * 57.296 AS winkel, -- * 180 / Pi
+         p.wkb_geometry 
+    FROM ap_pto p
+    JOIN alkis_beziehungen v   -- Relation zur ?irgendwas?
+      ON p.gml_id = v.beziehung_von
+   WHERE not p.schriftinhalt IS NULL 
+     AND p.endet IS NULL
+     AND p.art   NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG')
+     -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
+     -- 'PNR' (Pseudonummer, lfd.-Nr.-Nebengebäude) kommt nicht mehr vor?
+    AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+    AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
+           -- Ersatzweise auch "keine Angabe" (nul) akzeptieren, aber nur wenn es keinen besseren Text zu ?irgendwas? gibt
+           -- Es wird hier nur bis zur Verbindungstabelle "alkis_beziehungen" gesucht, ob am anderen Ende die gleiche gml_id verlinkt ist.
+           -- Diese gml_id können dann zu verschiedenen, unbekannten Objekttabellen linken.
+           OR (p.advstandardmodell IS NULL
+               AND (SELECT vs.beziehung_zu          -- irgend ein Feld
+					  FROM ap_pto s                 -- eines anderen Textes (suchen)
+                      JOIN alkis_beziehungen vs     -- zur gleichen ?irgendwas?
+                        ON s.gml_id = vs.beziehung_von
+                     WHERE vs.beziehung_zu = v.beziehung_zu
+                       AND vs.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+                       AND NOT s.advstandardmodell IS NULL 
+                     LIMIT 1  -- einer reicht als Ausschlußkriterium
+					) IS NULL 
+              ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
+         );
+COMMENT ON VIEW ap_pto_rest IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
+
+
+-- Texte, die NICHT dargestellt werden sollen.
+-- -------------------------------------------
+-- Texte und Text-Fragmente aus der Konvertierung ALK+ALB, die noch nicht gelöscht worden sind.
+CREATE OR REPLACE VIEW ap_pto_muell 
 AS 
   SELECT p.ogc_fid, 
          p.schriftinhalt, 
@@ -314,10 +419,8 @@ AS
     FROM ap_pto p
    WHERE not p.schriftinhalt IS NULL 
      AND p.endet IS NULL
-     AND p.art NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG');
-     -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
--- 'PNR' (Pseudonummer, lfd.-Nr.-Nebengebäude) kommt nicht mehr vor?
-COMMENT ON VIEW ap_pto_rest IS 'Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden';
+     AND p.art IN ('AOG_AUG','PNR');
+COMMENT ON VIEW ap_pto_muell IS 'Beschriftungen aus "ap_pto", die NICHT dargestellt werden sollen.';
 
 -- ENDE BESCHRIFTUNG
 

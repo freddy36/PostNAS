@@ -1,18 +1,19 @@
 <?php
 /*	Modul alkisfsexp.php
-	CSV-Export von Flurstücksdaten zu einem Grundbuch-Blatt
+	CSV-Export von FlurstÃ¼cksdaten zu einem Grundbuch-Blatt
 	2012-07-24 krz f.j.
+	2013-04-08  deprecated "import_request_variables" ersetzt
 	
-++++ IN ARBEIT ++++   Zunächst Kopie von alkisgbexp.php
+++++ IN ARBEIT ++++   ZunÃ¤chst Kopie von alkisgbexp.php
 
-	Es wird die gml_id eines Bestandes übergeben (analog alkisgbexp.php).
+	Es wird die gml_id eines Bestandes Ã¼bergeben (analog alkisgbexp.php).
 	Dazu alle darauf gebuchten FS ermitteln.
 	Dazu dann alle FS-DFaten ausgeben (analog alkisfsexp.php).	
 
 */
 
-
-import_request_variables("G"); // gmlid
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET); // gmlid
 
 header('Content-type: application/octet-stream');
 header('Content-Disposition: attachment; filename="alkis_grundbuch_'.$gmlid.'.csv"');

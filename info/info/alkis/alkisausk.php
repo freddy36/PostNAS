@@ -7,24 +7,26 @@
 	Dies Programm gibt einen kurzen Ueberblick zum Flurstueck.
 	Eigentuemer ohne Adresse.
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
-	Siehe auch alkisinlayausk.php - eine Variante für den Einbau in einen iFrame
+	Siehe auch alkisinlayausk.php - eine Variante fÃ¼r den Einbau in einen iFrame
 
-	Version:	17.11.2011  Link FS-Historie, Parameter der Functions geändert
-	30.11.2011  import_request_variables
+	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geÃ¤ndert
+	2011-11-30  import_request_variables
+	2013-04-08  deprecated "import_request_variables" ersetzt
 */
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
 $keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
 if ($keys == "j") {$showkey=true;} else {$showkey=false;}
-?>
+echo <<<END
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -37,7 +39,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	</style>
 </head>
 <body>
-<?php
+END;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 

@@ -2,15 +2,16 @@
 /*	Modul: alkisfshist.php
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
-	Flurstücks-Historie fuer ein Flurstückskennzeichen aus ALKIS PostNAS
-	Version:	2011-11-16 Zum aktuellen FS die Vorgänger suchen
-	2011-11-17 Parameter der Functions geändert
-	2011-11-30 import_request_variables
-	2012-11-27 Function split deprecated: explode
+	Flurstuecks-Historie fuer ein Flurstueckskennzeichen aus ALKIS PostNAS
+	Version:	2011-11-16  Zum aktuellen FS die VorgÃ¤nger suchen
+	2011-11-17  Parameter der Functions geÃ¤ndert
+	2011-11-30  import_request_variables
+	2012-11-27  Function split deprecated: explode
+	2013-04-08  deprecated "import_request_variables" ersetzt
 */
 
 function fzerleg($fs) {
-/*	Flurstückskennzeichen (20) zerlegen als lesbares Format (wie im Balken):
+/*	FlurstÃ¼ckskennzeichen (20) zerlegen als lesbares Format (wie im Balken):
 	Dies FS-Kennz-Format wird auch als Eingabe in der Navigation akzeptiert 
    ....*....1....*....2
    ll    fff     nnnn
@@ -44,7 +45,7 @@ function vornach($dbarr) {
 }
 
 function gemkg_name($gkey) {
-// Schlüssel wird übergeben, Name in DB nachschlagen
+// Schluessel wird uebergeben, Name in DB nachschlagen
 	global $con;
 	$sql ="SELECT bezeichnung FROM ax_gemarkung g WHERE g.gemarkungsnummer= $1 ;";
 	$v=array($gkey);
@@ -64,9 +65,9 @@ function gemkg_name($gkey) {
 }
 
 function such_vor_arr($fsk) {
-// Suchen der Vorgänger zum aktuellen Flurst. Ausgabe von Selbst-Links Zeilenweise in <td>.
-// Akt. FS hat keine Verweise auf Vorgänger. Darum in den Nachfolger-Verweisen von Hist.-FS suchen.
-// Problem: Dies sind Arrays, die nicht performant durchsucht werden können.
+// Suchen der Vorgaenger zum aktuellen Flurst. Ausgabe von Selbst-Links Zeilenweise in <td>.
+// Akt. FS hat keine Verweise auf Vorgaenger. Darum in den Nachfolger-Verweisen von Hist.-FS suchen.
+// Problem: Dies sind Arrays, die nicht performant durchsucht werden koennen.
 	global $gkz, $con, $debug;
 
 	$wherecl="WHERE $1 = ANY (nachfolgerflurstueckskennzeichen) ";
@@ -106,7 +107,8 @@ function such_vor_arr($fsk) {
 }
 
 session_start();
-import_request_variables("G");require_once("alkis_conf_location.php");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
@@ -140,7 +142,7 @@ if ($gmlid != "") { // Ja, die GML wurde uebergeben
 	$parmval=$gmlid;
 	$whereclause="WHERE gml_id= $1 ";
 	$v = array($gmlid);
-} else {	// Alternativ: das Flurstücks-Kennzeichen wurde übergeben
+} else {	// Alternativ: das FlurstÃ¼cks-Kennzeichen wurde Ã¼bergeben
 	if ($fskennz != "") {
 		$parmtyp="Flurst&uuml;ckskennzeichen";
 		$parmval=$fskennz;
@@ -153,7 +155,7 @@ if ($gmlid != "") { // Ja, die GML wurde uebergeben
 }
 
 if ($parmtyp != "") { // einer der beiden erlaubten Fälle
-	// UNION-Abfrage auf 3 ähnliche Tabellen, darin aber immer nur 1 Treffer.
+	// UNION-Abfrage auf 3ähnliche Tabellen, darin aber immer nur 1 Treffer.
 
 	$felder="gml_id, flurnummer, zaehler, nenner, flurstueckskennzeichen, amtlicheflaeche, zeitpunktderentstehung, gemarkungsnummer, ";
 
@@ -184,7 +186,7 @@ if ($parmtyp != "") { // einer der beiden erlaubten Fälle
 		$entsteh=$rowu["zeitpunktderentstehung"];
 		$vor=$rowu["vor"];
 		$nach=$rowu["nach"];
-		if ($gmlid == "") {$gmlid=$rowu["gml_id"];} // für selbst-link-Umschalter ueber footer
+		if ($gmlid == "") {$gmlid=$rowu["gml_id"];} // fÃ¼r selbst-link-Umschalter ueber footer
 	} else {
 		if ($debug > 1) {echo "<br><p class='err'>Fehler! Kein Treffer f&uuml;r ".$parmtyp." = '".$parmval."'</p><br>";}
 		if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sqlu."<br>$1=".$parmtyp." = '".$parmval."'</p>";}
@@ -261,13 +263,13 @@ echo "<table class='outer'>";
 		<td class='head'>Nachfolger</td>
 	</tr>"; // Head
 	
-	// Spalte 1: F l u r s t ü c k
+	// Spalte 1: F l u r s t Ã¼ c k
 	echo "\n<tr>\n\t<td>";
 		echo "<img src='ico/".$ico."' width='16' height='16' alt=''> ".$wert;
 		echo "<br>Fl&auml;che <span class='flae'>".$flae."</span>";
 	echo "</td>";
 
-	// Spalte 2: V o r g ä n g e r
+	// Spalte 2: V o r g Ã¤ n g e r
 	echo "\n\t<td>";
 	switch ($ftyp) { // Unterschiede Historisch/Aktuell
 		case 'a':

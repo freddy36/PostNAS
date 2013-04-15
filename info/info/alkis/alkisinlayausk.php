@@ -10,19 +10,22 @@
 	Dies ist eine Variante von alkisausk.ph 
 	 welches als vollstaendige Seite aufgerufen wird.
 
-	Version:	17.11.2011  Link FS-Historie, Parameter der Functions geändert
-	30.11.2011  import_request_variables, $dbvers PostNAS 0.5 entfernt*/
+	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geändert
+	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
+	2011-12-14  "window.open(..,width=680)"
+	2013-04-08  deprecated "import_request_variables" ersetzt*/
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
 $gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
-?>
+echo <<<END
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-	<meta name="author" content="F. Jaeger krz" >
+	<meta name="author" content="b600352" >
 	<meta http-equiv="cache-control" content="no-cache">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta http-equiv="expires" content="0">
@@ -32,12 +35,12 @@ $gmlid = isset($_GET["gmlid"]) ? $_GET["gmlid"] : 0;
 	<title>ALKIS-Auskunft</title>	<script type="text/javascript">
 	function imFenster(dieURL) {
 		var link = encodeURI(dieURL);
-		window.open(link,'','left=10,top=10,width=640,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+		window.open(link,'','left=10,top=10,width=680,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
 	}
 	</script>
 </head>
 <body>
-<?php
+END;
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 

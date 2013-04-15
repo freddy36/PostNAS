@@ -5,14 +5,16 @@
 	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
 	Version:
-	2011-11-16 Neuer Style class='dbg', Link Historie
-	2011-11-17 Parameter der Functions geändert
-	2011-11-30 import_request_variables, $dbvers PostNAS 0.5 entfernt
-	2011-12-01 Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
-	2011-12-16 Zeilenumbruch in Nutzungsart, Spaltenbreite Link
-	2012-07-24 Export als CSV, pg_free_result(), pg_close()
-	2012-11-27 split deprecated, besser: explode
-	2013-01-17 FS-Kennzeichen (ALB-Format) als Parameter statt gmlid möglich
+	2011-11-16  Neuer Style class='dbg', Link Historie
+	2011-11-17  Parameter der Functions geändert
+	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
+	2011-12-01  Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
+	2011-12-16  Zeilenumbruch in Nutzungsart, Spaltenbreite Link
+	2012-07-24  Export als CSV, pg_free_result(), pg_close()
+	2012-11-27  split deprecated, besser: explode
+	2013-01-17  FS-Kennzeichen (ALB-Format) als Parameter statt gmlid möglich
+	2013-04-08  deprecated "import_request_variables" ersetzt
+	2013-04-11  ID-Links (im Testmodus) auch an Lagebezeichnung (mit/ohne HsNr) und an Nutzungs-Abschnitt
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -20,14 +22,15 @@
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
 session_start();
-import_request_variables("G");
+//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
+$cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
 $keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
 if ($keys == "j") {$showkey=true;} else {$showkey=false;}
-?>
+echo <<<END
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
@@ -43,12 +46,13 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 		.noprint {visibility: hidden;}
 	</style>
 	<script type="text/javascript">
-	function ALKISexportFS() {window.open(<?php echo "'alkisfsexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
-	function ALKISexportGB() {window.open(<?php echo "'alkisfsgbexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
+	function ALKISexportFS() {window.open('alkisfsexp.php?gkz=$gkz&gmlid=$gmlid');}
+	function ALKISexportGB() {window.open('alkisfsgbexp.php?gkz=$gkz&gmlid=$gmlid');}
 	</script>
 </head>
 <body>
-<?php
+END;
+//if ($debug > 0) {echo "<p>Habe ".$cntget." Parameter per 'get' bekommen<p>";}
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
@@ -282,7 +286,9 @@ while($row = pg_fetch_array($res)) {
 		if ($showkey) {
 			echo "<span class='key'>(".$row["lage"].")</span>&nbsp;";
 		}
-		echo $sname."&nbsp;".$row["hausnummer"]."</td>";
+		echo $sname."&nbsp;".$row["hausnummer"];
+		if ($idanzeige) {linkgml($gkz, $row["gml_id"], "Lagebezeichnung mit Hausnummer");}
+		echo "</td>";
 		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"];
 			if ($showkey) {echo "&amp;showkey=j";}
@@ -303,7 +309,7 @@ $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=v.beziehung_zu ";
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
 $sql.="AND l.lage = s.lage ";
-$sql.="WHERE v.beziehung_von= $1 "; // id FS";
+$sql.="WHERE v.beziehung_von= $1 "; // id FS
 $sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -316,7 +322,7 @@ $j=0;
 // Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!
 while($row = pg_fetch_array($res)) {
 	$gewann = htmlentities($row["unverschluesselt"], ENT_QUOTES, "UTF-8");
-	$skey=$row["lage"]; // Strassenschluessel
+	$skey=$row["lage"]; // Strassenschl.
 	$lgml=$row["gml_id"]; // key der Lage
 	if (!$gewann == "") {
 		echo "\n<tr>";
@@ -339,7 +345,9 @@ while($row = pg_fetch_array($res)) {
 			if ($showkey) {
 				echo "<span class='key'>(".$skey.")</span>&nbsp;";
 			}
-			echo $row["bezeichnung"]."</td>";
+			echo $row["bezeichnung"];
+			if ($idanzeige) {linkgml($gkz, $lgml, "Lagebezeichnung o. HsNr.");}
+			echo "</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml;
 				if ($showkey) {echo "&amp;showkey=j";}				
@@ -426,10 +434,10 @@ while($row = pg_fetch_array($res)) {
 				}
 			}
 
-			If ($info != "") { // manchmal ein zweites Zusatzfeld (wie entschlüsseln?)
+			if ($info != "") { // manchmal ein zweites Zusatzfeld (wie entschlüsseln?)
 				echo ", ".$fldinfo."=".$info;
 			}
-			If ($zus != "") { // Zustand
+			if ($zus != "") { // Zustand
 				echo "\n\t\t<br>";
 				if ($showkey) {echo "<span class='key'>(".$zus.")</span> ";}
 				echo "<span title='Zustand'>";				
@@ -441,8 +449,10 @@ while($row = pg_fetch_array($res)) {
 				}
 				echo "</span>";
 			}
-			If ($nam != "") {echo "<br>Name: ".$nam;}
-			If ($bez != "") {echo "<br>Bezeichnung: ".$bez;}
+			if ($nam != "") {echo "<br>Name: ".$nam;}
+			if ($bez != "") {echo "<br>Bezeichnung: ".$bez;}
+			if ($idanzeige) {linkgml($gkz, $gml, "Nutzungs-Abschnitt");}
+
 		echo "</td>";
 		echo "\n\t<td>";
 			switch ($grupp) { // Icon nach 4 Objektartengruppen
@@ -747,7 +757,7 @@ if ($bs == 0) {
 	linkgml($gkz, $gmlid, "Flurst&uuml;ck");
 }
 pg_close($con);
-?>
+echo <<<END
 
 <form action=''>
 	<div class='buttonbereich noprint'>
@@ -759,8 +769,11 @@ pg_close($con);
 <!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
+END;
 
-<?php footer($gmlid, $_SERVER['PHP_SELF']."?", "&amp;eig=".$eig); ?>
+footer($gmlid, $_SERVER['PHP_SELF']."?", "&amp;eig=".$eig);
+
+?>
 
 </body>
 </html>
