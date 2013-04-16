@@ -6,6 +6,7 @@
 	2011-12-09 Sonderfall PostNAS 0.5 raus,
 	2012-12-03 A.E.: Ausgabe von Hausnr ohne Gebaeude
 	2013-01-15 F.J.: HsNr ohne Gebäude auf NRW/krz-Daten anpassen
+	2013-04-16 "import_request_variables" entfällt in PHP 5.4
 
 	ToDo:
 	-  auskommentierte Variante mit "subquery" entfernen
@@ -14,7 +15,7 @@
 	-	Mouse-Over in Straßenliste soll Position zeigen.
 		Dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
 */
-import_request_variables("G");
+$cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$$dbname.$dbvers.$gkz);

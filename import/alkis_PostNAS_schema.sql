@@ -958,16 +958,16 @@ COMMENT ON COLUMN ap_lto.gml_id IS 'Identifikator, global eindeutig';
 -- A P  D a r s t e l l u n g
 -- ----------------------------------------------
 CREATE TABLE ap_darstellung (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),			-- Datumsformat
-	endet 			character(20),			-- Datumsformat
-	advstandardmodell	varchar[],
-	anlass			varchar,
-	art			varchar,		-- (37)
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),			-- Datumsformat
+	endet 					character(20),			-- Datumsformat
+	advstandardmodell		varchar[],
+	anlass					varchar,
+	art						varchar,		-- (37)
 	darstellungsprioritaet  integer,
-	signaturnummer		varchar,
+	signaturnummer			varchar,
 	positionierungsregel    integer,
 	CONSTRAINT ap_darstellung_pk PRIMARY KEY (ogc_fid)
 );
@@ -1000,44 +1000,37 @@ CREATE TABLE ax_flurstueck (
 	-- GID: AX_Flurstueck_Kerndaten
 	-- 'Flurstück_Kerndaten' enthält Eigenschaften des Flurstücks, die auch für andere Flurstücksobjektarten gelten (z.B. Historisches Flurstück).
 
-	land 				integer,         --
+	land 					integer,         --
 	gemarkungsnummer 		integer,            --
-	flurnummer			integer,               -- Teile des Flurstückskennzeichens
-	zaehler 			integer,            --    (redundant zu flurstueckskennzeichen)
-	nenner				integer,         --
+	flurnummer				integer,               -- Teile des Flurstückskennzeichens
+	zaehler 				integer,            --    (redundant zu flurstueckskennzeichen)
+	nenner					integer,         --
 	-- daraus abgeleitet:
 	flurstueckskennzeichen		character(20),         -- Inhalt rechts mit __ auf 20 aufgefüllt
 
-	amtlicheflaeche			double precision,      -- AFL
+	amtlicheflaeche				double precision,      -- AFL
 	abweichenderrechtszustand	varchar default 'false', -- ARZ
 	zweifelhafterFlurstuecksnachweis varchar default 'false',-- ZFM Boolean
 	rechtsbehelfsverfahren		varchar default 'false', -- RBV
 	zeitpunktderentstehung		character(10),         -- ZDE  Inhalt jjjj-mm-tt  besser Format date ?
-
-	gemeinde			integer,
+	gemeinde				integer,
 	-- GID: ENDE AX_Flurstueck_Kerndaten
 
-	identifier			character(44),         -- global eindeutige Objektnummer
-	beginnt				character(20),         -- Timestamp der Entstehung
-	endet 				character(20),         -- Timestamp des Untergangs
+	identifier				character(44),         -- global eindeutige Objektnummer
+	beginnt					character(20),         -- Timestamp der Entstehung
+	endet 					character(20),         -- Timestamp des Untergangs
 	advstandardmodell 		varchar,               -- steuert die Darstellung nach Kartentyp
-	anlass				varchar,
---	art				varchar[],   -- Wozu braucht man das? Weglassen?
-	name				varchar[],   -- 03.11.2011: array, Buchauskunft anpassen!
+	anlass					varchar,
+--	art						varchar[],   -- Wozu braucht man das? Weglassen?
+	name					varchar[],   -- 03.11.2011: array, Buchauskunft anpassen!
 	regierungsbezirk		integer,
-	kreis				integer,
-	stelle				varchar[],
-
--- neu aus SVN-Version 28.02.2012 hinzugefuegt
--- Dies ist noch zu ueberpruefen
+	kreis					integer,
+	stelle					varchar[],
 	angabenzumabschnittflurstueck	varchar[],
---	"gemeindezugehoerigkeit|ax_gemeindekennzeichen|land" integer, -- siehe "land"
 	kennungschluessel		varchar[],
 	flaechedesabschnitts		double precision[],
-
 	angabenzumabschnittnummeraktenzeichen integer[],
 	angabenzumabschnittbemerkung	varchar[],
-
 	CONSTRAINT ax_flurstueck_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1118,24 +1111,24 @@ COMMENT ON COLUMN ax_besondereflurstuecksgrenze.gml_id IS 'Identifikator, global
 -- G r e n z p u n k t
 -- ----------------------------------------------
 CREATE TABLE ax_grenzpunkt (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character(44),
-	beginnt				character(20),
-	endet 				character(20),
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
 	advstandardmodell		varchar,
-	anlass				varchar,
+	anlass					varchar,
 	punktkennung			varchar, -- integer,
-	land				integer,
-	stelle				integer,
+	land					integer,
+	stelle					integer,
 	abmarkung_marke			integer,
 	festgestelltergrenzpunkt	varchar,
-	besonderepunktnummer		varchar,
-	bemerkungzurabmarkung		integer,
+	besonderepunktnummer	varchar,
+	bemerkungzurabmarkung	integer,
 	sonstigeeigenschaft		varchar[],
-	art				varchar, --(37)
-	name				varchar[],
-	zeitpunktderentstehung		integer,
+	art						varchar, --(37)
+	name					varchar[],
+	zeitpunktderentstehung	integer,
 	relativehoehe			double precision,
 	CONSTRAINT ax_grenzpunkt_pk PRIMARY KEY (ogc_fid)
 );
@@ -1217,18 +1210,18 @@ COMMENT ON COLUMN ax_lagebezeichnungmithausnummer.gml_id IS 'Identifikator, glob
 -- --------------------------------------------------------------
 -- Nebengebäude: lfd-Nummer eines Nebengebäudes zu einer (Pseudo-) Hausnummer
 CREATE TABLE ax_lagebezeichnungmitpseudonummer (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	land			integer,
+	anlass				varchar,
+	land				integer,
 	regierungsbezirk	integer,
-	kreis			integer,
-	gemeinde		integer,
-	lage			varchar, -- Strassenschluessel
+	kreis				integer,
+	gemeinde			integer,
+	lage				varchar, -- Strassenschluessel
 	pseudonummer		varchar,
 	laufendenummer		varchar, -- leer, Zahl, "P2"
 	CONSTRAINT ax_lagebezeichnungmitpseudonummer_pk PRIMARY KEY (ogc_fid)
@@ -1251,16 +1244,16 @@ COMMENT ON COLUMN ax_lagebezeichnungmitpseudonummer.gml_id IS 'Identifikator, gl
 -- A u f n a h m e p u n k t
 -- ----------------------------------------------
 CREATE TABLE ax_aufnahmepunkt (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier              character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	punktkennung		varchar,   --integer ist zu klein,
-	land			integer,
-	stelle			integer,
+	land				integer,
+	stelle				integer,
 	sonstigeeigenschaft	varchar[],
 	vermarkung_marke	integer,
 	relativehoehe		double precision,
@@ -1348,7 +1341,7 @@ CREATE TABLE ax_punktortag (
 	endet 			character(20),
 	advstandardmodell	varchar,
 	anlass			varchar,
-	art			varchar[],
+	art				varchar[],
 	name			varchar[],
 	kartendarstellung	varchar,	-- boolean
 --	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer, -- varchar[],
@@ -1370,16 +1363,16 @@ COMMENT ON COLUMN ax_punktortag.gml_id IS 'Identifikator, global eindeutig';
 -- P u n k t o r t   A U
 -- ----------------------------------------------
 CREATE TABLE ax_punktortau (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	kartendarstellung	varchar,	-- boolean
---	art			varchar, -- entbehrlich
-	name			varchar[],
+--	art					varchar, -- entbehrlich
+	name				varchar[],
 --	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer,  --varchar[],
 --	datetime		character(24)[],
 	individualname		varchar,
@@ -1401,17 +1394,17 @@ COMMENT ON COLUMN ax_punktortau.gml_id IS 'Identifikator, global eindeutig';
 -- P u n k t o r t   T A
 -- ----------------------------------------------
 CREATE TABLE ax_punktortta (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	kartendarstellung	varchar, -- boolean
-	description		integer,
-	art			varchar[],
-	name			varchar[],
+	description			integer,
+	art					varchar[],
+	name				varchar[],
 	genauigkeitsstufe	integer,
 	vertrauenswuerdigkeit	integer,
 	koordinatenstatus	integer,
@@ -1439,20 +1432,20 @@ CREATE TABLE ax_fortfuehrungsnachweisdeckblatt (
 	identifier			character(44),
 	beginnt				character(20),
 	endet				character(20),
-	advstandardmodell		varchar,
+	advstandardmodell	varchar,
 	anlass				varchar,
---	art				varchar,		-- entbehrlich
-	uri				varchar,
+--	art					varchar,		-- entbehrlich
+	uri					varchar,
 	fortfuehrungsfallnummernbereich	varchar,
-	land				integer, -- ingemarkung|ax_gemarkung_schluessel
-	gemarkungsnummer		integer, -- ingemarkung|ax_gemarkung_schluessel
-	laufendenummer			integer,
+	land				integer,
+	gemarkungsnummer	integer,
+	laufendenummer		integer,
 	titel				varchar,
 	erstelltam			varchar,		-- Datum jjjj-mm-tt
-	fortfuehrungsentscheidungam	varchar,
-	fortfuehrungsentscheidungvon	varchar,		-- Bearbeiter-Name und -Titel
+	fortfuehrungsentscheidungam		varchar,
+	fortfuehrungsentscheidungvon	varchar,	-- Bearbeiter-Name und -Titel
 	bemerkung			varchar,
-	beziehtsichauf			varchar,
+	beziehtsichauf		varchar,
 	CONSTRAINT ax_fortfuehrungsnachweisdeckblatt_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1465,22 +1458,22 @@ IS 'F o r t f u e h r u n g s n a c h w e i s / D e c k b l a t t';
 -- F o r t f u e h r u n g s f a l l
 -- ---------------------------------
 CREATE TABLE ax_fortfuehrungsfall (
-	ogc_fid					serial NOT NULL,
-	gml_id					character(16),
-	identifier				character(44),
-	beginnt					character(20),
-	endet					character(20),
+	ogc_fid						serial NOT NULL,
+	gml_id						character(16),
+	identifier					character(44),
+	beginnt						character(20),
+	endet						character(20),
 	advstandardmodell			varchar,
-	anlass					varchar,
---	art					varchar,  -- entbehrlich
-	uri					varchar,
-	fortfuehrungsfallnummer			integer,
+	anlass						varchar,
+--	art							varchar,  -- entbehrlich
+	uri							varchar,
+	fortfuehrungsfallnummer		integer,
 	laufendenummer				integer,
 	ueberschriftimfortfuehrungsnachweis	integer[],
 	anzahlderfortfuehrungsmitteilungen	integer,
-	zeigtaufaltesflurstueck			varchar[], -- Format wie flurstueckskennzeichen (20) als Array
-	zeigtaufneuesflurstueck			varchar[], -- Format wie flurstueckskennzeichen (20) als Array
-	bemerkung				varchar,
+	zeigtaufaltesflurstueck		varchar[], -- Format wie flurstueckskennzeichen (20) als Array
+	zeigtaufneuesflurstueck		varchar[], -- Format wie flurstueckskennzeichen (20) als Array
+	bemerkung					varchar,
 	CONSTRAINT ax_fortfuehrungsfall_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3269,16 +3262,16 @@ COMMENT ON COLUMN ax_bahnverkehrsanlage.gml_id IS 'Identifikator, global eindeut
 -- S e i l b a h n, S c h w e b e b a h n
 -- --------------------------------------
 CREATE TABLE ax_seilbahnschwebebahn (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar[],
-	anlass			varchar,
+	anlass				varchar,
 	bahnkategorie		integer,
-	name			varchar,
+	name				varchar,
 	CONSTRAINT ax_seilbahnschwebebahn_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3295,18 +3288,18 @@ COMMENT ON COLUMN ax_seilbahnschwebebahn.gml_id IS 'Identifikator, global eindeu
 -- G l e i s
 -- ----------------------------------------------
 CREATE TABLE ax_gleis (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar[],
-	anlass			varchar,
+	anlass				varchar,
 	bahnkategorie		integer,
-	art			integer,
-	lagezuroberflaeche      integer,
-	name			varchar,
+	art					integer,
+	lagezuroberflaeche	integer,
+	name				varchar,
 	CONSTRAINT ax_gleis_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3322,17 +3315,17 @@ COMMENT ON COLUMN ax_gleis.gml_id IS 'Identifikator, global eindeutig';
 -- F l u g v e r k e h r s a n l a g e
 -- -----------------------------------
 CREATE TABLE ax_flugverkehrsanlage (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar,
-	anlass			varchar,
-	art			integer,
+	anlass				varchar,
+	art					integer,
 	oberflaechenmaterial	integer,
-	name			varchar,
+	name				varchar,
 	CONSTRAINT ax_flugverkehrsanlage_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3352,16 +3345,16 @@ COMMENT ON COLUMN ax_flugverkehrsanlage.gml_id      IS 'Identifikator, global ei
 -- B a u w e r k   i m   G e w ä s s e r b e r e i c h
 -- -----------------------------------------------------
 CREATE TABLE ax_bauwerkimgewaesserbereich (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	bauwerksfunktion	integer,
-	name			varchar,
-	zustand			integer,
+	name				varchar,
+	zustand				integer,
 	CONSTRAINT ax_bauwerkimgewaesserbereich_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3408,15 +3401,15 @@ COMMENT ON COLUMN ax_vegetationsmerkmal.gml_id IS 'Identifikator, global eindeut
 -- G e w ä s s e r m e r k m a l
 -- ----------------------------------------------
 CREATE TABLE ax_gewaessermerkmal (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	art			integer,
-	name			varchar,
+	anlass				varchar,
+	art					integer,
+	name				varchar,
 	CONSTRAINT ax_gewaessermerkmal_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3432,17 +3425,17 @@ COMMENT ON COLUMN ax_gewaessermerkmal.gml_id IS 'Identifikator, global eindeutig
 -- u n t e r g e o r d n e t e s   G e w ä s s e r
 -- -------------------------------------------------
 CREATE TABLE ax_untergeordnetesgewaesser (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
-	advstandardmodell	varchar,
-	anlass			varchar,
-	funktion		integer,
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
+	advstandardmodell		varchar,
+	anlass					varchar,
+	funktion				integer,
 	lagezurerdoberflaeche	integer,
 	hydrologischesmerkmal	integer,
-	name			varchar,
+	name					varchar,
 	CONSTRAINT ax_untergeordnetesgewaesser_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3464,13 +3457,13 @@ COMMENT ON COLUMN ax_untergeordnetesgewaesser.gml_id IS 'Identifikator, global e
 -- W a s s e r s p i e g e l h ö h e
 -- ---------------------------------
 CREATE TABLE ax_wasserspiegelhoehe (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
-	advstandardmodell	varchar,
-	anlass			varchar,
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
+	advstandardmodell		varchar,
+	anlass					varchar,
 	hoehedeswasserspiegels	double precision,
 	CONSTRAINT ax_wasserspiegelhoehe_pk PRIMARY KEY (ogc_fid)
 );
@@ -3486,14 +3479,14 @@ COMMENT ON TABLE  ax_wasserspiegelhoehe  IS 'W a s s e r s p i e g e l h ö h e'
 -- S c h i f f f a h r t s l i n i e  /  F ä h r v e r k e h r
 -- -----------------------------------------------------------
 CREATE TABLE ax_schifffahrtsliniefaehrverkehr (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	art			integer,
+	anlass				varchar,
+	art					integer,
 	CONSTRAINT ax_schifffahrtsliniefaehrverkehr_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3515,15 +3508,15 @@ COMMENT ON TABLE  ax_schifffahrtsliniefaehrverkehr  IS 'S c h i f f f a h r t s 
 -- B ö s c h u n g s k l i f f
 -- -----------------------------
 CREATE TABLE ax_boeschungkliff (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar[],
-	anlass			varchar,
-	objekthoehe		double precision,
+	anlass				varchar,
+	objekthoehe			double precision,
 	CONSTRAINT ax_boeschungkliff_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3539,14 +3532,14 @@ COMMENT ON COLUMN ax_boeschungkliff.gml_id IS 'Identifikator, global eindeutig';
 -- ---------------------------------
 --AX_Boeschungsflaeche Geändert (Revisionsnummer: 1623)
 CREATE TABLE ax_boeschungsflaeche (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar[],
-	anlass			varchar,
+	anlass				varchar,
 	CONSTRAINT ax_boeschungsflaeche_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3562,16 +3555,16 @@ COMMENT ON COLUMN ax_boeschungsflaeche.gml_id IS 'Identifikator, global eindeuti
 -- D a m m  /  W a l l  /  D e i c h
 -- ----------------------------------------------
 CREATE TABLE ax_dammwalldeich (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	art			integer,
-	name			varchar,
-	funktion		integer,
+	anlass				varchar,
+	art					integer,
+	name				varchar,
+	funktion			integer,
 	CONSTRAINT ax_dammwalldeich_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3587,14 +3580,14 @@ COMMENT ON COLUMN ax_dammwalldeich.gml_id IS 'Identifikator, global eindeutig';
 -- H ö h l e n e i n g a n g
 -- ------------------------- 
 CREATE TABLE ax_hoehleneingang (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	name			varchar,
+	anlass				varchar,
+	name				varchar,
 	ax_datenerhebung	integer,
 	CONSTRAINT ax_hoehleneingang_pk PRIMARY KEY (ogc_fid)
 );
@@ -3612,14 +3605,14 @@ COMMENT ON COLUMN ax_hoehleneingang.gml_id IS 'Identifikator, global eindeutig';
 -- ------------------------------------------------------
 -- Nutzung
 CREATE TABLE ax_felsenfelsblockfelsnadel (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	name			varchar,
+	anlass				varchar,
+	name				varchar,
 	CONSTRAINT ax_felsenfelsblockfelsnadel_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3635,14 +3628,14 @@ COMMENT ON COLUMN ax_felsenfelsblockfelsnadel.gml_id IS 'Identifikator, global e
 -- D ü n e
 -- -------
 CREATE TABLE ax_duene (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	name			varchar,
+	anlass				varchar,
+	name				varchar,
 	CONSTRAINT ax_duene_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3656,13 +3649,13 @@ COMMENT ON TABLE  ax_duene IS 'D ü n e';
 -- H ö h e n l i n i e
 -- --------------------
 CREATE TABLE ax_hoehenlinie (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	hoehevonhoehenlinie	double precision,
 	CONSTRAINT ax_hoehenlinie_pk PRIMARY KEY (ogc_fid)
 );
@@ -3688,19 +3681,19 @@ CREATE UNIQUE INDEX ax_hoehenlinie_gml ON ax_hoehenlinie USING btree (gml_id,beg
 -- G e l ä n d e k a n t e
 -- ----------------------------------------------
 CREATE TABLE ax_gelaendekante (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet			character(20),
-	advstandardmodell	varchar,
-	sonstigesmodell		varchar,
-	anlass			varchar,
-	istteilvon		varchar, -- Beziehung?
-	artdergelaendekante	integer,
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet					character(20),
+	advstandardmodell		varchar,
+	sonstigesmodell			varchar,
+	anlass					varchar,
+	istteilvon				varchar, -- Beziehung?
+	artdergelaendekante		integer,
 	ax_dqerfassungsmethode	integer,
-	identifikation		integer,
-	art			integer,
+	identifikation			integer,
+	art						integer,
 	CONSTRAINT ax_gelaendekante_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3720,14 +3713,14 @@ COMMENT ON COLUMN ax_gelaendekante.gml_id IS 'Identifikator, global eindeutig';
 -- B e s o n d e r e r   H ö h e n p u n k t
 -- -------------------------------------------------------------
 CREATE TABLE ax_besondererhoehenpunkt (
-	ogc_fid			serial NOT NULL,
-	gml_id 			character(16),
-	identifier 		character(44),
-	beginnt 		character(20),
-	endet  			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id 				character(16),
+	identifier 			character(44),
+	beginnt 			character(20),
+	endet  				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar,
-	anlass			varchar,
+	anlass				varchar,
 	besonderebedeutung	integer,
 	CONSTRAINT ax_besondererhoehenpunkt_pk PRIMARY KEY (ogc_fid)
 );
@@ -3756,17 +3749,17 @@ COMMENT ON COLUMN ax_besondererhoehenpunkt.gml_id IS 'Identifikator, global eind
 -- K l a s s i f i z i e r u n g   n a c h   S t r a s s e n r e c h t
 -- -------------------------------------------------------------------
 CREATE TABLE ax_klassifizierungnachstrassenrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	artderfestlegung	integer,
-	land			integer,
-	stelle			varchar,
-	bezeichnung		varchar,
+	land				integer,
+	stelle				varchar,
+	bezeichnung			varchar,
 	CONSTRAINT ax_klassifizierungnachstrassenrecht_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3783,16 +3776,16 @@ COMMENT ON COLUMN ax_klassifizierungnachstrassenrecht.gml_id IS 'Identifikator, 
 -- K l a s s i f i z i e r u n g   n a c h   W a s s e r r e c h t
 -- ---------------------------------------------------------------
 CREATE TABLE ax_klassifizierungnachwasserrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	artderfestlegung	integer,
-	land			integer,
-	stelle			varchar,
+	land				integer,
+	stelle				varchar,
 	CONSTRAINT ax_klassifizierungnachwasserrecht_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3810,19 +3803,19 @@ COMMENT ON COLUMN ax_klassifizierungnachwasserrecht.gml_id IS 'Identifikator, gl
 -- 'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen
 -- mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften.
 CREATE TABLE ax_bauraumoderbodenordnungsrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
-	art			varchar, -- (15)
-	name			varchar,
+	anlass				varchar,
+	art					varchar, -- (15)
+	name				varchar,
 	artderfestlegung	integer,
-	land			integer,
-	stelle			varchar,
-	bezeichnung		varchar,
+	land				integer,
+	stelle				varchar,
+	bezeichnung			varchar,
 	CONSTRAINT ax_bauraumoderbodenordnungsrecht_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3834,30 +3827,29 @@ CREATE UNIQUE INDEX ax_bauraumoderbodenordnungsrecht_gml ON ax_bauraumoderbodeno
 COMMENT ON TABLE  ax_bauraumoderbodenordnungsrecht             IS 'REO: Bau-, Raum- oder Bodenordnungsrecht';
 COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.gml_id      IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.artderfestlegung IS 'ADF';
-COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.name      IS 'NAM, Eigenname von "Bau-, Raum- oder Bodenordnungsrecht"';
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.name        IS 'NAM, Eigenname von "Bau-, Raum- oder Bodenordnungsrecht"';
 COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht.bezeichnung IS 'BEZ, Amtlich festgelegte Verschlüsselung von "Bau-, Raum- oder Bodenordnungsrecht"';
 
 
 -- S o n s t i g e s   R e c h t
 -- -----------------------------
 CREATE TABLE ax_sonstigesrecht (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet 				character(20),
 	advstandardmodell	varchar,
-	anlass			varchar,
+	anlass				varchar,
 	artderfestlegung	integer,
-	land			integer,
-	stelle			varchar,
-	bezeichnung		varchar,
+	land				integer,
+	stelle				varchar,
+	bezeichnung			varchar,
 	characterstring		varchar,
-	art			varchar,  --(15)
-	name			varchar,
-	funktion		integer,
---	"qualitaetsangaben|ax_dqmitdatenerhebung|herkunft|li_lineage|pro" varchar,
---	datetime		varchar,
+	art					varchar,  --(15)
+	name				varchar,
+	funktion			integer,
+--	datetime			varchar,
 	CONSTRAINT ax_sonstigesrecht_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3877,23 +3869,23 @@ COMMENT ON COLUMN ax_sonstigesrecht.gml_id IS 'Identifikator, global eindeutig';
 -- B o d e n s c h ä t z u n g
 -- ----------------------------------------------
 CREATE TABLE ax_bodenschaetzung (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character(44),
-	beginnt				character(20),
-	endet 				character(20),
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
 	advstandardmodell		varchar,
-	anlass				varchar,
-	art				varchar, -- (15)
-	name				varchar,
-	kulturart			integer,
-	bodenart			integer,
+	anlass					varchar,
+--	art						varchar, -- (15)
+--	name					varchar,
+	kulturart				integer,
+	bodenart				integer,
 	zustandsstufeoderbodenstufe	integer,
 	entstehungsartoderklimastufewasserverhaeltnisse	integer[], -- veraendert [] 2012-02-03
 	bodenzahlodergruenlandgrundzahl	integer,
 	ackerzahlodergruenlandzahl	integer,
 	sonstigeangaben			integer[],
-	jahreszahl			integer,
+	jahreszahl				integer,
 	CONSTRAINT ax_bodenschaetzung_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -3902,41 +3894,58 @@ SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry',:alkis_epsg,'GEOMET
 CREATE INDEX ax_bodenschaetzung_geom_idx ON ax_bodenschaetzung USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_bodenschaetzung_gml ON ax_bodenschaetzung USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_bodenschaetzung        IS 'B o d e n s c h ä t z u n g';
-COMMENT ON COLUMN ax_bodenschaetzung.gml_id IS 'Identifikator, global eindeutig';
+COMMENT ON TABLE  ax_bodenschaetzung              IS 'B o d e n s c h ä t z u n g';
+COMMENT ON COLUMN ax_bodenschaetzung.gml_id       IS 'Identifikator, global eindeutig';
+COMMENT ON COLUMN ax_bodenschaetzung.kulturart    IS '"Kulturart" ist die bestandskräftig festgesetzte landwirtschaftliche Nutzungsart entsprechend dem Acker- oder Grünlandschätzungsrahmen.';
+COMMENT ON COLUMN ax_bodenschaetzung.bodenart     IS '"Bodenart" ist die nach den Durchführungsbestimmungen zum Bodenschätzungsgesetz (Schätzungsrahmen) festgelegte Bezeichnung der Bodenart.';
+COMMENT ON COLUMN ax_bodenschaetzung.zustandsstufeoderbodenstufe     IS '"Zustandsstufe oder Bodenstufe" ist die nach den Schätzungsrahmen festgelegte Bezeichnung der Zustands- oder Bodenstufe.';
+COMMENT ON COLUMN ax_bodenschaetzung.entstehungsartoderklimastufewasserverhaeltnisse IS '"Entstehungsart oder Klimastufe/Wasserverhältnisse" ist die nach den Schätzungsrahmen festgelegte Bezeichnung der Entstehungsart oder der Klimastufe und der Wasserverhältnisse.';
+COMMENT ON COLUMN ax_bodenschaetzung.bodenzahlodergruenlandgrundzahl IS '"Bodenzahl oder Grünlandgrundzahl" ist die Wertzahl nach dem Acker- oder Grünlandschätzungsrahmen';
+COMMENT ON COLUMN ax_bodenschaetzung.ackerzahlodergruenlandzahl      IS '"Ackerzahl oder Grünlandzahl" ist die "Bodenzahl oder Grünlandgrundzahl" einschließlich Ab- und Zurechnungen nach dem Bodenschätzungsgesetz.';
+COMMENT ON COLUMN ax_bodenschaetzung.sonstigeangaben                 IS '"Sonstige Angaben" ist der Nachweis von Besonderheiten einer bodengeschätzten Fläche.';
+COMMENT ON COLUMN ax_bodenschaetzung.jahreszahl   IS '"Jahreszahl" ist das Jahr, in dem eine Neukultur oder Tiefkultur angelegt worden ist.';
 
 
 -- M u s t e r -,  L a n d e s m u s t e r -   u n d   V e r g l e i c h s s t u e c k
 -- -----------------------------------------------------------------------------------
 CREATE TABLE ax_musterlandesmusterundvergleichsstueck (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character(44),
-	beginnt				character(20),
-	endet 				character(20),
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
 	advstandardmodell		varchar,
-	anlass				varchar,
-	merkmal				integer,
-	nummer				integer,
-	kulturart			integer,
-	bodenart			integer,
+	anlass					varchar,
+--	art						varchar,  -- (15)
+--	name					varchar,
+	merkmal					integer,
+	nummer					integer,
+	kulturart				integer,
+	bodenart				integer,
 	zustandsstufeoderbodenstufe	integer,
 	entstehungsartoderklimastufewasserverhaeltnisse	integer,
 	bodenzahlodergruenlandgrundzahl	integer,
 	ackerzahlodergruenlandzahl	integer,
-	art				varchar,  -- (15)
-	name				varchar,
+	sonstigeangaben			integer[],
 	CONSTRAINT ax_musterlandesmusterundvergleichsstueck_pk PRIMARY KEY (ogc_fid)
 );
 
-
 SELECT AddGeometryColumn('ax_musterlandesmusterundvergleichsstueck','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- POLYGON/POINT
 
-CREATE INDEX ax_musterlandesmusterundvergleichsstueck_geom_idx ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
+CREATE INDEX ax_musterlandesmusterundvergleichsstueck_geom_idx   ON ax_musterlandesmusterundvergleichsstueck USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_musterlandesmusterundvergleichsstueck_gml ON ax_musterlandesmusterundvergleichsstueck USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_musterlandesmusterundvergleichsstueck        IS 'Muster-, Landesmuster- und Vergleichsstueck';
-COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.gml_id IS 'Identifikator, global eindeutig';
+COMMENT ON TABLE  ax_musterlandesmusterundvergleichsstueck           IS '"Muster-, Landesmuster- und Vergleichsstück" ist eine besondere bodengeschätzte Fläche nach dem Bodenschätzungsgesetz, für die eine Ertragsfähigkeit im Liegenschaftskataster nachzuweisen ist.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.gml_id    IS 'Identifikator, global eindeutig';
+
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.merkmal   IS '"Merkmal" ist die Kennzeichnung zur Unterscheidung von Musterstück, Landesmusterstück und Vergleichsstück.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.kulturart IS '"Kulturart" ist die bestandskräftig festgesetzte landwirtschaftliche Nutzungsart entsprechend dem Acker- oder Grünlandschätzungsrahmen.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.bodenart  IS '"Bodenart" ist die nach den Durchführungsbestimmungen zum Bodenschätzungsgesetz (Schätzungsrahmen) festgelegte Bezeichnung der Bodenart.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.zustandsstufeoderbodenstufe     IS '"Zustandsstufe oder Bodenstufe" ist die nach den Schätzungsrahmen festgelegte Bezeichnung der Zustands- oder Bodenstufe.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.entstehungsartoderklimastufewasserverhaeltnisse IS '"Entstehungsart oder Klimastufe/Wasserverhältnisse" ist die nach den Schätzungsrahmen festgelegte Bezeichnung der Entstehungsart oder der Klimastufe und der Wasserverhältnisse.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.bodenzahlodergruenlandgrundzahl IS '"Bodenzahl oder Grünlandgrundzahl" ist die Wertzahl nach dem Acker- oder Grünlandschätzungsrahmen.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.ackerzahlodergruenlandzahl      IS '"Ackerzahl oder Grünlandzahl" ist die "Bodenzahl oder Grünlandgrundzahl" einschließlich Ab- und Zurechnungen nach dem Bodenschätzungsgesetz.';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck.sonstigeangaben                 IS '"Sonstige Angaben" ist der Nachweis von Besonderheiten einer bodengeschätzten Fläche.';
 
 
 --** Objektartengruppe: Kataloge

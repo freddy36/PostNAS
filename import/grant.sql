@@ -11,6 +11,10 @@
 --  2012-02-17  PostNAS 0.7, pp_Tabellen, ms5 -> ms6
 --  2012-04-25  Tabelle pp_flurstueck_nr
 --  2013-01-15  mehr Schlüsseltabellen rein
+--  2013-03-05  View "s_beschriftung" wird durch "ap_pto_stra" und "ap_pto_rest" ersetzt.
+--              View "s_nummer_nebengebaeude" wird durch "lfdnr_nebengebaeude" ersetzt.
+--  2013-03-25  View "grenzpunkt" und "gebaeude_txt"
+--  2013-04-16  Views zum Thema Bodenscätzung
 
 -- Tabellen
 -- ========
@@ -291,10 +295,17 @@ GRANT SELECT ON TABLE ax_bodenschaetzung_kulturart         TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_kulturart         TO mb27;
 GRANT SELECT ON TABLE ax_bodenschaetzung_zustandsstufe     TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_zustandsstufe     TO mb27;
-GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung  TO ms6;
-GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung  TO mb27;
+GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung          TO ms6;
+GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung          TO mb27;
 GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO ms6;
 GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO mb27;
+-- Bodenschätzung Views
+GRANT SELECT ON TABLE s_bodensch_wms TO ms6;
+GRANT SELECT ON TABLE s_bodensch_ent TO ms6;
+GRANT SELECT ON TABLE s_bodensch_po  TO ms6;
+GRANT SELECT ON TABLE s_bodensch_tx  TO ms6;
+GRANT SELECT ON TABLE s_zuordungspfeilspitze_bodensch TO ms6;
+GRANT SELECT ON TABLE s_zuordungspfeil_bodensch       TO ms6;
 
 -- Recht
 GRANT SELECT ON TABLE ax_denkmalschutzrecht_artdf          TO ms6;
@@ -307,12 +318,12 @@ GRANT SELECT ON TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung TO ms6;
 GRANT SELECT ON TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung TO mb27;
 GRANT SELECT ON TABLE ax_anderefestlegungnachstrassenrecht_artdf  TO ms6;
 GRANT SELECT ON TABLE ax_anderefestlegungnachstrassenrecht_artdf  TO mb27;
-GRANT SELECT ON TABLE ax_klassifizierungnachstrassenrecht_artdf TO ms6;
-GRANT SELECT ON TABLE ax_klassifizierungnachstrassenrecht_artdf TO mb27;
-GRANT SELECT ON TABLE ax_klassifizierungnachwasserrecht_artdf TO ms6;
-GRANT SELECT ON TABLE ax_klassifizierungnachwasserrecht_artdf TO mb27;
-GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf  TO ms6;
-GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf  TO mb27;
+GRANT SELECT ON TABLE ax_klassifizierungnachstrassenrecht_artdf   TO ms6;
+GRANT SELECT ON TABLE ax_klassifizierungnachstrassenrecht_artdf   TO mb27;
+GRANT SELECT ON TABLE ax_klassifizierungnachwasserrecht_artdf     TO ms6;
+GRANT SELECT ON TABLE ax_klassifizierungnachwasserrecht_artdf     TO mb27;
+GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf    TO ms6;
+GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf    TO mb27;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO ms6;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO mb27;
 
@@ -326,13 +337,20 @@ GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
 -- VIEWS
 -- =====
   GRANT SELECT ON TABLE s_hausnummer_gebaeude              TO ms6;
-  GRANT SELECT ON TABLE s_nummer_nebengebaeude             TO ms6;
+--GRANT SELECT ON TABLE s_nummer_nebengebaeude             TO ms6;
+  GRANT SELECT ON TABLE lfdnr_nebengebaeude                TO ms6;
   GRANT SELECT ON TABLE s_zugehoerigkeitshaken_flurstueck  TO ms6;
   GRANT SELECT ON TABLE s_zuordungspfeil_flurstueck        TO ms6;
   GRANT SELECT ON TABLE s_zuordungspfeilspitze_flurstueck  TO ms6;
+  GRANT SELECT ON TABLE s_zuordungspfeil_bodensch          TO ms6;
+  GRANT SELECT ON TABLE s_zuordungspfeilspitze_bodensch    TO ms6;
   GRANT SELECT ON TABLE s_zuordungspfeil_gebaeude          TO ms6;
   GRANT SELECT ON TABLE s_flurstueck_nr                    TO ms6;
-  GRANT SELECT ON TABLE s_beschriftung                     TO ms6;
+--GRANT SELECT ON TABLE s_beschriftung                     TO ms6;
+  GRANT SELECT ON TABLE ap_pto_stra                        TO ms6;
+  GRANT SELECT ON TABLE ap_pto_rest                        TO ms6;
+  GRANT SELECT ON TABLE grenzpunkt                         TO ms6;
+  GRANT SELECT ON TABLE gebaeude_txt                       TO ms6;
 -- VIEWS wie OBK
   GRANT SELECT ON TABLE sk2012_flurgrenze                  TO ms6;
   GRANT SELECT ON TABLE sk2014_gemarkungsgrenze            TO ms6;

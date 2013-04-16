@@ -21,10 +21,12 @@
 --  2011-12-19  F.J. Neue Tabelle "ax_datenerhebung"
 --  2011-12-20  A.E. ax_sonstigesbauwerkodersonstigeeinrichtung_bauwerksfunktion
 --  2011-12-22  A.E. ax_bauteil_bauart
---  2012-03-12  A.E. ax_anderefestlegungnachstrassenrecht_artdf, ax_klassifizierungnachwasserrecht_artdf, ax_klassifizierungnachstrassenrecht_artdf, ax_naturumweltoderbodenschutzrecht_artdf, ax_sonstigesrecht_artdf, ax_anderefestlegungnachwasserrecht_artdf
+--  2012-03-12  A.E. ax_anderefestlegungnachstrassenrecht_artdf, ax_klassifizierungnachwasserrecht_artdf, 
+--                   ax_klassifizierungnachstrassenrecht_artdf, ax_naturumweltoderbodenschutzrecht_artdf, 
+--                   ax_sonstigesrecht_artdf, ax_anderefestlegungnachwasserrecht_artdf
+--  2013-04-16  F.J. Kurzbezeichnungen der Bodenschättung für die Kartendarstellung
 
   SET client_encoding = 'UTF8';
-
 
 -- G e b a e u d e - B a u w e i s e
 -- ---------------------------------
@@ -509,18 +511,14 @@ INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (6101,'Nicht
 
 -- B a u - , R a u m -  oder  B o d e n - O r d n u n g s r e c h t  -  A r t  d e r  F e s t l e g u n g
 -- ------------------------------------------------------------------------------------------------------
-
 -- Kennung = 71008,
 -- Objektart = 'ax_bauraumoderbodenordnungsrecht'
-
 -- für: Entschluesseln der Rechte im Template
 
-CREATE TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung 
-  (wert        integer, 
-   bezeichner  character varying,
- --kennung     integer,   -- konstant 71008, entfernt 21.11.2011
- --objektart   character varying,  -- konstant ax_bauraumoderbodenordnungsrecht, entfernt 21.11.2011
-   CONSTRAINT pk_ax_brecht_artfest_wert PRIMARY KEY (wert)
+CREATE TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung (
+	wert        integer, 
+	bezeichner  character varying,
+	CONSTRAINT pk_ax_brecht_artfest_wert PRIMARY KEY (wert)
   );
 
 COMMENT ON TABLE  ax_bauraumoderbodenordnungsrecht_artderfestlegung 
@@ -583,29 +581,33 @@ INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner)
 
 -- B o d e n s c h a e t z u n g -  K u l t u r a r t
 -- --------------------------------------------------
-
+--DROP TABLE ax_bodenschaetzung_kulturart;
 CREATE TABLE ax_bodenschaetzung_kulturart (
     wert integer,
+	kurz character varying,
     bezeichner character varying,
     CONSTRAINT pk_ax_bodenschaetzung_kulturart  PRIMARY KEY (wert)
   );
 
-
 COMMENT ON TABLE ax_bodenschaetzung_kulturart 
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
+COMMENT ON COLUMN ax_bodenschaetzung_kulturart.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bodenschaetzung_kulturart.kurz       IS 'Kürzel';
+COMMENT ON COLUMN ax_bodenschaetzung_kulturart.bezeichner IS 'Lange Bezeichnung';
 
-INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (1000,'Ackerland (A)');
-INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (2000,'Acker-Grünland (AGr)');
-INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (3000,'Grünland (Gr)');
-INSERT INTO ax_bodenschaetzung_kulturart (wert, bezeichner) VALUES (4000,'Grünland-Acker (GrA)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, kurz, bezeichner) VALUES (1000,'A'  , 'Ackerland (A)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, kurz, bezeichner) VALUES (2000,'AGr', 'Acker-Grünland (AGr)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, kurz, bezeichner) VALUES (3000,'Gr' , 'Grünland (Gr)');
+INSERT INTO ax_bodenschaetzung_kulturart (wert, kurz, bezeichner) VALUES (4000,'GrA', 'Grünland-Acker (GrA)');
 
 
 -- B o d e n s c h a e t z u n g  -  B o d e n a r t
 -- -------------------------------------------------
-
+--DROP TABLE ax_bodenschaetzung_bodenart;
 CREATE TABLE ax_bodenschaetzung_bodenart (
     wert integer,
+	kurz character varying,
     bezeichner character varying,
     CONSTRAINT pk_ax_bodenschaetzung_bodenart  PRIMARY KEY (wert)
   );
@@ -613,81 +615,85 @@ CREATE TABLE ax_bodenschaetzung_bodenart (
 COMMENT ON TABLE ax_bodenschaetzung_bodenart 
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (1100,'Sand (S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (2100,'Lehmiger Sand (lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (3100,'Lehm (L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (4100,'Ton (T)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (5000,'Moor (Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (1200,'Anlehmiger Sand (Sl)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (2200,'Stark lehmiger Sand (SL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (3200,'Sandiger Lehm (sL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (4200,'Schwerer Lehm (LT)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6110,'Sand, Moor (SMo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6120,'Lehmiger Sand, Moor (lSMo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6130,'Lehm, Moor (LMo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6140,'Ton, Moor (TMo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6210,'Moor,Sand (MoS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6220,'Moor, Lehmiger Sand (MolS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6230,'Moor, Lehm (MoL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (6240,'Moor, Ton (MoT)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7110,'Sand auf sandigem Lehm (S/sL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7130,'Sand auf schwerem Lehm (S/LT)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7210,'Anlehmiger Sand auf Lehm (Sl/L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7220,'Anlehmiger Sand auf schwerem Lehm (Sl/LT)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7230,'Anlehmiger Sand auf Ton (Sl/T)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7310,'Lehmiger Sand auf schwerem Lehm (lS/LT)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7320,'Lehmiger Sand auf Sand (lS/S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7400,'Stark lehmiger Sand auf Ton (SL/T)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7510,'Ton auf stark lehmigen Sand (T/SL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7530,'Ton auf anlehmigen Sand (T/Sl)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7610,'Schwerer Lehm auf lehmigen Sand (LT/lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7620,'Schwerer Lehm auf anlehmigen Sand (LT/Sl)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7630,'Schwerer Lehm auf Sand (LT/S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7710,'Lehm auf anlehmigen Sand (L/Sl)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7800,'Sandiger Lehm auf Sand (sL/S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7120,'Sand auf Lehm (S/L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7140,'Sand auf Ton (S/T)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7330,'Lehmiger Sand auf Ton (lS/T)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7520,'Ton auf lehmigen Sand (T/lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7540,'Ton auf Sand (T/S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (7720,'Lehm auf Sand (L/S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8110,'Sand auf Moor (S/Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8120,'Lehmiger Sand auf Moor (lS/Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8130,'Lehm auf Moor (L/Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8140,'Ton auf Moor (T/Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8210,'Moor auf Sand (Mo/S)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8220,'Moor auf lehmigen Sand (Mo/lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8230,'Moor auf Lehm (Mo/L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (8240,'Moor auf Ton (Mo/T)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9120,'Bodenwechsel vom Lehm zu Moor (L+Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9130,'Lehmiger Sand mit starkem Steingehalt (lSg)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9140,'Lehm mit starkem Steingehalt (Lg)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9150,'lehmiger Sand mit Steinen und Blöcken (lS+St)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9160,'Lehm mit Steinen und Blöcken L+St)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9170,'Steine und Blöcke mit  lehmigem Sand (St+lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9180,'Steine und Blöcke mit  Lehm (St+L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9190,'lehmiger Sand mit Felsen (lS+Fe)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9200,'Lehm mit Felsen (L+Fe)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9210,'Felsen mit lehmigem Sand (Fe+lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9220,'Felsen mit Lehm (Fe+L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9310,'Sand auf lehmigen Sand (S/lS)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9320,'Anlehmiger Sand auf Mergel (Sl/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9330,'Anlehmiger Sand auf sandigem Lehm (Sl/sL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9340,'Lehmiger Sand auf Lehm (lS/L)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9350,'Lehmiger Sand auf Mergel (lS/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9360,'Lehmiger Sand auf sandigem Lehm (lS/sL)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9370,'Lehmiger Sand, Mergel (lSMe)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9380,'Lehmiger Sand, Moor auf Mergel (lSMo/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9390,'Anlehmiger Sand, Moor (SlMo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9410,'Lehm auf Mergel (L/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9420,'Lehm, Moor auf Mergel (LMo/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9430,'Schwerer Lehm auf Moor (LT/Mo)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9440,'Ton auf Mergel (T/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9450,'Moor auf Mergel (Mo/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9460,'Moor, Lehm auf Mergel (MoL/Me)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9470,'Moor, Mergel (MoMe)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9480,'LößDiluvium(LöD)');
-INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9490,'AlluviumDiluvium(AlD)');
+COMMENT ON COLUMN ax_bodenschaetzung_bodenart.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bodenschaetzung_bodenart.kurz       IS 'Kürzel, Kartenanzeige';
+COMMENT ON COLUMN ax_bodenschaetzung_bodenart.bezeichner IS 'Lange Bezeichnung';
+
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (1100,'S',     'Sand (S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (2100,'lS',    'Lehmiger Sand (lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (3100,'L',     'Lehm (L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (4100,'T',     'Ton (T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (5000,'Mo',    'Moor (Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (1200,'Sl',    'Anlehmiger Sand (Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (2200,'SL',    'Stark lehmiger Sand (SL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (3200,'sL',    'Sandiger Lehm (sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (4200,'LT',    'Schwerer Lehm (LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6110,'SMo',   'Sand, Moor (SMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6120,'lSMo',  'Lehmiger Sand, Moor (lSMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6130,'LMo',   'Lehm, Moor (LMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6140,'TMo',   'Ton, Moor (TMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6210,'MoS',   'Moor,Sand (MoS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6220,'MolS',  'Moor, Lehmiger Sand (MolS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6230,'MoL',   'Moor, Lehm (MoL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (6240,'MoT',   'Moor, Ton (MoT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7110,'S/sL',  'Sand auf sandigem Lehm (S/sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7130,'S/LT',  'Sand auf schwerem Lehm (S/LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7210,'Sl/L',  'Anlehmiger Sand auf Lehm (Sl/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7220,'Sl/LT', 'Anlehmiger Sand auf schwerem Lehm (Sl/LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7230,'Sl/T',  'Anlehmiger Sand auf Ton (Sl/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7310,'lS/LT', 'Lehmiger Sand auf schwerem Lehm (lS/LT)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7320,'lS/S',  'Lehmiger Sand auf Sand (lS/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7400,'SL/T)', 'Stark lehmiger Sand auf Ton (SL/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7510,'T/SL',  'Ton auf stark lehmigen Sand (T/SL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7530,'T/Sl',  'Ton auf anlehmigen Sand (T/Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7610,'LT/lS', 'Schwerer Lehm auf lehmigen Sand (LT/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7620,'LT/Sl', 'Schwerer Lehm auf anlehmigen Sand (LT/Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7630,'LT/S',  'Schwerer Lehm auf Sand (LT/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7710,'L/Sl',  'Lehm auf anlehmigen Sand (L/Sl)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7800,'sL/S',  'Sandiger Lehm auf Sand (sL/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7120,'S/L',   'Sand auf Lehm (S/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7140,'S/T',   'Sand auf Ton (S/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7330,'lS/T',  'Lehmiger Sand auf Ton (lS/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7520,'T/lS',  'Ton auf lehmigen Sand (T/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7540,'T/S',   'Ton auf Sand (T/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (7720,'L/S',   'Lehm auf Sand (L/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8110,'S/Mo',  'Sand auf Moor (S/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8120,'lS/Mo', 'Lehmiger Sand auf Moor (lS/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8130,'L/Mo',  'Lehm auf Moor (L/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8140,'T/Mo',  'Ton auf Moor (T/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8210,'Mo/S',  'Moor auf Sand (Mo/S)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8220,'Mo/lS', 'Moor auf lehmigen Sand (Mo/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8230,'Mo/L',  'Moor auf Lehm (Mo/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (8240,'Mo/T',  'Moor auf Ton (Mo/T)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9120,'L+Mo',  'Bodenwechsel vom Lehm zu Moor (L+Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9130,'lSg',   'Lehmiger Sand mit starkem Steingehalt (lSg)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9140,'Lg',    'Lehm mit starkem Steingehalt (Lg)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9150,'lS+St', 'lehmiger Sand mit Steinen und Blöcken (lS+St)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9160,'L+St',  'Lehm mit Steinen und Blöcken (L+St)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9170,'St+lS', 'Steine und Blöcke mit lehmigem Sand (St+lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9180,'St+L',  'Steine und Blöcke mit Lehm (St+L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9190,'lS+Fe', 'lehmiger Sand mit Felsen (lS+Fe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9200,'L+Fe',  'Lehm mit Felsen (L+Fe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9210,'Fe+lS', 'Felsen mit lehmigem Sand (Fe+lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9220,'Fe+L',  'Felsen mit Lehm (Fe+L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9310,'S/lS',  'Sand auf lehmigen Sand (S/lS)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9320,'Sl/Me', 'Anlehmiger Sand auf Mergel (Sl/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9330,'Sl/sL', 'Anlehmiger Sand auf sandigem Lehm (Sl/sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9340,'lS/L',  'Lehmiger Sand auf Lehm (lS/L)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9350,'lS/Me', 'Lehmiger Sand auf Mergel (lS/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9360,'lS/sL', 'Lehmiger Sand auf sandigem Lehm (lS/sL)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9370,'lSMe',  'Lehmiger Sand, Mergel (lSMe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9380,'lSMo/Me','Lehmiger Sand, Moor auf Mergel (lSMo/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9390,'SlMo',  'Anlehmiger Sand, Moor (SlMo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9410,'L/Me',  'Lehm auf Mergel (L/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9420,'LMo/Me','Lehm, Moor auf Mergel (LMo/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9430,'LT/Mo', 'Schwerer Lehm auf Moor (LT/Mo)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9440,'T/Me',  'Ton auf Mergel (T/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9450,'Mo/Me', 'Moor auf Mergel (Mo/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9460,'MoL/Me','Moor, Lehm auf Mergel (MoL/Me)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9470,'MoMe',  'Moor, Mergel (MoMe)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9480,'LöD',   'LößDiluvium (LöD)');
+INSERT INTO ax_bodenschaetzung_bodenart (wert, kurz, bezeichner) VALUES (9490,'AlD',   'AlluviumDiluvium (AlD)');
 
 
 -- B o d e n s c h a e t z u n g  -  Z u s t a n d s s t u f e
@@ -695,6 +701,7 @@ INSERT INTO ax_bodenschaetzung_bodenart (wert, bezeichner) VALUES (9490,'Alluviu
 
 CREATE TABLE ax_bodenschaetzung_zustandsstufe (
     wert integer,
+    kurz character varying,
     bezeichner character varying,
     CONSTRAINT pk_ax_bodenschaetzung_zustandsstufe  PRIMARY KEY (wert)
   );
@@ -702,28 +709,33 @@ CREATE TABLE ax_bodenschaetzung_zustandsstufe (
 COMMENT ON TABLE ax_bodenschaetzung_zustandsstufe 
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
+COMMENT ON COLUMN ax_bodenschaetzung_zustandsstufe.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bodenschaetzung_zustandsstufe.kurz       IS 'Kürzel, Kartenanzeige';
+COMMENT ON COLUMN ax_bodenschaetzung_zustandsstufe.bezeichner IS 'Lange Bezeichnung';
 
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (1)',1100);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (2)',1200);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (3)',1300);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (4)',1400);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (5)',1500);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (6)',1600);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe (7)',1700);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Zustandsstufe Misch- und Schichtböden sowie künstlichveränderte Böden (-)',1800);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (I)',2100);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (II)',2200);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (III)',2300);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe Misch- und Schichtböden sowie künstlich veränderte Böden (-)',2400);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (II+III)',3100);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe ("(III)")',3200);
-INSERT INTO ax_bodenschaetzung_zustandsstufe (bezeichner,wert) VALUES ('Bodenstufe (IV)',3300);
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1100,'1','Zustandsstufe (1)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1200,'2','Zustandsstufe (2)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1300,'3','Zustandsstufe (3)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1400,'4','Zustandsstufe (4)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1500,'5','Zustandsstufe (5)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1600,'6','Zustandsstufe (6)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1700,'7','Zustandsstufe (7)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (1800,'-','Zustandsstufe Misch- und Schichtböden sowie künstlichveränderte Böden (-)');
+
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (2100,'I','Bodenstufe (I)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (2200,'II','Bodenstufe (II)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (2300,'III','Bodenstufe (III)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (2400,'-','Bodenstufe Misch- und Schichtböden sowie künstlich veränderte Böden (-)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (3100,'II+III','Bodenstufe (II+III)');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (3200,'(III)','Bodenstufe ("(III)")');
+INSERT INTO ax_bodenschaetzung_zustandsstufe (wert, kurz, bezeichner) VALUES (3300,'IV','Bodenstufe (IV)');
 
 
 -- B o d e n s c h a e t z u n g   -  Muster-, Landesmuster- und Vergleichsstueck
 -- ------------------------------------------------------------------------------
 CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
     wert integer,
+    kurz character varying,
     bezeichner character varying,
     CONSTRAINT pk_ax_musterlandesmusterundvergleichsstueck_merkmal  PRIMARY KEY (wert)
   );
@@ -731,9 +743,13 @@ CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
 COMMENT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal 
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
-INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (1000,'Musterstück (M)');
-INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (2000,'Landesmusterstück (L)');
-INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert,bezeichner) VALUES (3000,'Vergleichsstück (V)');
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck_merkmal.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck_merkmal.kurz       IS 'Kürzel, Kartenanzeige';
+COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck_merkmal.bezeichner IS 'Lange Bezeichnung';
+
+INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert, kurz, bezeichner) VALUES (1000,'M','Musterstück (M)');
+INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert, kurz, bezeichner) VALUES (2000,'L','Landesmusterstück (L)');
+INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert, kurz, bezeichner) VALUES (3000,'V','Vergleichsstück (V)');
 
 
 -- B o d e n s c h a e t z u n g  -  Grabloch der Bodenschaetzung
@@ -748,7 +764,6 @@ CREATE TABLE ax_grablochderbodenschaetzung_bedeutung (
 COMMENT ON TABLE ax_grablochderbodenschaetzung_bedeutung
 IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
 
-
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1100,'Grabloch, bestimmend, lagerichtig (innerhalb der Fläche)');
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1200,'Grabloch, bestimmend, lagerichtig (außerhalb des Abschnitts)');
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1300,'Grabloch, nicht lagerichtig, im Abschnitt nicht vorhanden');
@@ -756,10 +771,84 @@ INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (20
 INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (3000,'Grabloch, nicht bestimmend');
 
 
+-- B o d e n s c h a e t z u n g   -  Entstehungsart oder Klimastufe / Wasserverhaeltnisse
+-- ----------------------------------------------------------------------------------------
+--DROP TABLE ax_bodenschaetzung_entstehungsartoderklimastufe;
+CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe (
+    wert integer,
+    kurz character varying,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_entstehungsartoderklimastufe PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+
+COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.kurz       IS 'Kürzel, Kartenanzeige';
+COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.bezeichner IS 'Lange Bezeichnung';
+
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1000,'D',   'Diluvium (D)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1100,'DAl', 'Diluvium über Alluvium (DAl)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1200,'DLö', 'Diluvium über Löß (DLö)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1300,'DV',  'Diluvium über Verwitterung (DV)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1400,'Dg',  'Diluvium, gesteinig (Dg)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1410,'DgAl','Diluvium, gesteinig über Alluvium (DgAl)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1420,'DgLö','Diluvium, gesteinig über Löß (DgLö)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(1430,'DgV', 'Diluvium, gesteinig über Verwitterung (DgV)');
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2000,'Lö',  'Löß (Lö)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2100,'LöD', 'Löß über Diluvium (LöD)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2110,'LöDg','Löß, Diluvium, Gesteinsböden (LöDg)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2120,'LöDV','Löß, Diluvium, Verwitterung (LöDV)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2200,'LöAl','Löß über Alluvium (LöAl)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2300,'LöV', 'Löß über Verwitterung (LöV)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2310,'LöVg','Löß, Verwitterung, Gesteinsböden (LöVg)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(2400,'LöVg','Löß über Verwitterung, gesteinig (LöVg)');
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3000,'Al',  'Alluvium (Al)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3100,'AlD', 'Alluvium über Diluvium (AlD)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3200,'AlLö','Alluvium über Löß (AlLö)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3300,'AlV', 'Alluvium über Verwitterung (AlV)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3400,'Alg', 'Alluvium, gesteinig (Alg)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3410,'AlgD','Alluvium, gesteinig über Diluvium (AlgD)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3420,'AlgLö','Alluvium, gesteinig über Löß (AlgLö)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3430,'AlgV','Alluvium, gesteinig über Verwitterung (AlgV)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3500,'AlMa','Alluvium, Marsch (AlMa)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3610,'AlMo','Alluvium, Moor (AlMo)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3620,'MoAI','Moor, Alluvium (MoAI)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(3700,'Me',  'Mergel (Me)');
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(4000,'V',   'Verwitterung (V)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(4100,'VD',  'Verwitterung über Diluvium (VD)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(4200,'VAl', 'Verwitterung über Alluvium (VAl)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(4300,'VLö', 'Verwitterung über Löß (VLö)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(4400,'Vg',  'Verwitterung, Gesteinsböden (Vg)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(4410,'VgD', 'Verwitterung, Gesteinsböden über Diluvium (VgD)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(5000,'-',   'Entstehungsart nicht erkennbar (-)');
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(6100,'a',   'Klimastufe 8° C und darüber (a)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(6200,'b',   'Klimastufe 7,9° - 7,0° C (b)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(6300,'c',   'Klimastufe 6,9° - 5,7° C (c)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(6400,'d',   'Klimastufe 5,6° C und darunter (d)');
+
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7100,'1',   'Wasserstufe (1)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7200,'2',   'Wasserstufe (2)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7300,'3',   'Wasserstufe (3)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7400,'4',   'Wasserstufe (4)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7410,'4-',  'Wasserstufe (4-)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7500,'5',   'Wasserstufe (5)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7510,'5-',  'Wasserstufe (5-)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7520,'3-',  'Wasserstufe (3-)');
+INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7530,'3+4', 'Wasserstufe (3+4)');
+
+
+
 -- F o r s t r e c h t  -  A r t   d e r   F e s t l e g u n g
 -- -----------------------------------------------------------
 
-CREATE TABLE ax_forstrecht_artderfestlegung(
+CREATE TABLE ax_forstrecht_artderfestlegung (
     wert integer,
     bezeichner character varying,
     CONSTRAINT pk_ax_forstrecht_artderfestlegung  PRIMARY KEY (wert)
@@ -807,70 +896,6 @@ INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Naturschu
 INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Andere Forstbetriebsfläche',9000);
 INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Nichtholzboden',9010);
 INSERT INTO ax_forstrecht_besonderefunktion (bezeichner, wert) VALUES('Sonstiges',9999);
-
-
-
--- B o d e n s c h a e t z u n g   -  Entstehungsart oder Klimastufe / Wasserverhaeltnisse
--- ----------------------------------------------------------------------------------------
-
-CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe(
-    wert integer,
-    bezeichner character varying,
-    CONSTRAINT pk_ax_bodenschaetzung_entstehungsartoderklimastufe PRIMARY KEY (wert)
-  );
-
-COMMENT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
-
-
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium (D)',1000);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium über Alluvium (DAl)',1100);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium über Löß (DLö)',1200);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium über Verwitterung (DV)',1300);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig (Dg)',1400);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig über Alluvium (DgAl)',1410);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig über Löß (DgLö)',1420);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Diluvium, gesteinig über Verwitterung (DgV)',1430);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß (Lö)',2000);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Diluvium (LöD)',2100);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß, Diluvium, Gesteinsböden (LöDg)',2110);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß, Diluvium, Verwitterung (LöDV)',2120);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Alluvium (LöAl)',2200);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Verwitterung (LöV)',2300);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß, Verwitterung, Gesteinsböden (LöVg)',2310);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Löß über Verwitterung, gesteinig (LöVg)',2400);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium (Al)',3000);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium über Diluvium (AlD)',3100);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium über Löß (AlLö)',3200);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium über Verwitterung (AlV)',3300);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig (Alg)',3400);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig über Diluvium (AlgD)',3410);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig über Löß (AlgLö)',3420);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, gesteinig über Verwitterung (AlgV)',3430);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, Marsch (AlMa)',3500);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Alluvium, Moor (AlMo)',3610);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Moor, Alluvium (MoAI)',3620);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Mergel (Me)',3700);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung (V)',4000);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung über Diluvium (VD)',4100);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung über Alluvium (VAl)',4200);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung über Löß (VLö)',4300);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung, Gesteinsböden (Vg)',4400);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Verwitterung, Gesteinsböden über Diluvium (VgD)',4410);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Entstehungsart nicht erkennbar (-)',5000);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 8° C und darüber (a)',6100);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 7,9° - 7,0° C (b)',6200);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 6,9° - 5,7° C (c)',6300);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Klimastufe 5,6° C und darunter (d)',6400);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (1)',7100);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (2)',7200);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3)',7300);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (4)',7400);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (4-)',7410);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (5)',7500);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (5-)',7510);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3-)',7520);
-INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (bezeichner, wert) VALUES('Wasserstufe (3+4)',7530);
 
 
 -- D a t e n e r h e b u n g

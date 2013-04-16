@@ -1,12 +1,13 @@
 <?php
 /* Version vom
-	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
-	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
-	14.12.2011 "window.open(..,width=680"
-	16.01.2012 Blattnummer in 2 Varianten suchen
-	17.01.2012 Blattnummer ohne Buchstabe in 3 Varianten suchen
+	2011-10-24 Nach Pos-Klick Highlight erneuern statt hideHighlight
+	2011-11-17 Nachweis-Links über javascript im neuen Hochformat-Fenster
+	2011-12-14 "window.open(..,width=680"
+	2012-01-16 Blattnummer in 2 Varianten suchen
+	2012-01-17 Blattnummer ohne Buchstabe in 3 Varianten suchen
+	2013-04-16 "import_request_variables" entfällt in PHP 5.4
 */
-import_request_variables("G");
+$cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);

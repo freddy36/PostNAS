@@ -1,16 +1,18 @@
 <?php
 /* Version vom
-	24.10.2011 Nach Pos-Klick Highlight erneuern statt hideHighlight
-	07.11.2011 optional auch Historische FS suchen, Link auf Buchauskunft-Modul alkisfshis.php
-	09.11.2011 "h" hinter Flur oder Flurstück sucht sofort in Historie
+	2011-10-24 Nach Pos-Klick Highlight erneuern statt hideHighlight
+	2011-11-07 optional auch Historische FS suchen, Link auf Buchauskunft-Modul alkisfshis.php
+	2011-11-09 "h" hinter Flur oder Flurstück sucht sofort in Historie
 					Ausgabe Flur in Varianten aktuell/historisch mit gegenseitigen Verweisen
-	11.11.2011 Nachfolger-Liste in der DB nachschlagen, und aktuelle FS als solche kennzeichnen
+	2011-11-11 Nachfolger-Liste in der DB nachschlagen, und aktuelle FS als solche kennzeichnen
 				neue Icons für Link mit Pfeil
 				Differenzierung mit/ohne Raumbezug bei Icons fuer Histor. FS
 				Gemarkung- und Flur-Zeile vor einzelnem Flurstück ausgeben
-	17.11.2011 Nachweis-Links über javascript im neuen Hochformat-Fenster
+	2011-11-17 Nachweis-Links über javascript im neuen Hochformat-Fenster
+	2013-04-16 "import_request_variables" entfällt in PHP 5.4, 
+				Fehlerkorrektur Komma in SQL bei FS-Suche.
 */
-import_request_variables("G");
+$cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);
 ?>

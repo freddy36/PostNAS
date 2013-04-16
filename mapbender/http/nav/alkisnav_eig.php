@@ -6,9 +6,10 @@
 	09.12.2011	Filter "Gemeinde" für Ebene Flurstücke.
 					Filter "Gemeinde" für Personen über neue Hilfstabelle "gemeinde_person".
 					Format css Person (Rahmen).
+	2013-04-16 "import_request_variables" entfällt in PHP 5.4
 	ToDo: Auf der Stufe 2 "getGBbyPerson" noch Filtern nach Gemeinde
 */
-import_request_variables("PG");
+$cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("<p class='err'>Fehler bei der Verbindung zur Datenbank</p>".$dbname.$dbvers.$gkz);
