@@ -14,7 +14,7 @@ AS
     AND p.endet IS NULL
     AND f.endet IS NULL
   ;
-COMMENT ON VIEW S_FLURSTUECK_NR IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück';
+-- COMMENT ON VIEW S_FLURSTUECK_NR IS 'fuer Kartendarstellung: Bruchnummerierung Flurstück';
 
 -- ToDo: UNION ueber ORA_GEOMETRY  noch fehlerhaft, derzeit auskommentiert
 CREATE OR REPLACE VIEW S_FLURSTUECK_NR2
@@ -37,7 +37,7 @@ AS
    WHERE v.beziehungsart is NULL
      AND f.endet IS NULL
   ;
-COMMENT ON VIEW S_FLURSTUECK_NR2 IS 'Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden';
+-- COMMENT ON VIEW S_FLURSTUECK_NR2 IS 'Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden';
 
 CREATE OR REPLACE VIEW S_HAUSNUMMER_GEBAEUDE 
 AS 
@@ -53,7 +53,7 @@ AS
   WHERE v.beziehungsart = 'dientZurDarstellungVon'
     AND p.endet IS NULL
     AND l.endet IS NULL;
-COMMENT ON VIEW S_HAUSNUMMER_GEBAEUDE IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
+-- COMMENT ON VIEW S_HAUSNUMMER_GEBAEUDE IS 'fuer Kartendarstellung: Hausnummern Hauptgebäude';
 
 CREATE OR REPLACE VIEW S_NUMMER_NEBENGEBAEUDE 
 AS 
@@ -70,7 +70,7 @@ AS
     AND p.endet IS NULL
     AND l.endet IS NULL
 ;
-COMMENT ON VIEW S_NUMMER_NEBENGEBAEUDE IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
+-- COMMENT ON VIEW S_NUMMER_NEBENGEBAEUDE IS 'fuer Kartendarstellung: Hausnummern Nebengebäude';
 
 CREATE OR REPLACE VIEW S_ZUGEHOERIGKEITSHAKEN_FLURSTU 
 AS 
@@ -87,7 +87,7 @@ AS
     AND v.beziehungsart = 'dientZurDarstellungVon'
     AND f.endet IS NULL
     AND p.endet IS NULL;
-COMMENT ON VIEW S_ZUGEHOERIGKEITSHAKEN_FLURSTU IS 'fuer Kartendarstellung';
+-- COMMENT ON VIEW S_ZUGEHOERIGKEITSHAKEN_FLURSTU IS 'fuer Kartendarstellung';
 
 CREATE OR REPLACE VIEW S_ZUORDUNGSPFEIL_FLURSTUECK 
 AS 
@@ -104,7 +104,7 @@ AS
     AND instr(l.advstandardmodell,'DKKM1000') > 0
     AND f.endet IS NULL
     AND l.endet IS NULL;
-COMMENT ON VIEW S_ZUORDUNGSPFEIL_FLURSTUECK IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer';
+-- COMMENT ON VIEW S_ZUORDUNGSPFEIL_FLURSTUECK IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer';
 
 -- ToDo Berechnung Pfeilspitze
 CREATE OR REPLACE VIEW S_ZUORDUNGSPFEILSPITZE_FLURSTU 
@@ -124,7 +124,7 @@ AS
     AND instr(l.advstandardmodell,'DKKM1000') > 0
     AND f.endet IS NULL
     AND l.endet IS NULL;
-COMMENT ON VIEW S_ZUORDUNGSPFEILSPITZE_FLURSTU IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
+-- COMMENT ON VIEW S_ZUORDUNGSPFEILSPITZE_FLURSTU IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
 
 CREATE OR REPLACE VIEW S_BESCHRIFTUNG 
 AS 
@@ -137,7 +137,7 @@ AS
    WHERE not p.schriftinhalt IS NULL 
      AND p.endet IS NULL
      AND p.art NOT IN ('HNR', 'PNR');
-COMMENT ON VIEW S_BESCHRIFTUNG IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
+-- COMMENT ON VIEW S_BESCHRIFTUNG IS 'ap_pto, die noch nicht in anderen Layern angezeigt werden';
 
 CREATE OR REPLACE VIEW S_ZUORDUNGSPFEIL_GEBAEUDE 
 AS 
@@ -152,7 +152,7 @@ AS
     AND v.beziehungsart = 'dientZurDarstellungVon'
     AND g.endet IS NULL
     AND l.endet IS NULL;
-COMMENT ON VIEW S_ZUORDUNGSPFEIL_GEBAEUDE IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
+-- COMMENT ON VIEW S_ZUORDUNGSPFEIL_GEBAEUDE IS 'fuer Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer';
 
 CREATE OR REPLACE VIEW SK2004_ZUORDNUNGSPFEIL 
 AS
@@ -161,7 +161,7 @@ AS
  WHERE ((ap.signaturnummer = '2004') 
    -- AND ('DKKM1000' ~~ ANY ((ap.advstandardmodell)[])));
    AND (instr(ap.advstandardmodell,'DKKM1000') > 0));
-COMMENT ON VIEW SK2004_ZUORDNUNGSPFEIL IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer"';
+-- COMMENT ON VIEW SK2004_ZUORDNUNGSPFEIL IS 'fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer"';
 
 
 -- ToDo Berechnung SK2004_ZUORDNUNGSPFEIL_SPITZE
@@ -185,7 +185,7 @@ AS
     (instr(fg.artderflurstuecksgrenze,'3000') > 0)
     --AND fg.advstandardmodell ~~ 'DLKM';
     AND (instr(fg.advstandardmodell,'DLKM') > 0));
-COMMENT ON VIEW SK2012_FLURGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Flurgrenze"';
+-- COMMENT ON VIEW SK2012_FLURGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Flurgrenze"';
 
 CREATE OR REPLACE VIEW SK2014_GEMARKUNGSGRENZE 
 AS 
@@ -196,7 +196,7 @@ AS
     (instr(gemag.artderflurstuecksgrenze,'7003') > 0)
     --AND gemag.advstandardmodell ~~ 'DLKM';
     AND (instr(gemag.advstandardmodell,'DLKM') > 0));
-COMMENT ON VIEW SK2014_GEMARKUNGSGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemarkungsgrenze"';
+-- COMMENT ON VIEW SK2014_GEMARKUNGSGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemarkungsgrenze"';
 
 CREATE OR REPLACE VIEW SK2018_BUNDESLANDGRENZE 
 AS 
@@ -207,7 +207,7 @@ AS
     (instr(blg.artderflurstuecksgrenze,'7102') > 0)
     --AND blg.advstandardmodell ~~ 'DLKM';
     AND (instr(blg.advstandardmodell,'DLKM') > 0));
-COMMENT ON VIEW SK2018_BUNDESLANDGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "BundesLANDgrenze"';
+-- COMMENT ON VIEW SK2018_BUNDESLANDGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "BundesLANDgrenze"';
 
 CREATE OR REPLACE VIEW SK2020_REGIERUNGSBEZIRKSGRENZE 
 AS 
@@ -217,7 +217,7 @@ AS
     (instr(rbg.artderflurstuecksgrenze,'7103') > 0)
     --AND rbg.advstandardmodell ~~ 'DLKM';
     AND (instr(rbg.advstandardmodell,'DLKM') > 0));
-COMMENT ON VIEW SK2020_REGIERUNGSBEZIRKSGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Regierungsbezirksgrenze"';
+-- COMMENT ON VIEW SK2020_REGIERUNGSBEZIRKSGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Regierungsbezirksgrenze"';
 
 CREATE OR REPLACE VIEW SK2022_GEMEINDEGRENZE 
 AS 
@@ -228,7 +228,7 @@ AS
      (instr(gemg.artderflurstuecksgrenze,'7106') > 0)
     --AND gemg.advstandardmodell ~~ 'DLKM';
     AND (instr(gemg.advstandardmodell,'DLKM') > 0));
-COMMENT ON VIEW SK2022_GEMEINDEGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemeindegrenze"';
+-- COMMENT ON VIEW SK2022_GEMEINDEGRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze "Gemeindegrenze"';
 
 CREATE OR REPLACE VIEW SK201X_POLITISCHE_GRENZE 
 AS 
@@ -249,7 +249,7 @@ AS
     --AND advstandardmodell ~~ 'DLKM';
    AND (instr(advstandardmodell,'DLKM') > 0);
 
-COMMENT ON VIEW SK201X_POLITISCHE_GRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze Politische Grenzen (Bund, LAND, Kreis, Gemeinde)';
+-- COMMENT ON VIEW SK201X_POLITISCHE_GRENZE IS 'fuer Kartendarstellung: besondere Flurstücksgrenze Politische Grenzen (Bund, LAND, Kreis, Gemeinde)';
 
 
 CREATE OR REPLACE VIEW FLSTNR_OHNE_POSITION
@@ -261,7 +261,7 @@ AS
   WHERE v.beziehungsart is NULL
     AND f.endet IS NULL
   ;
-COMMENT ON VIEW FLSTNR_OHNE_POSITION IS 'Flurstücke ohne manuell gesetzte Position für die Präsentation der FS-Nr';
+-- COMMENT ON VIEW FLSTNR_OHNE_POSITION IS 'Flurstücke ohne manuell gesetzte Position für die Präsentation der FS-Nr';
 
 CREATE OR REPLACE VIEW S_ALLGEMEINE_TEXTE 
 AS 
@@ -302,7 +302,7 @@ CREATE OR REPLACE VIEW FLURSTUECKS_MINMAX AS
         max(st_ymax(ORA_GEOMETRY)) AS h_max
    FROM ax_flurstueck f
    WHERE f.endet IS NULL;
-COMMENT ON VIEW FLURSTUECKS_MINMAX IS 'Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile';
+-- COMMENT ON VIEW FLURSTUECKS_MINMAX IS 'Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile';
 
 -- ToDo: 
 -- Tabelle liegt nur einmal vor wegen Laenge des Namens
@@ -333,7 +333,7 @@ AS
   WHERE           endet IS NULL
   ORDER BY        LAND, regierungsbezirk, kreis, gemeinde, gemarkungsnummer
 ;
-COMMENT ON VIEW GEMARKUNG_IN_GEMEINDE IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
+-- COMMENT ON VIEW GEMARKUNG_IN_GEMEINDE IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
 
 --ToDo: 
 --CREATE OR REPLACE VIEW ARTEN_VON_FLURSTUECKSGEOMETRIE
@@ -362,7 +362,7 @@ AS
     JOIN   AX_LAGEBEZEICHNUNGKATALOGEINTR s 
       ON l.kreis=s.kreis 
      AND l.gemeinde=s.gemeinde 
-     AND l.lage = s.lage
+     AND l.lage = s.lage;
     --WHERE     l.gemeinde = 40;
 
 CREATE OR REPLACE VIEW ADRESSEN_ZUM_FLURSTUECK
@@ -515,10 +515,10 @@ SELECT *
         WHERE bezalt.beziehung_von = bezneu.beziehung_von
           AND bezalt.beziehung_zu  = bezneu.beziehung_zu
           AND bezalt.beziehungsart = bezneu.beziehungsart
-          AND bezalt.OGR_FID       < bezneu.ogc_fid
+          AND bezalt.OGR_FID       < bezneu.OGR_FID
         );
 
-COMMENT ON VIEW BEZIEHUNGEN_REDUNDANT IS 'alkis_beziehungen zu denen es eine identische neue Version gibt.';
+-- COMMENT ON VIEW BEZIEHUNGEN_REDUNDANT IS 'alkis_beziehungen zu denen es eine identische neue Version gibt.';
 
 --ToDo
 --CREATE OR REPLACE VIEW BEZIEHUNGEN_REDUNDANT_IN_DELET
@@ -540,6 +540,6 @@ COMMENT ON VIEW BEZIEHUNGEN_REDUNDANT IS 'alkis_beziehungen zu denen es eine ide
 --            OR bezalt.beziehung_zu  = substr(featureid, 1, 16)
 --        );
 
---COMMENT ON VIEW BEZIEHUNGEN_REDUNDANT_IN_DELET IS 'alkis_beziehungen zu denen es eine identische neue Version gibt und wo das Objekt noch in der delete-Tabelle vorkommt.';
+---- COMMENT ON VIEW BEZIEHUNGEN_REDUNDANT_IN_DELET IS 'alkis_beziehungen zu denen es eine identische neue Version gibt und wo das Objekt noch in der delete-Tabelle vorkommt.';
 purge recyclebin;
 QUIT;
