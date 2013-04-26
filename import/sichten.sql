@@ -51,7 +51,8 @@ AS
    WHERE not p.schriftinhalt IS NULL 
      AND p.endet IS NULL
      AND p.art IN ('AOG_AUG','PNR');
-COMMENT ON VIEW ap_pto_muell IS 'Datenanalyse: Beschriftungen aus "ap_pto", die NICHT dargestellt werden sollen.';
+COMMENT ON VIEW ap_pto_muell 
+ IS 'Datenanalyse: Beschriftungen aus "ap_pto", die NICHT dargestellt werden sollen.';
 
 
 -- Flurstücke mit Anzeige der Flurstücksnummer an der "Standardposition"
@@ -87,7 +88,8 @@ AS
    FROM ap_pto 
   WHERE not schriftinhalt is null
     AND schriftinhalt like '%/n%';
-COMMENT ON VIEW texte_mit_umbruch IS 'Sicht für Datenanalyse: Vorkommen eines Umbruchs im Label-Text.';
+COMMENT ON VIEW texte_mit_umbruch 
+ IS 'Sicht für Datenanalyse: Vorkommen eines Umbruchs im Label-Text.';
 
 -- EXTENT für das Mapfile eines Mandanten ermitteln
 CREATE OR REPLACE VIEW flurstuecks_minmax AS 
@@ -97,7 +99,8 @@ CREATE OR REPLACE VIEW flurstuecks_minmax AS
         max(st_ymax(wkb_geometry)) AS h_max
    FROM ax_flurstueck f
    WHERE f.endet IS NULL;
-COMMENT ON VIEW flurstuecks_minmax IS 'Sicht für Datenanalyse: Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile.';
+COMMENT ON VIEW flurstuecks_minmax 
+ IS 'Sicht für Datenanalyse: Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile.';
 
 -- Nach Laden der Keytables:
 CREATE OR REPLACE VIEW baurecht
@@ -119,7 +122,8 @@ AS
       ON r.land   = d.land 
      AND r.stelle = d.stelle 
   WHERE r.endet IS NULL AND d.endet IS NULL ;
-COMMENT ON VIEW baurecht IS 'Datenanalyse: Enstschlüsselte Felder zu einer Fläche des Baurechts.';
+COMMENT ON VIEW baurecht 
+ IS 'Datenanalyse: Enstschlüsselte Felder zu einer Fläche des Baurechts.';
 
 -- Man glaubt es kaum, aber im ALKIS haben Gemeinde und Gemarkung keinerlei Beziehung miteinander
 -- Nur durch Auswertung der Flurstücke kann man ermitteln, in welcher Gemeinde eine Gemarkung liegt.
@@ -129,7 +133,8 @@ AS
   FROM            ax_flurstueck
   WHERE           endet IS NULL
   ORDER BY        land, regierungsbezirk, kreis, gemeinde, gemarkungsnummer;
-COMMENT ON VIEW gemarkung_in_gemeinde IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
+COMMENT ON VIEW gemarkung_in_gemeinde 
+ IS 'Welche Gemarkung liegt in welcher Gemeinde? Durch Verweise aus Flurstück.';
 
 
 -- Untersuchen, welche Geometrie-Typen vorkommen

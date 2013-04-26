@@ -1,18 +1,24 @@
 <?php
 /* Version vom
-	2011-10-24 Nach Pos-Klick Highlight erneuern statt hideHighlight
-	2011-11-17 Nachweis-Links über javascript im neuen Hochformat-Fenster
-	2011-12-14 "window.open(..,width=680"
-	2012-01-16 Blattnummer in 2 Varianten suchen
-	2012-01-17 Blattnummer ohne Buchstabe in 3 Varianten suchen
-	2013-04-16 "import_request_variables" entfällt in PHP 5.4
+	2011-10-24	Nach Pos-Klick Highlight erneuern statt hideHighlight
+	2011-11-17	Nachweis-Links über javascript im neuen Hochformat-Fenster
+	2011-12-14	"window.open(..,width=680"
+	2012-01-16	Blattnummer in 2 Varianten suchen
+	2012-01-17	Blattnummer ohne Buchstabe in 3 Varianten suchen
+	2013-04-16	"import_request_variables" entfällt in PHP 5.4
+	2013-04-26	Ersetzen View "gemeinde_gemarkung" durch Tabelle "pp_gemarkung"
+					Code aus _eig nach_fkt ausgelegert, hier mit nutzen. 
+					Dazu Var-Namen harmonisieren: $gblatt wird $blattgml
+					Zurück-Link, Titel der Transaktion anzeigen.
 */
 $cntget = extract($_GET);
-include("../../conf/alkisnav_conf.php");
+
+include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
+include("alkisnav_fkt.php"); // Funktionen
+
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);
-?>
-
+echo <<<END
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
@@ -27,11 +33,19 @@ $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank
 			var link = encodeURI(dieURL);
 			window.open(link,'','left=10,top=10,width=680,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
 		}
+		function transtitle(trans) {
+			document.getElementById('transaktiontitle').innerHTML = trans;
+		}
 	</script>
 </head>
 <body>
+<a title="zur&uuml;ck" href='javascript:history.back()'>
+	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" />
+</a>
+<dfn class='title' id='transaktiontitle'></dfn>
 
-<?php
+END;
+
 function is_ne_zahl($wert) {
 	// Prueft, ob ein Wert ausschließlich aus den Zahlen 0 bis 9 besteht
 	if (trim($wert, "0..9") == "") {return true;} else {return false;}
@@ -114,20 +128,26 @@ function ListAG($liste_ag) {
 		$cnt++;
 	}
 	if($cnt == 0){ // falsch configuriert!
-		echo "\n<p class='err'>Kein Amtsgericht aus Liste ".$$liste_ag.".</p>";
+		echo "\n<p class='anz'>Kein Amtsgericht aus Liste ".$$liste_ag.".</p>";
 	} elseif ($cnt >= $linelimit) {
-		echo "\n<p title='Bitte eindeutiger qualifizieren'>... und weitere</p>";
+		echo "\n<p title='Bitte eindeutiger qualifizieren'>".$cnt." Amtsgerichte ... und weitere</p>";
+	} elseif ($cnt > 1) {
+		echo "\n<p class='anz'>".$cnt." Amtsgerichte</p>";
 	}
 	return 0;
 }
 
 function ListGBBez($liste_ag, $mit_ag) {
 	// Grundbuch-Bezirke auflisten.
+	// +++ auch wenn Blätter da sind, kann es eine Sackgasse sein.
+	// +++ manchmal haben die Blätter keine Flurstücke.
 	global $con, $gkz, $gemeinde, $epsg, $debug, $gbkennz;
-	$linelimit=70;
+	$linelimit=90;
 	$sql ="SELECT a.stelle, a.bezeichnung AS ag, g.bezirk, g.bezeichnung FROM ax_buchungsblattbezirk g ";
 	$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle ";
 	$sql.="WHERE a.stelle IN (".$liste_ag.") AND a.stellenart = 1000 "; // Amtsgericht aus Liste
+	// Diese Subquery stellt sicher, dass nur Bezirke aufgelistett werden, die auch Blätter enthalten:
+	$sql.="AND NOT (SELECT gml_id FROM ax_buchungsblatt b WHERE b.land=g.land and b.bezirk=g.bezirk LIMIT 1) IS NULL ";
 	$sql.="ORDER BY g.bezeichnung LIMIT $1 ;";
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", array($linelimit));
@@ -152,10 +172,12 @@ function ListGBBez($liste_ag, $mit_ag) {
 		echo "\n</div>";
 		$cnt++;
 	}
-	if($cnt == 0){ // falsch configuriert
-		echo "\n<p class='err'>Kein Grundbuchbezirk zu den Amtsgerichten ".$liste_ag.".</p>";
+	if($cnt == 0){
+		echo "\n<p class='anz'>Kein Bezirk mit Bl&auml;ttern.</p>";
 	} elseif ($cnt >= $linelimit) {
-		echo "\n<p title='Bitte eindeutiger qualifizieren'>... und weitere</p>";
+		echo "\n<p class='anz' title='Bitte eindeutiger qualifizieren'>".$cnt." Bezirke ... und weitere</p>";
+	} elseif($cnt > 1) {
+		echo "\n<p class='anz'>".$cnt." Bezirke</p>"; // im Limit	
 	}
 	return 0;
 }
@@ -192,7 +214,7 @@ function SuchGBBezName() {
 		$gnr=$row["bezirk"];
 		$ag=htmlentities($row["ag"], ENT_QUOTES, "UTF-8");		
 		$anr=$row["stelle"];
-		echo "\n<div class='gk' title='GB-Bezirk'>";
+		echo "\n<div class='gk' title='Grundbuch-Bezirk'>";
 			echo "\n\t\t<img class='nwlink' src='ico/GB-Bezirk.ico' width='16' height='16' alt='Gemkg'> ";
 			echo "Bezirk <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gbkennz=".$gnr."'>";		
 				echo $gnam."</a> (".$gnr.")";
@@ -201,11 +223,13 @@ function SuchGBBezName() {
 		$cnt++;
 	}
 	if($cnt == 0){ 
-		echo "\n<p class='err'>Kein Grundbuchbezirk.</p>";
+		echo "\n<p class='anz'>Kein Grundbuchbezirk.</p>";
 	} elseif ($cnt >= $linelimit) {
-		echo "\n<p title='Bitte eindeutiger qualifizieren'>... und weitere</p>";
+		echo "\n<p title='Bitte eindeutiger qualifizieren'>".$cnt." Bezirke ... und weitere</p>";
 	} elseif ($cnt == 1) {
 		return $gnr; // Wenn eindeutig, gleich weiter
+	} elseif ($cnt > 1) {
+		echo "\n<p class='anz'>".$cnt." Bezirke</p>"; // im Limit	
 	}
 	return 0;
 }
@@ -214,13 +238,13 @@ function EinBezirk($showParent) {
 	// Kennzeichen bestehend nur aus GB-Bezirk-Schlüssel wurde eingegeben
 	global $con, $gkz, $gemeinde, $epsg, $debug, $zgbbez, $auskpath;
 	$linelimit=250; // max. Blatt je Bezirk
-	// Dies linelimit ist nicht ausreichend fuer alle Blaetter eines Bezirks, aber ...
+	// Dies Limit ist nicht ausreichend für alle Blätter eines Bezirks, aber ...
 	// Wenn man die Blatt-Nr nicht kennt, kommt man hier sowieso nicht weiter.
-	// Es nutzt also nichts, hier Tausende Nummern aufzulisten.
+	// Es nutzt also nichts, hier tausende Nummern aufzulisten.
+	// +++ Blätter-Funktion einführen analog Modul _eig
 	if ($showParent) {
 		$sql ="SELECT a.stelle, a.bezeichnung AS ag, g.bezeichnung FROM ax_buchungsblattbezirk g ";
-		$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle ";
-		$sql.="WHERE g.bezirk= $1 ;";
+		$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle WHERE g.bezirk= $1 ;";
 		$v=array($zgbbez);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -277,17 +301,18 @@ function EinBezirk($showParent) {
 			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='Blatt'>";
 			echo "\n\t</a> ";
-			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gblatt=".$gml."&amp;gbkennz=".$zgbbez."-".$blatt."'>&nbsp;".$blattd."&nbsp;</a>";
+			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;blattgml=".$gml."&amp;gbkennz=".$zgbbez."-".$blatt."'>&nbsp;".$blattd."&nbsp;</a>";
 		echo "\n</div>";
 		$cntbl++;
 	}
 	if($cntbl == 0) { 
-		echo "\n<p class='err'>Kein Blatt im Bezirk.</p>";
-	} else {
-		if($cntbl >= $linelimit) {
-			echo "\n<p>... und weitere</p>";
-			echo "\n<p>Geben sie ein: '".$zgbbez."-999A'<br>wobei '999A' = gesuchtes GB-Blatt</p>";
-		}
+		echo "\n<p class='anz'>Kein Blatt im Bezirk.</p>";
+	} elseif($cntbl >= $linelimit) {
+		echo "\n<p class='anz'>".$cntbl." Bl&auml;tter ... und weitere</p>";
+		// +++ Hier oft überschritten! Blätter-Funktion einführen
+		echo "\n<p>Geben sie ein: '".$zgbbez."-999A'<br>wobei '999A' = gesuchtes GB-Blatt</p>";
+	} elseif ($cntbl > 1) {
+		echo "\n<p class='anz'>".$cntbl." Bl&auml;tter</p>"; // im Limit	
 	}
 	return;
 }
@@ -318,28 +343,30 @@ function gml_blatt() {
 	}
 	if($cntbl == 0) { 
 		echo "\n<p class='err'>Grundbuchblatt '".$zgbbez."-".$zblatt."' nicht gefunden.</p>";
-	} elseif($cntbl == 1) {
+	} elseif ($cntbl == 1) {
 		return $bl_gml;
 	}
 	return;
 }
 
-function EinBlatt($showParent) {
+/*
+function EinBlatt_ALT($showParent) {
 	// Kennzeichen Bezirk + Blatt wurde eingegeben
-	global $con, $gkz, $debug, $gemeinde, $epsg, $auskpath, $zgbbez, $zblatt, $zblattn, $zblattz, $gblatt, $zbvnr;
+	// Ursprüngliche Version bis 2013-04-24
+	global $con, $gkz, $debug, $gemeinde, $epsg, $auskpath, $zgbbez, $zblatt, $zblattn, $zblattz, $blattgml, $zbvnr;
 
-	if ($showParent) {	
-		echo "\n<div class='gk' title='GB-Bezirk'>";
+	if ($showParent) {
+	// +++ nur der Schluessel ist bekannt. Bezirks-Namen und Amtsgericht noch ermitteln ++++
+		echo "\n<div class='gk' title='Grundbuch-Bezirk'>";
 			echo "\n\t\t<img class='nwlink' src='ico/GB-Bezirk.ico' width='16' height='16' alt='Bez.'> ";
 			echo "Bezirk <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gbkennz=".$zgbbez."'>";		
 			echo $zgbbez."</a>";
-			// Key ist bekannt. Sollte man sich die Muehe machen, Namen und Amtsgericht zu ermitteln?
 		echo "\n</div>";
 		echo "\n<div class='gb' title='GB-Blatt'>";
-			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gblatt."\")'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$blattgml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='Blatt'>";
 			echo "\n\t</a> ";
-			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gblatt=".$gblatt."&amp;gbkennz=".$zgbbez."-".$zblatt."'>&nbsp;".$zblattn.$zblattz."&nbsp;</a>";
+			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;blattgml=".$blattgml."&amp;gbkennz=".$zgbbez."-".$zblatt."'>&nbsp;".$zblattn.$zblattz."&nbsp;</a>";
 		echo "\n</div>";
 	}
 	// Blatt ->  B u c h u n g s s t e l l e
@@ -349,7 +376,7 @@ function EinBlatt($showParent) {
 	$sql.="WHERE v.beziehungsart='istBestandteilVon' AND b.gml_id= $1 ORDER BY s.laufendenummer;";
 	// +++ Buchungen ohne FLST weglassen?
 	// +++ Counter FLST ausgeben, Buchungen mit 0 weglassen 
-	$v=array($gblatt);
+	$v=array($blattgml);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -367,7 +394,7 @@ function EinBlatt($showParent) {
 		$cntbu++;
 	}
 	if($cntbu == 0) { 
-		echo "\n<p class='err'>Keine Buchung gefunden.</p>";
+		echo "\n<p class='anz'>Keine Buchung gefunden.</p>";
 	} elseif($cntbu == 1) {
 		$zbvnr=$lfd; // mit dieser BVNR gleich weiter machen
 		// Blatt zerteilen (benoetigt in gml_buchungsstelle)
@@ -378,8 +405,38 @@ function EinBlatt($showParent) {
 			$zblattn=ltrim(substr($zblatt,0,$len-1), "0"); // ohne fuehrende Nullen
 			$zblattz=strtoupper(substr($zblatt,$len-1,1)); 
 		}
+	} else {
+		echo "\n<p class='anz'>".$cntbu."Buchungen.</p>";
 	}
 	return $cntbu;
+}
+*/
+
+function EinBlatt($showParent) {
+	// Kennzeichen Bezirk + Blatt wurde eingegeben
+	global $con, $gkz, $debug, $gemeinde, $epsg, $auskpath, $zgbbez, $zblatt, $zblattn, $zblattz, $blattgml, $zbvnr;
+
+	if ($showParent) {
+	// +++ nur der Schluessel ist bekannt. Bezirks-Namen und Amtsgericht noch ermitteln ++++
+		echo "\n<div class='gk' title='Grundbuch-Bezirk'>";
+			echo "\n\t\t<img class='nwlink' src='ico/GB-Bezirk.ico' width='16' height='16' alt='Bez.'> ";
+			echo "Bezirk <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gbkennz=".$zgbbez."'>";		
+			echo $zgbbez."</a>";
+		echo "\n</div>";
+		echo "\n<div class='gb' title='GB-Blatt'>";
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$blattgml."\")'>";
+				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='Blatt'>";
+			echo "\n\t</a> ";
+			echo "Blatt <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;blattgml=".$blattgml."&amp;gbkennz=".$zgbbez."-".$zblatt."'>&nbsp;".$zblattn.$zblattz."&nbsp;</a>";
+		echo "\n</div>";
+	}
+
+	// Blatt -> Buchungsstelle -> Flurstueck
+	$linelimit = 200; // Max. Anzahl FS
+	GB_Buchung_FS($linelimit); // Externe Function
+
+	return 0; 
+	
 }
 
 function gml_buchungsstelle() {
@@ -425,14 +482,16 @@ function gml_buchungsstelle() {
 function EinGrundstueck($showParent) {
 	// Die gml_id der Buchungsstelle ist bekannt.
 	global $con, $gkz, $debug, $gemeinde, $epsg, $scalefs, $epsg, $auskpath, $gbuchung, $zgbbez, $zblatt, $zblattn, $zblattz, $zbvnr, $gfilter;
+	// NoLimit?
 	if ($showParent) { // wenn Kennzeichen bekannt ist, dann auch Blatt ausgeben
-		if (isset($zgbbez) and isset($zblatt)) {
+
+		if ($zgbbez.$zblatt != "") {
+			// +++ Schlüssel ist bekannt. Namen und Amtsgericht dazu ermitteln
+			// +++ oder Namen als &bez= übermitteln?
 			echo "\n<div class='gk' title='GB-Bezirk'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GB-Bezirk.ico' width='16' height='16' alt='Bez.'> ";
 				echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gbkennz=".$zgbbez."'>";		
 				echo "Bezirk ".$zgbbez."</a>";
-				// Key ist bekannt. Sollte man sich die Muehe machen, Namen und Amtsgericht zu ermitteln?
-				// ++++ Namen als &bez= übermitteln?
 			echo "\n</div>";			
 			echo "\n<div class='gb' title='GB-Blatt'>";
 				echo "\n\t\t<img class='nwlink' src='ico/GBBlatt.ico' width='16' height='16' alt='Blatt'> ";
@@ -441,6 +500,7 @@ function EinGrundstueck($showParent) {
 		} else {
 			echo "<p class='err'>Kennzeichen Bezirk und Blatt nicht gesetzt</p>";
 		}
+
 		echo "\n<div class='gs'>";
 			echo "\n\t\t<img class='nwlink' title='Grundst&uuml;ck' src='ico/Grundstueck.ico' width='16' height='16' alt='GS'> ";
 			echo "Buchung <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gbuchung=".$gbuchung."&amp;gbkennz=".$zgbbez."-".$zblattn.$zblattz."-".$zbvnr."'>&nbsp;".$zbvnr."&nbsp;</a>";
@@ -450,21 +510,36 @@ function EinGrundstueck($showParent) {
 	// +++ Ermitteln anderer Buchungsstellen wo diese Rechte hat
 	// +++ Filter "Gemeinde" berücksichtigt!! Wenn gesetzt.
 
-	// Buchungsstelle -> Flurstueck
-	$sql ="SELECT t.gemeinde, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
+	// SQL-Bausteine
+	$sql1 ="SELECT g.gemeinde, g.gemarkungsname, f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
 	if($epsg == "25832") { // Transform nicht notwendig
-		$sql.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
-		$sql.="st_y(st_Centroid(f.wkb_geometry)) AS y ";
+		$sql1.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
+		$sql1.="st_y(st_Centroid(f.wkb_geometry)) AS y ";
 	} else {  
-		$sql.="st_x(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS x, ";
-		$sql.="st_y(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS y ";			
+		$sql1.="st_x(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS x, ";
+		$sql1.="st_y(st_transform(st_Centroid(f.wkb_geometry),".$epsg.")) AS y ";			
 	}
-	$sql.="FROM ax_gemarkung g ";
-	$sql.="JOIN ax_flurstueck f ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-	$sql.="JOIN alkis_beziehungen v ON f.gml_id=v.beziehung_von "; 
-	$sql.="LEFT JOIN gemeinde_gemarkung t ON g.gemarkungsnummer=t.gemarkung ";
-	$sql.="WHERE v.beziehungsart='istGebucht' AND v.beziehung_zu= $1 "; // id buchungsstelle
-	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+	$sql1.="FROM ";
+
+	$sqla1 ="JOIN alkis_beziehungen vfb ON s1.gml_id = vfb.beziehung_zu ";
+	$sqla2 ="JOIN alkis_beziehungen vfb ON s2.gml_id = vfb.beziehung_zu ";
+
+	// Zwischen-JOIN (zusätzlich nur bei zweiter Abfrage)
+	$sqlz ="JOIN alkis_beziehungen vss ON vss.beziehung_von = s1.gml_id ";
+	$sqlz.="JOIN ax_buchungsstelle s2 ON vss.beziehung_zu = s2.gml_id ";
+
+	$sql2 ="JOIN ax_flurstueck f ON ....  ";
+	$sql2.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
+	$sql2.="WHERE v.beziehungsart='istGebucht' AND v.beziehung_zu= $1 "; // id buchungsstelle
+	switch ($gfilter) { // Filter Gemeinde
+		case 1: // Einzelwert
+			$sql2.="AND g.gemeinde=".$gemeinde." "; break;
+		case 2: // Liste
+			$sql2.="AND g.gemeinde in (".$gemeinde.") "; break;
+	}
+	$sql2.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+
+	$sql=$sql1.$sqla1.$sql2; // Direkte Buchungen
 	$v=array($gbuchung);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -476,16 +551,18 @@ function EinGrundstueck($showParent) {
 	while($row = pg_fetch_array($res)) {	
 		$fs_gml=$row["gml_id"];
 		$gemei=$row["gemeinde"];
-		$gmkg=$row["bezeichnung"];
+		$gmkg=$row["gemarkungsname"];
 		$flur=$row["flurnummer"];
 		$fskenn=$row["zaehler"];
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
 		$x=$row["x"];
 		$y=$row["y"];
-		if($gemeinde > 0 and $gemeinde != $gemei and $gfilter == 1) { // ex-territorial 
-		// +++ Wie Abgleich mit Filter=Gemeinde-Liste? Als Array aufbereiten?
-			if ($debug >= 2) {echo "<p class='dbg'>Gemkg ".$gmkg." liegt in Gemeinde '".$gemei."' nicht '".$gemeinde."'</p>";}
 
+		// FILTER OBEN, IN SQL - nicht HIER
+		if($gemeinde > 0 and $gemeinde != $gemei and $gfilter == 1) { // ex-territorial 
+			if ($debug >= 2) {
+				echo "<p class='dbg'>Gemkg ".$gmkg." liegt in Gemeinde '".$gemei."' nicht '".$gemeinde."'</p>";
+			}
 			echo "\n<div class='fs' title='Kein Zugriff! Liegt au&szlig;erhalb des Gebietes.'>";
 				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Leer.ico' width='16' height='16' alt='FS'> (".$gmkg." ".$flur."-".$fskenn." )";
 			echo "\n</div>";			
@@ -503,7 +580,11 @@ function EinGrundstueck($showParent) {
 		}
 		$zfs++;
 	}
-	if($zfs == 0) {echo "\n<p class='err'>Kein Flurst&uuml;ck.</p>";}
+	if($zfs == 0) {
+		echo "\n<p class='anz'>Kein Flurst&uuml;ck.</p>";
+	} elseif($zfs > 1) {
+		echo "\n<p class='anz'>".$zfs." Flurst&uuml;ck.</p>";
+	}
 	return;
 }
 
@@ -511,85 +592,102 @@ function EinGrundstueck($showParent) {
 // Start hier!
 // ===========
 if(isset($epsg)) {
-	if ($debug >= 2) {echo "<p class='dbg'>aktueller EPSG='".$epsg."'</p>";} // aus MB
+	#if ($debug >= 2) {echo "<p class='dbg'>aktueller EPSG='".$epsg."'</p>";} // aus MB
 	$epsg = str_replace("EPSG:", "" , $_REQUEST["epsg"]);	
 } else {
-	if ($debug >= 1) {echo "<p class='err'>kein EPSG gesetzt</p>";}	
+	#if ($debug >= 1) {echo "<p class='err'>kein EPSG gesetzt</p>";}	
 	$epsg=$gui_epsg; // aus Conf
 }
-if ($debug >= 2) {
-	if(isset($gemeinde)) {echo "<p class='dbg'>Filter Gemeinde = ".$gemeinde."</p>";
-	} else {echo "<p class='dbg'>Kein Filter Gemeinde</p>";}
-}
+
 if ($gemeinde == "") {
 	$gfilter = 0; // ungefiltert
+	#if ($debug >= 2) {echo "<p class='dbg'>Kein Filter Gemeinde</p>";}
 } elseif(strpos($gemeinde, ",") === false) {
 	$gfilter = 1; // Einzelwert
+	#if ($debug >= 2) {echo "<p class='dbg'>Filter Gemeinde Einzelwert = '".$gemeinde."'</p>";}
 } else {
 	$gfilter = 2; // Liste
+	#if ($debug >= 2) {echo "<p class='dbg'>Filter Gemeinde Liste = '".$gemeinde."'</p>";}
 }
 
 // Auch wenn redundant: Das Kennzeichen für Anzeige und weitere Links zerlegen
 $kennztyp=ZerlegungGBKennz($gbkennz);
-if ($debug >= 2) {echo "<p class='dbg'>GB-Kennzeichen Typ=".$kennztyp."</p>";}
+#if ($debug >= 2) {echo "<p class='dbg'>GB-Kennzeichen Typ=".$kennztyp."</p>";}
 
 // Wurde eine gml_id (internes Kennzeichen) aus einem Self-Link verwendet?
-// Dann hat das Prioritaet, nicht nach $gbkennz suchen.
-if (isset($gbuchung)) { // gml der Buchungsstelle
-	if ($debug >= 2) {echo "<p class='dbg'>Link Buchung(gml)=".$gbuchung."</p>";}
+// Dann hat das Prioritaet, also *nicht* nach $gbkennz suchen.
+if ($gbuchung != "") { // gml der Buchungsstelle
+	$trans="Buchungsstelle";
 	EinGrundstueck(true);
-} elseif(isset($gblatt)) { // gml des GB-Blattes
-	if ($debug >= 2) {echo "<p class='dbg'>Link Blatt(gml)=".$gblatt."</p>";}
+
+} elseif($blattgml != "") { // gml des GB-Blattes
+
+	// neue Version -> function GB_Buchung_FS
+	$trans="GB-Blatt mit Buchungen und Flst.";
+	EinBlatt(true);
+
+/*	alte Version (ohne die Function))
 	if (EinBlatt(true) == 1) { // darauf genau eine Buchung
 		$gbuchung=gml_buchungsstelle(); // gml_id zum Kennzeichen
+		$trans="Grundbuch-Blatt und 1 Buchung";
 		EinGrundstueck(false);
 	}
-} elseif(isset($ag)) { // Key 'stelle' des Amtsgerichtes
-	if ($debug >= 2) {echo "<p class='dbg'>Link Amtsgericht=".$ag."</p>";}
+*/
+
+} elseif(isset($ag)) { // Key des Amtsgerichtes
+	#if ($debug >= 2) {echo "<p class='dbg'>Link Amtsgericht=".$ag."</p>";}
+	$trans="GB-Bezirke zum Amtsgericht";
 	ListAG( "'".$ag."'" ); // noch mal Kopfzeile
 	ListGBBez("'".$ag."'", false);
-} else { // Kein Self-Link
-	// (manuelle) Eingabe im Formular interpretieren.
-	switch ($kennztyp) { // +++ Wie kann Filter "Gemeinde" berücksichtigt werden?
-		case 0: // keine Eingabe, 2 Alternativen
-			// +++ Alternativen-Auswahl konfigurieren?
-		//	ListGBBez($ag_liste, true); // gefilterte Liste der Bezirke
-			ListAG($ag_liste); // gefilterte Liste der Amtsgerichte
+
+} else { // Kein Self-Link, Eingabe im Formular
+
+	switch ($kennztyp) {
+		case 0: // keine Eingabe
+			$trans="Liste der Amtsgerichte";
+			ListAG($ag_liste);
 			break;
 		case 1: // Eingabe Bezirk-Name (-Teil) -> gefilterte Liste der Bezirke
-			if ($debug >= 2) {echo "<p class='dbg'>Eingabe Bez. ".$zgbbez."</p>";}
+			$trans="Grundbuchbezirke gefiltert";
 			$beznr=SuchGBBezName();
 			if ($beznr > 0) {  // eindeutig
 				$zgbbez=$beznr;
+				$trans="Bezirk gefunden, Bl&auml;tter dazu";
 				EinBezirk(false); // gleich weiter
-			};	
+			};
 			break;
 		case 2: // Eingabe Bezirk-Nummer -> Liste der Blätter
-			if ($debug >= 2) {echo "<p class='dbg'>Eingabe Bez. ".$zgbbez."</p>";}	
+			$trans="Bl&auml;tter im GB-Bezirk";
 			EinBezirk(true);
 			break;
 		case 3: // Eingabe Blatt -> Liste der Buchungen
-			if ($debug >= 2) {echo "<p class='dbg'>Eingabe Bez. ".$zgbbez." Blatt ".$zblatt."</p>";}
-			$gblatt=gml_blatt(); // gml_id zum Blatt suchen
-			if ($gblatt != "") { // gefunden		
+			$trans="Buchungen auf GB-Blatt";
+			$blattgml=gml_blatt(); // gml_id zum Blatt suchen
+			if ($blattgml != "") { // gefunden		
 				if (EinBlatt(true) == 1) { // darauf genau eine Buchung
+					$trans="GB-Blatt und 1 Buchung";
 					$gbuchung=gml_buchungsstelle(); // gml_id zum Kennzeichen
 					EinGrundstueck(false);
 				}
 			}
 			break;
 		case 4: // Eingabe Buchung (Grundstueck) -> Liste der Flurstuecke
-			if ($debug >= 2) {echo "<p class='dbg'>Eingabe Bez. ".$zgbbez." Blatt ".$zblatt." BVNR ".$zbvnr."</p>";}
+			$trans="Flurst. zur Buchungsstelle";
 			$gbuchung=gml_buchungsstelle(); // gml_id zum Kennzeichen
 			if ($gbuchung != "") { // .. wurde geliefert 
+				$trans="Buchungsstelle und 1 Flurst.";
 				EinGrundstueck(true);
 			}
 			break;
 		case 9: // Fehler
-			echo "<p class='err'>Bitte ein g&uuml;ltiges Grundbuchkennzeichen eingegeben, Format 'gggg-999999A-llll</p>";
+			$trans="fehlerhafte Eingabe";
+			echo "\n<p class='err'>Bitte ein g&uuml;ltiges Grundbuchkennzeichen eingegeben, Format 'gggg-999999A-llll</p>";
 			break;
 	}
 }
+// Titel im Kopf anzeigen
+echo "\n<script type='text/javascript'>\n\ttranstitle('".$trans."')\n</script>";
 ?>
+
 </body>
 </html>

@@ -12,6 +12,7 @@
 --  2012-04-23 ax_flurstueck hat keinen Unique Index mahr auf gml_id,
 --             ForeignKey vorübergehend ausgeschaltet.
 --  2012-04-25 simple_geom fuer pp_flur
+--  2013-04-18 Kommentare.
 
 
 -- ============================
@@ -30,7 +31,7 @@
 -- ToDo:
 
 -- Muss *multi*-Polygon sein? Gibt es "zerrissene" Fluren/Gemarkungen?
-
+-- Der View "gemeinde_gemarkung" kann entfallen, wenn Navigation umgestellt wurde.
 
 SET client_encoding = 'UTF-8';
 
@@ -59,7 +60,6 @@ SET client_encoding = 'UTF-8';
     CONSTRAINT pp_gemeinde_pk PRIMARY KEY (land, gemeinde)
   );
 
--- ALTER TABLE pp_gemeinde ADD COLUMN gid serial;
 CREATE UNIQUE INDEX pp_gemeinde_gid_ix ON pp_gemeinde (gid);
 
 -- Gesamtflaeche
@@ -88,8 +88,7 @@ CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 -- Da nicht ständig mit 'SELECT DISTINCT' sämtliche Flurstücke durchsucht werden können, 
 -- muss diese Information als (redundante) Tabelle nach dem Laden zwischengespeichert werden. 
 
---CREATE TABLE gemeinde_gemarkung (		-- alt: PostNAS 0.6
-  CREATE TABLE pp_gemarkung (			-- PostNAS 0.7
+  CREATE TABLE pp_gemarkung (
     gid			serial,
     land		integer NOT NULL,
     regierungsbezirk	integer,
@@ -101,7 +100,6 @@ CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
     CONSTRAINT pp_gemarkung_pk PRIMARY KEY (land, gemarkung)
   );
 
--- ALTER TABLE pp_gemarkung ADD COLUMN gid serial;
 CREATE UNIQUE INDEX pp_gemarkung_gid_ix ON pp_gemarkung (gid);
 
 -- Gesamtfläche
@@ -188,24 +186,21 @@ CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
 
 -- Flurstuecksnummern-Position
 -- ===========================
-
--- ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck"
+-- Die Tabelle "pp_flurstueck_nr" ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck".
 
 --DROP TABLE pp_flurstueck_nr;
-
   CREATE TABLE pp_flurstueck_nr (
     gid		serial,
     fsgml	character(16),
     fsnum	character varying(10),  -- zzzzz/nnnn
     CONSTRAINT pp_flurstueck_nr_pk  PRIMARY KEY (gid)  --,
-
--- Durch Änderung Patch #5444 am 2012-04-23 hat 'ax_flurstueck' keinen Unique-Index mahr auf gml_id
+-- Foreign Key
+-- ALT:
 --    CONSTRAINT pp_flurstueck_nr_gml FOREIGN KEY (fsgml)
 --      REFERENCES ax_flurstueck (gml_id) MATCH SIMPLE
 --      ON UPDATE CASCADE ON DELETE CASCADE
-
+-- Durch Änderung Patch #5444 am 2012-04-23 hat 'ax_flurstueck' keinen Unique-Index mehr auf gml_id
 -- Ersatzweise einen ForeignKey über 2 Felder?
-
   );
 
 SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom','25832','POINT',2);
@@ -237,6 +232,10 @@ AS
   JOIN pp_gemeinde  g 
     ON k.land = g.land 
    AND k.gemeinde = g.gemeinde;
+
+COMMENT ON VIEW gemeinde_gemarkung 
+  IS 'Die Sicht "gemeinde_gemarkung" enthaelt nur gefüllte Gemarkungen (mit FS) aber Gemeinde mehrfach. Diese Sicht wird derzeit noch in der Navigation benutzt (alkisnav_fls.php, _grd.php, _eig.php). Definiert in pp_definition.sql. Soll künftig entfallen.';
+
 
 -- VIEWs  fuer die Zuordnung vom Eigentümern zu Gemeinden
 -- ------------------------------------------------------

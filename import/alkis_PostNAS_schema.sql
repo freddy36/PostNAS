@@ -59,7 +59,9 @@
 --                Darüber können Tabellen aus diesem Script unterschieden werden 
 --                von Tabellen, die PostNAS selbst generiert hat.
 
--- 2013-04-15 FJ  Tabelle ax_wirtschaftlicheeinheit
+-- 2013-04-22 FJ  Tabelle ax_wirtschaftlicheeinheit, Kommentare ergänzt,
+--                Felad "ax_historischesflurstueck.buchungsart" varchar statt integer
+
 
 
 --  VERSIONS-NUMMER:
@@ -304,7 +306,8 @@ SELECT AddGeometryColumn('ax_soll','wkb_geometry',:alkis_epsg,'POLYGON',2);
 CREATE INDEX ax_soll_geom_idx ON ax_soll USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_soll_gml ON ax_soll USING btree (gml_id,beginnt);
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE  ax_soll        IS 'S o l l';
+COMMENT ON COLUMN ax_soll.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- B e w e r t u n g
@@ -326,10 +329,11 @@ SELECT AddGeometryColumn('ax_bewertung','wkb_geometry',:alkis_epsg,'GEOMETRY',2)
 CREATE INDEX ax_bewertung_geom_idx   ON ax_bewertung USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_bewertung_gml ON ax_bewertung USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_bewertung        IS 'B e w e r t u n g';
+COMMENT ON TABLE  ax_bewertung        IS '"B e w e r t u n g"  ist die Klassifizierung einer Fläche nach dem Bewertungsgesetz (Bewertungsfläche).';
 COMMENT ON COLUMN ax_bewertung.gml_id IS 'Identifikator, global eindeutig';
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON COLUMN ax_bewertung.klassifizierung IS '"Klassifizierung" ist die gesetzliche Klassifizierung nach dem Bewertungsgesetz.';
+
 
 
 -- T a g e s a b s c h n i t t
@@ -351,7 +355,8 @@ SELECT AddGeometryColumn('ax_tagesabschnitt','wkb_geometry',:alkis_epsg,'POLYGON
 CREATE INDEX ax_tagesabschnitt_geom_idx   ON ax_tagesabschnitt USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_tagesabschnitt_gml ON ax_tagesabschnitt USING btree (gml_id,beginnt);
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE  ax_tagesabschnitt        IS 'T a g e s a b s c h n i t t  der Bodenschätzung.';
+COMMENT ON COLUMN ax_tagesabschnitt.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- D e n k m a l s c h u t z r e c h t
@@ -405,7 +410,9 @@ CREATE INDEX ax_forstrecht_geom_idx   ON ax_forstrecht USING gist  (wkb_geometry
 CREATE UNIQUE INDEX ax_forstrecht_gml ON ax_forstrecht USING btree (gml_id,beginnt);
 CREATE INDEX ax_forstrecht_afs ON ax_forstrecht(land,stelle);
 
--- COMMENT ON TABLE ax___  IS 'XXXX';
+COMMENT ON TABLE  ax_forstrecht        IS 'F o r s t r e c h t';
+COMMENT ON COLUMN ax_forstrecht.gml_id IS 'Identifikator, global eindeutig';
+
 
 -- G e b ä u d e a u s g e s t a l t u n g
 -- -----------------------------------------
@@ -629,7 +636,7 @@ CREATE TABLE ax_historischesflurstueck (
 	vorgaengerflurstueckskennzeichen	varchar[],
 	nachfolgerflurstueckskennzeichen	varchar[],
 	blattart			integer,
-	buchungsart			integer,
+	buchungsart			varchar, -- integer, geä. 2013-04-22 Value z.B. "Grundstück"
 	buchungsblattkennzeichen	varchar[],
 	bezirk				integer,
 	buchungsblattnummermitbuchstabenerweiterung	varchar[], -- hier länger als (7)!
@@ -1757,6 +1764,7 @@ CREATE TABLE ax_buchungsblatt (
 	land			integer,
 	bezirk			integer,
 	buchungsblattnummermitbuchstabenerweiterung	varchar,
+    -- Konverter mault: "Warning 1: Value '001648 ' ... parsed incompletely to integer 1648." usw.
 	blattart		integer,
 	art			varchar,
 	-- name character(13),  -- immer leer?
@@ -3101,11 +3109,12 @@ SELECT AddGeometryColumn('ax_einrichtunginoeffentlichenbereichen','wkb_geometry'
 CREATE INDEX ax_einrichtunginoeffentlichenbereichen_geom_idx ON ax_einrichtunginoeffentlichenbereichen USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_einrichtunginoeffentlichenbereichen_gml ON ax_einrichtunginoeffentlichenbereichen USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_einrichtunginoeffentlichenbereichen        IS 'E i n r i c h t u n g   i n   Ö f f e n t l i c h e n   B e r e i c h e n';
+COMMENT ON TABLE  ax_einrichtunginoeffentlichenbereichen        IS 'E i n r i c h t u n g   i n   ö f f e n t l i c h e n   B e r e i c h e n';
 COMMENT ON COLUMN ax_einrichtunginoeffentlichenbereichen.gml_id IS 'Identifikator, global eindeutig';
 
 
--- Einrichtung für den Schiffsverkehr
+-- E i n r i c h t u n g   f ü r   d e n   S c h i f f s v e r k e h r
+-- ------------------------------------------------------------------------
 CREATE TABLE ax_einrichtungenfuerdenschiffsverkehr (
 	ogc_fid 		serial NOT NULL,
 	gml_id			character(16),
@@ -3122,8 +3131,11 @@ CREATE TABLE ax_einrichtungenfuerdenschiffsverkehr (
 
 SELECT AddGeometryColumn('ax_einrichtungenfuerdenschiffsverkehr','wkb_geometry',:alkis_epsg,'POINT',2);
 
-CREATE INDEX ax_einrichtungenfuerdenschiffsverkehr_geom_idx ON ax_einrichtungenfuerdenschiffsverkehr USING gist (wkb_geometry);
+CREATE INDEX ax_einrichtungenfuerdenschiffsverkehr_geom_idx   ON ax_einrichtungenfuerdenschiffsverkehr USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_einrichtungenfuerdenschiffsverkehr_gml ON ax_einrichtungenfuerdenschiffsverkehr USING btree (gml_id,beginnt);
+
+COMMENT ON TABLE  ax_einrichtungenfuerdenschiffsverkehr        IS 'E i n r i c h t u n g e n   f ü r  d e n  S c h i f f s v e r k e h r';
+COMMENT ON COLUMN ax_einrichtungenfuerdenschiffsverkehr.gml_id IS 'Identifikator, global eindeutig';
 
 
 -- B e s o n d e r e r   B a u w e r k s p u n k t
@@ -3646,6 +3658,7 @@ CREATE UNIQUE INDEX ax_duene_gml ON ax_duene USING btree (gml_id,beginnt);
 
 COMMENT ON TABLE  ax_duene IS 'D ü n e';
 
+
 -- H ö h e n l i n i e
 -- --------------------
 CREATE TABLE ax_hoehenlinie (
@@ -3664,6 +3677,9 @@ SELECT AddGeometryColumn('ax_hoehenlinie','wkb_geometry',:alkis_epsg,'LINESTRING
 
 CREATE INDEX ax_hoehenlinie_geom_idx ON ax_hoehenlinie USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_hoehenlinie_gml ON ax_hoehenlinie USING btree (gml_id,beginnt);
+
+COMMENT ON TABLE  ax_hoehenlinie        IS 'H ö h e n l i n i e';
+COMMENT ON COLUMN ax_hoehenlinie.gml_id IS 'Identifikator, global eindeutig';
 
 
 
@@ -3894,7 +3910,8 @@ SELECT AddGeometryColumn('ax_bodenschaetzung','wkb_geometry',:alkis_epsg,'GEOMET
 CREATE INDEX ax_bodenschaetzung_geom_idx ON ax_bodenschaetzung USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_bodenschaetzung_gml ON ax_bodenschaetzung USING btree (gml_id,beginnt);
 
-COMMENT ON TABLE  ax_bodenschaetzung              IS 'B o d e n s c h ä t z u n g';
+COMMENT ON TABLE  ax_bodenschaetzung              IS '"B o d e n s c h ä t z u n g" ist die kleinste Einheit einer bodengeschätzten Fläche nach dem Bodenschätzungsgesetz, für die eine Ertragsfähigkeit im Liegenschaftskataster nachzuweisen ist (Bodenschätzungsfläche). Ausgenommen sind Musterstücke, Landesmusterstücke und Vergleichsstücke der Bodenschätzung.';
+
 COMMENT ON COLUMN ax_bodenschaetzung.gml_id       IS 'Identifikator, global eindeutig';
 COMMENT ON COLUMN ax_bodenschaetzung.kulturart    IS '"Kulturart" ist die bestandskräftig festgesetzte landwirtschaftliche Nutzungsart entsprechend dem Acker- oder Grünlandschätzungsrahmen.';
 COMMENT ON COLUMN ax_bodenschaetzung.bodenart     IS '"Bodenart" ist die nach den Durchführungsbestimmungen zum Bodenschätzungsgesetz (Schätzungsrahmen) festgelegte Bezeichnung der Bodenart.';

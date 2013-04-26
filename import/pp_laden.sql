@@ -162,7 +162,8 @@ WHERE b.beziehungsart = 'istGebucht'
 
 -- ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck"
 
-  DELETE FROM pp_flurstueck_nr;
+--DELETE FROM pp_flurstueck_nr;
+  TRUNCATE pp_flurstueck_nr;    -- effektiver als DELETE
 
   INSERT INTO pp_flurstueck_nr
           ( fsgml, fsnum, the_geom )
@@ -202,7 +203,8 @@ WHERE b.beziehungsart = 'istGebucht'
 
 -- G E M A R K U N G
 
-DELETE FROM pp_gemarkung;
+--DELETE FROM pp_gemarkung;
+  TRUNCATE pp_gemarkung;
 
 -- Vorkommende Paarungen Gemarkung <-> Gemeinde in ax_Flurstueck
 INSERT INTO pp_gemarkung
@@ -226,7 +228,8 @@ UPDATE pp_gemarkung a
 
 -- G E M E I N D E
 
-DELETE FROM pp_gemeinde;
+--DELETE FROM pp_gemeinde;
+  TRUNCATE pp_gemeinde;
 
 -- Vorkommende Gemeinden aus den gemarkungen
 INSERT INTO pp_gemeinde

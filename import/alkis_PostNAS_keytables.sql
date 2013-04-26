@@ -1,5 +1,5 @@
 
--- ALKIS-Datenbank aus dem Konverter PostNAS 0.7
+-- ALKIS-Datenbank aus dem Konverter PostNAS
 
 -- Z u s a e t z l i c h e   S c h l u e s s e l t a b e l l e n
 
@@ -9,9 +9,7 @@
 
 -- Die Tabellen werden vom Buchwerk-Auskunftsprogramm benoetigt.
 
--- Dies Script kann nach dem Anlegen der Datenbank mit dem Script 'alkis_PostNAS_0.7_schema.sql' verarbeitet werden.
-
--- Alternativ kann eine Template-Datenbbank bereits mit diesen Schluesseltabellen angelegt werden.
+-- Dies Script kann nach dem Anlegen der Datenbank mit dem Script 'alkis_PostNAS_schema.sql' verarbeitet werden.
 
 -- Version
 --  2010-09-16  F.J. Buchungsart hinzugefuegt
@@ -24,15 +22,13 @@
 --  2012-03-12  A.E. ax_anderefestlegungnachstrassenrecht_artdf, ax_klassifizierungnachwasserrecht_artdf, 
 --                   ax_klassifizierungnachstrassenrecht_artdf, ax_naturumweltoderbodenschutzrecht_artdf, 
 --                   ax_sonstigesrecht_artdf, ax_anderefestlegungnachwasserrecht_artdf
---  2013-04-16  F.J. Kurzbezeichnungen der Bodenschättung für die Kartendarstellung
+--  2013-04-17  F.J. Kurzbezeichnungen der Bodenschättung für die Kartendarstellung
 
   SET client_encoding = 'UTF8';
 
 -- G e b a e u d e - B a u w e i s e
 -- ---------------------------------
-
 -- Wird z.B. benoetigt in Buchauskunft, Modul 'alkisgebaeudenw.php'
-
 -- Nicht im Grunddatenbestand NRW 
 -- Siehe http://www.kreis-euskirchen.de/service/downloads/geoinformation/Kreis_EU_Gebaeudeerfassung.pdf
 
@@ -43,7 +39,10 @@ CREATE TABLE ax_gebaeude_bauweise (
   );
 
 COMMENT ON TABLE ax_gebaeude_bauweise 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_gebaeude", Feld "bauweise".';
+
+COMMENT ON COLUMN ax_gebaeude_bauweise.bauweise_id           IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_gebaeude_bauweise.bauweise_beschreibung IS 'Bezeichnung, Bedeutung';
 
 INSERT INTO ax_gebaeude_bauweise (bauweise_id, bauweise_beschreibung) VALUES (1100,'Freistehendes Einzelgebäude');
 INSERT INTO ax_gebaeude_bauweise (bauweise_id, bauweise_beschreibung) VALUES (1200,'Freistehender Gebäudeblock');
@@ -58,12 +57,9 @@ INSERT INTO ax_gebaeude_bauweise (bauweise_id, bauweise_beschreibung) VALUES (25
 INSERT INTO ax_gebaeude_bauweise (bauweise_id, bauweise_beschreibung) VALUES (4000,'Offene Halle');
 
 
-
 -- G e b a e u d e - F u n k t i o n
 -- ---------------------------------
-
 -- Tabelle wird z.B. benoetigt in Buchauskunft, Modul 'alkisgebaeudenw.php'
-
 -- Kennung   = 31001
 -- Objektart = 'ax_gebaeude'
 
@@ -75,9 +71,11 @@ CREATE TABLE ax_gebaeude_funktion (
     CONSTRAINT pk_ax_gebaeude_funktion_wert PRIMARY KEY (wert)
    );
 
-
 COMMENT ON TABLE  ax_gebaeude_funktion 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_gebaeude", Feld "funktion".';
+
+COMMENT ON COLUMN ax_gebaeude_funktion.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_gebaeude_funktion.bezeichner IS 'Bezeichnung, Bedeutung';
 
 INSERT INTO ax_gebaeude_funktion (wert, bezeichner) VALUES (1000,'Wohngebäude');
 INSERT INTO ax_gebaeude_funktion (wert, bezeichner) VALUES (1010,'Wohnhaus');
@@ -313,53 +311,55 @@ INSERT INTO ax_gebaeude_funktion (wert, bezeichner) VALUES (3290,'Touristisches 
 INSERT INTO ax_gebaeude_funktion (wert, bezeichner) VALUES (9998,'Nach Quellenlage nicht zu spezifizieren');
 
 
-
 -- W e i t e r e   G e b a e u d e - F u n k t i o n
 -- -------------------------------------------------
 
 --DROP TABLE ax_gebaeude_weiterefunktion;
-
 CREATE TABLE ax_gebaeude_weiterefunktion (
     wert        integer,
     bezeichner  character varying,
+	erklaer		character varying,
     CONSTRAINT pk_ax_gebaeude_weitfunktion_wert PRIMARY KEY (wert)
    );
 
 COMMENT ON TABLE  ax_gebaeude_weiterefunktion 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_gebaeude", Feld "weiterefunktion".';
 
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1000, 'Bankfiliale');	-- , 'Bankfiliale' ist eine Einrichtung in der Geldgeschäfte getätigt werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1010, 'Hotel');		-- , 'Hotel' ist ein Beherbergungs- und/oder Verpflegungsbetrieb.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1020, 'Jugendherberge');	-- , 'Jugendherberge' ist eine zur Förderung von Jugendreisen dienende Aufenthalts- und Übernachtungsstätte.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1030, 'Gaststätte');		-- , 'Gaststätte' ist eine Einrichtung, in der gegen Entgelt Mahlzeiten und Getränke zum sofortigen Verzehr angeboten werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1040, 'Kino');		-- , 'Kino' ist eine Einrichtung, in der alle Arten von Filmen bzw. Lichtspielen für ein Publikum abgespielt werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1050, 'Spielkasino');	-- , 'Spielkasino' ist eine Einrichtung, in der öffentlich zugänglich staatlich konzessioniertes Glücksspiel betrieben wird.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1060, 'Tiefgarage');		-- , 'Tiefgarage' ist ein Bauwerk unterhalb der Erdoberfläche, in dem Fahrzeuge abgestellt werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1070, 'Parkdeck');		-- , 'Parkdeck' ist eine Fläche auf einem Gebäude, auf der Fahrzeuge abgestellt werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1080, 'Toilette');		-- , 'Toilette' ist eine Einrichtung mit sanitären Vorrichtungen zum Verrichtung der Notdurft.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1090, 'Post');		-- , 'Post' ist eine Einrichtung, von der aus Briefe, Pakete befördert und weitere Dienstleistungen angeboten werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1100, 'Zoll');		-- , 'Zoll' ist eine Einrichtung der Zollabfertigung.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1110, 'Theater');		-- , 'Theater' ist eine Einrichtung, in der Bühnenstücke aufgeführt werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1120, 'Museum');		-- , 'Museum' ist eine Einrichtung in der Sammlungen von (historischen) Objekten oder Reproduktionen davon ausgestellt werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1130, 'Bibliothek');		-- , 'Bibliothek' ist eine Einrichtung, in der Bücher und Zeitschriften gesammelt, aufbewahrt und ausgeliehen werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1140, 'Kapelle');		-- , 'Kapelle' ist eine Einrichtung für (christliche) gottesdienstliche Zwecke .
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1150, 'Moschee');		-- , 'Moschee' ist ein Einrichtung, in der sich Muslime zu Gottesdiensten versammeln oder zu anderen Zwecken treffen.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1160, 'Tempel');
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1170, 'Apotheke');		-- ,'Apotheke' ist ein Geschäft, in dem Arzneimittel hergestellt und verkauft werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1180, 'Polizeiwache');	-- , 'Polizeiwache' ist eine Dienststelle der Polizei.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1190, 'Rettungsstelle');	-- , 'Rettungsstelle' ist eine Einrichtung zur Aufnahme, Erstbehandlung und gezielten Weiterverlegung von Patienten mit Erkrankungen und Unfällen aller Art.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1200, 'Touristisches Informationszentrum'); -- , 'Touristisches Informationszentrum' ist eine Auskunftsstelle für Touristen.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1210, 'Kindergarten');	-- , 'Kindergarten' ist eine Einrichtung, in der Kinder im Vorschulalter betreut werden.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1220, 'Arztpraxis');		-- , 'Arztpraxis' ist die Arbeitsstätte eines Arztes.
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1230, 'Supermarkt');
-INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner) VALUES (1240, 'Geschäft');
+COMMENT ON COLUMN ax_gebaeude_weiterefunktion.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_gebaeude_weiterefunktion.bezeichner IS 'Lange Bezeichnung';
+COMMENT ON COLUMN ax_gebaeude_weiterefunktion.erklaer    IS 'ALKIS erklärt uns die Welt';
+
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1000, 'Bankfiliale',    '"Bankfiliale" ist eine Einrichtung in der Geldgeschäfte getätigt werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1010, 'Hotel',          '"Hotel" ist ein Beherbergungs- und/oder Verpflegungsbetrieb.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1020, 'Jugendherberge', '"Jugendherberge" ist eine zur Förderung von Jugendreisen dienende Aufenthalts- und Übernachtungsstätte.');	
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1030, 'Gaststätte',     '"Gaststätte" ist eine Einrichtung, in der gegen Entgelt Mahlzeiten und Getränke zum sofortigen Verzehr angeboten werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1040, 'Kino',           '"Kino" ist eine Einrichtung, in der alle Arten von Filmen bzw. Lichtspielen für ein Publikum abgespielt werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1050, 'Spielkasino',    '"Spielkasino" ist eine Einrichtung, in der öffentlich zugänglich staatlich konzessioniertes Glücksspiel betrieben wird.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1060, 'Tiefgarage',     '"Tiefgarage" ist ein Bauwerk unterhalb der Erdoberfläche, in dem Fahrzeuge abgestellt werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1070, 'Parkdeck',       '"Parkdeck" ist eine Fläche auf einem Gebäude, auf der Fahrzeuge abgestellt werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1080, 'Toilette',       '"Toilette" ist eine Einrichtung mit sanitären Vorrichtungen zum Verrichtung der Notdurft.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1090, 'Post',           '"Post" ist eine Einrichtung, von der aus Briefe, Pakete befördert und weitere Dienstleistungen angeboten werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1100, 'Zoll',           '"Zoll" ist eine Einrichtung der Zollabfertigung.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1110, 'Theater',        '"Theater" ist eine Einrichtung, in der Bühnenstücke aufgeführt werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1120, 'Museum',         '"Museum" ist eine Einrichtung in der Sammlungen von (historischen) Objekten oder Reproduktionen davon ausgestellt werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1130, 'Bibliothek',     '"Bibliothek" ist eine Einrichtung, in der Bücher und Zeitschriften gesammelt, aufbewahrt und ausgeliehen werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1140, 'Kapelle',        '"Kapelle" ist eine Einrichtung für (christliche) gottesdienstliche Zwecke.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1150, 'Moschee',        '"Moschee" ist ein Einrichtung, in der sich Muslime zu Gottesdiensten versammeln oder zu anderen Zwecken treffen.');	
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1160, 'Tempel',         '');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1170, 'Apotheke',       '"Apotheke" ist ein Geschäft, in dem Arzneimittel hergestellt und verkauft werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1180, 'Polizeiwache',   '"Polizeiwache" ist eine Dienststelle der Polizei.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1190, 'Rettungsstelle', '"Rettungsstelle" ist eine Einrichtung zur Aufnahme, Erstbehandlung und gezielten Weiterverlegung von Patienten mit Erkrankungen und Unfällen aller Art.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1200, 'Touristisches Informationszentrum', '"Touristisches Informationszentrum" ist eine Auskunftsstelle für Touristen.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1210, 'Kindergarten',    '"Kindergarten" ist eine Einrichtung, in der Kinder im Vorschulalter betreut werden.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1220, 'Arztpraxis',      '"Arztpraxis" ist die Arbeitsstätte eines Arztes.');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1230, 'Supermarkt',      '');
+INSERT INTO ax_gebaeude_weiterefunktion (wert, bezeichner, erklaer) VALUES (1240, 'Geschäft',        '');
 
 
 -- G e b ä u d e   D a c h f o r m
 -- -------------------------------
 
 --DROP TABLE ax_gebaeude_dachform;
-
 CREATE TABLE ax_gebaeude_dachform 
    (wert        integer, 
     bezeichner  character varying,
@@ -367,7 +367,10 @@ CREATE TABLE ax_gebaeude_dachform
    );
 
 COMMENT ON TABLE  ax_gebaeude_dachform 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_gebaeude", Feld "dachform".';
+
+COMMENT ON COLUMN ax_gebaeude_dachform.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_gebaeude_dachform.bezeichner IS 'Lange Bezeichnung';
 
 INSERT INTO ax_gebaeude_dachform (wert, bezeichner) VALUES (1000, 'Flachdach');
 INSERT INTO ax_gebaeude_dachform (wert, bezeichner) VALUES (2100, 'Pultdach');
@@ -393,18 +396,21 @@ INSERT INTO ax_gebaeude_dachform (wert, bezeichner) VALUES (9999, 'Sonstiges');
 CREATE TABLE ax_gebaeude_zustand 
    (wert        integer, 
     bezeichner  character varying,
+	erklaer		character varying,
     CONSTRAINT pk_ax_gebaeude_zustand_wert PRIMARY KEY (wert)
    );
 
 COMMENT ON TABLE  ax_gebaeude_zustand 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "___", Feld "___".';
+
+COMMENT ON COLUMN ax_gebaeude_zustand.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_gebaeude_zustand.erklaer    IS 'ggf. zusätzliche Erklärung';
+COMMENT ON COLUMN ax_gebaeude_zustand.bezeichner IS 'Lange Bezeichnung';
 
 INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (1000, 'In behelfsmäßigem Zustand');
 INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (2000, 'In ungenutztem Zustand');
-INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (2100, 'Außer Betrieb, stillgelegt, verlassen');
---'Außer Betrieb, stillgelegt, verlassen' bedeutet, dass das Gebäude auf Dauer nicht mehr bewohnt oder genutzt wird.
-INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (2200, 'Verfallen, zerstört');
--- 'Verfallen, zerstört' bedeutet, dass sich der ursprüngliche Zustand des Gebäudes durch menschliche oder zeitliche Einwirkungen so verändert hat, dass eine Nutzung nicht mehr möglich ist.
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, erklaer) VALUES (2100, 'Außer Betrieb, stillgelegt, verlassen', '"Außer Betrieb, stillgelegt, verlassen" bedeutet, dass das Gebäude auf Dauer nicht mehr bewohnt oder genutzt wird');
+INSERT INTO ax_gebaeude_zustand (wert, bezeichner, erklaer) VALUES (2200, 'Verfallen, zerstört', '"Verfallen, zerstört" bedeutet, dass sich der ursprüngliche Zustand des Gebäudes durch menschliche oder zeitliche Einwirkungen so verändert hat, dass eine Nutzung nicht mehr möglich ist.');
 INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (2300, 'Teilweise zerstört');
 INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (3000, 'Geplant und beantragt');
 INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (4000, 'Im Bau');
@@ -412,19 +418,16 @@ INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (4000, 'Im Bau');
 
 -- LageZurErdoberflaeche
 -- ---------------------
--- nur 2 Werte
-
+-- nur 2 Werte:
 -- 1200, Unter der Erdoberfläche
---	"Unter der Erdoberfläche" bedeutet, dass sich das Gebäude unter der Erdoberfläche befindet.
-
+--	    "Unter der Erdoberfläche" bedeutet, dass sich das Gebäude unter der Erdoberfläche befindet.
 -- 1400, Aufgeständert
---	"Aufgeständert" bedeutet, dass ein Gebäude auf Stützen steht.
+--	    "Aufgeständert" bedeutet, dass ein Gebäude auf Stützen steht.
 
 
 -- Dachgeschossausbau
 -- ------------------
--- nur 4 Werte
-
+-- nur 4 Werte:
 -- 1000 Nicht ausbaufähig
 -- 2000 Ausbaufähig
 -- 3000 Ausgebaut
@@ -433,7 +436,6 @@ INSERT INTO ax_gebaeude_zustand (wert, bezeichner) VALUES (4000, 'Im Bau');
 
 -- B u c h u n g s t s t e l l e  -  B u c h u n g s a r t
 -- -------------------------------------------------------
-
 -- Kennung   = 21008,
 -- Objektart = 'ax_buchungsstelle'
 
@@ -444,7 +446,10 @@ CREATE TABLE ax_buchungsstelle_buchungsart (
   );
 
 COMMENT ON TABLE  ax_buchungsstelle_buchungsart 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_buchungsstelle", Feld "buchungsart".';
+
+COMMENT ON COLUMN ax_buchungsstelle_buchungsart.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_buchungsstelle_buchungsart.bezeichner IS 'Lange Bezeichnung';
 
 -- 51 Werte
 INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (1100,'Grundstück');
@@ -522,7 +527,10 @@ CREATE TABLE ax_bauraumoderbodenordnungsrecht_artderfestlegung (
   );
 
 COMMENT ON TABLE  ax_bauraumoderbodenordnungsrecht_artderfestlegung 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bauraumoderbodenordnungsrecht", Feld "artderfestlegung".';
+
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht_artderfestlegung.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bauraumoderbodenordnungsrecht_artderfestlegung.bezeichner IS 'Lange Bezeichnung';
 
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner) VALUES (1700,'Festlegung nach Baugesetzbuch - Allgemeines Städtebaurecht');
 INSERT INTO ax_bauraumoderbodenordnungsrecht_artderfestlegung (wert, bezeichner) VALUES (1710,'Bebauungsplan');
@@ -590,7 +598,7 @@ CREATE TABLE ax_bodenschaetzung_kulturart (
   );
 
 COMMENT ON TABLE ax_bodenschaetzung_kulturart 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "kulturart".';
 
 COMMENT ON COLUMN ax_bodenschaetzung_kulturart.wert       IS 'numerischer Schlüssel';
 COMMENT ON COLUMN ax_bodenschaetzung_kulturart.kurz       IS 'Kürzel';
@@ -613,7 +621,7 @@ CREATE TABLE ax_bodenschaetzung_bodenart (
   );
 
 COMMENT ON TABLE ax_bodenschaetzung_bodenart 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "bodenart".';
 
 COMMENT ON COLUMN ax_bodenschaetzung_bodenart.wert       IS 'numerischer Schlüssel';
 COMMENT ON COLUMN ax_bodenschaetzung_bodenart.kurz       IS 'Kürzel, Kartenanzeige';
@@ -707,7 +715,7 @@ CREATE TABLE ax_bodenschaetzung_zustandsstufe (
   );
 
 COMMENT ON TABLE ax_bodenschaetzung_zustandsstufe 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "zustandsstufe".';
 
 COMMENT ON COLUMN ax_bodenschaetzung_zustandsstufe.wert       IS 'numerischer Schlüssel';
 COMMENT ON COLUMN ax_bodenschaetzung_zustandsstufe.kurz       IS 'Kürzel, Kartenanzeige';
@@ -737,11 +745,11 @@ CREATE TABLE ax_musterlandesmusterundvergleichsstueck_merkmal (
     wert integer,
     kurz character varying,
     bezeichner character varying,
-    CONSTRAINT pk_ax_musterlandesmusterundvergleichsstueck_merkmal  PRIMARY KEY (wert)
+    CONSTRAINT pk_ax_musterstueck_merkmal  PRIMARY KEY (wert)
   );
 
 COMMENT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal 
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_musterlandesmusterundvergleichsstueck", Feld "merkmal".';
 
 COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck_merkmal.wert       IS 'numerischer Schlüssel';
 COMMENT ON COLUMN ax_musterlandesmusterundvergleichsstueck_merkmal.kurz       IS 'Kürzel, Kartenanzeige';
@@ -758,17 +766,20 @@ INSERT INTO ax_musterlandesmusterundvergleichsstueck_merkmal (wert, kurz, bezeic
 CREATE TABLE ax_grablochderbodenschaetzung_bedeutung (
     wert integer,
     bezeichner character varying,
-    CONSTRAINT pk_ax_grablochderbodenschaetzung_bedeutung  PRIMARY KEY (wert)
+    CONSTRAINT pk_ax_grabloch_bedeutung  PRIMARY KEY (wert)
   );
 
 COMMENT ON TABLE ax_grablochderbodenschaetzung_bedeutung
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_grablochderbodenschaetzung", Feld "bedeutung".';
 
-INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1100,'Grabloch, bestimmend, lagerichtig (innerhalb der Fläche)');
-INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1200,'Grabloch, bestimmend, lagerichtig (außerhalb des Abschnitts)');
-INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (1300,'Grabloch, nicht lagerichtig, im Abschnitt nicht vorhanden');
-INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (2000,'Grabloch für Muster-, Landesmuster-, Vergleichsstück');
-INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert,bezeichner) VALUES (3000,'Grabloch, nicht bestimmend');
+COMMENT ON COLUMN ax_grablochderbodenschaetzung_bedeutung.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_grablochderbodenschaetzung_bedeutung.bezeichner IS 'Lange Bezeichnung';
+
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert, bezeichner) VALUES (1100, 'Grabloch, bestimmend, lagerichtig (innerhalb der Fläche)');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert, bezeichner) VALUES (1200, 'Grabloch, bestimmend, lagerichtig (außerhalb des Abschnitts)');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert, bezeichner) VALUES (1300, 'Grabloch, nicht lagerichtig, im Abschnitt nicht vorhanden');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert, bezeichner) VALUES (2000, 'Grabloch für Muster-, Landesmuster-, Vergleichsstück');
+INSERT INTO ax_grablochderbodenschaetzung_bedeutung (wert, bezeichner) VALUES (3000, 'Grabloch, nicht bestimmend');
 
 
 -- B o d e n s c h a e t z u n g   -  Entstehungsart oder Klimastufe / Wasserverhaeltnisse
@@ -778,11 +789,11 @@ CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe (
     wert integer,
     kurz character varying,
     bezeichner character varying,
-    CONSTRAINT pk_ax_bodenschaetzung_entstehungsartoderklimastufe PRIMARY KEY (wert)
+    CONSTRAINT pk_ax_bodenschaetzung_entstehung PRIMARY KEY (wert)
   );
 
 COMMENT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "entstehungsartoderklimastufe".';
 
 COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.wert       IS 'numerischer Schlüssel';
 COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.kurz       IS 'Kürzel, Kartenanzeige';
@@ -843,6 +854,112 @@ INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeich
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7520,'3-',  'Wasserstufe (3-)');
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7530,'3+4', 'Wasserstufe (3+4)');
 
+
+-- B o d e n s c h a e t z u n g   -  sonstige Angaben
+-- ----------------------------------------------------------------------------------------
+--DROP TABLE ax_bodenschaetzung_sonstigeangaben;
+CREATE TABLE ax_bodenschaetzung_sonstigeangaben (
+    wert integer,
+    kurz character varying,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_sonst PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bodenschaetzung_sonstigeangaben
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "sonstigeangaben".';
+
+COMMENT ON COLUMN ax_bodenschaetzung_sonstigeangaben.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bodenschaetzung_sonstigeangaben.kurz       IS 'Kürzel, Kartenanzeige';
+COMMENT ON COLUMN ax_bodenschaetzung_sonstigeangaben.bezeichner IS 'Lange Bezeichnung';
+
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1100,'Wa+',   'Nass, zu viel Wasser (Wa+)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1200,'Wa-',   'Trocken, zu wenig Wasser (Wa-)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1300,'Wa gt', 'Besonders günstige Wasserverhältnisse (Wa gt)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1400,'RiWa',  'Rieselwasser, künstliche Bewässerung (RiWa)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2100,'W',     'Unbedingtes Wiesenland (W)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2200,'Str',   'Streuwiese (Str) ');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2300,'Hu',    'Hutung (Hu)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2400,'A-Hack','Acker-Hackrain (A-Hack)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2500,'Gr-Hack','Grünland-Hackrain (Gr-Hack)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2600,'G',     'Garten (G)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(3000,'N',     'Neukultur (N)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(4000,'T',     'Tiefkultur (T) ');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(5000,'Ger',   'Geringstland (Ger)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(9000,'',      'Nachschätzung erforderlich ');
+
+-- Testfall dazu finden:
+-- SELECT gml_id, sonstigeangaben, x(st_Centroid(wkb_geometry)) AS x, y(st_Centroid(wkb_geometry)) AS y 
+--  FROM ax_bodenschaetzung WHERE NOT sonstigeangaben[1] IS NULL LIMIT 10; -- NOT sonstigeangaben[2] IS NULL
+
+
+-- B e w e r t u n g  - Klassifizierung
+-- ----------------------------------------------------------------------------------------
+--DROP TABLE ax_bewertung_klassifizierung;
+CREATE TABLE ax_bewertung_klassifizierung (
+    wert integer,
+    bezeichner character varying,
+	erklaer character varying,
+    CONSTRAINT pk_ax_bewertung_klass PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bewertung_klassifizierung
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bewertung", Feld "klassifizierung".';
+
+COMMENT ON COLUMN ax_bewertung_klassifizierung.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bewertung_klassifizierung.bezeichner IS 'Lange Bezeichnung';
+COMMENT ON COLUMN ax_bewertung_klassifizierung.erklaer    IS 'ggf. weitere Erlärung';
+
+
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1100, 'Unbebautes Grundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1120, 'Unbebautes Grundstück mit Gebäude von untergeordneter Bedeutung ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1130, 'Unbebautes Grundstück mit einem dem Verfall preisgegebenen Gebäude', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1140, 'Unbebautes Grundstück für Erholungs- und Freizeitzwecke', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1210, 'Einfamilienhausgrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1220, 'Zweifamilienhausgrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1230, 'Mietwohngrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1240, 'Gemischtgenutztes Grundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1250, 'Geschäftsgrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1260, 'Sonstiges bebautes Grundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1310, 'Einfamilienhaus auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1320, 'Zweifamilienhaus auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1330, 'Mietwohngrundstück, Mietwohngebäude auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1340, 'Gemischtgenutztes Grundstück, gemischtgenutztes Gebäude auf fremdem Grund und Boden ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1350, 'Geschäftsgrundstück, Geschäftsgebäude auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1360, 'Sonstige bebaute Grundstücke, sonstige Gebäude auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2110, 'Landwirtschaftliche Nutzung', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2120, 'Hopfen', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2130, 'Spargel', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2190, 'Sonstige Sonderkulturen', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2200, 'Holzung', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2300, 'Weingarten (allgemein)', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2310, 'Weingarten 1', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2320, 'Weingarten 2', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2330, 'Weingarten 3', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2340, 'Weingarten 4', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2350, 'Weingarten 5', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2360, 'Weingarten 6', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2370, 'Weingarten 7', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2380, 'Weingarten 8', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2390, 'Weingarten 9', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2410, 'Gartenland', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2420, 'Obstplantage', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2430, 'Baumschule', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2440, 'Anbaufläche unter Glas ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2450, 'Kleingarten', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2510, 'Weihnachtsbaumkultur', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2520, 'Saatzucht', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2530, 'Teichwirtschaft', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2610, 'Abbauland der Land- und Forstwirtschaft ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2620, 'Geringstland', '"Geringstland" sind Flächen geringster Ertragsfähigkeit ohne Wertzahlen nach dem Bodenschätzungsgesetz, das sind unkultivierte Moor- und Heideflächen (sofern nicht gesondert geführt), ehemals bodengeschätzte Flächen und ehemalige Weinbauflächen, die ihren Kulturzustand verloren haben.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2630, 'Unland',   '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2640, 'Moor',     '"Moor" ist eine unkultivierte Fläche mit einer (mindestens 20 cm starken) Auflage aus vertorften und vermoorten Pflanzenresten, soweit sie nicht als Torfstich benutzt wird.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2650, 'Heide',    '"Heide" ist eine unkultivierte, sandige, überwiegend mit Heidekraut oder Ginster bewachsene Fläche.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2700, 'Reet',     '"Reet" ist eine ständig oder zeitweise unter Wasser stehende und mit Reet bewachsene Fläche.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2710, 'Reet I',   'Reetfläche, deren Nutzung eingestuft ist in Güteklasse I (gut).');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2720, 'Reet II',  'Reetfläche, deren Nutzung eingestuft ist in Güteklasse II (mittel).');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2730, 'Reet III', 'Reetfläche, deren Nutzung eingestuft ist in Güteklasse III (gering).');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2800, 'Nebenfläche des Betriebs der Land- und Forstwirtschaft', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2899, 'Noch nicht klassifiziert', '');
 
 
 -- F o r s t r e c h t  -  A r t   d e r   F e s t l e g u n g

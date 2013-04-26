@@ -19,7 +19,7 @@
 --  2013-04-15 Unterdrücken doppelter Darstellung in den Views 'ap_pto_stra', 'ap_pto_nam', 'ap_pto_rest'
 --  2013-04-16 Thema "Bodenschätzung" und fehlernde Kommentare zum Views ergänzt.
 --             Diese Datei aufgeteilt in "sichten.sql" und "sichten_wms.sql"
-
+--  2013-04-22 ++++ art="PNR" (Pseudonummer)
 
 -- WMS-Layer "ag_t_flurstueck"
 -- ---------------------------
@@ -28,17 +28,18 @@
 
 -- Bruchnummerierung erzeugen
 -- ALT 2012-04-17: Diese Version zeigt nur die manuell gesetzten Positionen
-CREATE OR REPLACE VIEW s_flurstueck_nr
-AS 
- SELECT f.ogc_fid, 
-        p.wkb_geometry,  -- Position des Textes
-        f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
-   FROM ap_pto             p
-   JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
-   JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
-  WHERE v.beziehungsart = 'dientZurDarstellungVon' 
-    AND p.endet IS NULL  AND f.endet IS NULL;
-COMMENT ON VIEW s_flurstueck_nr IS 'Sicht für Kartendarstellung über PostProcessing: Bruchnummerierung Flurstück (nur manuell gesetzte Positionen)';
+-- 2013-04-18 auskommentiert
+--	CREATE OR REPLACE VIEW s_flurstueck_nr
+--	AS 
+--	 SELECT f.ogc_fid, 
+--			p.wkb_geometry,  -- Position des Textes
+--			f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
+--	   FROM ap_pto             p
+--	   JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
+--	   JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
+--	  WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+--		AND p.endet IS NULL  AND f.endet IS NULL;
+--	COMMENT ON VIEW s_flurstueck_nr IS 'Sicht für Kartendarstellung über PostProcessing: Bruchnummerierung Flurstück (nur manuell gesetzte Positionen)';
 
 -- Wenn keine manuelle Position gesetzt ist, wird die Flaechenmitte verwendet
 
@@ -47,27 +48,29 @@ COMMENT ON VIEW s_flurstueck_nr IS 'Sicht für Kartendarstellung über PostProce
 -- berechnet werden müssen, bevor darüber gefiltert werden kann.
 
 -- In einer Hilfstabelle mit geometrischem Index zwischenspeichern.
--- Siehe PostProcessing Tabelle "pp_flurstueck_nr"
+-- Siehe PostProcessing: Tabelle "pp_flurstueck_nr"
 
-CREATE OR REPLACE VIEW s_flurstueck_nr2
-AS 
-  SELECT f.ogc_fid, 
-         p.wkb_geometry,  -- manuelle Position des Textes
-         f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
-    FROM ap_pto             p
-    JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
-    JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
-   WHERE v.beziehungsart = 'dientZurDarstellungVon' 
-     AND p.endet IS NULL
-     AND f.endet IS NULL
- UNION 
-  SELECT f.ogc_fid,
-         ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry,  -- Flächenmitte als Position des Textes
-         f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
-    FROM      ax_flurstueck     f 
-    LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
-   WHERE v.beziehungsart is NULL AND f.endet IS NULL;
-COMMENT ON VIEW s_flurstueck_nr2 IS 'Sicht für Kartendarstellung über PostProcessing: Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden!';
+-- 2013-04-18 auskommentiert
+--	CREATE OR REPLACE VIEW s_flurstueck_nr2
+--	AS 
+--	  SELECT f.ogc_fid, 
+--			 p.wkb_geometry,  -- manuelle Position des Textes
+--			 f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
+--		FROM ap_pto             p
+--		JOIN alkis_beziehungen  v  ON p.gml_id       = v.beziehung_von
+--		JOIN ax_flurstueck      f  ON v.beziehung_zu = f.gml_id
+--	   WHERE v.beziehungsart = 'dientZurDarstellungVon' 
+--		 AND p.endet IS NULL
+--		 AND f.endet IS NULL
+--	 UNION 
+--	  SELECT f.ogc_fid,
+--			 ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry,  -- Flächenmitte als Position des Textes
+--			 f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS fsnum
+--		FROM      ax_flurstueck     f 
+--		LEFT JOIN alkis_beziehungen v  ON v.beziehung_zu = f.gml_id
+--	   WHERE v.beziehungsart is NULL AND f.endet IS NULL;
+--	COMMENT ON VIEW s_flurstueck_nr2 
+--	 IS 'Sicht für Kartendarstellung über PostProcessing: Bruchnummerierung Flurstück, auch Standard-Position. Nicht direkt fuer WMS verwenden!';
 
 
 -- Layer "ag_t_gebaeude"
@@ -93,7 +96,6 @@ COMMENT ON VIEW s_flurstueck_nr2 IS 'Sicht für Kartendarstellung über PostProc
 -- Nimmt nun vorzugsweise den Text der Darstellung aus ap_pto (bei ibR immer gefüllt).
 -- Wenn der nicht gefüllt ist, wird statt dessen die Nummer aus der verknüpften Labebezeichnung 
 -- verwendet (der häufigste Fall bei AED). 
-DROP VIEW s_hausnummer_gebaeude;
 CREATE OR REPLACE VIEW s_hausnummer_gebaeude 
 AS 
  SELECT p.ogc_fid, 
@@ -126,7 +128,7 @@ COMMENT ON VIEW s_hausnummer_gebaeude IS 'Sicht für Kartendarstellung: Hausnumm
 
 -- Layer "ag_t_nebengeb"
 -- ---------------------
--- 2013-03-05: Diese Abfrage liefert keine Daten mehr??
+-- 2013-03-05: Diese Abfrage liefert keine Daten mehr.
 --	CREATE OR REPLACE VIEW s_nummer_nebengebaeude 
 --	AS 
 --	 SELECT p.ogc_fid, p.wkb_geometry, 
@@ -158,7 +160,8 @@ AS
    WHERE v.beziehungsart = 'hat'
      AND g.endet IS NULL
      AND g.endet IS NULL;
-COMMENT ON VIEW lfdnr_nebengebaeude IS 'Sicht für Kartendarstellung: Laufende Nummer des Nebengebäudes zu einer Lagebezeichnung mit der Flächengeometrie des Gebäudes';
+COMMENT ON VIEW lfdnr_nebengebaeude 
+  IS 'Sicht für Kartendarstellung: Laufende Nummer des Nebengebäudes zu einer Lagebezeichnung mit der Flächengeometrie des Gebäudes';
 
 
 -- Gebäude-Text
@@ -174,7 +177,9 @@ AS
      ON g.gebaeudefunktion = f.wert
   WHERE g.endet IS NULL 
     AND g.gebaeudefunktion < 9998; -- "Nach Quellenlage nicht zu spezifizieren" braucht man nicht anzeigen
-COMMENT ON VIEW gebaeude_txt IS 'Sicht für Kartendarstellung: Name zum Gebäude und Entschlüsselung der Gebäude-Funktion (Ersatz für Symbole)';
+COMMENT ON VIEW gebaeude_txt 
+  IS 'Sicht für Kartendarstellung: Name zum Gebäude und Entschlüsselung der Gebäude-Funktion (Ersatz für Symbole)';
+
 
 -- Layer "ag_p_flurstueck"
 -- -----------------------
@@ -193,7 +198,9 @@ AS
     AND v.beziehungsart = 'dientZurDarstellungVon'
     AND f.endet IS NULL
     AND p.endet IS NULL;
-COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck IS 'Sicht für Kartendarstellung: Zugehörigkeitshaken zum Flurstück.';
+COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck 
+  IS 'Sicht für Kartendarstellung: Zugehörigkeitshaken zum Flurstück.';
+
 
 -- Layer "s_zuordungspfeil_flurstueck" (Signaturnummer 2004)
 -- -----------------------------------
@@ -212,7 +219,9 @@ AS
     AND f.endet IS NULL
     AND l.endet IS NULL;
 -- Die OBK-Alternative "sk2004_zuordnungspfeil" wird NICHT verwendet. Siehe dort.
-COMMENT ON VIEW s_zuordungspfeil_flurstueck IS 'Sicht für Kartendarstellung: Zuordnungspfeil zur Flurstücksnummer, Liniengeometrie.';
+COMMENT ON VIEW s_zuordungspfeil_flurstueck 
+  IS 'Sicht für Kartendarstellung: Zuordnungspfeil zur Flurstücksnummer, Liniengeometrie.';
+
 
 CREATE OR REPLACE VIEW s_zuordungspfeilspitze_flurstueck 
 AS 
@@ -231,7 +240,9 @@ AS
     AND f.endet IS NULL
     AND l.endet IS NULL;
 -- Die OBK-Alternativen "sk2004_zuordnungspfeil_spitze" wird NICHT verwendet. Siehe dort.
-COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'Sicht für Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze, Punktgeometrie mit Drehwinkel.';
+COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck 
+  IS 'Sicht für Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze, Punktgeometrie mit Drehwinkel.';
+
 
 -- Drehwinkel in Bogenmass, wird vom mapserver in Grad benötigt. Umrechnung durch Faktor (180 / Pi)
 
@@ -251,7 +262,8 @@ AS
     AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
     AND b.endet IS NULL
     AND l.endet IS NULL;
-COMMENT ON VIEW s_zuordungspfeil_bodensch IS 'Sicht für Kartendarstellung: Zuordnungspfeil Bodenschätzung, Liniengeometrie.';
+COMMENT ON VIEW s_zuordungspfeil_bodensch 
+  IS 'Sicht für Kartendarstellung: Zuordnungspfeil Bodenschätzung, Liniengeometrie.';
 
 CREATE OR REPLACE VIEW s_zuordungspfeilspitze_bodensch 
 AS 
@@ -315,7 +327,8 @@ AS
               ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
          )
 ;
-COMMENT ON VIEW ap_pto_stra IS 'Sicht für Kartendarstellung: Beschriftung aus ap_pto für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
+COMMENT ON VIEW ap_pto_stra 
+  IS 'Sicht für Kartendarstellung: Beschriftung aus ap_pto für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
 -- ToDo: Im PostProcessing in einer Tabelle speichern.
 
 
@@ -365,7 +378,8 @@ AS
               ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
          )
 ;
-COMMENT ON VIEW ap_pto_nam IS 'Sicht für Kartendarstellung: Beschriftung mit Art = Name/Zweitname. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe.';
+COMMENT ON VIEW ap_pto_nam 
+  IS 'Sicht für Kartendarstellung: Beschriftung mit Art = Name/Zweitname. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe.';
 -- ToDo: Im PostProcessing in einer Tabelle speichern.
 
 
@@ -402,9 +416,9 @@ AS
       ON p.gml_id = v.beziehung_von
    WHERE not p.schriftinhalt IS NULL 
      AND p.endet IS NULL
-     AND p.art   NOT IN ('HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG')
+     AND p.art   NOT IN ('PNR','HNR','Strasse','Weg','Platz','BezKlassifizierungStrasse','AOG_AUG') -- 'PNR',
      -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
-     -- 'PNR' (Pseudonummer, lfd.-Nr.-Nebengebäude) kommt nicht mehr vor?
+     -- 'PNR' = Pseudonummer (lfd.-Nr.-Nebengebäude), Inhalte wie "(1)" oder "P50" - kommt nicht mehr vor, oder?
     AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
     AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
            -- Ersatzweise auch "keine Angabe" (nul) akzeptieren, aber nur wenn es keinen besseren Text zu ?irgendwas? gibt
@@ -422,8 +436,13 @@ AS
 					) IS NULL 
               ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
          );
-COMMENT ON VIEW ap_pto_rest IS 'Sicht für Kartendarstellung: Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden.';
+COMMENT ON VIEW ap_pto_rest 
+  IS 'Sicht für Kartendarstellung: Beschriftungen aus "ap_pto", die noch nicht in anderen Layern angezeigt werden.';
 -- ToDo: Im PostProcessing in einer Tabelle speichern.
+
+-- Kommt PNR (Pseudonummer) noch im Bestand vor?
+--  SELECT * FROM ap_pto WHERE art = 'PNR' LIMIT 100; 
+
 
 -- Layer "s_zuordungspfeil_gebaeude"
 -- -----------------------------------
@@ -442,7 +461,8 @@ AS
     AND v.beziehungsart = 'dientZurDarstellungVon'
     AND g.endet IS NULL
     AND l.endet IS NULL;
-COMMENT ON VIEW s_zuordungspfeil_gebaeude IS 'Sicht für Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer (Nebengebäude). Wird wahrscheinlich nicht mehr benötigt.';
+COMMENT ON VIEW s_zuordungspfeil_gebaeude 
+  IS 'Sicht für Kartendarstellung: Zuordnungspfeil für Gebäude-Nummer (Nebengebäude). Wird wahrscheinlich nicht mehr benötigt.';
 
 
 -- Grenzpunkte
@@ -464,7 +484,8 @@ AS
    WHERE v.beziehungsart = 'istTeilVon'
      AND g.endet IS NULL
      AND g.endet IS NULL;
-COMMENT ON VIEW grenzpunkt IS 'Sicht für Kartendarstellung: Zusammenführung von Punktort (Geometrie) und AX_Grenzpunkt (Eigenschaften)';
+COMMENT ON VIEW grenzpunkt 
+  IS 'Sicht für Kartendarstellung: Zusammenführung von Punktort (Geometrie) und AX_Grenzpunkt (Eigenschaften)';
 
 
 -- Sichten vom OBK (Oberbergischer Kreis)
@@ -575,8 +596,10 @@ AS
         ea1.bezeichner                     AS entstehart1,
         ea2.bezeichner                     AS entstehart2,
         -- entstehungsartoderklimastufewasserverhaeltnisse ist array!
-        bs.sonstigeangaben, 		-- integer array  - Entschlüsseln?
-        bs.jahreszahl				-- integer
+        bs.sonstigeangaben,                           -- integer array  - Entschlüsseln?
+        so1.bezeichner                     AS sonst1, -- Enstschlüsselung 
+     -- so2.bezeichner                     AS sonst2, -- immer leer?
+        bs.jahreszahl                                 -- integer
    FROM ax_bodenschaetzung bs
    LEFT JOIN ax_bodenschaetzung_kulturart      ka ON bs.kulturart = ka.wert
    LEFT JOIN ax_bodenschaetzung_bodenart       ba ON bs.bodenart  = ba.wert
@@ -585,6 +608,8 @@ AS
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[1] = ea1.wert   -- [1] fast immer gefüllt
    LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea2 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[2] = ea2.wert   -- [2] manchmal gefüllt
+   LEFT JOIN ax_bodenschaetzung_sonstigeangaben so1 ON bs.sonstigeangaben[1] = so1.wert -- [1] selten gefüllt
+ --LEFT JOIN ax_bodenschaetzung_sonstigeangaben so2 ON bs.sonstigeangaben[2] = so2.wert -- [2] fast nie
    WHERE bs.endet IS NULL;
 COMMENT ON VIEW s_bodensch_ent IS 'Sicht für Feature-Info: Bodenschätzung, mit Langtexten entschlüsselt';
 

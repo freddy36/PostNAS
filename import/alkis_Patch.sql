@@ -3,17 +3,17 @@
 
 -- Gezielte Aktualisierung der Datenbank durch die "letzten Änderungen"
 
---  2013-04-16  F.J. Kurzbezeichnungen der Bodenschätzung für die Kartendarstellung
+--  2013-04-17  F.J. Kurzbezeichnungen der Bodenschätzung für die Kartendarstellung
 
   SET client_encoding = 'UTF8';
 
--- Abhängigkeiten:
-DROP VIEW s_bodensch_wms;
-DROP VIEW s_bodensch_ent;
-DROP VIEW s_bodensch_po;
-DROP VIEW s_bodensch_tx;
-DROP VIEW s_zuordungspfeil_bodensch;
-DROP VIEW s_zuordungspfeilspitze_bodensch;
+-- Abhängigkeiten / bei Wiederholung:
+-- DROP VIEW s_bodensch_wms;
+-- DROP VIEW s_bodensch_ent;
+-- DROP VIEW s_bodensch_po;
+-- DROP VIEW s_bodensch_tx;
+-- DROP VIEW s_zuordungspfeil_bodensch;
+-- DROP VIEW s_zuordungspfeilspitze_bodensch;
 
 
 -- B o d e n s c h a e t z u n g -  K u l t u r a r t
@@ -197,11 +197,11 @@ CREATE TABLE ax_bodenschaetzung_entstehungsartoderklimastufe (
     wert integer,
     kurz character varying,
     bezeichner character varying,
-    CONSTRAINT pk_ax_bodenschaetzung_entstehungsartoderklimastufe PRIMARY KEY (wert)
+    CONSTRAINT pk_ax_bodenschaetzung_entstehung PRIMARY KEY (wert)
   );
 
 COMMENT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe
-IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script.';
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "entstehungsartoderklimastufe".';
 
 COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.wert       IS 'numerischer Schlüssel';
 COMMENT ON COLUMN ax_bodenschaetzung_entstehungsartoderklimastufe.kurz       IS 'Kürzel, Kartenanzeige';
@@ -263,9 +263,110 @@ INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeich
 INSERT INTO ax_bodenschaetzung_entstehungsartoderklimastufe (wert, kurz, bezeichner) VALUES(7530,'3+4', 'Wasserstufe (3+4)');
 
 
+-- B o d e n s c h a e t z u n g   -  sonstige Angaben
+-- ----------------------------------------------------------------------------------------
+--DROP TABLE ax_bodenschaetzung_sonstigeangaben;
+CREATE TABLE ax_bodenschaetzung_sonstigeangaben (
+    wert integer,
+    kurz character varying,
+    bezeichner character varying,
+    CONSTRAINT pk_ax_bodenschaetzung_sonst PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bodenschaetzung_sonstigeangaben
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bodenschaetzung", Feld "sonstigeangaben".';
+
+COMMENT ON COLUMN ax_bodenschaetzung_sonstigeangaben.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bodenschaetzung_sonstigeangaben.kurz       IS 'Kürzel, Kartenanzeige';
+COMMENT ON COLUMN ax_bodenschaetzung_sonstigeangaben.bezeichner IS 'Lange Bezeichnung';
+
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1100,'Wa+',   'Nass, zu viel Wasser (Wa+) ');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1200,'Wa-',   'Trocken, zu wenig Wasser (Wa-)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1300,'Wa gt', 'Besonders günstige Wasserverhältnisse (Wa gt)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(1400,'RiWa',  'Rieselwasser, künstliche Bewässerung (RiWa)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2100,'W',     'Unbedingtes Wiesenland (W)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2200,'Str',   'Streuwiese (Str) ');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2300,'Hu',    'Hutung (Hu)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2400,'A-Hack','Acker-Hackrain (A-Hack)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2500,'Gr-Hack','Grünland-Hackrain (Gr-Hack)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(2600,'G',     'Garten (G)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(3000,'N',     'Neukultur (N)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(4000,'T',     'Tiefkultur (T) ');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(5000,'Ger',   'Geringstland (Ger)');
+INSERT INTO ax_bodenschaetzung_sonstigeangaben (wert, kurz, bezeichner) VALUES(9000,'',      'Nachschätzung erforderlich ');
+
+
+--DROP TABLE ax_bewertung_klassifizierung;
+CREATE TABLE ax_bewertung_klassifizierung (
+    wert integer,
+    bezeichner character varying,
+	erklaer character varying,
+    CONSTRAINT pk_ax_bewertung_klass PRIMARY KEY (wert)
+  );
+
+COMMENT ON TABLE ax_bewertung_klassifizierung
+IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_bewertung", Feld "klassifizierung".';
+
+COMMENT ON COLUMN ax_bewertung_klassifizierung.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_bewertung_klassifizierung.bezeichner IS 'Lange Bezeichnung';
+COMMENT ON COLUMN ax_bewertung_klassifizierung.erklaer    IS 'ggf. weitere Erlärung';
+
+
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1100, 'Unbebautes Grundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1120, 'Unbebautes Grundstück mit Gebäude von untergeordneter Bedeutung ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1130, 'Unbebautes Grundstück mit einem dem Verfall preisgegebenen Gebäude', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1140, 'Unbebautes Grundstück für Erholungs- und Freizeitzwecke', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1210, 'Einfamilienhausgrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1220, 'Zweifamilienhausgrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1230, 'Mietwohngrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1240, 'Gemischtgenutztes Grundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1250, 'Geschäftsgrundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1260, 'Sonstiges bebautes Grundstück', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1310, 'Einfamilienhaus auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1320, 'Zweifamilienhaus auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1330, 'Mietwohngrundstück, Mietwohngebäude auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1340, 'Gemischtgenutztes Grundstück, gemischtgenutztes Gebäude auf fremdem Grund und Boden ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1350, 'Geschäftsgrundstück, Geschäftsgebäude auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(1360, 'Sonstige bebaute Grundstücke, sonstige Gebäude auf fremdem Grund und Boden', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2110, 'Landwirtschaftliche Nutzung', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2120, 'Hopfen', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2130, 'Spargel', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2190, 'Sonstige Sonderkulturen', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2200, 'Holzung', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2300, 'Weingarten (allgemein)', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2310, 'Weingarten 1', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2320, 'Weingarten 2', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2330, 'Weingarten 3', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2340, 'Weingarten 4', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2350, 'Weingarten 5', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2360, 'Weingarten 6', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2370, 'Weingarten 7', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2380, 'Weingarten 8', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2390, 'Weingarten 9', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2410, 'Gartenland', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2420, 'Obstplantage', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2430, 'Baumschule', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2440, 'Anbaufläche unter Glas ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2450, 'Kleingarten', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2510, 'Weihnachtsbaumkultur', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2520, 'Saatzucht', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2530, 'Teichwirtschaft', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2610, 'Abbauland der Land- und Forstwirtschaft ', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2620, 'Geringstland', '"Geringstland" sind Flächen geringster Ertragsfähigkeit ohne Wertzahlen nach dem Bodenschätzungsgesetz, das sind unkultivierte Moor- und Heideflächen (sofern nicht gesondert geführt), ehemals bodengeschätzte Flächen und ehemalige Weinbauflächen, die ihren Kulturzustand verloren haben.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2630, 'Unland',   '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2640, 'Moor',     '"Moor" ist eine unkultivierte Fläche mit einer (mindestens 20 cm starken) Auflage aus vertorften und vermoorten Pflanzenresten, soweit sie nicht als Torfstich benutzt wird.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2650, 'Heide',    '"Heide" ist eine unkultivierte, sandige, überwiegend mit Heidekraut oder Ginster bewachsene Fläche.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2700, 'Reet',     '"Reet" ist eine ständig oder zeitweise unter Wasser stehende und mit Reet bewachsene Fläche.');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2710, 'Reet I',   'Reetfläche, deren Nutzung eingestuft ist in Güteklasse I (gut).');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2720, 'Reet II',  'Reetfläche, deren Nutzung eingestuft ist in Güteklasse II (mittel).');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2730, 'Reet III', 'Reetfläche, deren Nutzung eingestuft ist in Güteklasse III (gering).');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2800, 'Nebenfläche des Betriebs der Land- und Forstwirtschaft', '');
+INSERT INTO ax_bewertung_klassifizierung (wert, bezeichner, erklaer) VALUES(2899, 'Noch nicht klassifiziert', '');
+
 -- Bodenschätzung
 
 -- Für Nachschlagen bei Feature-Info: Entschlüsselung in Langform zu einer Klassenfläche, ohne Geometrie.
+--DROP VIEW s_bodensch_ent;
 CREATE OR REPLACE VIEW s_bodensch_ent
 AS 
  SELECT bs.ogc_fid,
@@ -279,6 +380,8 @@ AS
         ea2.bezeichner                     AS entstehart2,
         -- entstehungsartoderklimastufewasserverhaeltnisse ist array!
         bs.sonstigeangaben, 		-- integer array  - Entschlüsseln?
+        so1.bezeichner                     AS sonst1, -- Enstschlüsselung 
+        so2.bezeichner                     AS sonst2,
         bs.jahreszahl				-- integer
    FROM ax_bodenschaetzung bs
    LEFT JOIN ax_bodenschaetzung_kulturart      ka ON bs.kulturart = ka.wert
@@ -288,9 +391,11 @@ AS
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[1] = ea1.wert   -- [1] fast immer gefüllt
    LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea2 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[2] = ea2.wert   -- [2] manchmal gefüllt
+   LEFT JOIN ax_bodenschaetzung_sonstigeangaben so1 ON bs.sonstigeangaben[1] = so1.wert -- [1] selten gefüllt
+   LEFT JOIN ax_bodenschaetzung_sonstigeangaben so2 ON bs.sonstigeangaben[2] = so2.wert -- [2] noch seltener
    WHERE bs.endet IS NULL;
 COMMENT ON VIEW s_bodensch_ent IS 'Sicht für Feature-Info: Bodenschätzung, mit Langtexten entschlüsselt';
-
+GRANT SELECT ON TABLE s_bodensch_ent TO ms6;
 
 -- Klassenfläche (Geometrie) mit ihrem Kurz-Label-Text, der dann mittig an Standardposition angezeigt werden kann. 
 CREATE OR REPLACE VIEW s_bodensch_wms
@@ -404,7 +509,6 @@ AS
     AND l.endet IS NULL;
 COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'Sicht fuer Kartendarstellung: Zuordnungspfeil Flurstücksnummer, Spitze';
 
-
 -- GRANT
 -- Bodenschätzung
 GRANT SELECT ON TABLE ax_bodenschaetzung_bodenart          TO ms6;
@@ -415,10 +519,15 @@ GRANT SELECT ON TABLE ax_bodenschaetzung_kulturart         TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_kulturart         TO mb27;
 GRANT SELECT ON TABLE ax_bodenschaetzung_zustandsstufe     TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_zustandsstufe     TO mb27;
+GRANT SELECT ON TABLE ax_bodenschaetzung_sonstigeangaben   TO ms6;
+GRANT SELECT ON TABLE ax_bodenschaetzung_sonstigeangaben   TO mb27;
 GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung  TO ms6;
 GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung  TO mb27;
 GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO ms6;
 GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO mb27;
+GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO ms6;
+GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO mb27;
+
 -- Bodenschätzung Views
 GRANT SELECT ON TABLE s_bodensch_wms TO ms6;
 GRANT SELECT ON TABLE s_bodensch_ent TO ms6;
