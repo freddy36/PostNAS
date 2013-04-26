@@ -1,5 +1,5 @@
-# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant - Druckversion zur Entwickler-Version
-# 2013-03-11 F.J. krz  manueller Abgleich mit .map ohne _4
+# WMS: ALKIS PostNAS Muster mit Platzhalter *gkz* für Mandant - Druckversion zur Entwickler-Version
+# 2013-04-17 F.J. krz  Thema (Gruppe) "Bodenschätzung" wurde überarbeitet und vor Gruppe "Flurstücke" verschoben
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -15,7 +15,7 @@ MAP
 	WEB
 		METADATA
 			wms_title "ALKIS"
-			ows_abstract "ALKIS - PostNAS Version 0.7, Mapfile Version 'a' vom März 2013"
+			ows_abstract "ALKIS - PostNAS Version 0.7, Mapfile Version 'a' vom April 2013"
 			wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 			wms_encoding "UTF-8"
 			wms_onlineresource "http://ows.krz.de/cgi-bin/mapserv62?map=/opt/gdi/alkis07/alkis07*gkz*a_4.map"
@@ -2310,6 +2310,200 @@ LAYER
 	END
 END
 
+# B o d e n s c h ä t z u n g
+## Einfache Version: Den Label mittig in der Fläche anzeigen
+#LAYER
+#	NAME "bodensch_klass"
+
+LAYER
+	NAME "bodensch_po"
+	GROUP "bodenschaetzung"
+	TYPE POLYGON
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from s_bodensch_po using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_group_title "Bodenschätzung"
+		wms_group_abstract "Bodenschätzung" 
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Klassenfläche"
+		wms_abstract "Fläche der Bodenschätzung, das Ergebnis der Schätzung kann abgefragt werden."
+	END
+	PROJECTION "init=epsg:25832" END
+	MINSCALEDENOM 12 #50
+	MAXSCALEDENOM 875 #3500
+	SYMBOLSCALEDENOM 250 #1000
+	CLASS
+		NAME "Klassenflächengrenze"
+		STYLE
+			OUTLINECOLOR 144 197 140
+			WIDTH 14 MINWIDTH 10 MAXWIDTH 20 # 3.5  2.5  5
+		END
+	END
+END
+
+LAYER
+	NAME "bodensch_tx"
+	GROUP "bodenschaetzung"
+	REQUIRES "[bodensch_po]" # Grenzen aufzeigen?
+	TYPE POINT
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from s_bodensch_tx using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Schätzungsergebnis"
+		wms_abstract "Kompakte Anzeige von: (1. Zeile) Bodenart, Zustandsstufe, Entstehungsart oder Klimastufe/Wasserverhältnisse und (2. Zeile) Bodenzahl oder Grünlandgrundzahl / Ackerzahl oder Grünlandzahl."
+	END
+	PROJECTION "init=epsg:25832" END
+	MINSCALEDENOM 12 #50
+	MAXSCALEDENOM 875 #3500
+	SYMBOLSCALEDENOM 250 #1000
+	CLASSITEM kult # Kulturart, SELECT DISTINCT kult FROM s_bodensch_wms; A, AGR, Gr, GrA
+	LABELITEM derlabel
+	CLASS
+		NAME "Acker"
+		EXPRESSION  ('[kult]' = 'A' OR '[kult]' = 'AGr')
+		LABEL
+			TYPE TRUETYPE FONT "times" # Serifenschrift
+			COLOR 211 147 135 # rosa
+			OUTLINECOLOR 254 254 254 OUTLINEWIDTH 8 #2
+			SIZE 44 MINSIZE 34 MAXSIZE 56 # 13 10 16
+			POSITION uc  # hor/ver = zentrisch/basis
+			PARTIALS FALSE FORCE TRUE
+			WRAP ' ' MAXLENGTH 3
+		END
+	END
+	CLASS
+		NAME "Grünland"
+		EXPRESSION ('[kult]' = 'Gr' OR '[kult]' = 'GrA')
+		LABEL
+			TYPE TRUETYPE FONT "times"
+			COLOR 144 197 140 # Grün
+			OUTLINECOLOR 254 254 254 OUTLINEWIDTH 8 #2
+			SIZE 44 MINSIZE 34 MAXSIZE 56 # 13 10 16
+			POSITION uc  # hor/ver = zentrisch/basis
+			PARTIALS FALSE FORCE TRUE
+			WRAP ' ' MAXLENGTH 3
+		END
+	END
+END
+
+# Zuordnungspfeile Bodenschätzung
+LAYER
+	NAME "ag_l_bodsch"
+	GROUP "bodenschaetzung"
+	#REQUIRES "[ag_t_flurstueck]" # zur Nummer
+	TYPE LINE
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM s_zuordungspfeil_bodensch) as foo using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Zuordnungspfeile" # Linie
+		wms_abstract "Zuordnungspfeil Bodenschätzung Linie"
+	END
+	MINSCALEDENOM 12 #50
+	MAXSCALEDENOM 875 #3500
+	SYMBOLSCALEDENOM 250 #1000
+	CLASS
+		#NAME "Zuordnungspfeil"
+		STYLE
+			COLOR 144 197 140
+			WIDTH 4 MINWIDTH 4 MAXWIDTH 8 # 1 1 2
+		END
+	END
+END
+LAYER
+	NAME "ag_l_bodsch_sp"
+	GROUP "bodenschaetzung"
+	REQUIRES "[ag_l_bodsch]" # nur beides
+	TYPE Annotation
+	STATUS ON
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_bodensch) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Zuordnungspfeil Spitze"
+		wms_abstract "Zuordnungspfeil Flurstücksnummer Spitze"
+	END
+	MINSCALEDENOM 12 #50
+	MAXSCALEDENOM 875 #3500
+	SYMBOLSCALEDENOM 250 #1000
+	CLASS
+		#NAME "Zuordnungspfeilspitze"
+		TEXT 'E'
+		LABEL
+			TYPE TRUETYPE
+			FONT "alkis_textsymbols"
+			SIZE 12 MINSIZE 8 MAXSIZE 24 # 3 2 6
+			POSITION cc
+			ANGLE [winkel]
+			COLOR 144 197 140
+			ANTIALIAS TRUE PARTIALS FALSE FORCE TRUE
+		END
+	END
+END
+
+#LAYER
+#	NAME "ax_grablochderbodenschaetzung"
+#	GROUP "bodenschaetzung"
+#	TYPE POINT
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Grabloch der Bodenschätzung"
+#		wms_abstract "Grabloch der Bodenschätzung"
+#		wms_group_title "Bodenschätzung"
+#		wms_group_abstract "Bodenschätzung" 
+#	END
+#	#PROJECTION "init=epsg:25832" END
+#	#EXTENT 349000 5529000 356000 5533000
+#	MINSCALEDENOM 0
+#	MAXSCALEDENOM 1250 #5000
+#	CLASS
+#		NAME "Grabloch der Bodenschätzung"
+#		STYLE
+#			SYMBOL "sn3703"
+#			COLOR 255 128 128
+#			SIZE 4 #1
+#		END
+#	END
+#END
+
+#LAYER
+#	NAME "ax_musterlandesmusterundvergleichsstueck"
+#	GROUP "bodenschaetzung"
+#	TYPE POLYGON
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Muster Landesmuster und Vergleichsstück"
+#		wms_abstract "Muster-, Landesmuster- und Vergleichsstück der Bodenschätzung"
+#	END
+#	#PROJECTION "init=epsg:25832" END
+#	#EXTENT 349000 5529000 356000 5533000
+#	MINSCALEDENOM 12 #0
+#	MAXSCALEDENOM 1250 #5000
+#	CLASS
+#		NAME "Muster Landesmuster und Vergleichsstück"
+#		STYLE
+#			OUTLINECOLOR 255 128 128
+#		END
+#	END
+#END
+
 # ALKIS  F l u r s t ü c k
 LAYER
 	NAME "ax_flurstueck"
@@ -2456,6 +2650,7 @@ LAYER
 		END
 	END
 END
+
 # Zuordnungspfeile Flurstück
 LAYER
 	NAME "ag_l_flurstueck"
@@ -2468,8 +2663,8 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Zuordnungspfeile Flurstück"
-		wms_abstract "Flurstück Zuordnungspfeile (nur Linie, Pfeilspitze fehlt noch)"
+		wms_title "Zuordnungspfeil Linie"
+		wms_abstract "Zuordnungspfeil Flurstücksnummer Linie"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2518,6 +2713,7 @@ LAYER
 		END
 	END
 END
+
 # Flurstuecksnummer
 LAYER
 	NAME "ag_t_flurstueck"
@@ -2822,59 +3018,7 @@ LAYER
 		END
 	END
 END
-# ALKIS Bodenschätzung
-LAYER
-	NAME "ax_grablochderbodenschaetzung"
-	GROUP "bodenschaetzung"
-	TYPE POINT
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Grabloch der Bodenschätzung"
-		wms_abstract "Grabloch der Bodenschätzung"
-		wms_group_title "Bodenschätzung"
-		wms_group_abstract "Bodenschätzung" 
-	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 0
-	MAXSCALEDENOM 1250 #5000
-	CLASS
-		NAME "Grabloch der Bodenschätzung"
-		STYLE
-			SYMBOL "sn3703"
-			COLOR 255 128 128
-			SIZE 4 #1
-		END
-	END
-END
-LAYER
-	NAME "ax_musterlandesmusterundvergleichsstueck"
-	GROUP "bodenschaetzung"
-	TYPE POLYGON
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Muster Landesmuster und Vergleichsstück"
-		wms_abstract "Muster-, Landesmuster- und Vergleichsstück der Bodenschätzung"
-	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 12 #0
-	MAXSCALEDENOM 1250 #5000
-	CLASS
-		NAME "Muster Landesmuster und Vergleichsstück"
-		STYLE
-			OUTLINECOLOR 255 128 128
-		END
-	END
-END
+
 # ALKIS Punktort (Vermessungspunkte)
 LAYER
 	NAME "ax_punktortta"
@@ -3216,32 +3360,30 @@ LAYER
 		END
 	END
 END
-LAYER
-	NAME "ap_lpo"
-	GROUP "praesentation"
-	TYPE LINE
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Zuordnungspfeile"
-		wms_abstract "Linienförmiges Präsentationsobjekt LPO"
-	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 12 # 50
-	MAXSCALEDENOM 1250 #5000
-	CLASSITEM "art"
-	CLASS
-		NAME "Zuordnungspfeile"
-		EXPRESSION /Pfeil/
-		STYLE
-			COLOR 0 0 0
-		END
-	END
-END
+#LAYER
+#	NAME "ap_lpo"
+#	GROUP "praesentation"
+#	TYPE LINE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Zuordnungspfeile"
+#		wms_abstract "Linienförmiges Präsentationsobjekt LPO"
+#	END
+#	MINSCALEDENOM 12 # 50
+#	MAXSCALEDENOM 1250 #5000
+#	CLASSITEM "art"
+#	CLASS
+#		NAME "Zuordnungspfeile"
+#		EXPRESSION /Pfeil/
+#		STYLE
+#			COLOR 0 0 0
+#		END
+#	END
+#END
 
 # ap_ppo fehlt noch
 

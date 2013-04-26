@@ -1,4 +1,4 @@
-# WMS: ALKIS PostNAS 0.7 Muster mit Platzhalter *gkz* für Mandant - Entwickler-Version
+# WMS: ALKIS PostNAS Muster mit Platzhalter *gkz* für Mandant - Entwickler-Version
 #
 # Stand / Historie:
 # 2012-02-09 F.J. krz  Branch 0.7 aus Version 0.6
@@ -15,6 +15,49 @@
 #                      Keine Schraffur auf "Gebäude, graphisch".
 #                      "Laufende Nummer Nebengebäude": kein Präsentationsobjekt mehr, Anzeige mittig in Geb.-Fläche 
 # 2013-03-11 F.J. krz  Neuer Layer "ax_gebaeude_txt" (Funktion und Name zum Gebäude)
+# 2013-04-18 F.J. krz  Thema (Gruppe) "Bodenschätzung" wurde überarbeitet und vor Gruppe "Flurstücke" verschoben
+
+###
+# Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
+###
+
+# ToDo:
+# - Gebaeude: Layer nach "Name" und "Funktion" auftrennen.
+
+# - neuen Layer "Namen" auf View ap_pto_nam (NAM, ZNM)
+
+# - Bei Präsentation/Beschriftung die doppelten Texte unterdrücken (-> View?)
+#   Für appto_stra und appto_rest bereits erfolgt.
+
+# - Mit Status on/off die gängigen Layer vorkonfigurieren?
+
+# - Zuordnungspfeils FS:
+#   Linie im Druck zu dünn
+#   Ist doppelt: in "Flurstück" ("ag_l_flurstueck") und in "Präsentation/Zuordnungspfeile" ("ap_lpo")
+
+# - Zuordnungspfeile Nebengeäude:
+#   entfällt? Oder auch für Hausnummern verwendet?
+#   Was wird da eigentlich zugeordnet?  Beispiel: 140 am Quellenweg
+
+# - Straßennamen im Cache abgeschnitten, PARTIALS TRUE?  Beispiel: 250 Brüderweg
+# - Hausnummern doppelt oder mehrfach (z.B. 070: Bürgermeister-Brinkmann-Weg 3)
+# - Template auf Gebäude-Objekt, Auskunft aufrufen?
+
+###
+# Tipp für Mapbender 2-Nutzer:
+# Damit bei einem bestehenden WMS nach dem Neu-Hochladen auch die geänderte Layer-Reihenfolge wirksam wird,
+# sollte in der Mapbender-Datenbank folgendes SQL ausgeführt werden:
+#  UPDATE gui_layer g SET gui_layer_priority = (SELECT layer_pos FROM layer l 
+#   WHERE g.fkey_layer_id = l.layer_id AND g.gui_layer_wms_id = l.fkey_wms_id)
+#  WHERE g.gui_layer_wms_id = ___; -- HIER: die ID des WMS einsetzen
+###
+
+###
+# GID = Geo Info Dok
+# Farbangabe  dort "Farbe    - 0      - 0         - 0        - 20     " 
+# das bedeutet:    "Grundton - cyan % - magenta % - yellow % - black %"
+###
+
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -24,13 +67,12 @@ MAP
 	SYMBOLSET "symbols/symbols_alkis.sym"
 	FONTSET "fonts/fonts_alkis.fnt"
 	UNITS METERS
-	# Nur fuer Test
-	#CONFIG "MS_ERRORFILE" "/opt/gdi/log/umn.log"
+	#CONFIG "MS_ERRORFILE" "/opt/gdi/log/umn.log" # Nur fuer Test
 	#DEBUG 3
 	WEB
 		METADATA
 			wms_title "ALKIS_" # TEST-Kennung im Title
-			ows_abstract "ALKIS - PostNAS Version 0.7, Mapfile Version 'a' vom März 2013"
+			ows_abstract "ALKIS - PostNAS Version 0.7, Mapfile Version 'a' vom April 2013"
 			wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 			wms_encoding "UTF-8"
 			wms_onlineresource "http://ows.krz.de/cgi-bin/mapserv62?map=/opt/gdi/alkis07/alkis07*gkz*a.map"
@@ -496,7 +538,7 @@ LAYER
 	NAME "ax_wohnbauflaeche"
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
-	REQUIRES "![nutzung_alle]"
+	REQUIRES "![nutzung_alle]" # nicht doppelt
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
@@ -1975,7 +2017,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 		END
 	END
 END
-# ToDo: evtl. getrennt schaltbare Layer?
+# ToDo: Name und Funktion trennen.
 LAYER
 	NAME "ax_gebaeude_txt" # Gebäude-Texte: Funktion und Name
 	GROUP "gebaeude"
@@ -2600,6 +2642,296 @@ LAYER
 	END
 END
 
+# B o d e n s c h ä t z u n g
+
+## Einfache Version: Den Label mittig in der Fläche anzeigen
+#LAYER
+#	NAME "bodensch_klass"
+#	GROUP "bodenschaetzung"
+#	TYPE POLYGON
+#	DUMP TRUE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from s_bodensch_wms using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_group_title "Bodenschätzung"
+#		wms_group_abstract "Bodenschätzung" 
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Klassenfläche mit Label"
+#		wms_abstract "Klassenfläche der Bodenschätzung. Das Ergebnis der Schätzung wird als Text zentral in der Fläche angezeigt."
+#	END
+#	PROJECTION "init=epsg:25832" END
+#	#EXTENT 349000 5529000 356000 5533000
+#	MINSCALEDENOM 50
+#	MAXSCALEDENOM 3000
+#	SYMBOLSCALEDENOM 1000
+#	TOLERANCEUNITS pixels TOLERANCE 1
+#	HEADER   "/opt/gdi/templates/alkisbodenschh.html"
+#	TEMPLATE "/opt/gdi/templates/alkisbodensch.html" # (noch?) nicht an Buchauskunft angeschlosssen
+#	FOOTER   "/opt/gdi/templates/footerp.html"
+#	JOIN # VIEW s_bodensch_ent: Felder einzeln und langschriftlich entschlüsselt.
+#		NAME "BOD"
+#		CONNECTIONTYPE ogr
+#		CONNECTION 'host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432'
+#		TABLE "s_bodensch_ent" FROM "ogc_fid" TO "ogc_fid" TYPE ONE-TO-ONE
+#  	END
+#	CLASSITEM kult # Kulturart, SELECT DISTINCT kult FROM s_bodensch_wms; A, AGR, Gr, GrA
+#	LABELITEM derlabel
+#	CLASS
+#		NAME "Acker"
+#		EXPRESSION  ('[kult]' = 'A' OR '[kult]' = 'AGr')
+#		STYLE
+#			OUTLINECOLOR 178 255 148 # hellgrün
+#			WIDTH 5 MINWIDTH 3 MAXWIDTH 7
+#		END
+#		LABEL
+#			TYPE TRUETYPE FONT "times" # Serifenschrift
+#			COLOR 210 150 150 # rosa
+#			OUTLINECOLOR 254 254 254 OUTLINEWIDTH 2
+#			SIZE 13 MINSIZE 10 MAXSIZE 16
+#			POSITION cc
+#			PARTIALS FALSE FORCE TRUE
+#			WRAP ' ' MAXLENGTH 3
+#		END
+#	END
+#	CLASS
+#		NAME "Grünland"
+#		EXPRESSION ('[kult]' = 'Gr' OR '[kult]' = 'GrA')
+#		STYLE
+#			OUTLINECOLOR 178 255 148 # hellgrün
+#			WIDTH 5 MINWIDTH 3 MAXWIDTH 7
+#		END
+#		LABEL
+#			TYPE TRUETYPE FONT "times"
+#			COLOR 130 210 120 # Grün
+#			OUTLINECOLOR 254 254 254 OUTLINEWIDTH 2
+#			SIZE 13 MINSIZE 10 MAXSIZE 16
+#			POSITION cc
+#			PARTIALS FALSE FORCE TRUE
+#			WRAP ' ' MAXLENGTH 3
+#		END
+#	END
+#END
+
+LAYER
+	NAME "bodensch_po"
+	GROUP "bodenschaetzung"
+	TYPE POLYGON
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from s_bodensch_po using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_group_title "Bodenschätzung"
+		wms_group_abstract "Bodenschätzung" 
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Klassenfläche"
+		wms_abstract "Fläche der Bodenschätzung, das Ergebnis der Schätzung kann abgefragt werden."
+	END
+	PROJECTION "init=epsg:25832" END
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 3500
+	SYMBOLSCALEDENOM 1000
+	TOLERANCEUNITS pixels TOLERANCE 1
+	HEADER   "/opt/gdi/templates/alkisbodenschh.html"
+	TEMPLATE "/opt/gdi/templates/alkisbodensch.html" # (noch?) nicht an Buchauskunft angeschlosssen
+	FOOTER   "/opt/gdi/templates/footerp.html"
+	JOIN # VIEW s_bodensch_ent: Felder einzeln und langschriftlich entschlüsselt.
+		NAME "BOD"
+		CONNECTIONTYPE ogr
+		CONNECTION 'host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432'
+		TABLE "s_bodensch_ent" FROM "ogc_fid" TO "ogc_fid" TYPE ONE-TO-ONE
+  	END
+	CLASS
+		NAME "Klassenflächengrenze" # SignaturNr: 2703
+		STYLE
+			OUTLINECOLOR 144 197 140 # GID (CMYK %): Grün–30–0–42–0
+			WIDTH 3.6 MINWIDTH 2.6 MAXWIDTH 5.2
+		END
+	END
+END
+
+LAYER
+	NAME "bodensch_tx"
+	GROUP "bodenschaetzung"
+	REQUIRES "[bodensch_po]" # Grenzen aufzeigen?
+	TYPE POINT
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from s_bodensch_tx using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Schätzungsergebnis"
+		wms_abstract "Kompakte Anzeige von: (1. Zeile) Bodenart, Zustandsstufe, Entstehungsart oder Klimastufe/Wasserverhältnisse und (2. Zeile) Bodenzahl oder Grünlandgrundzahl / Ackerzahl oder Grünlandzahl."
+	END
+	PROJECTION "init=epsg:25832" END
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 3500
+	SYMBOLSCALEDENOM 1000
+	CLASSITEM kult # Kulturart, SELECT DISTINCT kult FROM s_bodensch_wms; A, AGR, Gr, GrA
+	LABELITEM derlabel
+	CLASS
+		NAME "Acker"
+		EXPRESSION  ('[kult]' = 'A' OR '[kult]' = 'AGr')
+		LABEL
+			TYPE TRUETYPE FONT "times" # Serifenschrift
+			COLOR 211 147 135 # rosa
+			OUTLINECOLOR 254 254 254 OUTLINEWIDTH 2
+			SIZE 13 MINSIZE 10 MAXSIZE 16
+			POSITION uc  # hor/ver = zentrisch/basis
+			PARTIALS FALSE FORCE TRUE
+			WRAP ' ' MAXLENGTH 3
+		END
+	END
+	CLASS
+		NAME "Grünland"
+		EXPRESSION ('[kult]' = 'Gr' OR '[kult]' = 'GrA')
+		LABEL
+			TYPE TRUETYPE FONT "times"
+			COLOR 144 197 140
+			OUTLINECOLOR 254 254 254 OUTLINEWIDTH 2
+			SIZE 13 MINSIZE 10 MAXSIZE 16
+			POSITION uc  # hor/ver = zentrisch/basis
+			PARTIALS FALSE FORCE TRUE
+			WRAP ' ' MAXLENGTH 3
+		END
+	END
+END
+
+# Signaturen:
+#  Signaturnummer 2703 = Klassenflächengrenze
+#  Signaturnummer 2705 = Klassenabschnittsgrenze  gestrichelt 400 - 200
+#  Signaturnummer 2707 = Sonderflächengrenze      strich-punktiert 400 500 900 500
+
+# Objektearten:
+#  72001 'Bodenschätzung'  -> 'Kulturart' und 'Bodenart'
+#  72002 'Muster-, Landesmuster- und Vergleichsstück'
+#  72003 'Grabloch der Bodenschätzung'
+#  72004 'Bewertung'
+#  72005 'AX_KennzifferGrabloch' (Datentyp).
+#  72006 'Tagesabschnitt'
+
+# ToDo: Überhaken zu den Klassenflächen
+
+# Zuordnungspfeile Bodenschätzung
+# Neu 2013-04-16
+# Dieser Pfeil ist nur notwendig bzw. sinnvoll, wenn der Label nicht mitten in der Klassenfläche angezeigt wird,
+# sondern an einer manuell festgelegten Textposition. Woher?
+LAYER
+	NAME "ag_l_bodsch"
+	GROUP "bodenschaetzung"
+	REQUIRES "[bodensch_tx]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'bodensch_tx' automatisch an
+	TYPE LINE
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM s_zuordungspfeil_bodensch) as foo using unique ogc_fid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Zuordnungspfeile" # Linie
+		wms_abstract "Zuordnungspfeil Bodenschätzung" # Linie
+	END
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 3500
+	SYMBOLSCALEDENOM 1000
+	CLASS
+		#NAME "Zuordnungspfeil"
+		STYLE
+			COLOR 144 197 140
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 2
+		END
+	END
+END
+LAYER
+	NAME "ag_l_bodsch_sp"
+	GROUP "bodenschaetzung"
+	STATUS ON
+	REQUIRES "[ag_l_bodsch]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'bodensch_tx' automatisch an
+	TYPE Annotation
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_bodensch) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
+	METADATA
+		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+		wms_title "Zuordnungspfeil Spitze"
+		wms_abstract "Zuordnungspfeil Bodenschätzung Spitze"
+	END
+	MINSCALEDENOM 50
+	MAXSCALEDENOM 3500
+	SYMBOLSCALEDENOM 1000
+	CLASS
+		#NAME "Zuordnungspfeilspitze"
+		TEXT 'E'
+		LABEL
+			TYPE TRUETYPE
+			FONT "alkis_textsymbols"
+			SIZE 3 MINSIZE 2 MAXSIZE 6
+			POSITION cc
+			ANGLE [winkel]
+			COLOR 144 197 140
+			ANTIALIAS TRUE PARTIALS FALSE FORCE TRUE
+		END
+	END
+END
+
+#LAYER
+#	NAME "ax_grablochderbodenschaetzung"
+#	GROUP "bodenschaetzung"
+#	TYPE POINT
+#	DUMP TRUE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Grabloch der Bodenschätzung"
+#		wms_abstract "Grabloch der Bodenschätzung"
+#		gml_include_items "all"
+#	END
+#	#PROJECTION "init=epsg:25832" END
+#	#EXTENT 349000 5529000 356000 5533000
+#	MINSCALEDENOM 50
+#	MAXSCALEDENOM 5000
+#	CLASS
+#		NAME "Grabloch der Bodenschätzung"
+#		STYLE
+#			SYMBOL "sn3703"
+#			COLOR 255 128 128
+#			SIZE 1
+#		END
+#	END
+#END
+#LAYER
+#	NAME "ax_musterlandesmusterundvergleichsstueck"
+#	GROUP "bodenschaetzung"
+#	TYPE POLYGON
+#	DUMP TRUE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Muster Landesmuster und Vergleichsstück"
+#		wms_abstract "Muster-, Landesmuster- und Vergleichsstück der Bodenschätzung"
+#		gml_include_items "all"
+#	END
+#	#PROJECTION "init=epsg:25832" END
+#	#EXTENT 349000 5529000 356000 5533000
+#	MINSCALEDENOM 50
+#	MAXSCALEDENOM 5000
+#	CLASS
+#		NAME "Muster Landesmuster und Vergleichsstück"
+#		STYLE
+#			OUTLINECOLOR 255 128 128
+#		END
+#	END
+#END
+
 # ALKIS  F l u r s t ü c k
 LAYER
 	NAME "ax_flurstueck"
@@ -2639,7 +2971,7 @@ LAYER
 		NAME "Flurstück"
 		STYLE
 			OUTLINECOLOR 0 0 0
-			WIDTH 1.5 MINWIDTH 1 MAXWIDTH 2.5
+			WIDTH 1.2 MINWIDTH 0.8 MAXWIDTH 2.2
 		END
 	END
 END
@@ -2886,12 +3218,12 @@ END
 #	END
 #END
 ### OBK ENDE
+
 # Zuordnungspfeile Flurstück
-# siehe auch Layer "ap_lpo"
 LAYER
 	NAME "ag_l_flurstueck" # Ausgestaltung Linie zum Flurstück
 	GROUP "flurstueck"
-	REQUIRES "[ag_t_flurstueck]" # zur Nummer
+	REQUIRES "[ag_t_flurstueck]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'ag_t_flurstueck' automatisch an
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
@@ -2899,7 +3231,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Zuordnungspfeile Linie"
+		wms_title "Zuordnungspfeil Linie"
 		wms_abstract "Zuordnungspfeil Flurstücksnummer Linie"
 	END
 	#PROJECTION "init=epsg:25832" END
@@ -2918,7 +3250,7 @@ END
 LAYER
 	NAME "sk2004_zuordnungspfeil_spitze"
 	GROUP "flurstueck"
-	REQUIRES "[ag_l_flurstueck]" # nur beides
+	REQUIRES "[ag_l_flurstueck]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'ag_l_flurstueck' automatisch an
 	TYPE Annotation
 	STATUS ON
 	CONNECTIONTYPE POSTGIS
@@ -2949,6 +3281,7 @@ LAYER
 		END
 	END
 END
+
 # Flurstuecksnummer
 # Muster RLP: zaehler-nenner steht auch in Feld "ap_pto.schriftinhalt"
 # NRW: Feld "ap_pto.schriftinhalt" ist leer. Label aus Tabelle "ax_flurstueck" entnehmen
@@ -2995,7 +3328,7 @@ END
 LAYER
 	NAME "ag_p_flurstueck"
 	GROUP "flurstueck"
-	REQUIRES "[ax_flurstueck]" # an Grenze
+	REQUIRES "[ax_flurstueck]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'ax_flurstueck' automatisch an
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
@@ -3003,7 +3336,7 @@ LAYER
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Zugehörigkeitshaken Flurstueck"
+		wms_title "Zugehörigkeitshaken" # Flurstueck
 		wms_abstract "Flurstück Zugehörigkeitshaken"
 	END
 	#PROJECTION "init=epsg:25832" END
@@ -3385,63 +3718,7 @@ LAYER
 		END
 	END
 END
-# ALKIS Bodenschätzung
-LAYER
-	NAME "ax_grablochderbodenschaetzung"
-	GROUP "bodenschaetzung"
-	TYPE POINT
-	DUMP TRUE
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Grabloch der Bodenschätzung"
-		wms_abstract "Grabloch der Bodenschätzung"
-		wms_group_title "Bodenschätzung"
-		wms_group_abstract "Bodenschätzung" 
-		gml_include_items "all"
-	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 50
-	MAXSCALEDENOM 5000
-	CLASS
-		NAME "Grabloch der Bodenschätzung"
-		STYLE
-			SYMBOL "sn3703"
-			COLOR 255 128 128
-			SIZE 1
-		END
-	END
-END
-LAYER
-	NAME "ax_musterlandesmusterundvergleichsstueck"
-	GROUP "bodenschaetzung"
-	TYPE POLYGON
-	DUMP TRUE
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Muster Landesmuster und Vergleichsstück"
-		wms_abstract "Muster-, Landesmuster- und Vergleichsstück der Bodenschätzung"
-		gml_include_items "all"
-	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 50
-	MAXSCALEDENOM 5000
-	CLASS
-		NAME "Muster Landesmuster und Vergleichsstück"
-		STYLE
-			OUTLINECOLOR 255 128 128
-		END
-	END
-END
+
 # ALKIS Punktort (Vermessungspunkte)
 LAYER
 	NAME "ax_punktortta"
@@ -3727,6 +4004,10 @@ LAYER
 		END
 	END
 END
+
+## ToDo: neuen Layer Namen auf View ap_pto_nam (NAM, ZNM)
+##  Unterscheidung horizontale/vertikale Position.
+##  Namen von Gebäude wieder wegnehmen? - Oder ALLE Namen jeweils auch einer fachlichen Ebene/Gruppe zuordnen?
 LAYER
 	NAME "ap_pto" # Rest
 	GROUP "praesentation"
@@ -3794,41 +4075,32 @@ LAYER
 		END
 	END
 END
-LAYER
-	# Dieser wms-Layer sollte ersetzt werden durch folienspezische Layer:
-	#  Flurstuecke / Zuordnungspfeile - ist bereits realisiert = redundant
-	#  Gebaeude    / Zuordnungspfeile Hausnummer         - anzeigen
-	#  Gebaeude    / Zuordnungspfeile Nebengebäudenummer - nur wenn auch lfd.Nr angezeigt wird
-	# Was gibt es noch? Freie Präsentationsobjekte (dientZurDarstellungVon=NULL)
-	NAME "ap_lpo"
-	GROUP "praesentation"
-	TYPE LINE
-	DUMP TRUE
-	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
-	METADATA
-		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
-		wms_title "Zuordnungspfeile"
-		wms_abstract "Linienförmiges Präsentationsobjekt LPO"
-		gml_include_items "all"
-	END
-	#PROJECTION "init=epsg:25832" END
-	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 50
-	MAXSCALEDENOM 5000
-	CLASSITEM "art"
-	CLASS
-		NAME "Zuordnungspfeile"
-		EXPRESSION /Pfeil/
-		STYLE
-			COLOR 0 0 0
-		END
-	END
-END
+#LAYER # ersetzt werden durch fachspezische Layer: Flurstueck, Gebaeude, Bodenschaetzung
+#	NAME "ap_lpo"
+#	GROUP "praesentation"
+#	TYPE LINE
+#	CONNECTIONTYPE POSTGIS
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	PROCESSING "CLOSE_CONNECTION=DEFER"
+#	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
+#	METADATA
+#		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+#		wms_title "Zuordnungspfeile"
+#		wms_abstract "Linienförmiges Präsentationsobjekt LPO"
+#	END
+#	MINSCALEDENOM 50
+#	MAXSCALEDENOM 5000
+#	CLASSITEM "art"
+#	CLASS
+#		NAME "Zuordnungspfeile"
+#		EXPRESSION /Pfeil/
+#		STYLE
+#			COLOR 0 0 0
+#		END
+#	END
+#END
 
-# ap_ppo fehlt noch
+# ap_ppo fehlt noch (Punktförmiges Präsentationsobjekt)
 
 ## Gruppe  G r e n z e n
 # Politische Grenzen:
