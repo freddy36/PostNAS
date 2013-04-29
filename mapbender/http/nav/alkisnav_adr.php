@@ -8,6 +8,7 @@
 	2013-01-15	F.J.: HsNr ohne Gebäude auf NRW/krz-Daten anpassen
 	2013-04-26	"import_request_variables" entfällt in PHP 5.4.
 					Zurück-Link, Titel der Transaktion anzeigen
+	2013-04-29	Test mit IE
 
 	ToDo:
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
@@ -37,8 +38,8 @@ echo <<<END
 	</script>
 </head>
 <body>
-<a title="zur&uuml;ck" href='javascript:history.back()'>
-	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" />
+<a href='javascript:history.back()'>
+	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck" />
 </a>
 <dfn class='title' id='transaktiontitle'></dfn>
 

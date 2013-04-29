@@ -13,6 +13,7 @@
 					Fehlerkorrektur Komma in SQL bei FS-Suche.
 	2013-04-26	Ersetzen View "gemeinde_gemarkung" durch Tabelle "pp_gemarkung"
 					Zurück-Link, Titel der Transaktion anzeigen
+	2013-04-29	Test mit IE
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
@@ -38,8 +39,8 @@ echo <<<END
 	</script>
 </head>
 <body>
-<a title="zur&uuml;ck" href='javascript:history.back()'>
-	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" />
+<a href='javascript:history.back()'>
+	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck" />
 </a>
 <dfn class='title' id='transaktiontitle'></dfn>
 

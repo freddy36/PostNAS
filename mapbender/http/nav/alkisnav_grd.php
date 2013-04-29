@@ -10,6 +10,7 @@
 					Code aus _eig nach_fkt ausgelegert, hier mit nutzen. 
 					Dazu Var-Namen harmonisieren: $gblatt wird $blattgml
 					Zurück-Link, Titel der Transaktion anzeigen.
+	2013-04-29	Test mit IE
 */
 $cntget = extract($_GET);
 
@@ -39,8 +40,8 @@ echo <<<END
 	</script>
 </head>
 <body>
-<a title="zur&uuml;ck" href='javascript:history.back()'>
-	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" />
+<a href='javascript:history.back()'>
+	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck" />
 </a>
 <dfn class='title' id='transaktiontitle'></dfn>
 
