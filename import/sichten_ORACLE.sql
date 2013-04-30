@@ -295,13 +295,15 @@ CREATE OR REPLACE VIEW S_ALLGEMEINE_TEXTE_ARTEN
 AS 
  SELECT DISTINCT art 
    FROM s_allgemeine_texte;
-CREATE OR REPLACE VIEW FLURSTUECKS_MINMAX AS 
- SELECT min(st_xmin(ORA_GEOMETRY)) AS r_min, 
-        min(st_ymin(ORA_GEOMETRY)) AS h_min, 
-        max(st_xmax(ORA_GEOMETRY)) AS r_max, 
-        max(st_ymax(ORA_GEOMETRY)) AS h_max
-   FROM ax_flurstueck f
-   WHERE f.endet IS NULL;
+
+-- ToDo: 
+--CREATE OR REPLACE VIEW FLURSTUECKS_MINMAX AS 
+-- SELECT min(st_xmin(ORA_GEOMETRY)) AS r_min, 
+--        min(st_ymin(ORA_GEOMETRY)) AS h_min, 
+--        max(st_xmax(ORA_GEOMETRY)) AS r_max, 
+--        max(st_ymax(ORA_GEOMETRY)) AS h_max
+--   FROM ax_flurstueck f
+--   WHERE f.endet IS NULL;
 -- COMMENT ON VIEW FLURSTUECKS_MINMAX IS 'Maximale Ausdehnung von ax_flurstueck fuer EXTENT-Angabe im Mapfile';
 
 -- ToDo: 
@@ -508,10 +510,10 @@ AS
 CREATE OR REPLACE VIEW BEZIEHUNGEN_REDUNDANT 
 AS
 SELECT *
- FROM alkis_beziehungen AS bezalt
+ FROM alkis_beziehungen bezalt
  WHERE EXISTS
        (SELECT OGR_FID
-         FROM alkis_beziehungen AS bezneu
+         FROM alkis_beziehungen bezneu
         WHERE bezalt.beziehung_von = bezneu.beziehung_von
           AND bezalt.beziehung_zu  = bezneu.beziehung_zu
           AND bezalt.beziehungsart = bezneu.beziehungsart
@@ -527,7 +529,7 @@ SELECT *
 -- FROM alkis_beziehungen AS bezalt
 -- WHERE EXISTS
 --       (SELECT OGR_FID
---         FROM alkis_beziehungen AS bezneu
+--         FROM alkis_beziehungen bezneu
 --        WHERE bezalt.beziehung_von = bezneu.beziehung_von
 --          AND bezalt.beziehung_zu  = bezneu.beziehung_zu
 --         AND bezalt.beziehungsart = bezneu.beziehungsart
