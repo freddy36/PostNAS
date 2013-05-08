@@ -4,6 +4,7 @@
 					Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms
+	2013-05-08  in Arbeit ...
 
 	ToDo:
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
@@ -42,7 +43,7 @@ END;
 
 function suchStrName() {
 	// Strassen nach Name(-nsanfang)
-	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug;
+	global $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug;
 	$linelimit=120;  // -> in die Conf?
 	preg_match("/^(\D+)(\d*)(\D*)/",$street,$matches); # 4 matches name/nr/zusatz echo "match: ".$matches[1].",".$matches[2].",".$matches[3];
 	$matches[1] = preg_replace("/strasse/i","str", $matches[1]);
@@ -110,7 +111,7 @@ function suchStrName() {
 
 function suchStrKey() {
 	// Strassen nach Strassen-Schluessel
-	global $con, $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug;
+	global $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug;
 	$linelimit=50;
 	if(preg_match("/\*/",$street)) {
 		$match=trim(preg_replace("/\*/i","%",$street));
@@ -173,7 +174,7 @@ function suchStrKey() {
 
 function suchHausZurStr($showParent){
 	// Haeuser zu einer Strasse
-	global $con, $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $debug;
+	global $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $debug;
 	// Strasse zum Strassenschluessel
 	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
@@ -327,7 +328,10 @@ if (isset($str_schl)) { // aus Link
 	}
 }
 // Titel im Kopf anzeigen
-echo "\n<script type='text/javascript'>\n\ttranstitle('".$trans."')\n</script>";
+echo "
+<script type='text/javascript'>
+	transtitle ('".$trans."') ; 
+</script>";
 
 ?>
 

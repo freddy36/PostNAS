@@ -1,6 +1,7 @@
 <?php
 /* Version vom 
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
+	2013-05-08  Hervorhebung aktuelles Objekt, in Arbeit ...
 */
 
 // function Typ "zeile_**"  = Ausgabe eines Knotens
@@ -8,14 +9,15 @@
 // - Zeile, ggf. mit Link zur weiteren Auflösung untergeordneter Knoten
 // Hierin die Encodierung für url und HTML.
 
-function zeile_ag ($ag, $anr) {	// Zeile  A m t s g e r i c h t
+function zeile_ag ($ag, $anr, $aktuell) {	// Zeile  A m t s g e r i c h t
 	global $gkz, $gemeinde, $epsg, $auskpath;
 	if ($ag == "") {
 		$agd=$anr; // Ersatz: Nummer statt Name. Besser: Name immer füllen
 	} else {
 		$agd=htmlentities($ag, ENT_QUOTES, "UTF-8");
 	}
-	echo "\n<div class='ga' title='Amtsgericht'>";
+	if ($aktuell) {$cls=" aktuell";}
+	echo "\n<div class='ga".$cls."' title='Amtsgericht'>";
 		echo "\n\t\t<img class='nwlink' src='ico/Gericht.ico' width='16' height='16' alt='Amtsgericht'> ";
 		echo "AG <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;ag=".$anr."'>";		
 		echo $agd."</a> (".$anr.")";
@@ -23,25 +25,28 @@ function zeile_ag ($ag, $anr) {	// Zeile  A m t s g e r i c h t
 	return;
 }
 
-function zeile_gbbez ($gnam, $zgbbez) {	// Zeile Grundbuch - B e z i r k
+function zeile_gbbez ($gnam, $zgbbez, $aktuell) {	// Zeile Grundbuch - B e z i r k
 	global $gkz, $gemeinde, $epsg, $auskpath;
 	$gnamd=htmlentities($gnam, ENT_QUOTES, "UTF-8");
-	echo "\n<div class='gk' title='GB-Bezirk'>";
+	if ($aktuell) {$cls=" aktuell";}	
+	echo "\n<div class='gk".$cls."' title='GB-Bezirk'>";
 		echo "\n\t\t<img class='nwlink' src='ico/GB-Bezirk.ico' width='16' height='16' alt='Bez.'> ";
 		echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gbkennz=".$zgbbez."'>";		
 		echo "Bezirk ".$gnamd."</a> (".suchfeld($zgbbez).")";			
 	echo "\n</div>";
+
 	return;
 }
 
-function zeile_blatt ($bezirk, $beznam, $blattgml, $blatt, $dienend, $person) {
+function zeile_blatt ($bezirk, $beznam, $blattgml, $blatt, $dienend, $person, $aktuell) {
 	global $gkz, $gemeinde, $epsg, $auskpath;
 	// Zeile Grundbuch - B l a t t
 	$blattd=ltrim($blatt, "0"); // Display-Version ohne führende Nullen
 	if ( $dienend) {$dientxt="dienendes ";}
 	$blattlnk=urlencode($blatt); // trailing Blank
 	if ($beznam != "") {$nam = $beznam." ";}
-	echo "\n<div class='gb' title='".$dientxt."GB-Blatt'>";
+	if ($aktuell) {$cls=" aktuell";}	
+	echo "\n<div class='gb".$cls."' title='".$dientxt."GB-Blatt'>";
 	if ($blattgml == "") { // Link zum Nachweis nur wenn GML bekannt
 		echo "\n\t<img class='nwlink' src='ico/GBBlatt_link.ico' width='16' height='16' alt='Blatt'>";
 	} else {
@@ -59,7 +64,7 @@ function zeile_blatt ($bezirk, $beznam, $blattgml, $blatt, $dienend, $person) {
 	return;
 }
 
-function zeile_buchung ($buchunggml, $bvnr, $gbkennz, $dienend) {
+function zeile_buchung($buchunggml, $bvnr, $blattkennz, $dienend, $aktuell) {
 	// Zeile  B u c h u n g s s t e l l e  -  Grundstück ausgeben
 	global $gkz, $gemeinde, $epsg, $auskpath;
 	if ($bvnr == 0) {
@@ -74,26 +79,25 @@ function zeile_buchung ($buchunggml, $bvnr, $gbkennz, $dienend) {
 		$ti="";
 		$re="";
 	}
-	echo "\n<div class='gs' title='".$ti."Grundst&uuml;ck'>";
-	echo "\n\t<img class='nwlink' src='ico/Grundstueck.ico' width='16' height='16' alt='GS'> ";
-	echo $re."Buchung";
-
-	if ($gbkennz == "") { // ohne Link
-		echo "&nbsp;".$bvnra."&nbsp;";
-	} else { // Bezirk-Blatt-lfd
-		echo "\n\t<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;buchunggml=".$buchunggml;			
-		echo "&amp;gbkennz=".$gbkennz;
-		echo "'>&nbsp;".$bvnra."&nbsp;</a>";
+	if ($aktuell) {$cls=" aktuell";}	
+	echo "\n<div class='gs".$cls."' title='".$ti."Grundst&uuml;ck'>";
+	echo "\n\t<img class='nwlink' src='ico/Grundstueck.ico' width='16' height='16' alt='GS'> ".$re;
+	if ($blattkennz == "") { // ohne Link
+		echo "Buchung ".$bvnra;
+	} else {
+		$gbkennlnk=urlencode($blattkennz."-".$bvnr); // Trailing Blanks!
+		echo "<a href='".$_SERVER['SCRIPT_NAME']. "?gkz=". $gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;buchunggml=".$buchunggml;
+		echo "&amp;gbkennz=".$gbkennlnk."'>Buchung ".$bvnra."</a>";
 	}
-	echo "\n</div>";	
-	return 0;
+	echo "\n</div>";
+	return;
 }
 
-function zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur) {
+function zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur, $aktuell) {
 	// Zeile mit Icon (Link zum Buch-Nachweis) und Text (Link zum Positionieren)
 	global $gkz, $gemeinde, $epsg, $auskpath, $scalefs;
-
-	echo "\n<div class='fs'>";
+	if ($aktuell) {$cls=" aktuell";}
+	echo "\n<div class='fs".$cls."'>";
 	echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
 		echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
 	echo "\n\t</a>\n\t";			
@@ -122,18 +126,22 @@ function zeile_person ($persongml, $nachname, $vorname) {
 	$nnam=htmlentities($nachname, ENT_QUOTES, "UTF-8");
 	$namlnk=urlencode($nachname);
 	$vnam=htmlentities($vorname, ENT_QUOTES, "UTF-8");
-	// Link zur Auskunft Person  +++ Icon differenzieren? Firma/Person
-	echo "\n<br>\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."\")'>";
-		echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'>";
-	echo "\n\t</a> ";		
-	echo "\n<a title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$persongml."&amp;name=".$namlnk."'>".$nnam.", ".$vnam."</a>";
-	return;
+	// Link zur Auskunft Person ++ Icon differenzieren? Firma/Person
+
+// 2013-05-08 DIV statt br
+echo "<div class='pe'>
+	<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."\")'>
+		<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'>
+	</a> 		
+	<a title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$persongml."&amp;name=".$namlnk."'>".$nnam.", ".$vnam."</a>
+</div>";
+return;
 }
 
-function GB_Buchung_FS ($linelimit) {
+function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 // Zu einem Grundbuch-Blatt (identifiziert über seine gml_id) suchen der 
 // Buchungen (Gruppenwechsel) und Flurstücke (Links)
-	global $gkz, $gemeinde, $blattgml, $epsg, $gfilter, $debug;
+	global $gemeinde, $blattgml, $epsg, $gfilter, $debug;
 
 	// SQL-Bausteine vorbereiten
 	// SQL vorne gleich
@@ -155,9 +163,6 @@ function GB_Buchung_FS ($linelimit) {
 	$sqlz2 ="JOIN alkis_beziehungen vss ON vss.beziehung_von = s1.gml_id ";
 	$sqlz2.="JOIN ax_buchungsstelle s2 ON vss.beziehung_zu = s2.gml_id ";
 	$sqlz2.="JOIN alkis_beziehungen vfb ON s2.gml_id = vfb.beziehung_zu ";
-
-	// ++	JOIN alkis_beziehungen - ax_buchungsblatt 
-	//		für Link auf Buchung mit komplettem Grundbuchennzeichen
 
 	// SQL hinten gleich
 	$sql2 ="JOIN ax_flurstueck f ON vfb.beziehung_von = f.gml_id ";
@@ -190,7 +195,7 @@ function GB_Buchung_FS ($linelimit) {
 		$bsgml=$row["bsgml"]; // Buchungsstelle gml_id
 		if ($gwbv != $bvnr) { // Gruppierung Buchungs-Stelle (BVNR)
 			$gwbv = $bvnr;
-			zeile_buchung ($bsgml, $bvnr, "", false); // Für GB-Kennz. (-> Link) fehlt Bezirk + Blatt
+			zeile_buchung($bsgml, $bvnr, $blattgbkenn, false, false);
 		}
 		$fs_gml=$row["gml_id"];
 		$gmkg=$row["gemarkungsname"];
@@ -199,7 +204,7 @@ function GB_Buchung_FS ($linelimit) {
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // BruchNr
 		$x=$row["x"];
 		$y=$row["y"];
-		zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur);
+		zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur, false);
 		$zfs1++;
 	}
 	#if($zfs1 == 0) { // "nichts gefunden" erst melden, wenn auch Teil 2 (Rechte an) nichts findet
@@ -221,25 +226,23 @@ function GB_Buchung_FS ($linelimit) {
 		return;
 	}
 	$zfs2=0;
-	#$gwblatt="";
 	$gwbv="";
 	while($row = pg_fetch_array($res)) {	
 		$bvnr=$row["lfd"];
 		$bsgml=$row["bsgml"]; // Buchungsstelle gml_id
 		if ($gwbv != $bvnr) { // Gruppierung Buchung (BVNR) - dienend
 			$gwbv = $bvnr;
-			zeile_buchung ($bsgml, $bvnr, "", true);
+			zeile_buchung($bsgml, $bvnr, $blattgbkenn, true, false);
 		}
 		$fs_gml=$row["gml_id"];
 		$gmkg=$row["gemarkungsname"];
 		$flur=$row["flurnummer"];
 		$fskenn=$row["zaehler"];
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
-		$x=$row["x"];
-		$y=$row["y"];
-		zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur);
+		zeile_flurstueck ($fs_gml, $fskenn, $row["x"], $row["y"], $gmkg, $flur, false);
 		$zfs2++;
 	}
+	// Foot
 	if($zfs1 + $zfs2 == 0) { 
 		echo "\n<p class='anz'>Kein Flurst&uuml;ck im berechtigten Bereich.</p>";
 	} elseif($zfs >= $linelimit) {

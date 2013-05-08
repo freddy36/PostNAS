@@ -1,6 +1,7 @@
 /* Style fuer ALKIS-Navigation 
 	Version
-	 2013-04-29 Abgleich Darstellung in IE/FF
+	2013-04-29	Abgleich Darstellung in IE/FF
+	2013-05-08  in Arbeit ...
 */
 body,p,a,.textfield,.sbutton	{font-family: Verdana, Arial, Helvetica, sans-serif;}
 body		{font-size: 11px; color: #000000; margin: 0px; border: 0px;}
@@ -23,20 +24,30 @@ a.blt		{color: maroon; background-color: yellow;} 	/* Link weitere ... */
 /* abgestuft eingerueckte Treffer in der Suche */
 div			{margin: 0px; padding: 0px;}
 div.back 	{font-size: 10px; color: gray; border-bottom: 1px dotted gray;}
+
 div.ga		{color: fuchsia;	margin-left:  0px; margin-top: 6px;} /* GB-Amtsgericht */
 div.gm		{color: green;		margin-left:  0px; margin-top: 6px;} /* Gemeinde */
-div.gk		{color: black;		margin-left:  5px; margin-top: 6px;} /* Gemarkung o. GB-Bezirk*/
+
+div.gk		{color: black;		margin-left:  5px; margin-top: 6px;} /* Gemarkung o. GB-Bezirk */
+div.pe		{color: black;		margin-left:  5px; margin-top: 0px;} /* Person, Eigentuemer */
+
 div.fl		{color: olive;		margin-left: 12px; margin-top: 4px;} /* Flur */
+
 div.gb		{color: green;		margin-left: 10px; margin-top: 3px;} /* Grundbuch */
+
 div.gs		{color: olive;		margin-left: 15px; margin-top: 2px;} /* Grundstueck, BVNR */
+
 div.fs		{color: navy;		margin-left: 20px; margin-top: 0px;} /* Flurstueck */
 div.hi		{color: gray;		margin-left: 20px; margin-top: 0px;} /* Historie */
-div.hn		{color: gray;		margin-left: 25px; margin-top: 0px;} /* Historie-Nachfolger */
+div.hn		{color: gray;		margin-left: 20px; margin-top: 0px;} /* Historie-Nachfolger */
+
 div.stu		{color: maroon; font-size: 13px;} /* Strasse - Ueberschrift */
 div.stl		{color: maroon; font-size: 11px; margin-top: 3px;} /* Strasse - Liste */
+
 td.hsnr		{font-size: 11px; text-align: center; padding-left: 4px; padding-right: 4px;} /* Hausnummer */
 hr				{color: silver; background-color: silver; height: 2px; border: 0px; width: 98%;}
 dfn.title	{color: maroon; font-size: 10px; text-align: right; padding-left: 8px; padding-right: 4px;}
+.aktuell		{background-color: #fdfbd0;}
 .textfield	{border: 1px solid #990000; height: 20px; width: 140px; background: #FFFFFF;}
 .sbutton		{font-size: 11px; font-weight: normal; border: solid 1px #000000; width: 22px; height: 20px; background: #6699FF;}
 img			{border: 0px;} /* Icons */
