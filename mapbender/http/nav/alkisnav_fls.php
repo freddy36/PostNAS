@@ -1,22 +1,15 @@
 <?php
 /* Version vom
-	2011-10-24	Nach Pos-Klick Highlight erneuern statt hideHighlight
-	2011-11-07	optional auch Historische FS suchen, Link auf Buchauskunft-Modul alkisfshis.php
-	2011-11-09	"h" hinter Flur oder Flurstück sucht sofort in Historie
-					Ausgabe Flur in Varianten aktuell/historisch mit gegenseitigen Verweisen
-	2011-11-11	Nachfolger-Liste in der DB nachschlagen, und aktuelle FS als solche kennzeichnen
-					neue Icons für Link mit Pfeil
-					Differenzierung mit/ohne Raumbezug bei Icons fuer Histor. FS
-					Gemarkung- und Flur-Zeile vor einzelnem Flurstück ausgeben
-	2011-11-17	Nachweis-Links über javascript im neuen Hochformat-Fenster
 	2013-04-16	"import_request_variables" entfällt in PHP 5.4, 
 					Fehlerkorrektur Komma in SQL bei FS-Suche.
 	2013-04-26	Ersetzen View "gemeinde_gemarkung" durch Tabelle "pp_gemarkung"
 					Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
+	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 */
 $cntget = extract($_GET);
-include("../../conf/alkisnav_conf.php");$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
+include("../../conf/alkisnav_conf.php");
+include("alkisnav_fkt.php"); // Funktionen$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);
 echo <<<END
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -27,7 +20,7 @@ echo <<<END
 	<meta http-equiv="expires" content="0">
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>ALKIS-Suche Flurst&uuml;ck</title>
-	<link rel="stylesheet" type="text/css" href="alkisnav.css"></link>
+	<link rel="stylesheet" type="text/css" href="alkisnav.css">
 	<script type="text/javascript">
 		function imFenster(dieURL) {
 			var link = encodeURI(dieURL);
@@ -40,7 +33,7 @@ echo <<<END
 </head>
 <body>
 <a href='javascript:history.back()'>
-	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck" />
+	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck">
 </a>
 <dfn class='title' id='transaktiontitle'></dfn>
 
@@ -72,8 +65,7 @@ function h_hinten($zahl) {
 
 function ZerlegungFsKennz($fskennz) {
 // Das eingegebene Flurstücks-Kennzeichen auseinander nehmen. Erwartet wird gggg-fff-zzzz/nnn
-	global $debug, $zgemkg, $zflur, $zzaehler, $znenner;	//	if ($debug > 1) {echo "<p class='dbg'>Zerlegen: '".$fskennz."'</p>";}
-	$arr = explode("-", $fskennz, 4);
+	global $debug, $zgemkg, $zflur, $zzaehler, $znenner;		$arr = explode("-", $fskennz, 4);
 	$zgemkg=trim($arr[0]);
 	$zflur=h_hinten($arr[1]);
 	$zfsnr=trim($arr[2]);
@@ -108,137 +100,222 @@ function ZerlegungFsKennz($fskennz) {
 	}
 }
 
-function gemkg_zeile($zgemkg) {
-// Eine Zeile zu Gemarkung ausgeben, Schlüssel wird übergeben, Name in DB nachschlagen
-	global $con, $gkz, $gemeinde, $epsg;
-	$sql ="SELECT bezeichnung FROM ax_gemarkung g WHERE g.gemarkungsnummer= $1 ;";
-	$v=array($zgemkg);
-	$res=pg_prepare("", $sql);
-	$res=pg_execute("", $v);
-	if (!$res) {echo "\n<p class='err'>Fehler bei Gemarkung.</p>";}
-	$zgmk=0;
-	while($row = pg_fetch_array($res)) { // eigentlich nur EINE
-		$gmkg=$row["bezeichnung"];
-		$zgmk++;
-		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
-			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."'> ".$gmkg." (".$zgemkg.")</a>";
-		echo "\n</div>";
+function flurstueckskoordinaten($gml) {
+	// Die Koordinaten zu einem Flurstück aus der Datenbank liefern
+	global $epsg;
+	$sqlk ="SELECT ";
+	if($epsg == "25832") { // Transform nicht notwendig
+		$sqlk.="x(st_Centroid(wkb_geometry)) AS x, ";
+		$sqlk.="y(st_Centroid(wkb_geometry)) AS y ";
+	} else {  
+		$sqlk.="x(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS x, ";
+		$sqlk.="y(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS y ";			
 	}
-	if ($zgmk == 0) {
-		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<p class='err'><img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
-				echo  " Gemarkung ".$zgemkg." ist unbekannt.</p>";
-		echo "\n</div>";
-		return;
-	}
-	return 0;
+   $sqlk.="FROM ax_flurstueck WHERE gml_id= $1 ";
+	$v=array($gml);
+	$resk=pg_prepare("", $sqlk);
+	$resk=pg_execute("", $v);
+	if (!$resk) {echo "\n<p class='err'>Fehler bei Koordinate.</p>";}
+	$rowk = pg_fetch_array($resk);
+	$koor=array("x" => $rowk["x"], "y" => $rowk["y"]);
+	return $koor;
 }
 
-function flur_zeile($zgemkg, $zflur) {
-//	Eine Zeile zur Flur ausgeben
-	global $con, $gkz, $gemeinde, $epsg;
-	echo "\n<div class='fl' title='Flur'>";
-		echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
-		$url=$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$zflur;
-		echo "Flur <a href='".$url."'>".$zflur."</a>";
-		//echo "<span class='hislnk'>";
-		echo " <a class='hislnk' title='Historische Flurst&uuml;cke' href='".$url."&amp;hist=j'>Hist.</a>";		
+function zeile_gemeinde ($gnr, $gemeindename) {
+	// Eine Zeile zu Gemeinde ausgeben, Schlüssel und Name wird übergeben
+	global $gkz, $gemeinde, $epsg;
+	$stadt=htmlentities($gemeindename, ENT_QUOTES, "UTF-8");
+	$bez=urlencode($gemeindename);
+	echo "\n<div class='gm' title='Gemeinde'>";
+		echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";
+		echo " Gem. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gm=".$gnr."&amp;bez=".$bez."'>";		
+		echo  " ".$stadt."</a> (".$gnr.")";
 	echo "\n</div>";
-	return 0;
+	return;
+}
+
+function zeile_gemarkung($gnr, $gemkgname) {
+	// Eine Zeile zu Gemarkung ausgeben
+	global $con, $gkz, $gemeinde, $epsg, $gfilter;
+	if ($gemkgname == "") { // Falls Gem.-Name fehlt, in DB nachschlagen
+		$sql ="SELECT g.gemarkungsname FROM pp_gemarkung g WHERE g.gemarkung = $1 LIMIT 1;";
+		$v=array($gnr);
+		$res=pg_prepare("", $sql);
+		$res=pg_execute("", $v);
+		if (!$res) {echo "\n<p class='err'>Fehler bei Gemarkungsname.</p>";}
+		$row = pg_fetch_array($res);
+		$gemkgname=$row["gemarkungsname"];
+	}
+	if ($gemkgname == "") {$gemkgname = "(unbekannt)";}
+	$gnam=htmlentities($gemkgname, ENT_QUOTES, "UTF-8");
+	echo "\n<div class='gk' title='Gemarkung'>";
+	echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
+	echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gnr."'>";		
+	echo  " ".$gnam."</a> (".$gnr.")";
+	echo "\n</div>";
+	return;
+}
+
+function zeile_flur($zgemkg, $zflur, $historie) { // Eine Zeile zur Flur ausgeben
+	global $gkz, $gemeinde, $epsg;
+	echo "\n<div class='fl' title='Flur'>";
+	echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
+	$url=$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$zflur;
+	echo "<a title='Aktuelle Flurst&uuml;cke suchen' href='".$url."'>Flur ".$zflur." </a>"; 
+	If ($historie) { // Link zur hist. Suche anbieten
+		echo " <a class='hislnk' title='Historische Flurst&uuml;cke der Flur' href='".$url."&amp;hist=j'>Hist.</a>";
+	}
+	echo "\n</div>";	
+	return;
+}
+
+function zeile_hist_fs($fs_gml, $fskenn, $ftyp, $gknr, $flur) {
+	// Eine Zeile für ein historisches Flurstück ausgeben 
+	global $gkz, $gemeinde, $epsg, $auskpath;
+	if ($ftyp == "h") {
+		$ico="Flurstueck_Historisch_Lnk.ico";
+		$titl="Historisches Flurst&uuml;ck";
+	} else {
+		$ico="Flurstueck_Historisch_oR_Lnk.ico";
+		$titl="Historisches Flurst&uuml;ck ohne Raumbezug";
+	}
+	echo "\n<div class='hi' title='".$titl."'>";
+
+	// Icon -> Buchnachweis
+	echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
+		echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist'>";
+	echo "\n\t</a>";
+
+	// Zeile -> tiefer in die Historie
+	$flurl =$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;hist=j";
+	$flurl.="&amp;fskennz=".$gknr."-".$flur."-";
+	echo "\n\thist. Flst. <a href='".$flurl.$fskenn."'>".$fskenn."</a>";		
+
+	echo "\n</div>";
+	return;
+}
+
+function zeile_nachf_fs($gml, $gknr, $flur, $fskenn, $ftyp) {
+	// Eine Zeile für ein Nachfolger-Flurstück eines hist. Fs. ausgeben 
+	global $gkz, $gemeinde, $epsg, $auskpath;
+	$fs=$gknr."-".$flur."-".$fskenn;
+	switch ($ftyp) {
+
+	#case "a":
+	#	// Fuer ein akt. FS wird hier ein Link auf FS-Kennzeichen-Eingabe angeboten.
+	#	// Erst aus der nächsten Anzeige kann dann positioniert werden.
+	#	$ico="Flurstueck_Link.ico";
+	#	$titl="Aktuelles Flurst&uuml;ck";
+	#	$hisparm="";
+	#	$auskprog="alkisfsnw";
+	#	break;
+		
+	case "a": // Alternativ: hier gleich eine FS-Zeile mit Link ausgeben (Einrückung css passt nicht)
+		$koor=flurstueckskoordinaten($gml);
+		zeile_flurstueck($gml, $fskenn, $koor["x"], $koor["y"], "", "");
+		return;
+		break;
+
+	case "h":
+		$ico="Flurstueck_Historisch_Lnk.ico";
+		$titl="Historisches Flurst&uuml;ck";
+		$hisparm="&amp;hist=j";
+		$auskprog="alkisfshist";
+		break;
+	case "o":
+		$ico="Flurstueck_Historisch_oR_Lnk.ico";
+		$titl="Historisches Flurst&uuml;ck ohne Raumbezug";
+		$hisparm="&amp;hist=j";
+		$auskprog="alkisfshist";
+		break;
+	}
+	// für die Hist.-Fälle:
+	echo "\n<div class='hn' title='Nachfolger: ".$titl."'>";			
+		echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath.$auskprog.".php?gkz=".$gkz."&amp;gmlid=".$gml."\")'>";
+			echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='FS'>";
+		echo "\n\t</a> ";		
+		echo "Flst. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fs.$hisparm."'>".$fskenn."</a>";					
+	echo "\n</div>";
+	return;
 }
 
 function ListGemeinden() {
-// bei Leereingabe die Gemeinden anlisten
+	// Bei Leereingabe im Formular die Gemeinden auflisten
 	global $con, $gkz, $gemeinde, $epsg, $debug, $gfilter;
-	$linelimit=50;
+	$linelimit=60;
 	$sql ="SELECT gemeinde, gemeindename FROM pp_gemeinde ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="WHERE gemeinde=".$gemeinde." ";
-			break;
+			$sql.="WHERE gemeinde=".$gemeinde." "; break;
 		case 2: // Liste
-			$sql.="WHERE gemeinde in (".$gemeinde.") ";
-			break;
-		default: // kein Filter
-			break;
+			$sql.="WHERE gemeinde in (".$gemeinde.") "; break;
+		default: break;
 	}
 	$sql.=" ORDER BY gemeindename LIMIT $1 ;";
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", array($linelimit));
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Gemeinde</p>";
-		if ($debug >= 3) {echo "\n<p class='dbg'>".$sql."</p>";}
+		#if ($debug >= 3) {echo "\n<p class='dbg'>".$sql."</p>";}
 		return 0;
 	}
 	$cnt = 0;
 	while($row = pg_fetch_array($res)) {
-		$gemeindename=$row["gemeindename"];
-		$stadt=htmlentities($gemeindename, ENT_QUOTES, "UTF-8");
-		$bez=urlencode($gemeindename);  // Uebergeben an ListGmkgInGemeinde
-		$gnr=$row["gemeinde"];		echo "\n<div class='gm' title='Gemeinde'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";
-			echo " Gem. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gm=".$gnr."&amp;bez=".$bez."'>";		
-			echo  " ".$stadt."</a> (".$gnr.")";
-		echo "\n</div>";
+		$gnr=$row["gemeinde"];
+		$gemeindename=$row["gemeindename"];		zeile_gemeinde($gnr, $gemeindename);
 		$cnt++;
 	}
-	if($cnt == 0){ 
+	// Foot
+	if($cnt == 0) { 
 		echo "\n<p class='anz'>Keine Gemeinde.</p>";
 	} elseif($cnt >= $linelimit) {
 		echo "\n<p class='anz' title='Bitte eindeutiger qualifizieren'>".$cnt." Gemeinden ... und weitere</p>";
-		// +++ Blättern ?
 	} elseif($cnt == 1) { // Eindeutig!
 		return $gnr; 
 	} else {
 		echo "\n<p class='anz'>".$cnt." Gemeinden</p>";
 	}
-	return 0;
+	return;
 }
 
-function ListGmkgInGemeinde($gkey) {
-// Die (gefuellten) Gemarkungen zu einem Gemeinde-Key (aus Link) listen
-	global $con, $gkz, $gemeinde, $epsg, $debug, $gfilter, $bez;
+function ListGmkgInGemeinde($gkey, $bez) {
+	// Die Gemarkungen zu einem Gemeinde-Key (aus Link) listen
+	global $con, $gkz, $gemeinde, $epsg, $debug, $gfilter;
 	$linelimit=70;
-	$sql ="SELECT gemarkung, gemarkungsname FROM pp_gemarkung ";
-   $sql.="WHERE gemeinde= $1 ORDER BY gemarkungsname LIMIT $2 ;";
+
+	// Head
+	zeile_gemeinde($gkey, $bez);
+
+	// Body
+	$sql ="SELECT gemarkung, gemarkungsname FROM pp_gemarkung WHERE gemeinde= $1 ORDER BY gemarkungsname LIMIT $2 ;";
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", array($gkey, $linelimit));
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Gemarkungen</p>";
-		if ($debug >= 3) {echo "\n<p class='dbg'>".$sql."</p>";}
-		return 0;
+		return 1;
 	}
-	// Hierarchie Dokumentieren, Gemeinde-Name?
-	echo "\n<div class='gm' title='Gemeinde'>";
-		echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";	
-		echo  " Gem. ".$bez." (".$gkey.")"; // .urldecode($bez). ??
-	echo "\n</div>";
 	$cnt = 0;
 	while($row = pg_fetch_array($res)) {
-		$gnam=htmlentities($row["gemarkungsname"], ENT_QUOTES, "UTF-8");
-		$gnr=$row["gemarkung"];		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
-			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gnr."'>";		
-			echo  " ".$gnam."</a> (".$gnr.")";
-		echo "\n</div>";
+		$gnr=$row["gemarkung"];
+		$gnam=$row["gemarkungsname"];
+		zeile_gemarkung($gnr, $gnam, "");
 		$cnt++;
 	}
+	// Foot
 	if($cnt == 0){ 
 		echo "\n<p class='anz'>Keine Gemarkung.</p>";
 	} elseif($cnt >= $linelimit) {
 		echo "\n<p class='anz' title='Bitte eindeutiger qualifizieren'>".$cnt." Gemarkungen ... und weitere</p>";
-		// +++ Blättern ?
 	} elseif($cnt == 1) { // Eindeutig!
 		return $gnr; 
 	} else {
 		echo "\n<p class='anz'>".$cnt." Gemarkungen</p>";
 	}
-	return 0;
+	return;
 }
 
 function SuchGmkgName() {
-// Gemarkung suchen nach Name(-nsanfang)
+	// Gemarkung suchen nach Name(-nsanfang)
 	global $con, $gkz, $gemeinde, $epsg, $debug, $fskennz, $gfilter;
 	$linelimit=120;
 	if(preg_match("/\*/",$fskennz)){
@@ -246,54 +323,38 @@ function SuchGmkgName() {
 	} else {
 		$match = trim($fskennz)."%";
 	}	
-	$sql ="SELECT g.gemeinde, g.gemarkung, g.gemarkungsname ";
-	If ($gfilter == 0 OR $gfilter == 2) { // Stadt anzeigen
-		$sql.=", s.gemeindename FROM pp_gemarkung g JOIN pp_gemeinde s ON g.gemeinde = s.gemeinde ";
-	} else {
-		$sql.="FROM pp_gemarkung g ";
-	}
+	$sql ="SELECT g.gemeinde, g.gemarkung, g.gemarkungsname, s.gemeindename ";
+	$sql.="FROM pp_gemarkung g JOIN pp_gemeinde s ON g.gemeinde = s.gemeinde ";
 	$sql.="WHERE g.gemarkungsname ILIKE $1 ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="AND g.gemeinde = ".$gemeinde." ";
-			break;
+			$sql.="AND g.gemeinde = ".$gemeinde." "; break;
 		case 2: // Liste
-			$sql.="AND g.gemeinde in (".$gemeinde.") ";
-			break;
-		default: // kein Filter
-			break;
+			$sql.="AND g.gemeinde in (".$gemeinde.") "; break;
 	}
-	$sql.=" ORDER BY g.gemarkungsname LIMIT $2 ;";
+	$sql.=" ORDER BY s.gemeindename, g.gemarkungsname LIMIT $2 ;";
 	$v=array($match, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Gemarkung</p>";
-		if ($debug >= 3) {echo "\n<p class='dbg'>".$sql."</p>";}
-		return 0;
+		return;
 	}
 	$cnt = 0;
+	$gwgem="";
 	while($row = pg_fetch_array($res)) {
-		$gnam=htmlentities($row["gemarkungsname"], ENT_QUOTES, "UTF-8");
+		$gemeindename=$row["gemeindename"];
+		if ($gwgem != $gemeindename) { // Gruppierung Gemeinde
+			$gwgem = $gemeindename;
+			$skey=$row["gemeinde"];
+			zeile_gemeinde($skey, $gemeindename);
+		}
+		$gnam=$row["gemarkungsname"];
 		$gnr=$row["gemarkung"];
-
-		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
-			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gnr."'>";		
-			echo  " ".$gnam."</a> (".$gnr.")";
-			switch ($gfilter) {
-				case 0: // Kein Filter
-					echo " ".$row["gemeindename"];
-					break;
-				case 2: // Liste
-					echo " ".$row["gemeindename"];
-					break;
-				default: // Einzelwert
-					break;
-			}
-		echo "\n</div>";
+		zeile_gemarkung($gnr, $gnam, $gemeindename);
 		$cnt++;
 	}
+	// Foot
 	if($cnt == 0){ 
 		echo "\n<p class='anz'>Keine Gemarkung.</p>";
 	} elseif($cnt >= $linelimit) {
@@ -303,53 +364,50 @@ function SuchGmkgName() {
 	} else {
 		echo "\n<p class='anz'>".$cnt." Gemarkungen</p>";
 	}
-	return 0;
+	return;
+}
+
+function gg_head($gkgnr) {
+	// Übergeordnete Zeilen (Head) für Gemeinde und Gemarkung ausgeben
+	// Parameter = Gemarkungsnummer
+	$sqlh ="SELECT g.gemarkungsname, s.gemeinde, s.gemeindename FROM pp_gemarkung g ";
+	$sqlh.="JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde AND g.land=s.land ";
+	$sqlh.="WHERE g.gemarkung = $1 ;";
+	$v=array($gkgnr);
+	$resh=pg_prepare("", $sqlh);
+	$resh=pg_execute("", $v);
+	if (!$resh) {echo "\n<p class='err'>Fehler bei Gemeinde und Gemarkung.</p>";}
+	$rowh = pg_fetch_array($resh);
+	$gmkg=$rowh["gemarkungsname"];
+	$skey=$rowh["gemeinde"];
+	$snam=$rowh["gemeindename"];
+	zeile_gemeinde($skey, $snam);
+	zeile_gemarkung($gkgnr, $gmkg);
+	return;
 }
 
 function EineGemarkung($AuchGemkZeile) {
-// Kennzeichen bestehend nur aus Gemarkung-Schlüssel wurde eingegeben
+	// Kennzeichen bestehend nur aus Gemarkung-Schlüssel wurde eingegeben
+	// Parameter = $zgemkg
 	global $con, $gkz, $gemeinde, $epsg, $debug, $zgemkg;
-	$linelimit=120; // max. Fluren je Gemarkung
-	if ($AuchGemkZeile) {
-		$sql ="SELECT bezeichnung FROM ax_gemarkung g WHERE g.gemarkungsnummer= $1 ;"; // WHERE f.land= ?
-		$v=array($zgemkg);
-		$res=pg_prepare("", $sql);
-		$res=pg_execute("", $v);
-		if (!$res) {echo "\n<p class='err'>Fehler bei Gemarkung.</p>";}
-		$zgmk=0;
-		while($row = pg_fetch_array($res)) {	
-			$gmkg=$row["bezeichnung"];
-			$zgmk++;
-		}
-		if ($zgmk == 0) {
-			echo "\n<div class='gk' title='Gemarkung'>";
-				echo "\n\t\t<p class='err'><img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
-					echo  " Gemarkung ".$zgemkg." ist unbekannt.</p>";
-			echo "\n</div>";
-			return;
-		}
-		// > 1 auch möglich?
-		echo "\n<div class='gk' title='Gemarkung'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'> ";
-			echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."'>";		
-			echo $gmkg."</a>  (".$zgemkg.")"; // in Gemeinde?
-		echo "\n</div>";
-	}
+	$linelimit=120; // max.Fluren/Gemkg
+
+	// Head
+	if ($AuchGemkZeile) {gg_head($zgemkg);}
+	// Body
 	$sql ="SELECT gemarkungsteilflur AS flur FROM ax_gemarkungsteilflur f ";
-	$sql.="WHERE gemarkung= $1 ORDER BY gemarkungsteilflur LIMIT $2 ;"; 	// WHERE f.land= ?
+	$sql.="WHERE gemarkung= $1 ORDER BY gemarkungsteilflur LIMIT $2 ;"; //WHERE f.land=?
 	$v=array($zgemkg, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {echo "\n<p class='err'>Fehler bei Flur.</p>";}
 	$zfl=0;
 	while($row = pg_fetch_array($res)) {	
-		$flur=$row["flur"];
-		echo "\n<div class='fl' title='Flur'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'>&nbsp;";
-			echo "Flur<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$flur."'>&nbsp;".$flur."&nbsp;</a>";
-		echo "\n</div>";
+		$zflur=$row["flur"];
+		zeile_flur($zgemkg, $zflur, false);
 		$zfl++;
 	}
+	// Foot
 	if($zfl == 0) { 
 		echo "\n<p class='anz'>Keine Flur.</p>";
 	} elseif($zfl >= $linelimit) {
@@ -361,12 +419,15 @@ function EineGemarkung($AuchGemkZeile) {
 }
 
 function EineFlur() {
-// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben, dazu aktuelle Flurstücke suchen
-	global $con, $gkz, $gemeinde, $epsg, $debug, $scalefs, $auskpath, $zgemkg, $zflur;
+	// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben, dazu aktuelle Flurstücke suchen
+	global $con, $gkz, $gemeinde, $epsg, $debug, $zgemkg, $zflur;
 	$linelimit=600; // Wie groß kann eine Flur sein?
-	gemkg_zeile($zgemkg);
-	flur_zeile($zgemkg, $zflur);
 
+	// Head
+	gg_head($zgemkg);
+	zeile_flur($zgemkg, $zflur, true);
+
+	// Body
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
@@ -376,7 +437,7 @@ function EineFlur() {
 		$sql.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
    $sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 ";
-	$sql.="ORDER BY f.zaehler, f.nenner LIMIT $3 ;"; // WHERE f.land= ?
+	$sql.="ORDER BY f.zaehler, f.nenner LIMIT $3 ;"; // WHERE f.land=?
 	$v=array($zgemkg, $zflur, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -389,21 +450,10 @@ function EineFlur() {
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
 		$x=$row["x"];
 		$y=$row["y"];
-		echo "\n<div class='fs'>";
-			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
-				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
-			echo "\n\t</a> ";			
-			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-					echo "javascript:";
-					echo "transtitle(\"auf Flurst&uuml;ck positioniert\"); ";
-					echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
-					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
-				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
-				echo "onmouseout='parent.parent.hideHighlight()'>&nbsp;".$fskenn."&nbsp;</a>";
-		echo "\n</div>";
+		zeile_flurstueck ($fs_gml, $fskenn, $x, $y, "", "");
 		$zfs++;
 	}
-	if($zfs == 0) { 
+	if($zfs == 0) {
 		echo "\n<p class='anz'>Kein Flurst&uuml;ck.</p>";
 	} elseif($zfs >= $linelimit) {
 		echo "\n<p class='anz'>".$zfs." Flurst&uuml;cke... und weitere</p>";
@@ -414,18 +464,16 @@ function EineFlur() {
 }
 
 function HistFlur() {
-// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben
-// Die Flur nach historischen Flurstücken durchsuchen
+	// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben
+	// Die Flur nach historischen Flurstücken durchsuchen
 	global $con, $gkz, $gemeinde, $epsg, $debug, $scalefs, $auskpath, $land, $zgemkg, $zflur;
 	$linelimit=500;
 
-	gemkg_zeile($zgemkg);
-	echo "\n<div class='fl' title='Flur'>";
-		echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur-Historie'> ";
-		$url=$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$zgemkg."-".$zflur;
-		echo "Historie: Flur<a title='Aktuelle Flurst&uuml;cke suchen' href='".$url."'> ".$zflur." </a>"; 
-	echo "\n</div>";
+	// Head	
+	gg_head($zgemkg);
+	zeile_flur($zgemkg, $zflur, true);
 
+	// Body
 	$whcl.="WHERE flurstueckskennzeichen like $1 ";
 	$sql ="SELECT 'h' AS ftyp, gml_id, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
 	$sql.="UNION SELECT 'o' AS ftyp, gml_id, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
@@ -436,32 +484,16 @@ function HistFlur() {
 	$res=pg_execute("", $v);
 	if (!$res) {echo "\n<p class='err'>Fehler bei Historie Flur.</p>";}
 	$zfs=0;
-
-	// Konst. Teil d.URL (Flur), FS anhängen
-	$flurl=$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;hist=j&amp;fskennz=".$zgemkg."-".$zflur."-";
-
 	while($row = pg_fetch_array($res)) {	
 		$ftyp=$row["ftyp"];
 		$fs_gml=$row["gml_id"];	// fuer Buchausk.
 		$fskenn=$row["zaehler"];
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
-		if ($ftyp == "h") {
-			$ico="Flurstueck_Historisch_Lnk.ico";
-			$titl="Historisches Flurst&uuml;ck";		
-		} else {
-			$ico="Flurstueck_Historisch_oR_Lnk.ico";
-			$titl="Historisches Flurst&uuml;ck ohne Raumbezug";
-		}  // h: Karte Pos.?
-		echo "\n<div class='hi' title='".$titl."'>"; // Zeile
-			// Icon -> Bauchauskunft
-			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
-				echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist'>";
-			echo "\n\t</a> ";		
-			// Kennzeichen -> weiter in die Historie hinein
-			echo "\n\tFlst. <a href='".$flurl.$fskenn."'>".$fskenn."</a>";					
-		echo "\n</div>";
+		zeile_hist_fs($fs_gml, $fskenn, $ftyp, $zgemkg, $zflur);
 		$zfs++;
 	}
+
+	// Foot
 	if($zfs == 0) { 
 		echo "\n<p class='anz'>Kein historisches Flurst&uuml;ck.</p>";
 		#if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = ".$fskzwhere."</p>";}
@@ -474,19 +506,20 @@ function HistFlur() {
 }
 
 function EinFlurstueck() {
-// Flurstückskennzeichen wurde komplett bis zum Zaehler eingegeben
-// Sonderfall: bei Bruchnummer, mehrere Nenner zum Zaehler
-	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $fskennz, $zgemkg, $zflur, $zzaehler, $znenner;
+	// Flurstückskennzeichen wurde komplett bis zum Zaehler eingegeben
+	// Sonderfall: bei Bruchnummer, mehrere Nenner zum Zaehler
+	global $con, $gkz, $debug, $epsg, $gemeinde, $fskennz, $zgemkg, $zflur, $zzaehler, $znenner;
 
-	gemkg_zeile($zgemkg);
-	flur_zeile($zgemkg, $zflur);
+	// Head
+	gg_head($zgemkg);
+	zeile_flur($zgemkg, $zflur, true);
 
+	// Body
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql.="x(st_Centroid(f.wkb_geometry)) AS x, ";
 		$sql.="y(st_Centroid(f.wkb_geometry)) AS y ";
-	}
-	else {  
+	} else {  
 		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
@@ -503,60 +536,51 @@ function EinFlurstueck() {
 		$fs_gml=$row["gml_id"];
 		$flur=$row["flurnummer"];
 		$fskenn=$row["zaehler"];
-		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
-		$x=$row["x"];
-		$y=$row["y"];
-		echo "\n<div class='fs'>";
-			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
-				echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
-			echo "\n\t</a> ";		
-			echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-					echo "javascript:";
-					echo "transtitle(\"auf Flurst&uuml;ck positioniert\"); ";
-					echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
-					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
-				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
-				echo "onmouseout='parent.parent.hideHighlight()'>";
-			echo $fskenn."</a>";
-		echo "\n</div>";
+		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];}
+		zeile_flurstueck($fs_gml, $fskenn, $row["x"], $row["y"], "", "");
 		$zfs++;
 	}
+	// Foot
 	if($zfs == 0) {
-		echo "\n<p class='err'>Kein aktuelles Flurst&uuml;ck.</p>";
-		// Soll in der Historie weiter gesucht werden?
-		echo "\n<div class='hi' title='Historie'>";
+		echo "\n<p class='anz'>Kein aktuelles Flurst&uuml;ck.</p>";
+		echo "\n<div class='hi' title='in Historie suchen'>";
 			echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Historisch.ico' width='16' height='16' alt='Historisches Flurst&uuml;ck'>&nbsp;";
-			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fskennz."&amp;hist=j'>in Historie suchen</a>";
+			echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fskennz."&amp;hist=j'>";
+			echo $zgemkg."-".$zflur."-".$zzaehler;
+			if ($znenner != "") {echo "/".$znenner;}
+			echo " h - suchen</a>";
 		echo "\n</div>";		
 	}
 	return;
 }
 
 function HistFlurstueck() {
-	// Ein Nachfolger-FS-Kennzeichen soll recherchiert werden.
-	// Es ist unbekannt, ob dies aktuell ist oder auch schon historisch.
-	global $con, $gkz, $debug, $scalefs, $epsg, $auskpath, $land, $zgemkg, $zflur, $zzaehler, $znenner;
+	// Die Nachfolger-FS-Kennzeichen sollen recherchiert werden.
+	global $debug, $land, $zgemkg, $zflur, $zzaehler, $znenner;
 
-	gemkg_zeile($zgemkg);
-	flur_zeile($zgemkg, $zflur);
+	// Head
+	gg_head($zgemkg);
+	zeile_flur($zgemkg, $zflur, true);
 
-	// Suche ueber das Flurstueckskennzeichen, gml ist meist unbekannt
+	// Body
+	// Suche ueber das Flurstueckskennzeichen, gml unbekannt
+	$fldlist=" AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, ";
 	$whcl.="WHERE flurstueckskennzeichen= $1 ";
-	$sql ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, null as nachf FROM ax_flurstueck ".$whcl;
-	$sql.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
-	$sql.="UNION SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
-
+	$sql ="SELECT 'a'".$fldlist."null as nachf FROM ax_flurstueck ".$whcl;
+	$sql.="UNION SELECT 'h'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
+	$sql.="UNION SELECT 'o'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
 	$fskzwhere =$land.$zgemkg; // Flurst-Kennz. f. Where
 	$fskzwhere.=str_pad($zflur, 3, "0", $STR_PAD_LEFT);
 	$fskzwhere.=str_pad($zzaehler, 5, "0", $STR_PAD_LEFT);
 	if ($znenner == "") {$fskzwhere.="______";}
 	else {$fskzwhere.=str_pad($znenner, 4, "0", $STR_PAD_LEFT)."__";}
-
 	$v=array($fskzwhere);
+
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {echo "\n<p class='err'>Fehler bei hist. Flurst&uuml;ck.</p>";}
 	$zfs=0;
+
 	while($row = pg_fetch_array($res)) {
 		$ftyp=$row["ftyp"];
 		$fs_gml=$row["gml_id"];
@@ -564,140 +588,55 @@ function HistFlurstueck() {
 		$flur=$row["flurnummer"];
 		$fskenn=$row["zaehler"];
 		$nachf=$row["nachf"];
-		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];} // Bruchnummer
-
-		if ($ftyp == "a") { // aktuelles FS gefunden, Koordinate holen
-
-			// BEGINN +++ als function ?
-			$sqlk ="SELECT ";
-			if($epsg == "25832") { // Transform nicht notwendig
-				$sqlk.="x(st_Centroid(wkb_geometry)) AS x, ";
-				$sqlk.="y(st_Centroid(wkb_geometry)) AS y ";
-			} else {  
-				$sqlk.="x(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS x, ";
-				$sqlk.="y(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS y ";			
-			}
-		   $sqlk.="FROM ax_flurstueck WHERE gml_id= $1 ";
-			$v=array($fs_gml);
-			$resk=pg_prepare("", $sqlk);
-			$resk=pg_execute("", $v);
-			if (!$resk) {echo "\n<p class='err'>Fehler bei Koordinate.</p>";}
-			$zfsk=0;
-			while($rowk = pg_fetch_array($resk)) {	
-				$x=$rowk["x"];
-				$y=$rowk["y"];
-				$zfsk++;
-			}
-			if ($zfsk == 0) {echo "\n<p class='err'>Kein Treffer bei Koordinate.</p>";}
-			// ENDE +++ als function ?
-
-			echo "\n<p>aktueller Nachfolger:</p>";	
-			echo "\n<div class='fs' title='Aktuelles Nachfolger-Flurst&uuml;ck'>"; // Zeile
-
-				// Icon -> Nachweis FS-Hist. in Buchauskunft
-				echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
-					echo "\n\t\t<img class='nwlink' src='ico/Flurstueck_Link.ico' width='16' height='16' alt='FS'>";
-				echo "\n\t</a> ";	
-
-				// Kennzeichen -> Karte positionieren
-				echo "\n\tFlst. <a title='Flurst&uuml;ck positionieren 1:".$scalefs."' href='";
-						echo "javascript:";
-						echo "transtitle(\"auf H-Flurst&uuml;ck positioniert\"); ";
-						echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalefs."); ";
-						echo "parent.parent.showHighlight(".$x.",".$y.");' ";
-					echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
-					echo "onmouseout='parent.parent.hideHighlight()'>";
-			//	echo $flur."-".$fskenn."</a>";
-				echo $fskenn."</a>";
-
-			echo "\n</div>";
-
+		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];}
+		if ($ftyp == "a") { // als aktuelles FS gefunden, das "h" war also unnötig!
+			$koor=flurstueckskoordinaten($fs_gml);
+			echo "\n<p>Flurst&uuml;ck ".$fskenn." ist aktuell, nicht historisch</p>";	
+			zeile_flurstueck ($fs_gml, $fskenn, $koor["x"], $koor["y"], $gknr, $flur);
 		} else { // Historisches FS gefunden (h oder o)
-		//	echo "\n<p>Historisches Flurst&uuml;ck:</p>";
-
-			if ($ftyp == "h") {
-				$ico="Flurstueck_Historisch_Lnk.ico";
-				$titl="Historisches Flurst&uuml;ck";
-			} else {
-				$ico="Flurstueck_Historisch_oR_Lnk.ico";
-				$titl="Historisches Flurst&uuml;ck ohne Raumbezug";
-			}  // h: Karte Pos.?
-			echo "\n<div class='hi' title='".$titl."'>";
-				echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
-					echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist'>";
-				echo "\n\t</a> Historisches Flst. ".$fskenn."</a>";
-			echo "\n</div>";
-
+			zeile_hist_fs($fs_gml, $fskenn, $ftyp, $gknr, $flur);
 			if ($nachf == "") {
 				echo "\n<p class='err'>keine Nachfolger</p>";	
 			} else {
 				echo "\n<p>Nachfolger-Flurst&uuml;cke:</p>";
-				// Die direkten Nachfolger ermitteln
+				// Direkte Nachfolger ermitteln. In $nachf steht ein Array von FS-Kennzeichen.
+				// Von den einzelnen Kennz. ist unbekannt, ob diese noch aktuell sind 
+				// oder auch schon wieder historisch.
 				// Nachfolger in DB suchen um den Status aktuell/historisch zu ermitteln
 				$stri=trim($nachf, "{}");
 				$stri="'".str_replace(",", "','", $stri)."'";
-			//	$whcln.="WHERE flurstueckskennzeichen IN ( $1 ) ";
 				$whcln.="WHERE flurstueckskennzeichen IN ( ".$stri." ) ";
-				$sqln ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_flurstueck ".$whcln;
-				$sqln.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueck ".$whcln;
-				$sqln.="UNION SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueckohneraumbezug ".$whcln;
-		//		$v=array($stri);
+				$nasql ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_flurstueck ".$whcln;
+				$nasql.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueck ".$whcln;
+				$nasql.="UNION SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueckohneraumbezug ".$whcln;
 				$v=array();
-				$resn=pg_prepare("", $sqln);
-				$resn=pg_execute("", $v);
-				if (!$resn) {echo "\n<p class='err'>Fehler bei Nachfolger.</p>";}
+				$nares=pg_prepare("", $nasql);
+				$nares=pg_execute("", $v);
+				if (!$nares) {echo "\n<p class='err'>Fehler bei Nachfolger.</p>";}
 				$zfsn=0;
-				while($rown = pg_fetch_array($resn)) {
-					$ftypn=$rown["ftyp"];
-					$na_gml=$rown["gml_id"];
-					$gknrn=$rown["gemarkungsnummer"];
-					$flurn=$rown["flurnummer"];
-					$fskennn=$rown["zaehler"];
-					if ($rown["nenner"] != "") {$fskennn.="/".$rown["nenner"];}
-
-					switch ($ftypn) {
-					case "a":
-						$ico="Flurstueck_Link.ico";
-						$titl="Aktuelles Flurst&uuml;ck";
-						$hisparm="";
-						$auskprog="alkisfsnw";
-						// ++ Koordinaten holen? siehe oben "als function"
-					break;
-					case "h":
-						$ico="Flurstueck_Historisch_Lnk.ico";
-						$titl="Historisches Flurst&uuml;ck";
-						$hisparm="&amp;hist=j";
-						$auskprog="alkisfshist";
-					break;
-					case "o":
-						$ico="Flurstueck_Historisch_oR_Lnk.ico";
-						$titl="Historisches Flurst&uuml;ck ohne Raumbezug";
-						$hisparm="&amp;hist=j";
-						$auskprog="alkisfshist";
-					break;
-					}
-					$fs=$gknrn."-".$flurn."-".$fskennn;
-					echo "\n<div class='hn' title='Nachfolger: ".$titl."'>";			
-						echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath.$auskprog.".php?gkz=".$gkz."&amp;gmlid=".$na_gml."\")'>";
-							echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='FS'>";
-						echo "\n\t</a> ";		
-						echo "Flst. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fs.$hisparm."'>".$fskennn."</a>";					
-					echo "\n</div>";
-
+				while($narow = pg_fetch_array($nares)) {
+					$naftyp=$narow["ftyp"];
+					$nagml=$narow["gml_id"];
+					$nagknr=$narow["gemarkungsnummer"];
+					$naflur=$narow["flurnummer"];
+					$nafskenn=$narow["zaehler"];
+					if ($narow["nenner"] != "") {$nafskenn.="/".$narow["nenner"];}
+					zeile_nachf_fs ($nagml, $nagknr, $naflur, $nafskenn, $naftyp);
 					$zfsn++;
-					// Kontrollieren: Wurden auch so viele FS in DB gefunden, wie im Array "Where in()" standen?
 				}
 				if ($zfsn == 0) {
-					echo "\n<p class='err'>keine Nachfolger gefunden</p>";
-					if ($debug > 1) {echo "\n<p class='dbg'>SQL=<br>".$sqln."<br>Liste=<br> ".$stri."</p>";}
-				}		
+					echo "\n<p class='anz'>keine Nachfolger gefunden</p>";
+				} else { // if($zfsn > 1)
+					echo "\n<p class='anz'>".$zfsn." Nachfolger-Flurst&uuml;cke</p>";
+				}
 			}
 		}
 		$zfs++;
 	}
+	// Foot
 	if($zfs == 0) {
-		echo "\n<p class='err'>Kein historisches Flurst&uuml;ck.</p>";
-		#if ($debug > 2) {echo "\n<p class='dbg'>".$sql."</p>";}
+		echo "\n<p class='anz'>Kein historisches Flurst&uuml;ck.</p>";
+		#if ($debug > 2) {echo  "\n<p class='dbg'> SQL= ".$sql."\n<br> $1 = FS-Kennz = '".$fskzwhere."'</p>";}
 	}
 	return;
 }
@@ -706,15 +645,13 @@ function HistFlurstueck() {
 // Start hier!
 // ===========
 if(isset($epsg)) {
-	//if ($debug >= 2) {echo "<p class='dbg'>aktueller EPSG='".$epsg."'</p>";} // aus MB
 	$epsg = str_replace("EPSG:", "" , $_REQUEST["epsg"]);	
 } else {
-	if ($debug >= 1) {echo "\n<p class='dbg'>kein EPSG gesetzt</p>";}	
-	$epsg=$gui_epsg; // aus Conf
+	#if ($debug >= 1) {echo "\n<p class='dbg'>kein EPSG gesetzt</p>";}	
+	$epsg=$gui_epsg; // Conf
 }
-//if ($debug >= 2) {echo "<p class='dbg'>Filter Gemeinde = ".$gemeinde."</p>";}
 if ($gemeinde == "") {
-	$gfilter = 0; // ungefiltert
+	$gfilter = 0;
 } elseif(strpos($gemeinde, ",") === false) {
 	$gfilter = 1; // Einzelwert
 } else {
@@ -722,28 +659,26 @@ if ($gemeinde == "") {
 }
 if ($hist == "j") {$phist = true;} else {$phist = false;}
 
-if(isset($gm)) { // Self-Link aus Gemeinde-Liste
+if($gm != "") { // Self-Link aus Gemeinde-Liste
 	$trans="Gemarkungen zur Gemeinde";
-	$gnr=ListGmkgInGemeinde($gm);
+	$gnr=ListGmkgInGemeinde($gm, $bez);
 	if ($gnr > 0) {
 		$zgemkg=$gnr;
 		EineGemarkung(false);
 	}
 } else { // Die Formular-Eingabe interpretieren (kann auch ein Link sein)
 	$retzer=ZerlegungFsKennz($fskennz);
-	#if ($debug > 1) {echo "<p class='dbg'>Return Zerlegung (case) = '".$retzer."'</p>";}	
 	switch ($retzer) {
 	case 0: // leere Eingabe
-		if ($gfilter == 1) { // Die GUI ist bereits auf eine Gemeinde gefiltert
+		if ($gfilter == 1) { // Die GUI ist bereits auf EINE Gemeinde gefiltert
 			$trans="Liste der Gemarkungen";
 			SuchGmkgName();
 		} else {
 			$trans="Liste der Gemeinden";
 			ListGemeinden();
 		}
-	break;
+		break;
 	case 1:
-		#if ($debug >= 2) {echo "<p class='dbg'>Gemarkungsname ".$zgemkg."</p>";}
 		$trans="Suche Gemarkungsname";
 		$gnr=SuchGmkgName();
 		if ($gnr > 0) {
@@ -751,14 +686,12 @@ if(isset($gm)) { // Self-Link aus Gemeinde-Liste
 			$zgemkg=$gnr;
 			EineGemarkung(false);
 		}
-	break;
+		break;
 	case 2:
-		#if ($debug >= 2) {echo "<p class='dbg'>Gemarkungsnummer ".$zgemkg."</p>";}
 		$trans="Fluren in Gemarkung";
 		EineGemarkung(true);
-	break;
+		break;
 	case 3:
-		#if ($debug >= 2) {echo "<p class='dbg'>Gemarkung ".$zgemkg." Flur ".$zflur."</p>";}
 		if ($phist)	{
 			$trans="historische Flurst. in Flur";
 			HistFlur();
@@ -766,9 +699,8 @@ if(isset($gm)) { // Self-Link aus Gemeinde-Liste
 			$trans="Flurst&uuml;cke in Flur";
 			EineFlur();
 		}
-	break;
+		break;
 	case 4:
-		#if ($debug >= 2) {echo "<p class='dbg'>Gemarkung ".$zgemkg." Flur ".$zflur." Flurstück ".$zzaehler."</p>";}
 		if ($phist)	{
 			$trans="historisches Flurst&uuml;ck";
 			HistFlurstueck();
@@ -776,7 +708,7 @@ if(isset($gm)) { // Self-Link aus Gemeinde-Liste
 			$trans="Flurst&uuml;ck";
 			EinFlurstueck();
 		}
-	break;
+		break;
 	case 5:
 		if ($phist) {
 			$trans="historisches Flurst&uuml;ck";
@@ -784,14 +716,15 @@ if(isset($gm)) { // Self-Link aus Gemeinde-Liste
 		} else {
 			$trans="Flurst&uuml;ck";
 			EinFlurstueck();
-		}		
-	break;
+		}	
+		break;
 	case 9:
 		$trans="falsche Eingabe";
 		echo "\n<p class='err'>Bitte ein Flurst&uuml;ckskennzeichen eingegeben, Format 'gggg-fff-zzzz/nnn</p>";
-	break;
+		break;
 	}
 }
+
 // Titel im Kopf anzeigen
 echo "\n<script type='text/javascript'>\n\ttranstitle('".$trans."')\n</script>";
 

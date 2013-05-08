@@ -1,14 +1,9 @@
 <?php
 /* Version vom 
-	2011-04-11	epsg in Link, transform nur wenn notwendig
-	2011-07-25	PostNAS 0.5/0.6 Versionen unterscheiden
-	2011-10-24	Nach Pos-Klick Highlight erneuern statt hideHighlight
-	2011-12-09	Sonderfall PostNAS 0.5 raus,
-	2012-12-03	A.E.: Ausgabe von Hausnr ohne Gebaeude
-	2013-01-15	F.J.: HsNr ohne Gebäude auf NRW/krz-Daten anpassen
 	2013-04-26	"import_request_variables" entfällt in PHP 5.4.
 					Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
+	2013-05-07  Strukturierung des Programms
 
 	ToDo:
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
@@ -39,7 +34,7 @@ echo <<<END
 </head>
 <body>
 <a href='javascript:history.back()'>
-	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck" />
+	<img src="ico/zurueck.ico" width="16" height="16" alt="&lt;&lt;" title="zur&uuml;ck">
 </a>
 <dfn class='title' id='transaktiontitle'></dfn>
 
@@ -128,7 +123,6 @@ function suchStrKey() {
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.lage LIKE $1 ";
-
 	switch ($gfilter) {
 		case 1: // Einzelwert
 			$sql.="AND k.gemeinde=".$gemeinde." ";
@@ -154,15 +148,12 @@ function suchStrKey() {
 		echo "\n\t<div class='stl' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
 			echo $skey." <a class='st' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$gkey."' title='".$gemname."'>".$sname;
 			echo "</a>";
-
 			switch ($gfilter) {
 				case 0: // Kein Filter
 					echo " in ".$gemname;
 					break;
 				case 2: // Liste
 					echo " in ".$gemname;
-					break;
-				default: // Einzelwert
 					break;
 			}
 		echo "</div>";
@@ -246,15 +237,11 @@ function suchHausZurStr($showParent){
 				case 2: // Liste
 					echo " in ".$gemname;
 					break;
-				default: // Einzelwert
-					break;
 			}			
 			echo "\n</div>";
 		}
 		echo "\n<hr>";
-
 		// Haeuser zum Strassenschluessel
-	//	$sql="SELECT replace(h.hausnummer,' ','') AS hsnr, subq.geb, "; // Subquery
 		$sql="SELECT replace(h.hausnummer,' ','') AS hsnr, ";
 		if($epsg == "25832") { // Transform nicht notwendig
 			$sql.="st_x(p.wkb_geometry) AS x, ";
@@ -263,18 +250,6 @@ function suchHausZurStr($showParent){
 			$sql.="st_x(st_transform(p.wkb_geometry,".$epsg.")) AS x, ";
 			$sql.="st_y(st_transform(p.wkb_geometry,".$epsg.")) AS y ";		
 		}
-
-/* Version mit // Subquery
-Liefert Informationen über Gebäude zur Hausnummer. Läuft aber spürbar langsamer.
-		$sql.="FROM ap_pto p JOIN alkis_beziehungen v ON p.gml_id = v.beziehung_von ";
-		$sql.="JOIN ax_lagebezeichnungmithausnummer h ON v.beziehung_zu = h.gml_id ";
-		$sql.="LEFT JOIN (SELECT b.beziehung_zu AS zu, g.gml_id AS geb FROM alkis_beziehungen b ";
-		$sql.="JOIN ax_gebaeude g ON b.beziehung_von=g.gml_id WHERE b.beziehungsart='zeigtAuf') subq ";
-		$sql.="ON h.gml_id = subq.zu WHERE v.beziehungsart='dientZurDarstellungVon' AND p.art = 'HNR' ";
-		$sql.="AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
-		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);"; */
-
-		// Version ohne Subquery
 		$sql.="FROM ap_pto p JOIN alkis_beziehungen v ON p.gml_id = v.beziehung_von ";
 		$sql.="JOIN ax_lagebezeichnungmithausnummer h ON v.beziehung_zu = h.gml_id ";
 		$sql.="WHERE v.beziehungsart='dientZurDarstellungVon' AND p.art = 'HNR' ";
@@ -290,20 +265,9 @@ Liefert Informationen über Gebäude zur Hausnummer. Läuft aber spürbar langsa
 		while($rowh = pg_fetch_array($resh)) { // mehrere HsNr je Zeile
 			if($count == 0){echo "\n<tr>";}	
 			$hsnr=$rowh["hsnr"];
-		//	$geb=$rowh["geb"]; // Subquery
 			$x=$rowh["x"];
 			$y=$rowh["y"];
-		/* // Subquery
-			if ($geb == "") { // kein Gebäude
-				$cls=" class='hsnro'";
-				$ttl="kein Haus";
-			} else {
-				$cls="";
-				$ttl="Haus ".$geb;
-			}
-		*/		
 			echo "\n\t<td class='hsnr'>";
-			//	echo "<a".$cls." href='";
 				echo "<a href='";
 					echo "javascript:";
 					echo "transtitle(\"auf Haus positioniert\"); ";
@@ -311,7 +275,6 @@ Liefert Informationen über Gebäude zur Hausnummer. Läuft aber spürbar langsa
 					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
 				echo "onmouseout='parent.parent.hideHighlight()";
-			//	echo "' title='".$ttl."'>".$hsnr."</a>"; // Subquery
 				echo "'>".$hsnr."</a>";
 			echo "</td>";
 			$cnt++;
