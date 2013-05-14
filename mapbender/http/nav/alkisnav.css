@@ -39,7 +39,7 @@ div.gs		{color: olive;		margin-left: 15px; margin-top: 2px;} /* Grundstueck, BVN
 
 div.fs		{color: navy;		margin-left: 20px; margin-top: 0px;} /* Flurstueck */
 div.hi		{color: gray;		margin-left: 20px; margin-top: 0px;} /* Historie */
-div.hn		{color: gray;		margin-left: 20px; margin-top: 0px;} /* Historie-Nachfolger */
+div.hn, p.hn	{color: gray;		margin-left: 20px; margin-top: 0px;} /* Historie-Nachfolger */
 
 div.stu		{color: maroon; font-size: 13px;} /* Strasse - Ueberschrift */
 div.stl		{color: maroon; font-size: 11px; margin-top: 3px;} /* Strasse - Liste */

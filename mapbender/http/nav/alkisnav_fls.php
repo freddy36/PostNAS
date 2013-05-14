@@ -6,7 +6,7 @@
 					Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
-	2013-05-08  Variablen-Namen geordnet, Hervorhebung aktuelles Objekt, in Arbeit ...
+	2013-05-14  Variablen-Namen geordnet, Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
@@ -39,11 +39,6 @@ echo <<<END
 <dfn class='title' id='transaktiontitle'></dfn>
 
 END;
-
-function is_ne_zahl($wert) {
-	// Prueft, ob ein Wert ausschließlich aus den Zahlen 0 bis 9 besteht
-	if (trim($wert, "0..9") == "") {return true;} else {return false;}
-}
 
 function h_hinten($zahl) {
 	// Testen: Wurde an eine Zahl ein "h" angehängt?
@@ -155,7 +150,7 @@ function zeile_gemarkung($gkgnr, $gkgname, $aktuell) {
 	$gnam=htmlentities($gkgname, ENT_QUOTES, "UTF-8");
 	if ($aktuell) {$cls=" aktuell";}
 	echo "\n<div class='gk".$cls."' title='Gemarkung'>";
-	echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='Gemarkung'>";
+	echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='GKG' title='Gemarkung'>";
 	echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gkgnr."'>";		
 	echo  " ".$gnam."</a> (".$gkgnr.")";
 	echo "\n</div>";
@@ -166,7 +161,7 @@ function zeile_flur($gkgnr, $flurnr, $histlnk, $aktuell) { // Eine Zeile zur Flu
 	global $gkz, $gemeinde, $epsg;
 	if ($aktuell) {$cls=" aktuell";}
 	echo "\n<div class='fl".$cls."' title='Flur'>";
-	echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='Flur'> ";
+	echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='FL' title='Flur'> ";
 	$url=$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gkgnr."-".$flurnr;
 	echo "<a title='Aktuelle Flurst&uuml;cke suchen' href='".$url."'>Flur ".$flurnr." </a>"; 
 	If ($histlnk) { // Link zur hist. Suche anbieten
@@ -191,7 +186,7 @@ function zeile_hist_fs($fs_gml, $fskenn, $ftyp, $gknr, $flur, $aktuell) {
 
 	// Icon -> Buchnachweis
 	echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfshist.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
-		echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist'>";
+		echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='Hist' title='".$titl."'>";
 	echo "\n\t</a>";
 
 	// Zeile -> tiefer in die Historie
@@ -229,7 +224,7 @@ function zeile_nachf_fs($gml, $gknr, $flur, $fskenn, $ftyp) {
 	// für die Hist.-Fälle:
 	echo "\n<div class='hn' title='Nachfolger: ".$titl."'>";			
 		echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath.$auskprog.".php?gkz=".$gkz."&amp;gmlid=".$gml."\")'>";
-			echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='FS'>";
+			echo "\n\t\t<img class='nwlink' src='ico/".$ico."' width='16' height='16' alt='FS' title='Nachweis'>";
 		echo "\n\t</a> ";		
 		echo "Flst. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$fs.$hisparm."'>".$fskenn."</a>";					
 	echo "\n</div>";
@@ -460,7 +455,7 @@ function EineFlur() {
 }
 
 function HistFlur() {
-	// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben
+	// Kennzeichen aus Gemarkung und FlurNr wurde eingegeben.
 	// Die Flur nach historischen Flurstücken durchsuchen
 	global $con, $gkz, $gemeinde, $epsg, $debug, $scalefs, $auskpath, $land, $zgemkg, $zflur;
 	$linelimit=500;
@@ -502,8 +497,8 @@ function HistFlur() {
 }
 
 function EinFlurstueck() {
-	// Flurstückskennzeichen wurde komplett bis zum Zaehler eingegeben
-	// Sonderfall: bei Bruchnummer, mehrere Nenner zum Zaehler
+	// Flurstückskennzeichen wurde komplett bis zum Zaehler (oder Nenner) eingegeben
+	// Sonderfall: bei Bruchnummer, mehrere Nenner zum Zaehler suchen wenn kein Nenner eingegeben wurde.
 	global $con, $gkz, $debug, $epsg, $gemeinde, $fskennz, $zgemkg, $zflur, $zzaehler, $znenner;
 
 	// Head
@@ -551,33 +546,46 @@ function EinFlurstueck() {
 }
 
 function HistFlurstueck() {
-	// Die Nachfolger-FS-Kennzeichen sollen recherchiert werden.
+	// Die Nachfolger-FS-Kennzeichen zu einem Historischen FS sollen recherchiert werden.
 	global $debug, $land, $zgemkg, $zflur, $zzaehler, $znenner;
 
 	// Head
 	gg_head($zgemkg, false);
 	zeile_flur($zgemkg, $zflur, true, false);
+	echo "\n<hr>";
 
 	// Body
 	// Suche ueber das Flurstueckskennzeichen, gml unbekannt
-	$fldlist=" AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, ";
-	$whcl.="WHERE flurstueckskennzeichen= $1 ";
-	$sql ="SELECT 'a'".$fldlist."null as nachf FROM ax_flurstueck ".$whcl;
-	$sql.="UNION SELECT 'h'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
-	$sql.="UNION SELECT 'o'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
 	$fskzwhere =$land.$zgemkg; // Flurst-Kennz. f. Where
 	$fskzwhere.=str_pad($zflur, 3, "0", $STR_PAD_LEFT);
 	$fskzwhere.=str_pad($zzaehler, 5, "0", $STR_PAD_LEFT);
-	if ($znenner == "") {$fskzwhere.="______";}
-	else {$fskzwhere.=str_pad($znenner, 4, "0", $STR_PAD_LEFT)."__";}
+	if ($znenner == "") {	// Wenn kein Nenner angegeben wurde, 
+		//wird mit Wildcard und like nach allen Nennern gesucht.
+		$fskzwhere.="____\_\_";	// für like 
+		// Das Wildcard-Zeichen "_" ist dummerweise mit Füllzeichen im Feldinhalt identisch
+		$whereop=" like ";
+	} else { // Ein Nenner wurde angegeben
+		$fskzwhere.=str_pad($znenner, 4, "0", $STR_PAD_LEFT)."__";
+		$whereop=" = ";
+	}
+	$whcl.="WHERE flurstueckskennzeichen ".$whereop." $1 ";
+	
+	$fldlist=" AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, ";
+
+	// NICHT in aktuell suchen wenn explizit historisch gesucht wird
+	#$sql ="SELECT 'a'".$fldlist."null as nachf FROM ax_flurstueck ".$whcl." UNION ";
+	$sql ="SELECT 'h'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
+	$sql.="UNION SELECT 'o'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
+
 	$v=array($fskzwhere);
+	#echo "<p class='dbg'>SQL=".$sql."<br>WHERE=".$fskzwhere."</p>";  // ++++ TEST
 
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {echo "\n<p class='err'>Fehler bei hist. Flurst&uuml;ck.</p>";}
 	$zfs=0;
 
-	while($row = pg_fetch_array($res)) {
+	while($row = pg_fetch_array($res)) { // Schleife Hist-FS
 		$ftyp=$row["ftyp"];
 		$fs_gml=$row["gml_id"];
 		$gknr=$row["gemarkungsnummer"];
@@ -585,48 +593,56 @@ function HistFlurstueck() {
 		$fskenn=$row["zaehler"];
 		$nachf=$row["nachf"];
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];}
-		if ($ftyp == "a") { // als aktuelles FS gefunden, das "h" war also unnötig!
-			$koor=flurstueckskoordinaten($fs_gml);
-			echo "\n<p>Flurst&uuml;ck ".$fskenn." ist aktuell, nicht historisch</p>";	
-			zeile_flurstueck ($fs_gml, $fskenn, $koor["x"], $koor["y"], $gknr, $flur, true);
-		} else { // Historisches FS gefunden (h oder o)
-			zeile_hist_fs($fs_gml, $fskenn, $ftyp, $gknr, $flur, true);
-			if ($nachf == "") {
-				echo "\n<p class='err'>keine Nachfolger</p>";	
-			} else {
-				echo "\n<p>Nachfolger-Flurst&uuml;cke:</p>";
-				// Direkte Nachfolger ermitteln. In $nachf steht ein Array von FS-Kennzeichen.
-				// Von den einzelnen Kennz. ist unbekannt, ob diese noch aktuell sind 
-				// oder auch schon wieder historisch.
-				// Nachfolger in DB suchen um den Status aktuell/historisch zu ermitteln
-				$stri=trim($nachf, "{}");
-				$stri="'".str_replace(",", "','", $stri)."'";
-				$whcln.="WHERE flurstueckskennzeichen IN ( ".$stri." ) ";
-				$nasql ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_flurstueck ".$whcln;
-				$nasql.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueck ".$whcln;
-				$nasql.="UNION SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueckohneraumbezug ".$whcln;
-				$v=array();
-				$nares=pg_prepare("", $nasql);
-				$nares=pg_execute("", $v);
-				if (!$nares) {echo "\n<p class='err'>Fehler bei Nachfolger.</p>";}
-				$zfsn=0;
-				while($narow = pg_fetch_array($nares)) {
-					$naftyp=$narow["ftyp"];
-					$nagml=$narow["gml_id"];
-					$nagknr=$narow["gemarkungsnummer"];
-					$naflur=$narow["flurnummer"];
-					$nafskenn=$narow["zaehler"];
-					if ($narow["nenner"] != "") {$nafskenn.="/".$narow["nenner"];}
-					zeile_nachf_fs ($nagml, $nagknr, $naflur, $nafskenn, $naftyp);
-					$zfsn++;
-				}
-				if ($zfsn == 0) {
-					echo "\n<p class='anz'>keine Nachfolger gefunden</p>";
-				} else { // if($zfsn > 1)
-					echo "\n<p class='anz'>".$zfsn." Nachfolger-Flurst&uuml;cke</p>";
-				}
+
+		#if ($ftyp == "a") { // als aktuelles FS gefunden, das "h" war also unnötig!
+		#	$koor=flurstueckskoordinaten($fs_gml);
+		#	echo "\n<p>Flurst&uuml;ck ".$fskenn." ist aktuell, nicht historisch</p>";	
+		#	zeile_flurstueck ($fs_gml, $fskenn, $koor["x"], $koor["y"], $gknr, $flur, true);
+		#} else { // Historisches FS gefunden (h oder o)
+
+		zeile_hist_fs($fs_gml, $fskenn, $ftyp, $gknr, $flur, true);
+		if ($nachf == "") {
+			echo "\n<p class='anz'>keine Nachfolger</p>";	
+		} else {
+			echo "\n<p class='hn'>Nachfolger-Flurst&uuml;cke:</p>";
+			// Direkte Nachfolger ermitteln. In $nachf steht ein Array von FS-Kennzeichen.
+			// Von den einzelnen Kennz. ist unbekannt, ob diese noch aktuell sind 
+			// oder auch schon wieder historisch.
+			// Nachfolger in DB suchen um den Status aktuell/historisch zu ermitteln
+			$stri=trim($nachf, "{}");
+			$stri="'".str_replace(",", "','", $stri)."'";
+
+			$nawhcl="WHERE flurstueckskennzeichen IN ( ".$stri." ) ";
+
+			$nasql ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_flurstueck ".$nawhcl;
+			$nasql.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueck ".$nawhcl;
+			$nasql.="UNION SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueckohneraumbezug ".$nawhcl;
+
+			$v=array();
+			$nares=pg_prepare("", $nasql);
+			$nares=pg_execute("", $v);
+			if (!$nares) {echo "\n<p class='err'>Fehler bei Nachfolger.</p>";}
+			$zfsn=0;
+			// inner Body
+			while($narow = pg_fetch_array($nares)) {
+				$naftyp=$narow["ftyp"];
+				$nagml=$narow["gml_id"];
+				$nagknr=$narow["gemarkungsnummer"];
+				$naflur=$narow["flurnummer"];
+				$nafskenn=$narow["zaehler"];
+				if ($narow["nenner"] != "") {$nafskenn.="/".$narow["nenner"];}
+				zeile_nachf_fs ($nagml, $nagknr, $naflur, $nafskenn, $naftyp);
+				$zfsn++;
 			}
+			// inner Footer
+			if ($zfsn == 0) {
+				echo "\n<p class='anz'>keine Nachfolger</p>";
+			} elseif ($zfsn > 1) {
+				echo "\n<p class='anz'>".$zfsn." Nachfolger-Flst.</p>";
+			}
+			echo "\n<hr>";
 		}
+		#} // aktuell ...
 		$zfs++;
 	}
 	// Foot

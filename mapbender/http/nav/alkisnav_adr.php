@@ -4,7 +4,7 @@
 					Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms
-	2013-05-08  in Arbeit ...
+	2013-05-14  Feinkorrekturen.
 
 	ToDo:
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd

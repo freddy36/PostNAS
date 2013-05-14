@@ -9,7 +9,8 @@
 					Zurück-Link, Titel der Transaktion anzeigen.
 	2013-04-29	Darstellung mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
-	2013-05-08  Hervorhebung aktuelles Objekt, in Arbeit ...
+	2013-05-14  Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
+					Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -49,7 +50,7 @@ function familiensuche() {
 	global $gkz, $gemeinde, $epsg, $name;
 	if(isset($name)) { // Familiensuche
 		echo "\n<div class='back' title='Andere Personen mit diesem Nachnamen'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer_2.ico' width='16' height='16' alt='FAM'> ";
+			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer_2.ico' width='16' height='16' alt='FAM' title='Andere Personen mit diesem Nachnamen'> ";
 			echo "\n<a class='back' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;name=".$name."'>\"".$name."\"</a>";
 		echo "\n</div>\n<br>";	
 	}
@@ -91,7 +92,7 @@ echo "
 <tr>
 	<td valign='top'>
 		<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$person."\")'>
-			<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'>
+			<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG' title='Nachweis'>
 		</a>
 	</td>
 	<td>
@@ -176,22 +177,38 @@ function getGBbyPerson() {
 // Dann kann entweder das FS gleich mit ausgegeben werden -> getGBuFSbyPerson.
 // Alternativ würde eine Hilfstabelle benötigt, in der im PostProcessing 
 // das GB-zu-Gemeinde-Verhältnis vorbereitet wird.
-	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $debug, $bltbez, $bltblatt, $bltseite;
+	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $debug, $bltbez, $bltblatt, $bltseite, $kennztyp, $zgbbez;
+	# $zblatt, $zblattn, $zblattz, $zbvnr;
 	$linelimit=150;
+
+	// Head
 	familiensuche();
 	personendaten();
+
+	// Body
 	// Suche nach Grundbüchern der Person
-	$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezeichnung AS beznam ";
+	$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam ";
 	$sql.="FROM alkis_beziehungen bpn ";
 	$sql.="JOIN ax_namensnummer n ON bpn.beziehung_von=n.gml_id ";
 	$sql.="JOIN alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
 	$sql.="JOIN ax_buchungsblatt gb ON bng.beziehung_zu=gb.gml_id ";
 	$sql.="JOIN ax_buchungsblattbezirk b ON gb.land = b.land AND gb.bezirk = b.bezirk ";
 	$sql.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
+
+	// Parameter $gbkennz, z.B. nach Klick auf Zeile "Bezirk"
+	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
+		#if ($debug > 0) {echo "<p class='dbg'>Filter Bezirk '".$zgbbez."'<p>";}
+		$sql.="AND b.bezirk = ".$zgbbez." ";
+		$bezirkaktuell = true;
+	} else {
+		$bezirkaktuell = false;
+	}
+
 	if ($bltbez.$bltblatt != "") { // Blättern, Fortsetzen bei ...
 		$sql.="AND ((b.bezeichnung > '".$bltbez."') ";
 		$sql.="OR (b.bezeichnung = '".$bltbez."' AND gb.buchungsblattnummermitbuchstabenerweiterung > '".$bltblatt."')) ";
 	}
+
 	$sql.="ORDER BY b.bezeichnung, gb.buchungsblattnummermitbuchstabenerweiterung LIMIT $2 ;";
 
 	if ($bltseite == "") { // Seite 1
@@ -207,17 +224,27 @@ function getGBbyPerson() {
 		return;
 	}
 	$cnt = 0;
+	$gwbez="";
 	while($row = pg_fetch_array($res)) {
+		$beznr=$row["bezirk"];
+		if ($gwbez != $beznr) { // Gruppenwechsel Bezirk
+			$beznam=$row["beznam"];
+			$gwbez=$beznr;
+			zeile_gbbez ($beznam, $beznr, $bezirkaktuell);
+		}
 		$gml=$row["gml_g"];
-		$beznam=$row["beznam"];
 		$blatt=$row["blatt"];
 		zeile_blatt($zgbbez, $beznam, $gml, $blatt, false, $person, false);
 		$cnt++;
 	}
+
+	// Foot
 	if($cnt == 0) { 
 		echo "\n<p class='anz'>Kein Grundbuch zum Eigent&uuml;mer</p>";
 	} elseif($cnt >= $linelimit) {
 		echo "\n<p class='blt'>".$cnt." Grundb. zum Eigent.";
+
+		// Blättern
 		$nxtbltbez=urlencode($beznam);
 		$nxtbltblatt=urlencode($blatt);
 		$nxtbltseite=$bltseite + 1;
@@ -240,6 +267,7 @@ function getFSbyGB($backlink) {
 // Buchungstellen.
 	global $gkz, $gemeinde, $name, $person, $blattgml, $epsg, $gfilter, $debug;
 	if($backlink) { // Erneuter Ansatz bei Person oder GB möglich.
+
 		// Namen ermitteln
 		$sql ="SELECT nachnameoderfirma, vorname FROM ax_person WHERE gml_id = $1 ";
 		$v=array($person);
@@ -247,20 +275,12 @@ function getFSbyGB($backlink) {
 		$res=pg_execute("", $v);
 		if (!$res) {echo "\n<p class='err'>Fehler bei Eigent&uuml;mer</p>";}
 		$row = pg_fetch_array($res); // nur eine Zeile
-		$nnam=htmlentities($row["nachnameoderfirma"], ENT_QUOTES, "UTF-8");
-		$vnam=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
-
-		// +++ Function zeile_person nutzen ?
-		echo "\n\t<div class='back' title='zur&uuml;ck zur Person'>";
-			echo "\n\t\t<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG'> ";
-			echo "\n\t<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$person."'>";
-			echo $nnam.", ".$vnam."</a><br>";		
-		echo "</div>";
+		zeile_person($person, $row["nachnameoderfirma"], $row["vorname"]);
 
 		// Grundbuch-Daten ermitteln
 		$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam ";
 		$sql.="FROM ax_buchungsblatt gb JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk ";
-		$sql.="WHERE gb.gml_id= $1 ;";
+		$sql.="WHERE gb.gml_id= $1 LIMIT 1 ;";
 		$v=array($blattgml);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -270,10 +290,10 @@ function getFSbyGB($backlink) {
 		$bezirk=$row["bezirk"];
 		$beznam=$row["beznam"];
 		$blatt=$row["blatt"];
+		zeile_gbbez ($beznam, $bezirk, false);
 		zeile_blatt($bezirk, $beznam, $blattgml, $blatt, false, $person, true);	
 	}
-	#GB_Buchung_FS(200, $bezirk."-".$blatt); // Blatt > Grundstück > Flurst. (max. 200)
-	GB_Buchung_FS(200, ""); // ohne den Link auf "Buchung"
+	GB_Buchung_FS(250, ""); // Blatt > Grundst. > FS, max. 250, ohne Link "Buchung"
 	return;
 }
 
@@ -287,7 +307,7 @@ function getGBuFSbyPerson() {
 // Für Fälle in denen nicht nach Gemeinde gefiltert wird (z.B. ganzer Kreis) kann weiter 
 // Stufe 2 und 3 nacheinander verwendet werden. Dies ist wahrscheinlich übersichtlicher, 
 // weil "ungefiltert" in "2+3" zu lange Listen entstehen würden, die durchblättert werden müssen. 
-	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $gfilter, $debug, $bltbez, $bltblatt, $bltbvnr, $bltseite, $bltrecht;
+	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $gfilter, $debug, $bltbez, $bltblatt, $bltbvnr, $bltseite, $bltrecht, $kennztyp, $zgbbez;
 	$linelimit=80; // als Limit "Anzahl Flurstücke" in den beiden folgenden Abfragen
 	// darf nun etwas knapper sein, weil man jetzt blättern kann
 	familiensuche();
@@ -335,6 +355,16 @@ function getGBuFSbyPerson() {
    $sql2.="JOIN pp_gemarkung ot ON f.land=ot.land AND f.gemarkungsnummer=ot.gemarkung "; // Ortsteil
 	$sql2.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
 	$sql2.="AND vbg.beziehungsart='istBestandteilVon' AND vfb.beziehungsart='istGebucht' ";
+
+	// Parameter $gbkennz nach Klick auf Zeile "Bezirk"
+	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
+		#if ($debug > 0) {echo "<p class='dbg'>Filter Bezirk '".$zgbbez."'<p>";}
+		$sql2.="AND b.bezirk = ".$zgbbez." ";
+		$bezirkaktuell = true;
+	} else {
+		$bezirkaktuell = false;
+	}
+
 	switch ($gfilter) { // Gemeinde-Filter
 		case 1: // Einzelwert
 			$sql2.="AND ot.gemeinde=".$gemeinde." "; break;
@@ -386,8 +416,7 @@ function getGBuFSbyPerson() {
 				$gwbez=$bezirk;
 				$beznam=$row["beznam"];
 				$gwgb="";
-				# Zeile ausgeben?
-				if($debug > 0) {echo "<p class='dbg'>Bezirk ".$bezirk."</p<>";}
+				zeile_gbbez($beznam, $gwbez, $bezirkaktuell);
 			}
 			$gb_gml=$row["gml_g"];
 			if ($gwgb != $gb_gml) { // Gruppierung Blatt (Grundbuch)
@@ -400,8 +429,7 @@ function getGBuFSbyPerson() {
 			if ($gwbv != $bvnr) { // Gruppierung Buchung (BVNR)
 				$gwbv = $bvnr;
 				$bsgml=$row["bsgml"];
-				zeile_buchung($bsgml, $bvnr, "", false, false); // ohne Link!
-			#	zeile_buchung($bsgml, $bvnr, $bezirk."-".$blatt, false, false);
+				zeile_buchung($bsgml, $bvnr, "", false, false); //ohne Link
 			}
 			$fs_gml=$row["gml_id"];
 			$gmkg=$row["gemarkungsname"];
@@ -413,16 +441,28 @@ function getGBuFSbyPerson() {
 		}
 		if($zfs1 == 0) {
 			if ($bltrecht == "ohne") {echo "\n<p class='anz'>Keine direkte Buchung gefunden.</p>";}
-		} elseif($zfs1 >= $linelimit) { // das Limit war zu knapp, das  B l ä t t e r n  anbieten
-			echo "\n<p class='blt'>".$zfs1." Flurst&uuml;cke";
+		} elseif($zfs1 >= $linelimit) { // das Limit war zu knapp
+			echo "\n<p class='blt'>";
+			if ($bltseite > 1) {echo "weitere ";}
+			echo $zfs1." Flurst&uuml;cke";
+			// B l ä t t e r n  (eine Folgeseite anbieten)
 			$nxtbltbez=urlencode($beznam);
 			$nxtbltblatt=urlencode($blatt);
 			$nxtbltseite=$bltseite + 1;
-			echo "\n - <a class='blt' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$person."&amp;bltbez=".$nxtbltbez."&amp;bltblatt=".$nxtbltblatt."&amp;bltbvnr=".$bvnr."&amp;bltseite=".$nxtbltseite."&amp;bltrecht=ohne' ";
+			echo "\n - <a class='blt' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$person;
+			echo "&amp;gbkennz=".$zgbbez; // Filter Bezirk
+			echo "&amp;bltbez=".$nxtbltbez."&amp;bltblatt=".$nxtbltblatt."&amp;bltbvnr=".$bvnr."&amp;bltseite=".$nxtbltseite."&amp;bltrecht=ohne' ";
 			echo "title='Bl&auml;ttern ab ".htmlentities($beznam)." Blatt ".$blatt." BVNR ".$bvnr."'>weitere</a>";
 			echo "</p>";
-		} elseif($zfs1 > 1) { // Meldung (Plural) ab 2 
-			echo "\n<p class='anz'>".$zfs1." Flurst&uuml;cke zum Eigent&uuml;mer</p>"; // im Limit
+		} elseif($zfs1 > 1) { // Meldung (Plural) ab 2, im Limit
+			echo "\n<p class='anz'>";
+			if ($bltseite > 1) {echo "weitere ";}
+			echo $zfs1;
+			if ($kennztyp > 1) {
+				echo " Flurst. zum Eigent. im GB-Bezirk</p>"; 
+			} else {
+				echo " Flurst&uuml;cke zum Eigent&uuml;mer</p>"; 
+			}
 		}
 	}	
 	if ($bltrecht == "" and $zfs1 > 0) { // beides
@@ -442,8 +482,16 @@ function getGBuFSbyPerson() {
 			return;
 		}
 		$zfs2=0;
-		$gwgb="";
+		$gwbez="";
+		#gwgb="";
 		while($row = pg_fetch_array($res)) {	
+			$bezirk=$row["bezirk"];
+			if ($gwbez != $bezirk) { // Gruppierung Bezirk
+				$gwbez=$bezirk;
+				$beznam=$row["beznam"];
+				$gwgb="";
+				zeile_gbbez($beznam, $gwbez, $bezirkaktuell);
+			}
 			$gb_gml=$row["gml_g"];
 			if ($gwgb != $gb_gml) {  // Gruppierung Blatt (Grundbuch)
 				$beznam=$row["beznam"];
@@ -474,15 +522,21 @@ function getGBuFSbyPerson() {
 				echo "\n<p class='anz'>Keine Rechte an Buchungen.</p>";
 			}
 		} elseif($zfs2 >= $linelimit) { // das Limit war zu knapp, das  B l ä t t e r n  anbieten
-			echo "\n<p class='blt'>".$zfs2." Rechte an Flurst.";
+			echo "\n<p class='blt'>";
+			if ($bltseite > 1) {echo "weitere ";}
+			echo $zfs2." Rechte an Flurst.";
 			$nxtbltbez=urlencode($beznam);
 			$nxtbltblatt=urlencode($blatt);
 			$nxtbltseite=$bltseite + 1;
-			echo "\n - <a class='blt' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$person."&amp;bltbez=".$nxtbltbez."&amp;bltblatt=".$nxtbltblatt."&amp;bltbvnr=".$bvnr."&amp;bltseite=".$nxtbltseite."&amp;bltrecht=nur' ";
+			echo "\n - <a class='blt' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$person;
+			echo "&amp;gbkennz=".$zgbbez; // Filter Bezirk
+			echo "&amp;bltbez=".$nxtbltbez."&amp;bltblatt=".$nxtbltblatt."&amp;bltbvnr=".$bvnr."&amp;bltseite=".$nxtbltseite."&amp;bltrecht=nur' ";
 			echo "title='Bl&auml;ttern ab ".htmlentities($beznam)." Blatt ".$blatt." BVNR ".$bvnr."'>weitere</a>";
 			echo "</p>";
 		} elseif($zfs2 > 1) { // ab 2
-			echo "\n<p class='anz'>".$zfs2." Rechte an Flurst.</p>"; // im Limit		
+			echo "\n<p class='anz'>";
+			if ($bltseite > 1) {echo "weitere ";}
+			echo $zfs2." Rechte an Flurst.</p>"; // im Limit		
 		}
 	} // ENDE Fälle mit "Rechte an"
 	return;
@@ -509,13 +563,8 @@ if ($gemeinde == "") {
 	$gfilter = 2; // Gemeinde Filter-Liste
 }
 
-## Aus Link "Buchung" kommen folgende Parameter:
-# ?gkz=250&gemeinde=20&epsg=31467
-# &buchunggml=DENW15AL1000Bj2m
-# &gbkennz=2619-000025+-8
-## Weder buchunggml noch gbkennz werden ausgewertet.
-## Name fehlt (zum drüber setzen)
-## vorläufige Lösung: Link verhindern.
+$kennztyp=ZerlegungGBKennz($gbkennz); // Grundbuch-Kennzeichen aus Parameter zerlegen: $z__ 
+// 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
 
 // Quo Vadis?
 if($blattgml != "") {		// Flurstücke zum Grundbuch
@@ -531,17 +580,25 @@ if($blattgml != "") {		// Flurstücke zum Grundbuch
 
 	// Die Filtereinstellung beeinflusst die Such-Strategie:
 	if ($gfilter == 0) {			// Keine Filterung auf "Gemeinde": große Datenmenge
-
-		$trans="Grundb&uuml;cher zum Eigent&uuml;mer";
+		if ($kennztyp > 1) {
+			$trans = "Grundb&uuml;cher in ".$zgbbez." von .."; // Filter GB-Bez
+		} else {
+			$trans = "Grundb&uuml;cher von .."; // Name steht darunter
+		}
 		getGBbyPerson();
 		// Also schrittweise erst mal Stufe 2 = Grundbücher zur Person suchen.
 		if(isset($blattgml) ) {	// Es wurde nur EIN Grundbuch zu der Person gefunden.
-			$trans="1 Blatt zum Eigent&uuml;mer";
+			$trans = "1 Blatt zum Eigent&uuml;mer";
 			getFSbyGB(false); 	// Dann dazu auch gleich die Stufe 3 hinterher, aber ohne Backlink.
-		} 
-
+		}
 	} else { 						// mit Filter auf Gemeinde: weniger Daten?
-		$trans="Grundb. und Flurst. zum Eigent&uuml;mer";
+		if ($kennztyp > 1) {
+			#trans="Grundb. und Flurst. in ".$zgbbez." von .. "; // zu lang
+			$trans="Grdb. und Flst. von .. in .."; // Filter GB-Bez,
+			// darunter sind dann Name und Bezirk farblich markiert
+		} else {
+			$trans="Grundb. und Flurst. von .."; // der Eigentümer steht darunter
+		}
 		getGBuFSbyPerson();		// Schritte 2+3 gleichzeitig, dabei Gemeinde-Filter auf Stufe 3
 	}
 

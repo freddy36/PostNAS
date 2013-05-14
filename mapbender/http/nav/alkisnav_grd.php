@@ -7,7 +7,7 @@
 					Zurück-Link, Titel der Transaktion anzeigen.
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
-	2013-05-08  Hervorhebung aktuelles Objekt, in Arbeit ...
+	2013-05-14  Hervorhebung aktuelles Objekt. Title "Nachweis" auch auf Icon.
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -45,67 +45,6 @@ echo <<<END
 <dfn class='title' id='transaktiontitle'></dfn>
 
 END;
-
-function suchfeld($suchstring) {	// Suchstring Ausgeben UND das Eingabeformular damit belegen
-	$out="<a title='Dies als Suchbegriff setzen' href='javascript:formular_belegung(\"".$suchstring."-\")'>".$suchstring."</a>";
-	return $out;
-}
-
-function is_ne_zahl($wert) {
-	// Prueft, ob ein Wert ausschließlich aus den Zahlen 0 bis 9 besteht
-	if (trim($wert, "0..9") == "") {return true;} else {return false;}
-}
-
-function ZerlegungGBKennz($gbkennz) {
-	// Das eingegebene Grundbuch-Kennzeichen auseinander nehmen (gggg-999999z-BVNR)
-	// Return: 9=Fehler, 0=Listen alle Bezirke 1=Such Bezirk-Name
-	//  2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
-	global $debug, $zgbbez, $zblatt, $zblattn, $zblattz, $zbvnr;		$arr=explode("-", $gbkennz, 3);
-	$zgbbez=trim($arr[0]);
-	$zblatt=trim($arr[1]);
-	$zbvnr=trim($arr[2]);
-	if ($zgbbez == "") { // keine Eingabe
-		return 0; // Amtsgerichte oder Bezirke listen
-	} elseif ( ! is_ne_zahl($zgbbez)) { // Alphabetische Eingabe
-		return 1; // Such Bezirk-NAME
-	} elseif ($zblatt == "") {
-		return 2; // Such Bezirk-NUMMER
-	} else { // Format von BlattNr pruefen
-	//'19'      linksbündig
-	//'000019 ' gefüllt 6 + blank
-	//'000019A' .. mit Zusatzbuchstabe
-	//'0300001' gefüllt 7, bei Blattart 5000 "fiktives Blatt"
-		$len=strlen($zblatt);
-		if ($len > 0 AND $len < 8) {		
-			if (trim($zblatt, "0..9 ") == "") { // Normalfall: nur Zahlen (und Blank))
-				$zblattn= rtrim(ltrim($zblatt, "0"), " ");
-				$zblattz="";
-			} else { // Sonderfall: Zusatz-Buchstabe am Ende
-				$zblattn=substr($zblatt,0,$len-1);
-				$zblattz=strtoupper(substr($zblatt,$len-1,1)); 
-				if ((trim($zblattn, "0..9") == "") and (trim($zblattz, "A..Z") == "")) {
-					$zblattn= ltrim($zblattn, "0"); // ohne fuehrende Nullen
-				} else {
-					echo "<p class='err>Format 'Blatt': bis zu 6 Zahlen und ggf. ein Buchstabe</p>";	
-					return 9;
-				}
-			}
-			if ($zbvnr == "") {
-				return 3; // Such BLATT
-			} elseif (is_ne_zahl($zbvnr)) {		
-				// $zbvnr=ltrim($zbvnr,"0"); // DB-Format ist integer
-				// Vorsicht, Wert "0" ist moeglich und gueltig
-				return 4; // Such Grundstueck
-			} else {
-				echo "<p class='err>Die Buchungsstelle (BVNR) '".$zbvnr."' ist nicht numerisch</p>";
-				return 9;
-			}
-		} else {
-			echo "<p class='err>Das Grundbuch-Blatt '".$zblatt."' ist ung&uuml;ltig.</p>";
-			return 9;
-		}
-	}
-}
 
 function ListAG($liste_ag, $aktuell) {
 	// Amtsgerichte (Grundbuch) auflisten, dazu als Filter eine AG-Liste
