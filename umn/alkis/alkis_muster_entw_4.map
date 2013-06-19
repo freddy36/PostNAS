@@ -1,5 +1,5 @@
 # WMS: ALKIS PostNAS Muster mit Platzhalter *gkz* für Mandant - Druckversion zur Entwickler-Version
-# 2013-04-17 F.J. krz  Thema (Gruppe) "Bodenschätzung" wurde überarbeitet und vor Gruppe "Flurstücke" verschoben
+# 2013-06-19 F.J. krz  Layer "ax_untergeordnetesgewaesser_polygon"/"*_line" nach Geometrietyp filtern nicht nach funktion
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -1081,9 +1081,7 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
-	# Feld funktion, Werte 1010, 1030, 1040
-	# Statt EXPRESSION filtern besser gleich als WHERE in SQL
+	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser WHERE st_geometrytype(wkb_geometry) = 'ST_Polygon') as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Untergeordnetes Gewässer (Flächen)"
@@ -1093,9 +1091,34 @@ LAYER
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 1250 #5000
+	CLASSITEM funktion
 	CLASS
-		NAME "Untergeordnetes Gewässer"
-		EXPRESSION ('[funktion]' = '1010')
+		NAME "Graben"
+		EXPRESSION ('[funktion]' >= '1010' AND '[funktion]' <= '1013')
+		STYLE
+			COLOR 227 255 255
+			OUTLINECOLOR 0 204 204
+		END
+	END
+	CLASS # ToDo: Klassen differenzieren? nach Farbe?
+		NAME "Fleet"
+		EXPRESSION '1020'
+		STYLE
+			COLOR 227 255 255
+			OUTLINECOLOR 0 204 204
+		END
+	END
+	CLASS
+		NAME "Bach"
+		EXPRESSION '1030'
+		STYLE
+			COLOR 227 255 255
+			OUTLINECOLOR 0 204 204
+		END
+	END
+	CLASS
+		NAME "Teich"
+		EXPRESSION '1040'
 		STYLE
 			COLOR 227 255 255
 			OUTLINECOLOR 0 204 204
@@ -1109,7 +1132,7 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser) as foo using unique ogc_fid using SRID=25832"
+	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser WHERE st_geometrytype(wkb_geometry) = 'ST_LineString') as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Untergeordnetes Gewässer (Line)"
@@ -1119,14 +1142,35 @@ LAYER
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 12 #50
 	MAXSCALEDENOM 1250 #5000
-	# Feld funktion, Werte 1010, 1030, 1040
+	CLASSITEM funktion
 	CLASS
-		NAME "Untergeordnetes Gewässer"
-		EXPRESSION ('[funktion]' = '1010')
+		NAME "Graben"
+		EXPRESSION ('[funktion]' >= '1010' AND '[funktion]' <= '1013')
 		STYLE
 			COLOR 0 204 204
 		END
 	END
+	CLASS # ToDo: Klassen differenzieren? nach Farbe?
+		NAME "Fleet"
+		EXPRESSION '1020'
+		STYLE
+			COLOR 0 204 204
+		END
+	END
+	CLASS
+		NAME "Bach"
+		EXPRESSION '1030'
+		STYLE
+			COLOR 0 204 204
+		END
+	END
+	#CLASS
+	#	NAME "Teich"
+	#	EXPRESSION '1040'
+	#	STYLE
+	#		COLOR 0 204 204
+	#	END
+	#END
 END
 
 # ** aus Post-Processing: Katasterbezirke
@@ -1853,11 +1897,9 @@ LAYER
 	CLASS
 		NAME "Besondere Gebäudelinie"
 		STYLE
-		#	SYMBOL 0
 			COLOR 0 0 0
 		END
 		STYLE
-		#	SYMBOL 'point'
 			COLOR 254 254 254
 			PATTERN 12 24 END # 3 6 
 		END
@@ -1955,8 +1997,8 @@ LAYER # Lagebezeichnung mit Pseudonummer, Anzeige der lfd-Nr.
 		wms_abstract "Lagebezeichnung mit Pseudonummer, Anzeige laufende Nummer zum Nebengebäude"
 		gml_include_items "all"
 	END
-	MINSCALEDENOM 50
-	MAXSCALEDENOM 1500
+	MINSCALEDENOM 12 # 50
+	MAXSCALEDENOM 325 # 1500
 	SYMBOLSCALEDENOM 1000
 	#LABELITEM "laufendenummer"
 	CLASS
@@ -1991,8 +2033,8 @@ LAYER
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
-	MINSCALEDENOM 50
-	MAXSCALEDENOM 2500
+	MINSCALEDENOM 12 # 50
+	MAXSCALEDENOM 325 # 1500
 	CLASS
 		NAME "Zuordnungspfeile"
 		STYLE
