@@ -15,6 +15,7 @@
 	2013-01-17  FS-Kennzeichen (ALB-Format) als Parameter statt gmlid möglich
 	2013-04-08  deprecated "import_request_variables" ersetzt
 	2013-04-11  ID-Links (im Testmodus) auch an Lagebezeichnung (mit/ohne HsNr) und an Nutzungs-Abschnitt
+	2013-06-24  Unna: Bodenneuordnung, strittige Grenze
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -489,6 +490,30 @@ echo "\n</tr>";
 echo "\n</table>";
 
 // ALB: KLASSIFIZIERUNG  BAULASTEN  HINWEISE  TEXTE  VERFAHREN
+
+// Hinweis auf Bodenneuordnung oder eine strittige Grenze (Erweiterung Kreis Unna)
+$sql_bodeneuordnung = "SELECT a.bezeichner as verfahren,b.bezeichnung as verfahren_nr,d.bezeichnung as stelle FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert = b.artderfestlegung JOIN ax_dienststelle d ON b.stelle = d.stelle WHERE 	ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry) OR 	ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry)";
+pg_prepare($con, "bodeneuordnung", $sql_bodeneuordnung);
+$res_bodeneuordnung = pg_execute($con, "bodeneuordnung", array($gmlid));
+
+$sql_strittigeGrenze = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE 1000 = ANY(artderflurstuecksgrenze) AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry);";
+pg_prepare($con, "strittigeGrenze", $sql_strittigeGrenze);
+$res_strittigeGrenze = pg_execute($con, "strittigeGrenze", array($gmlid));
+
+if (pg_num_rows($res_bodeneuordnung) > 0 OR pg_num_rows($res_strittigeGrenze) > 0) {
+	echo "\n<h5>Hinweise zum Flurst&uuml;ck</h5>\n";
+	if (pg_num_rows($res_bodeneuordnung) > 0) {
+		while ($row = pg_fetch_array($res_bodeneuordnung)) {
+			echo "<p>" . $row['verfahren'] . "</p>";
+			echo "<p>Flurbereinigungsbeh&ouml;rde: " . $row['stelle'] . "</p>";
+			echo "<p>Verfahrensbezeichnung: " . $row['verfahren_nr'] . "</p>";
+		}
+	}
+	if (pg_num_rows($res_strittigeGrenze) > 0) {
+		echo "<p>Mindestens eine Flurst&uuml;cksgrenze ist als <b>strittig</b> zu bezeichnen. Sie kann nicht festgestellt werden, weil die Beteiligten sich nicht &uuml;ber den Verlauf einigen. Nach sachverst&auml;ndigem Ermessen der Katasterbeh&ouml;rde ist anzunehmen, dass das Liegenschaftskataster nicht die rechtm&auml;&szlig;ige Grenze nachweist.</p>";
+	}
+}
+// Erweiterung Kreis Unna - Ende
 
 // G R U N D B U C H
 echo "\n<table class='outer'>";
