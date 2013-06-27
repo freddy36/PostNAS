@@ -26,12 +26,6 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<title>ALKIS Bau-, Raum- oder Bodenordnungsrecht</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Gericht.ico">
-	<script type="text/javascript">
-	function imFenster(dieURL) {
-		var link = encodeURI(dieURL);
-		window.open(link,'','left=10,top=10,width=680,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
-	}
-	</script>
 </head>
 <body>
 
@@ -60,6 +54,10 @@ if (!$res) {
 if ($row = pg_fetch_array($res)) {
 	$artfest=$row["adfkey"];  // Art der Festlegung, Key
 	$verfnr=$row["rechtbez"]; // Verfahrens-Nummer
+	$enam=$row["name"];
+	$stellk=$row["stelle"]; // LEFT JOIN !
+	$stellb=$row["stellbez"];
+	$stella=$row["stellenart"];
 
 	// Balken
 	echo "<p class='recht'>ALKIS Bau-, Raum- oder Bodenordnungsrecht ".$artfest."-".$verfnr."&nbsp;</p>\n";
@@ -76,22 +74,20 @@ if ($row = pg_fetch_array($res)) {
 			echo "<span class='wichtig'>".$row["adfbez"]."</span></td>";
 		echo "\n</tr>";
 
-		$enam=$row["name"];
 		if ($enam != "") {
 			echo "\n<tr>";
 				echo "\n\t<td class='li'>Eigenname des Gebietes:</td>\n\t<td>".$enam."</td>";
 			echo "\n</tr>";
 		}
 
-		echo "\n<tr>";
-			echo "\n\t<td class='li'>Verfahrensnummer:</td>";
-			echo "\n\t<td>".$verfnr."</td>";
-			// if ($idanzeige) {linkgml($gkz, $gmlid, "Verfahren"); } // KEINE Bez.!
-		echo "\n</tr>";
+		if ($verfnr != "") {
+			echo "\n<tr>";
+				echo "\n\t<td class='li'>Verfahrensnummer:</td>";
+				echo "\n\t<td>".$verfnr."</td>";
+				// if ($idanzeige) {linkgml($gkz, $gmlid, "Verfahren"); } // KEINE Bez.!
+			echo "\n</tr>";
+		}
 
-		$stellk=$row["stelle"]; // LEFT JOIN !
-		$stellb=$row["stellbez"];
-		$stella=$row["stellenart"];
 		if ($stellb != "") { // z.B. Umlegung mit und Baulast ohne Dienststelle
 			echo "\n<tr>";
 				echo "\n\t<td class='li'>Dienststelle:</td>\n\t<td>";
@@ -165,7 +161,7 @@ echo "\n<table class='fs'>";
 			echo "\n\t<td class='fla'>".$row["schnittflae"]." m&#178;</td>"; 
 			echo "\n\t<td class='fla'>".$row["amtlicheflaeche"]." m&#178;</td>";
 			echo "\n\t<td class='nwlink noprint'>";
-				echo "\n\t\t<a href='javascript:imFenster(\"alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$row["gml_id"]."&amp;eig=n\")' " ;					echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck ";
+				echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$row["gml_id"]."&amp;eig=n' " ;					echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck ";
 					echo "\n\t\t\t<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
 				echo "\n\t\t</a>";
 			echo "\n\t</td>";

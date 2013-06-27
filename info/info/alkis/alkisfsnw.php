@@ -504,12 +504,6 @@ $sql_str = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE 1000 = ANY(ar
 pg_prepare($con, "strittigeGrenze", $sql_str);
 $res_strittigeGrenze = pg_execute($con, "strittigeGrenze", array($gmlid));
 
-// Testfall suchen: Flurstücke mit strittigen Grenzen
-// SELECT f.gml_id  FROM ax_flurstueck f WHERE ST_touches(f.wkb_geometry, (SELECT g.wkb_geometry FROM ax_besondereflurstuecksgrenze g WHERE 1000 = ANY(g.artderflurstuecksgrenze))) LIMIT 20;
-// alkis 150:
-// str.Gr:  DENW17AL0000Vvbw   DENW17AL0000VrG6  DENW17AL0000ViIt
-// Verf.:   DENW17AL0000VyQe
-
 if (pg_num_rows($res_bodeneuordnung) > 0 OR pg_num_rows($res_strittigeGrenze) > 0) {
 	echo "\n<tr>";
 	echo "\n\t<td title='Hinweise zum Flurst&uuml;ck'><h6><img src='ico/Hinweis.ico' width='16' height='16' alt=''> ";

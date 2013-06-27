@@ -7,13 +7,13 @@
 	Dies Programm gibt einen kurzen Ueberblick zum Flurstueck.
 	Eigentuemer ohne Adresse.
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
-	Dies ist eine Variante von alkisausk.ph 
-	 welches als vollstaendige Seite aufgerufen wird.
+	Dies ist eine Variante von alkisausk.ph welches als vollstaendige Seite aufgerufen wird.
 
 	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geändert
 	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
 	2011-12-14  "window.open(..,width=680)"
-	2013-04-08  deprecated "import_request_variables" ersetzt*/
+	2013-04-08  deprecated "import_request_variables" ersetzt
+	2013-05-06	Fehlende Leerstelle*/
 session_start();
 //import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
@@ -194,7 +194,7 @@ while($rowg = pg_fetch_array($resg)) {
 			echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 		}
 		echo "\n</td>\n<td>";		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
-			echo "\n\t\t<a href='javascript:imFenster(\"alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0]."\")'";
+			echo "\n\t\t<a href='javascript:imFenster(\"alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0]."\")' ";
 				echo "title='Grundbuchnachweis'>";
 				echo $blattart;
 				echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
