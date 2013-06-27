@@ -16,6 +16,7 @@
 	2013-04-08  deprecated "import_request_variables" ersetzt
 	2013-04-11  ID-Links (im Testmodus) auch an Lagebezeichnung (mit/ohne HsNr) und an Nutzungs-Abschnitt
 	2013-06-24  Unna: Bodenneuordnung, strittige Grenze
+	2013-06-27	Bodenneuordnung u. stritt.Gr. in Tabellen-Struktur, Link zur Bodenerneuerung (neues Modul)
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -23,7 +24,6 @@
 	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
 */
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
@@ -53,7 +53,7 @@ echo <<<END
 </head>
 <body>
 END;
-//if ($debug > 0) {echo "<p>Habe ".$cntget." Parameter per 'get' bekommen<p>";}
+
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
@@ -474,7 +474,7 @@ pg_free_result($res);
 
 echo "\n<tr>"; // Summenzeile
 	echo "\n\t<td class='ll' title='amtliche Fl&auml;che (Buchfl&auml;che)'>Fl&auml;che:</td>";
-	echo "\n\t<td class='fla'>";
+	echo "\n\t<td class='fla sum'>";
 	echo "<span title='geometrisch berechnete Fl&auml;che = ".$fsgeomflaed."' class='flae'>".$fsbuchflaed."</span></td>";
 
 	// Flaeche und Link auf Gebäude-Auswertung
@@ -487,33 +487,103 @@ echo "\n<tr>"; // Summenzeile
 	echo "\n\t</td>";
 echo "\n</tr>";
 
-echo "\n</table>";
+// Hinweis auf Bodenneuordnung oder eine strittige Grenze
+//  b.name, b.artderfestlegung, 
 
-// ALB: KLASSIFIZIERUNG  BAULASTEN  HINWEISE  TEXTE  VERFAHREN
-
-// Hinweis auf Bodenneuordnung oder eine strittige Grenze (Erweiterung Kreis Unna)
-$sql_bodeneuordnung = "SELECT a.bezeichner as verfahren,b.bezeichnung as verfahren_nr,d.bezeichnung as stelle FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert = b.artderfestlegung JOIN ax_dienststelle d ON b.stelle = d.stelle WHERE 	ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry) OR 	ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry)";
-pg_prepare($con, "bodeneuordnung", $sql_bodeneuordnung);
+$sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, ";
+$sql_boden.="b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, b.name AS verf_name, ";
+$sql_boden.="d.bezeichnung AS stelle_bez, d.stelle AS stelle_key ";
+$sql_boden.="FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert = b.artderfestlegung ";
+$sql_boden.="LEFT JOIN ax_dienststelle d ON b.stelle = d.stelle ";
+$sql_boden.="WHERE ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry) ";
+$sql_boden.="OR ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry)";
+pg_prepare($con, "bodeneuordnung", $sql_boden);
 $res_bodeneuordnung = pg_execute($con, "bodeneuordnung", array($gmlid));
 
-$sql_strittigeGrenze = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE 1000 = ANY(artderflurstuecksgrenze) AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry);";
-pg_prepare($con, "strittigeGrenze", $sql_strittigeGrenze);
+$sql_str = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE 1000 = ANY(artderflurstuecksgrenze) AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry);";
+pg_prepare($con, "strittigeGrenze", $sql_str);
 $res_strittigeGrenze = pg_execute($con, "strittigeGrenze", array($gmlid));
 
+// Testfall suchen: Flurstücke mit strittigen Grenzen
+// SELECT f.gml_id  FROM ax_flurstueck f WHERE ST_touches(f.wkb_geometry, (SELECT g.wkb_geometry FROM ax_besondereflurstuecksgrenze g WHERE 1000 = ANY(g.artderflurstuecksgrenze))) LIMIT 20;
+// alkis 150:
+// str.Gr:  DENW17AL0000Vvbw   DENW17AL0000VrG6  DENW17AL0000ViIt
+// Verf.:   DENW17AL0000VyQe
+
 if (pg_num_rows($res_bodeneuordnung) > 0 OR pg_num_rows($res_strittigeGrenze) > 0) {
-	echo "\n<h5>Hinweise zum Flurst&uuml;ck</h5>\n";
+	echo "\n<tr>";
+	echo "\n\t<td title='Hinweise zum Flurst&uuml;ck'><h6><img src='ico/Hinweis.ico' width='16' height='16' alt=''> ";
+	echo "Hinweise:</td></h6>\n\t<td colspan=3>&nbsp;</td>";
+	echo "\n</tr>";
+
 	if (pg_num_rows($res_bodeneuordnung) > 0) {
-		while ($row = pg_fetch_array($res_bodeneuordnung)) {
-			echo "<p>" . $row['verfahren'] . "</p>";
-			echo "<p>Flurbereinigungsbeh&ouml;rde: " . $row['stelle'] . "</p>";
-			echo "<p>Verfahrensbezeichnung: " . $row['verfahren_nr'] . "</p>";
+
+		while ($row = pg_fetch_array($res_bodeneuordnung)) { // 3 Zeilen je Verfahren
+
+			// Zeile 1 - kommt immer, darum hier den Link
+			echo "\n<tr title='Bau-, Raum- oder Bodenordnungsrecht'>";
+				echo "\n\t<td>Bodenrecht:</td>";
+				echo "\n\t<td>Festlegung</td>"; // "Art der Festlegung" zu lang
+				echo "\n\t<td>";
+					if ($showkey) {echo "<span class='key'>(".$row['wert'].")</span> ";}
+					echo $row['art_verf'];
+				echo "</td>";
+				echo "\n\t<td>";
+				// LINK:
+				echo "\n\t\t<p class='nwlink noprint'>";
+					echo "\n\t\t\t<a href='alkisbaurecht.php?gkz=".$gkz."&amp;gmlid=".$row['verf_gml'];
+					if ($idanzeige) {echo "&amp;id=j";}					if ($showkey) {echo "&amp;showkey=j";}
+					echo "' title='Bau-, Raum- oder Bodenordnungsrecht'>Recht <img src='ico/Gericht.ico' width='16' height='16' alt=''></a>";
+				echo "\n\t\t</p>";			
+				echo "</td>";
+			echo "\n</tr>";
+
+			// Zeile 2
+			$dstell=$row['stelle_key']; // LEFT JOIN
+			if ($dstell != "") { // Kann auch leer sein
+				echo "\n<tr title='Flurbereinigungsbeh&ouml;rde'>";
+					echo "\n\t<td>&nbsp;</td>";
+					echo "\n\t<td>Dienststelle</td>";
+					echo "\n\t<td>";
+						if ($showkey) {echo "<span class='key'>(".$dstell.")</span> ";}
+						echo $row['stelle_bez'];
+					echo "</td>";
+					echo "\n\t<td>&nbsp;</td>";
+				echo "\n</tr>";
+			}
+
+			// Zeile 3
+			$vbez=$row['verf_bez']; // ist nicht immer gefüllt
+			$vnam=$row['verf_name']; // noch seltener
+			if ($vbez != "") {
+				echo "\n<tr title='Verfahrensbezeichnung'>";
+					echo "\n\t<td>&nbsp;</td>\n\t<td>Verfahren</td>";
+					echo "\n\t<td>";
+						if ($vnam == "") {
+							echo $vbez; // nur die Nummer
+						} else {	// Name oder beides
+							if ($showkey) {echo "<span class='key'>(".$vbez.")</span> ";}
+							echo $vnam;
+						}
+		 			echo "</td>";
+					echo "\n\t<td>&nbsp;</td>";
+				echo "\n</tr>";
+			}
 		}
 	}
-	if (pg_num_rows($res_strittigeGrenze) > 0) {
-		echo "<p>Mindestens eine Flurst&uuml;cksgrenze ist als <b>strittig</b> zu bezeichnen. Sie kann nicht festgestellt werden, weil die Beteiligten sich nicht &uuml;ber den Verlauf einigen. Nach sachverst&auml;ndigem Ermessen der Katasterbeh&ouml;rde ist anzunehmen, dass das Liegenschaftskataster nicht die rechtm&auml;&szlig;ige Grenze nachweist.</p>";
+
+	if (pg_num_rows($res_strittigeGrenze) > 0) { // 1 Zeile
+		echo "\n<tr>";
+		echo "\n<td>Strittige Grenze:</td>";
+		echo "<td colspan=2>Mindestens eine Flurst&uuml;cksgrenze ist als <b>strittig</b> zu bezeichnen. Sie kann nicht festgestellt werden, weil die Beteiligten sich nicht &uuml;ber den Verlauf einigen. Nach sachverst&auml;ndigem Ermessen der Katasterbeh&ouml;rde ist anzunehmen, dass das Liegenschaftskataster nicht die rechtm&auml;&szlig;ige Grenze nachweist.</td>";
+		echo "\n<td>&nbsp;</td>";
+		echo "\n</tr>";
 	}
 }
+
 // Erweiterung Kreis Unna - Ende
+
+echo "\n</table>";
 
 // G R U N D B U C H
 echo "\n<table class='outer'>";
