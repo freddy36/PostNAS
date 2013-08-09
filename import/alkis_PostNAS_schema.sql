@@ -4474,8 +4474,8 @@ COMMENT ON TABLE  ax_verwaltung  IS 'V e r w a l t u n g';
 
 
 -- wenn schon, dann auch alle Tabellen mit Kommentaren versehen:
-COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
-COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
+--COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
+--COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 
 -- Schema aktualisieren (setzt auch die Indizes neu)
 -- SELECT alkis_update_schema();
