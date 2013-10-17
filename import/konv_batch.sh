@@ -26,6 +26,8 @@
 ##   2012-06-04 SQL-Skripte in deren Verzeichnis ausfuehren (Voraussetzung fuer \i Includes)
 ##   2012-10-30 Umgebungsvariable setzen, delete-Tabelle am Ende fuer Analyse gefuellt lassen.
 ##              Test als 0.7a mit gepatchter gdal-Version (noch 2.0dev)
+##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" für Reparatur der 
+##              Präsentationsobjekte Straßenname im Post-Processing
 ##
 ## ToDo: Option "-skipfailures" nach Test entfernen ?
 ##
@@ -85,7 +87,7 @@ else
 	fi
 fi
 # Fehlerprotokoll:
-  errprot='$POSTNAS_HOME/log/postnas_err_'$DBNAME'.prot'
+  errprot=${POSTNAS_HOME}'/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
   con="-p 5432 -d ${DBNAME} "
@@ -143,13 +145,20 @@ fi
     # Der Aufwand fuer das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
   else
     echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
+
     echo "** - Optimierte Nutzungsarten neu Laden:"
     (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f nutzungsart_laden.sql)
-    ##
+
+
     echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
     (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_laden.sql)
-  fi
 
+
+    echo "** - Präsentationsobjekte generieren:"
+    (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_praesentation_action.sql)
+
+  fi
+#
   if [ "$(readlink $POSTNAS_HOME/alkis-trigger.sql)" = "alkis-trigger-kill.sql" ]; then
 # Durch Einfuegen in Tabelle 'delete' werden Loeschungen anderer Tabellen getriggert
     echo "** delete-Tabelle enthaelt:"
@@ -166,7 +175,6 @@ fi
     #echo 'SELECT alkis_delete_all_endet();' | psql $con
     #echo "  ... geendete Objekte entfernen wurde fuer Test dektiviert."
     #echo "  Bitte manuell ausfuehren:  SELECT alkis_delete_all_endet(); "
-#
-    echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
-    #echo "HINWEIS: -skipfailures  fuer Produktion wieder einschalten."
   fi
+  echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
+  #echo "HINWEIS: -skipfailures  fuer Produktion wieder einschalten."

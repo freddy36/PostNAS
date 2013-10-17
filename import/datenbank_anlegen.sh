@@ -8,6 +8,7 @@
 ##  2012-02-10 PostNAS 07, Umbenennung
 ##  2013-01-15 Zwischenstopp um Meldungen lesen zu können bevor, sie aus dem Scrollbereich verschwinden
 ##  2013-04-16 Vers.-Nr. "0.7" aus dem Dateinamen von Schema und Keytable entfernt, sichten_wms.sql
+##  2013-10-16 F.J. krz: Neues Sript "pp_praesentation_sichten.sql" für Reparatur Präsentationsobjekte Straßennamen
 
 POSTNAS_HOME=$(dirname $0)
 MANDANT_HOME=$PWD
@@ -96,21 +97,31 @@ echo " "
 echo "** Anlegen der Datenbank-Struktur - zusaetzliche Schluesseltabellen"
 ## Nur die benoetigten Tabellen fuer die Buchauskunft
 psql $con -U ${DBUSER} -f alkis_PostNAS_keytables.sql >$MANDANT_HOME/log/keytables.log
+
 echo " "
 echo "** Anlegen Optimierung Nutzungsarten (nutzungsart_definition.sql)"
 psql $con -U ${DBUSER} -f nutzungsart_definition.sql
+
 echo " "
 echo "** Laden NUA-Metadaten (nutzungsart_metadaten.sql) Protokoll siehe log"
 psql $con -U ${DBUSER} -f nutzungsart_metadaten.sql >$MANDANT_HOME/log/meta.log
+
 echo " "
-echo "** Anlegen Post Processing (pp_definition.sql)"
+echo "** Anlegen Post Processing Tabellen (pp_definition.sql)"
 psql $con -U ${DBUSER} -f pp_definition.sql >$MANDANT_HOME/log/pp_definition.log
+
+echo " "
+echo "** Anlegen Post Processing Views (pp_praesentation_sichten.sql)"
+psql $con -U ${DBUSER} -f pp_praesentation_sichten.sql >$MANDANT_HOME/log/pp_praesentation_sichten.log
+
 echo " "
 echo "** Definition von Views (sichten_wms.sql)"
 psql $con -U ${DBUSER} -f sichten_wms.sql >$MANDANT_HOME/log/sichten_wms.log
+
 echo " "
 echo  "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7';" | psql -p 5432 -d ${DBNAME} -U ${DBUSER} 
 echo " "
+
 echo "** Berechtigung (grant.sql) Protokoll siehe log"
 psql $con -U ${DBUSER} -f grant.sql >$MANDANT_HOME/log/log_grant.log
 echo " 
