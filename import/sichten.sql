@@ -20,7 +20,7 @@
 --  2013-04-15 Unterdrücken doppelter Darstellung in den Views 'ap_pto_stra', 'ap_pto_nam', 'ap_pto_rest'
 --  2013-04-16 Thema "Bodenschätzung" und fehlernde Kommentare zum Views ergänzt.
 --             Diese Datei aufgeteilt in "sichten.sql" und "sichten_wms.sql"
-
+--  2013-10-23 Fehlersuche Gebäude-Hausnummer-Relation
 
 -- Welche Karten-Typen ?
 CREATE OR REPLACE VIEW kartentypen_der_texte_fuer_hnr
@@ -439,6 +439,50 @@ AS
 --   GROUP BY b.beziehung_von
 --   HAVING count(b.ogc_fid) > 1;
 
-COMMENT ON VIEW mehrfache_buchung_zu_fs IS 'Nach replace von ax_flurtstueck mit einer neuen ax_buchungsstelle bleibt die alte Verbindung in alkis_beziehungen';
+COMMENT ON VIEW mehrfache_buchung_zu_fs 
+ IS 'Fehler: Nach replace von ax_flurtstueck mit einer neuen ax_buchungsstelle bleibt die alte Verbindung in alkis_beziehungen';
+
+
+-- Suche nach Fehler durch "Replace"
+-- Eine Hausnummer darf nur einem Gebaeude zugeordnet werden.
+-- Das verschieben der Relation 
+--   ax_gebaeude   >von>zeigtAuf>zu>  ax_lagebezeichnungmithausnummer
+-- fuehrt möglicherweise dazu, dass die alte Relation nicht gelöscht wird.
+-- Die angezeigten Fälle sind potentielle Fehler.
+
+CREATE OR REPLACE VIEW fehler_hausnummer_mehrfach_verwendet
+AS
+ SELECT l.gml_id, l.gemeinde, l.lage, l.hausnummer 
+   FROM ax_gebaeude g
+   JOIN alkis_beziehungen b ON b.beziehung_von = g.gml_id
+   JOIN ax_lagebezeichnungmithausnummer l ON b.beziehung_zu = l.gml_id
+  WHERE b.beziehungsart = 'zeigtAuf'
+  GROUP BY l.gml_id, l.gemeinde, l.lage, l.hausnummer
+  HAVING count(g.gml_id) > 1;
+
+COMMENT ON VIEW fehler_hausnummer_mehrfach_verwendet
+ IS 'Fehler: Nach replace von ax_lagebezeichnungmithausnummer mit einem neuen ax_gebaeude bleibt die alte Verbindung in alkis_beziehungen';
+
+
+-- Der umgekehrt Fall ist erlaubt.
+-- Gebäude hat mehrere Nummern.
+
+CREATE OR REPLACE VIEW adressen_zu_gebauede_mit_mehreren_hausnummern
+AS
+ SELECT l.gml_id, l.gemeinde, l.lage, l.hausnummer -- Anzeige der Adressfelder
+ FROM ax_gebaeude g1
+   JOIN alkis_beziehungen b ON b.beziehung_von = g1.gml_id
+   JOIN ax_lagebezeichnungmithausnummer l ON b.beziehung_zu = l.gml_id
+  WHERE b.beziehungsart = 'zeigtAuf' AND g1.gml_id IN -- Subquery sucht Gebäude mit meherern Hausnummen
+   (SELECT g2.gml_id 
+    FROM ax_gebaeude g2
+    JOIN alkis_beziehungen b ON b.beziehung_von = g2.gml_id
+    JOIN ax_lagebezeichnungmithausnummer l ON b.beziehung_zu = l.gml_id
+   WHERE b.beziehungsart = 'zeigtAuf'
+   GROUP BY g2.gml_id 
+   HAVING count(l.gml_id) > 1);
+
+COMMENT ON VIEW adressen_zu_gebauede_mit_mehreren_hausnummern
+ IS 'Gebäude mit mehreren Hausnummern suchen (ist erlaubt) und dazu die Adressen anzeigen.';
 
 -- END --
