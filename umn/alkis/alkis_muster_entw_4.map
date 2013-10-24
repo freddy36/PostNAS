@@ -1,5 +1,8 @@
 # WMS: ALKIS PostNAS Muster mit Platzhalter *gkz* für Mandant - Druckversion zur Entwickler-Version
 # 2013-06-19 F.J. krz  Layer "ax_untergeordnetesgewaesser_polygon"/"*_line" nach Geometrietyp filtern nicht nach funktion
+# 2013-10-16 F.J. krz  FS-Nr dunkler, besser sichtbar auf SW-Drucker.
+# 2013-10-24 F.J. krz  Präsentation der Straßennamen aus der Tabelle "pp_strassenname" statt aus dem View "ap_pto_stra".
+#                      Die Tabelle wird im PostProcessing redundant befüllt um schneller darstellen zu können.
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -2786,7 +2789,7 @@ LAYER
 			SIZE 28 MINSIZE 20 MAXSIZE 48 # kleiner als 4x Bildschirm. Im Druck "dezentere" Darstellung
 			POSITION cc
 			OFFSET 0 -14 # -3.5433
-			COLOR 200 0 0
+			COLOR 100 0 0 # 200 0 0
 			OUTLINECOLOR 254 254 254
 			OUTLINEWIDTH 6 # 2
 			FORCE True
@@ -3171,7 +3174,8 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT * FROM ap_pto_stra) as foo using unique ogc_fid using SRID=25832"
+	#ATA "wkb_geometry from (SELECT * FROM ap_pto_stra) as foo using unique ogc_fid using SRID=25832"
+	DATA "the_geom from (SELECT * FROM pp_strassenname) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Straßen"

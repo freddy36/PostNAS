@@ -14,7 +14,8 @@
 --  2013-03-05  View "s_beschriftung" wird durch "ap_pto_stra" und "ap_pto_rest" ersetzt.
 --              View "s_nummer_nebengebaeude" wird durch "lfdnr_nebengebaeude" ersetzt.
 --  2013-03-25  View "grenzpunkt" und "gebaeude_txt"
---  2013-04-16  Views zum Thema Bodenscätzung
+--  2013-04-19  Neues zum Thema "Bodenschätzung", Views entfallen
+--  2013-10-24  Table "pp_strassenname" ersetzt View "ap_pto_stra" im WMS (ms6)
 
 -- Tabellen
 -- ========
@@ -253,10 +254,10 @@
   GRANT SELECT ON TABLE nutzung_class                      TO ms6;
   GRANT SELECT ON TABLE nutzung_class                      TO mb27;
 
--- post_processung: Gemeinde / Gemarkung / Flur
+-- Post-Processung
 -- --------------------------------------------
-  GRANT SELECT ON TABLE  gemarkung_in_gemeinde             TO ms6; -- View
-  GRANT SELECT ON TABLE  gemarkung_in_gemeinde             TO mb27;
+--GRANT SELECT ON TABLE  gemarkung_in_gemeinde             TO ms6;
+--GRANT SELECT ON TABLE  gemarkung_in_gemeinde             TO mb27;
   GRANT SELECT ON TABLE  gemeinde_gemarkung                TO ms6;
   GRANT SELECT ON TABLE  gemeinde_gemarkung                TO mb27;
   GRANT SELECT ON TABLE  pp_gemeinde                       TO ms6; 
@@ -266,6 +267,7 @@
   GRANT SELECT ON TABLE  pp_flur                           TO ms6;
   GRANT SELECT ON TABLE  pp_flur                           TO mb27;
   GRANT SELECT ON TABLE  pp_flurstueck_nr                  TO ms6;
+  GRANT SELECT ON TABLE  pp_strassenname                   TO ms6;
   GRANT SELECT ON TABLE  gemeinde_person                   TO ms6;
   GRANT SELECT ON TABLE  gemeinde_person                   TO mb27;
 
@@ -295,17 +297,22 @@ GRANT SELECT ON TABLE ax_bodenschaetzung_kulturart         TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_kulturart         TO mb27;
 GRANT SELECT ON TABLE ax_bodenschaetzung_zustandsstufe     TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_zustandsstufe     TO mb27;
+GRANT SELECT ON TABLE ax_bodenschaetzung_sonstigeangaben   TO ms6;
+GRANT SELECT ON TABLE ax_bodenschaetzung_sonstigeangaben   TO mb27;
 GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung          TO ms6;
 GRANT SELECT ON TABLE ax_grablochderbodenschaetzung_bedeutung          TO mb27;
 GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO ms6;
 GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO mb27;
+GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO ms6;
+GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO mb27;
+
 -- Bodenschätzung Views
-GRANT SELECT ON TABLE s_bodensch_wms TO ms6;
-GRANT SELECT ON TABLE s_bodensch_ent TO ms6;
-GRANT SELECT ON TABLE s_bodensch_po  TO ms6;
-GRANT SELECT ON TABLE s_bodensch_tx  TO ms6;
-GRANT SELECT ON TABLE s_zuordungspfeilspitze_bodensch TO ms6;
-GRANT SELECT ON TABLE s_zuordungspfeil_bodensch       TO ms6;
+GRANT SELECT ON TABLE s_bodensch_wms                       TO ms6;
+GRANT SELECT ON TABLE s_bodensch_ent                       TO ms6;
+GRANT SELECT ON TABLE s_bodensch_po                        TO ms6;
+GRANT SELECT ON TABLE s_bodensch_tx                        TO ms6;
+GRANT SELECT ON TABLE s_zuordungspfeilspitze_bodensch      TO ms6;
+GRANT SELECT ON TABLE s_zuordungspfeil_bodensch            TO ms6;
 
 -- Recht
 GRANT SELECT ON TABLE ax_denkmalschutzrecht_artdf          TO ms6;
@@ -345,9 +352,9 @@ GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
   GRANT SELECT ON TABLE s_zuordungspfeil_bodensch          TO ms6;
   GRANT SELECT ON TABLE s_zuordungspfeilspitze_bodensch    TO ms6;
   GRANT SELECT ON TABLE s_zuordungspfeil_gebaeude          TO ms6;
-  GRANT SELECT ON TABLE s_flurstueck_nr                    TO ms6;
+--GRANT SELECT ON TABLE s_flurstueck_nr                    TO ms6;
 --GRANT SELECT ON TABLE s_beschriftung                     TO ms6;
-  GRANT SELECT ON TABLE ap_pto_stra                        TO ms6;
+--GRANT SELECT ON TABLE ap_pto_stra                        TO ms6;
   GRANT SELECT ON TABLE ap_pto_rest                        TO ms6;
   GRANT SELECT ON TABLE grenzpunkt                         TO ms6;
   GRANT SELECT ON TABLE gebaeude_txt                       TO ms6;

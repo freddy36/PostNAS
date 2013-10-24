@@ -13,6 +13,8 @@
 --  2012-10-29 F.J. Redundanzen aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
 --  2013-02-06 A.E. Function-Name an PostGIS 2 angepasst: multi() -> st_multi(), simplify() -> st_simplify()
 --  2013-02-21 F.J. doppelte Buchungen zum Flurstück aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
+--  2013-07-10 F.J. Bereinigen der alkis_beziehungen auskommentiert, wird jetzt im Trigger gelöst.
+--  2012-10-24 Neue Tabelle für die Präsentation von Straßennamen und -Klassifikationen
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -39,16 +41,20 @@ SET client_encoding = 'UTF-8';
 -- Besser wäre: sofort im Trigger bei replace entfernen.
 -- Siehe Schema in FUNCTION delete_feature_kill
 
-DELETE 
-  FROM alkis_beziehungen AS bezalt        -- Beziehung Alt
- WHERE EXISTS
-       (SELECT ogc_fid
-         FROM alkis_beziehungen AS bezneu -- Beziehung Neu
-        WHERE bezalt.beziehung_von = bezneu.beziehung_von
-          AND bezalt.beziehung_zu  = bezneu.beziehung_zu
-          AND bezalt.beziehungsart = bezneu.beziehungsart
-          AND bezalt.ogc_fid       < bezneu.ogc_fid
-        );
+-- 2013-07-10 Das folgende Delete auskommentiert. Das wird jetzt im Trigger gelöst.
+------
+--	DELETE 
+--	  FROM alkis_beziehungen AS bezalt        -- Beziehung Alt
+--	 WHERE EXISTS
+--		   (SELECT ogc_fid
+--			 FROM alkis_beziehungen AS bezneu -- Beziehung Neu
+--			WHERE bezalt.beziehung_von = bezneu.beziehung_von
+--			  AND bezalt.beziehung_zu  = bezneu.beziehung_zu
+--			  AND bezalt.beziehungsart = bezneu.beziehungsart
+--			  AND bezalt.ogc_fid       < bezneu.ogc_fid
+--			);
+------
+
 -- Denkbar ist eine Variante für den Trigger, die zusätzlich
 -- auf eine bestimmte gml_id filtert.
 -- Damit wäre die DB schon während der Konvertierung konsistenter.
@@ -94,35 +100,37 @@ DELETE
 --	WHERE sub.beziehung_von = a1.beziehung_von);
 
 
--- Version Frank Jäger, Lemgo 
-DELETE
--- SELECT *   -- TEST: erst mal schauen, was gelöscht würde, wenn ...
-FROM alkis_beziehungen b
-WHERE b.beziehungsart = 'istGebucht'
-  -- Die erste subquery zählt die Buchungen zu einer (Flurstücks-) gml_id.
-  -- Es wird nur dort gelöscht, wo mehrerer Buchungen existieren.
-  AND 1 < 
-     ( SELECT count(f1.ogc_fid) AS anzfs
-        FROM ax_flurstueck f1
-        JOIN alkis_beziehungen z
-          ON f1.gml_id = z.beziehung_von
-       WHERE f1.gml_id = b.beziehung_von
-         AND z.beziehungsart = 'istGebucht'
-       GROUP BY f1.gml_id )
-  -- Die zweite Subquery liefert die letzte (= aktuelle) Beziehung.
-  -- Diese aktuelle Buchung wird vom Löschen ausgeschlossen.
-  AND b.ogc_fid <
-     ( SELECT max(a.ogc_fid) AS maxi
-        FROM ax_flurstueck f2
-        JOIN alkis_beziehungen a
-          ON f2.gml_id = a.beziehung_von
-       WHERE f2.gml_id = b.beziehung_von
-         AND a.beziehungsart = 'istGebucht'
-       GROUP BY a.beziehung_von )
--- bei Test mit SELECT darf man sortieren:
---  ORDER BY b.beziehung_von, b.ogc_fid
-;
-
+-- 2013-07-10 Das folgende Delete auskommentiert. Das wird jetzt im Trigger gelöst
+------
+--	-- Version Frank Jäger, Lemgo 
+--	DELETE
+--	-- SELECT *   -- TEST: erst mal schauen, was gelöscht würde, wenn ...
+--	FROM alkis_beziehungen b
+--	WHERE b.beziehungsart = 'istGebucht'
+--	  -- Die erste subquery zählt die Buchungen zu einer (Flurstücks-) gml_id.
+--	  -- Es wird nur dort gelöscht, wo mehrerer Buchungen existieren.
+--	  AND 1 < 
+--		 ( SELECT count(f1.ogc_fid) AS anzfs
+--			FROM ax_flurstueck f1
+--			JOIN alkis_beziehungen z
+--			  ON f1.gml_id = z.beziehung_von
+--		   WHERE f1.gml_id = b.beziehung_von
+--			 AND z.beziehungsart = 'istGebucht'
+--		   GROUP BY f1.gml_id )
+--	  -- Die zweite Subquery liefert die letzte (= aktuelle) Beziehung.
+--	  -- Diese aktuelle Buchung wird vom Löschen ausgeschlossen.
+--	  AND b.ogc_fid <
+--		 ( SELECT max(a.ogc_fid) AS maxi
+--			FROM ax_flurstueck f2
+--			JOIN alkis_beziehungen a
+--			  ON f2.gml_id = a.beziehung_von
+--		   WHERE f2.gml_id = b.beziehung_von
+--			 AND a.beziehungsart = 'istGebucht'
+--		   GROUP BY a.beziehung_von )
+--	-- bei Test mit SELECT darf man sortieren:
+--	--  ORDER BY b.beziehung_von, b.ogc_fid
+--	;
+------
 
 
 -- SELECT *
@@ -187,6 +195,38 @@ WHERE b.beziehungsart = 'istGebucht'
        AND f.endet IS NULL 
   ;
 -- Ausführung: mittlere Stadt: ca. 4 - 18 Sec.
+
+
+-- Straßen - N a m e n  und  - K l a s s i f i k a t i o n
+-- NEU 2013-10-24
+-- Tabellen für die Präsentation von Straßen-Namen und -Klassifikationen
+-- Daten aus dem View "ap_pto_stra" werden im PostProcessing gespeichert in der Tabelle "pp_strassenname".
+-- Der View übernimmt die Auswahl des passenden "advstandardmodell" und rechnet den Winkel passend um.
+-- In der Tabelle werden dann die leer gebliebenen Label aus dem Katalog noch ergänzt. 
+
+-- Tabelle aus View befüllen
+TRUNCATE pp_strassenname;
+INSERT INTO pp_strassenname (schriftinhalt, hor, ver, art, winkel, the_geom)
+       SELECT schriftinhalt, hor, ver, art, winkel, wkb_geometry
+       FROM ap_pto_stra; -- View sucht das passende advstandardmodell
+
+-- Schriftinhalt ergänzen
+--DATE ap_pto           p  -- Präsentationsobjekte Punktförmig
+UPDATE pp_strassenname  p
+   SET schriftinhalt =     -- Hier fehlt der Label
+   -- Subquery "Gib mir den Straßennamen":
+   ( SELECT k.bezeichnung                       -- Straßenname ..
+       FROM ax_lagebezeichnungkatalogeintrag k  --  .. aus Katalog
+       JOIN ax_lagebezeichnungohnehausnummer l  -- verwendet als Lage o.H.
+         ON (k.land=l.land AND k.regierungsbezirk=l.regierungsbezirk 
+             AND k.kreis=l.kreis AND k.gemeinde=l.gemeinde AND k.lage=l.lage )
+       JOIN alkis_beziehungen x ON l.gml_id = x.beziehung_zu  -- Relation zum Präsentationsobjekt
+      WHERE p.gml_id = x.beziehung_von
+        AND x.beziehungsart = 'dientZurDarstellungVon'
+      -- LIMIT 1 -- war in einem Fall notwendig, wo 2mal der gleiche Text zugeordnet war, Ursache?
+   )
+ WHERE     p.schriftinhalt IS NULL
+   AND NOT p.the_geom      IS NULL;
 
 
 -- ========================================================

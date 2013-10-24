@@ -13,6 +13,7 @@
 --             ForeignKey vorübergehend ausgeschaltet.
 --  2012-04-25 simple_geom fuer pp_flur
 --  2013-04-18 Kommentare.
+--  2012-10-24 Neue Tabelle für die Präsentation von Straßennamen und -Klassifikationen
 
 
 -- ============================
@@ -357,5 +358,38 @@ CREATE VIEW pp_gemarkung_analyse AS
          st_npoints(simple_geom) AS umring_einfache_punkte
   FROM pp_gemarkung;
 
+
+-- NEU 2013-10-24
+-- Tabelle für die Präsentation von Straßen-Namen und -Klassifikationen
+-- Tabelle "pp_strassenname" speichert den VIEW "ap_pto_stra".
+
+--DROP TABLE pp_strassenname;
+CREATE TABLE pp_strassenname 
+(   gid		serial NOT NULL,
+    gml_id character(16),
+ -- advstandardmodell character varying[],
+    schriftinhalt character varying, -- Label: anzuzeigender Text
+    hor character varying,
+    ver character varying,
+ -- signaturnummer character varying,
+ -- darstellungsprioritaet integer,
+    art character varying,
+    winkel double precision,
+    CONSTRAINT pp_snam_pk  PRIMARY KEY (gid)
+) WITH (OIDS=FALSE);
+
+SELECT AddGeometryColumn('pp_strassenname','the_geom','25832','POINT',2);
+CREATE INDEX pp_snam_gidx ON pp_strassenname USING gist(the_geom); 
+
+  COMMENT ON TABLE  pp_strassenname                IS 'Post-Processing: Label der Straßennamen in der Karte. Auszug aus ap_pto.';
+
+  COMMENT ON COLUMN pp_strassenname.gid            IS 'Editierschlüssel der Tabelle';
+  COMMENT ON COLUMN pp_strassenname.gml_id         IS 'Objektschlüssel des Präsentationsobjektes aus ap_pto. Zur Verbindung mit Katalog.';
+  COMMENT ON COLUMN pp_strassenname.schriftinhalt  IS 'Label, darzustellender Name der Straße oder Klassifikation';
+  COMMENT ON COLUMN pp_strassenname.hor            IS 'Horizontale Ausrichtung des Textes zur Punkt-Koordinate: linksbündig, zentrisch, ...';
+  COMMENT ON COLUMN pp_strassenname.ver            IS 'Vertikale   Ausrichtung des Textes zur Punkt-Koordinate: Basis, ..';
+  COMMENT ON COLUMN pp_strassenname.art            IS 'Klasse der Straße: Straße, Weg, .. , BezKlassifizierungStrasse';
+  COMMENT ON COLUMN pp_strassenname.winkel         IS 'Drehung des Textes';
+  COMMENT ON COLUMN pp_strassenname.the_geom       IS 'Position (Punkt) der Labels in der Karte';
 
 -- ENDE --

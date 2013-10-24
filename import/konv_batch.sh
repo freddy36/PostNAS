@@ -28,6 +28,7 @@
 ##              Test als 0.7a mit gepatchter gdal-Version (noch 2.0dev)
 ##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" für Reparatur der 
 ##              Präsentationsobjekte Straßenname im Post-Processing
+##   2013-10-24 F.J. krz: Zwischenlösung "praesentation_action.sql" wieder deaktiviert.
 ##
 ## ToDo: Option "-skipfailures" nach Test entfernen ?
 ##
@@ -154,8 +155,8 @@ fi
     (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_laden.sql)
 
 
-    echo "** - Präsentationsobjekte generieren:"
-    (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_praesentation_action.sql)
+    # echo "** - Präsentationsobjekte generieren:"
+    # (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_praesentation_action.sql)
 
   fi
 #

@@ -19,7 +19,9 @@
 --  2013-04-15 Unterdrücken doppelter Darstellung in den Views 'ap_pto_stra', 'ap_pto_nam', 'ap_pto_rest'
 --  2013-04-16 Thema "Bodenschätzung" und fehlernde Kommentare zum Views ergänzt.
 --             Diese Datei aufgeteilt in "sichten.sql" und "sichten_wms.sql"
---  2013-04-22 ++++ art="PNR" (Pseudonummer)
+--  2013-04-22 art="PNR" (Pseudonummer)
+--  2013-10-24 View ap_pto_stra wird ersetzt durch die Tabellen "pp_strassenname" und "pp_strassenklas", die im postProcessing gefüllt werden.
+
 
 -- WMS-Layer "ag_t_flurstueck"
 -- ---------------------------
@@ -328,9 +330,11 @@ AS
          )
 ;
 COMMENT ON VIEW ap_pto_stra 
-  IS 'Sicht für Kartendarstellung: Beschriftung aus ap_pto für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe';
--- ToDo: Im PostProcessing in einer Tabelle speichern.
+  IS 'Sicht für Kartendarstellung: Beschriftung aus ap_pto für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe. Siehe auch pp_strassenname und pp_strassenklas';
 
+-- 2013-10-24: Daten aus dem View "ap_pto_stra" werden im PostProcessing gespeichert in den Tabellen "pp_strassenname" und "pp_strassenklas".
+-- Der View übernimmt die Auswahl des passenden advstandardmodell und rechnet den Winkel passend um,
+-- In der Tabelle werden dann die leer gebliebenen Label aus dem Katalog noch ergänzt.
 
 -- Layer NAME "ap_pto_nam" GROUP "praesentation"
 -- -------------------------------------------------------

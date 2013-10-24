@@ -108,7 +108,7 @@ COMMENT ON VIEW pp_praes_strassen_klass_leer
 -- Dann sind die Namen noch gefüllt und brauchen nicht auf diese Weise rekonstruiert werden.
 
 
- DROP VIEW  pp_praes_strassen_name_update_vorschau;
+--DROP VIEW  pp_praes_strassen_name_update_vorschau;
 CREATE OR REPLACE VIEW pp_praes_strassen_name_update_vorschau
 AS
   SELECT -- p.gml_id AS gml_pto,
@@ -129,7 +129,7 @@ COMMENT ON VIEW pp_praes_strassen_name_update_vorschau
   IS 'Präsentationsobjekt zu Straßen. Vorschau zum Update des Namens der in ap_pto.';
 
 
- DROP VIEW pp_praes_strassen_klass_update_vorschau;
+--DROP VIEW pp_praes_strassen_klass_update_vorschau;
 CREATE OR REPLACE VIEW pp_praes_strassen_klass_update_vorschau
 AS
   SELECT -- p.gml_id AS gml_pto,

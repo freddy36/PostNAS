@@ -17,6 +17,9 @@
 # 2013-03-11 F.J. krz  Neuer Layer "ax_gebaeude_txt" (Funktion und Name zum Gebäude)
 # 2013-04-18 F.J. krz  Thema (Gruppe) "Bodenschätzung" wurde überarbeitet und vor Gruppe "Flurstücke" verschoben
 # 2013-06-19 F.J. krz  Layer "ax_untergeordnetesgewaesser_polygon"/"*_line" nach Geometrietyp filtern nicht nach funktion
+# 2013-10-16 F.J. krz  FS-Nr dunkler, besser sichtbar auf SW-Drucker.
+# 2013-10-24 F.J. krz  Präsentation der Straßennamen aus der Tabelle "pp_strassenname" statt aus dem View "ap_pto_stra".
+#                      Die Tabelle wird im PostProcessing redundant befüllt um schneller darstellen zu können.
 
 ###
 # Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
@@ -3368,7 +3371,7 @@ LAYER
 			SIZE 9 MINSIZE 7 MAXSIZE 14
 			POSITION cc
 			OFFSET 0 -3.5433
-			COLOR 200 0 0
+			COLOR 100 0 0 # 200 0 0
 			OUTLINECOLOR 254 254 254
 			OUTLINEWIDTH 2
 			FORCE True
@@ -3885,7 +3888,8 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "wkb_geometry from (SELECT * FROM ap_pto_stra) as foo using unique ogc_fid using SRID=25832"
+	#ATA "wkb_geometry from (SELECT * FROM ap_pto_stra) as foo using unique ogc_fid using SRID=25832"
+	DATA "the_geom from (SELECT * FROM pp_strassenname) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
 		wms_title "Straßen"
