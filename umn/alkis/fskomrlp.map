@@ -1,0 +1,75 @@
+MAP # 2013-11-26 Flurstücke im Kommunalen Eigentum - Ortsgemeinde Osann-Monzel
+	NAME "fskomrlp"
+	STATUS ON
+	EXTENT 349000 5529000 356000 5533000
+	PROJECTION "init=epsg:25832" END
+	MAXSIZE 2100
+	FONTSET "/opt/gdi/fonts/arial.fnt"
+	UNITS METERS
+	WEB
+		METADATA
+			wms_title "Flurstücke kommunal"
+			wms_abstract "Flurstücke der Gemeinde Hüllhorst aus ALKIS"
+			wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+			wms_encoding "UTF-8"
+			wms_onlineresource "http://ows.krz.de/cgi-bin/mapserv62?map=/opt/gdi/wms/fskomrlp.map"
+			wms_feature_info_mime_type "text/html"
+			wms_keywordlist "ALKIS,Flurstück"
+			wms_fees "none"
+			wms_accessconstraints "für den Dienstgebrauch"
+			wms_enable_request "*"
+			wms_box_extended "true"
+			include "meta600fj.map"
+		END
+	END
+	LEGEND
+		STATUS ON
+		KEYSIZE 32 16
+		KEYSPACING 5 5
+		TRANSPARENT ON
+		LABEL
+			TYPE TRUETYPE
+			FONT 'arial'
+			SIZE 9
+			COLOR 1 1 1
+		END
+	END
+	LAYER
+		NAME "st_flurst"
+		TYPE POLYGON
+		CONNECTIONTYPE POSTGIS
+		CONNECTION "host=10.0.100.73 dbname=alkis07rlp user=ms6 port=5432"
+		PROCESSING "CLOSE_CONNECTION=DEFER"
+		DATA "wkb_geometry from st_flurst using SRID=25832 using unique gml_id"
+		METADATA
+			wms_srs "EPSG:31467 EPSG:4326 EPSG:25832 EPSG:54004"
+			wms_title "Fläche"
+			wms_abstract "Flächen der Flurstücke mit (Teil-) Eigentümer Gemeinde oder Recht der Gemeinde am Flurstück."
+		END
+		MINSCALEDENOM 50
+		MAXSCALEDENOM 12000
+		SYMBOLSCALEDENOM 1000
+		CLASSITEM ba_dien # Buchungsart dienend
+		CLASS
+			EXPRESSION "0"
+			NAME "Eigentum"
+			STYLE
+				COLOR 250 180 0 OPACITY 20
+			END
+			STYLE
+				OUTLINECOLOR 200 60 0
+				WIDTH 1.2 MINWIDTH 0.8 MAXWIDTH 2.2
+			END
+		END
+		CLASS
+			NAME "Recht an .."
+			STYLE
+				COLOR 240 90 60 OPACITY 20
+			END
+			STYLE
+				OUTLINECOLOR 250 20 0
+				WIDTH 1.2 MINWIDTH 0.8 MAXWIDTH 2.2
+			END
+		END
+	END
+END

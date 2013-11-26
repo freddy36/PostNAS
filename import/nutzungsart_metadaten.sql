@@ -15,6 +15,69 @@
 -- Stand 
 
 --  2012-02-10 PostNAS 07, Umbenennung
+--  2013-11-18 Auch jeweils einen 0-Wert in "nutzung_class.class" laden für die Fälle wo die Quelltabelle ein "IS NULL" enthält.
+--             Weitere Werte erfasst.
+
+-- WARNUNG:  Wenn in der Praxis weitere Schlüssel vorkommen, die in dieser Tabelle "nutzung_class" noch nicht 
+--           vorkommen, dann kann das bei Equivalenz-Abfragen (INNER JOIN) dazu führen, dass die 
+--           Nutzungsarten-Abschnitte mit den hier fehlenden Schlüsseln ausgelassen werden.
+-- Lösung: - Bei SQL-Abfragen diese Tabelle mit "LEFT JOIN" verknüpfen.
+--         - Im PostProcessing (pp_) diese Tabelle durch vorkommende Schlüssel aus der der Tabelle "nutzung" ergänzen.
+
+
+-- DoDo: Sollte die Durchnummerierung der Gruppen (Spalte "nutz_id") ersetzt werden durch
+--       den Wert "Kennung" aus der GeoInfoDok?
+--  http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/GeoInfoDok/ALKIS/ALKIS_OK_V6-0.html#_3DFA354A0193
+
+-- Objektartengruppe:Siedlung
+
+-- nutz_id Kennung Name
+
+-- 1       41001 'Wohnbaufläche'
+-- 2       41002 'Industrie- und Gewerbefläche'
+-- 3       41003 'Halde'
+-- 4       41004 'Bergbaubetrieb'
+-- 5       41005 'Tagebau, Grube, Steinbruch'
+-- 6       41006 'Fläche gemischter Nutzung'
+-- 7       41007 'Fläche besonderer funktionaler Prägung'
+-- 8       41008 'Sport-, Freizeit- und Erholungsfläche'
+-- 9       41009 'Friedhof'
+-- ?       41010 'Siedlungsfläche'
+
+-- Objektartengruppe:Verkehr
+
+-- 10      42001 'Straßenverkehr'
+-- ?       42002 'Straße'
+-- ?       42003 'Straßenachse'
+-- ?       42005 'Fahrbahnachse'
+-- 11      42006 'Weg'
+-- ?       42008 'Fahrwegachse'
+-- 12      42009 'Platz'
+-- 13      42010 'Bahnverkehr'
+-- ?       42014 'Bahnstrecke'
+-- 14      42015 'Flugverkehr'
+-- 15      42016 'Schiffsverkehr'
+
+-- Objektartengruppe:Vegetation
+
+-- 16      43001 'Landwirtschaft'
+-- 17      43002 'Wald'
+-- 18      43003 'Gehölz'
+-- 19      43004 'Heide'
+-- 20      43005 'Moor'
+-- 21      43006 'Sumpf'
+-- 22      43007 'Unland/Vegetationslose Fläche'
+-- ?       43008 'Fläche zur Zeit unbestimmbar'
+
+-- Objektartengruppe:Gewässer
+
+-- 24      44001 'Fließgewässer'
+-- ?       44002 'Wasserlauf'
+-- ?       44003 'Kanal'
+-- ?       44004 'Gewässerachse'
+-- 25      44005 'Hafenbecken'
+-- 26      44006 'Stehendes Gewässer'
+-- 27      44007 'Meer'
 
 SET client_encoding = 'UTF-8';
 
@@ -38,9 +101,11 @@ DELETE FROM nutzung_class;
 INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinfo)
 VALUES (1, 'Siedlung','ax_wohnbauflaeche','Wohnbaufläche', 'Art der Bebauung', null);
 
--- Classes (artderbebauung):
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (1, 1000,'Offen',       '"Offen" beschreibt die Bebauung von "Wohnbaufläche", die vorwiegend durch einzelstehende Gebäude charakterisiert wird.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (1, 2000,'Geschlossen', '"Geschlossen" beschreibt die Bebauung von "Wohnbaufläche", die vorwiegend durch zusammenhängende Gebäude charakterisiert wird. Die Gebäudeabdeckung ist in der Regel >50 Prozent der Wohnbaufläche.');
+-- Classes (ArtDerBebauung):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (1,    0, '');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (1, 1000, 'Offen',       '"Offen" beschreibt die Bebauung von "Wohnbaufläche", die vorwiegend durch einzelstehende Gebäude charakterisiert wird.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (1, 2000, 'Geschlossen', '"Geschlossen" beschreibt die Bebauung von "Wohnbaufläche", die vorwiegend durch zusammenhängende Gebäude charakterisiert wird. Die Gebäudeabdeckung ist in der Regel >50 Prozent der Wohnbaufläche.');
+
 
 -- Zustand: 2 Werte
 -- 2100,'Außer Betrieb, stillgelegt, verlassen', '"Außer Betrieb, stillgelegt; verlassen" bedeutet, dass sich die Fläche nicht mehr in regelmäßiger, der Bestimmung entsprechenden Nutzung befindet.');
@@ -54,6 +119,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (2, 'Siedlung','ax_industrieundgewerbeflaeche','Industrie- und Gewerbefläche', 'Funktion', null);
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (2,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (2, 1700,'Industrie und Gewerbe', '"Industrie und Gewerbe" bezeichnet Flächen, auf denen vorwiegend Industrie- und Gewerbebetriebe vorhanden sind. Darin sind Gebäude- und Freiflächen und die Betriebsläche Lagerplatz enthalten.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (2, 1710,'Produktion');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (2, 1720,'Handwerk');
@@ -110,13 +176,13 @@ INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (2, 2623,'Betri
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (2, 2630,'Deponie (oberirdisch)', '"Deponie (oberirdisch)" bezeichnet eine Fläche, auf der oberirdisch Abfallstoffe gelagert werden.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (2, 2640,'Deponie (untertägig)', '"Deponie (untertägig)" bezeichnet eine oberirdische Betriebsfläche, unter der Abfallstoffe eingelagert werden (Untertagedeponie).');
 
+
 -- MUSTER:
 --INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (2, __,'__');
 --INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (2, __,'__', '____');
 
 
 -- Zustand als 2. Feld?
-
 
 --*Fördergut:
 -- 1000 Erdöl        'Erdöl' ist ein flüssiges und brennbares Kohlenwasserstoffgemisch, das gefördert wird.
@@ -159,6 +225,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (3, 'Siedlung','ax_halde','Halde', 'Lagergut', null);
 
 -- Classes (Lagergut):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (3,    0,'');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (3, 1000,'Baustoffe');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (3, 2000,'Kohle');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (3, 4000,'Erde');
@@ -181,6 +248,7 @@ VALUES (4, 'Siedlung','ax_bergbaubetrieb','Bergbaubetrieb', 'Abbaugut', null);
 
 -- Classes (Abbaugut):
 -- 'Abbaugut' gibt an, welches Material abgebaut wird.
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (4,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (4, 1000,'Erden, Lockergestein', '"Erden, Lockergestein" bedeutet, dass feinkörnige Gesteine abgebaut werden.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (4, 1001,'Ton', '"Ton" ist ein Abbaugut, das aus gelblichem bis grauem Lockergestein besteht und durch Verwitterung älterer Gesteine entsteht.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (4, 1007,'Kalk, Kalktuff, Kreide', '"Kalk, Kalktuff, Kreide" ist ein Abbaugut, das aus erdigem weißen Kalkstein besteht.');
@@ -226,70 +294,58 @@ INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (4, 5011,'Graph
 INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinfo) 
 VALUES (5, 'Siedlung','ax_tagebaugrubesteinbruch','Tagebau, Grube, Steinbruch', 'Abbaugut', null);
 
--- Classes (Abbaugut):
+-- Classes (Abbaugut):                                                          Ton Steine Scherben
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (5,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1000,'Erden, Lockergestein', '"Erden, Lockergestein" bedeutet, dass feinkörnige Gesteine abgebaut werden.');
-
---Ton 1001 --'Ton' ist ein Abbaugut, das aus gelblichem bis grauem Lockergestein besteht und durch Verwitterung älterer Gesteine entsteht.
---Bentonit 1002 --'Bentonit' ist ein tonartiges Abbaugut, das durch Verwitterung vulkanischer Asche (Tuffe) entstanden ist.
---Kaolin 1003 --'Kaolin' ist ein Abbaugut, das aus weißem, erdigem Gestein, fast reinem Aluminiumsilikat (kieselsaure Tonerde) besteht.
---Lehm 1004 --'Lehm' ist ein Abbaugut, das durch Verwitterung entstanden ist und aus gelb bis braun gefärbtem sandhaltigem Ton besteht.
---Löß, Lößlehm 1005 --'Löß, Lößlehm' ist ein Abbaugut das aus feinsten gelblichen Sedimenten besteht und eine hohe Wasserspeicherfähigkeit aufweist.
---Mergel 1006 --'Mergel' ist ein Abbaugut das aus kalk- und tonartigem Sedimentgestein besteht.
---Kalk, Kalktuff, Kreide 1007 --  'Kalk, Kalktuff, Kreide' ist ein Abbaugut, das aus erdigem weißen Kalkstein besteht.
-
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1008,'Sand', '"Sand" ist ein Abbaugut, das aus kleinen, losen Mineralkörnern (häufig Quarz) besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1001,'Ton',         '"Ton" ist ein Abbaugut, das aus gelblichem bis grauem Lockergestein besteht und durch Verwitterung älterer Gesteine entsteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1002,'Bentonit',    '"Bentonit" ist ein tonartiges Abbaugut, das durch Verwitterung vulkanischer Asche (Tuffe) entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1003,'Kaolin',      '"Kaolin" ist ein Abbaugut, das aus weißem, erdigem Gestein, fast reinem Aluminiumsilikat (kieselsaure Tonerde) besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1004,'Lehm',        '"Lehm" ist ein Abbaugut, das durch Verwitterung entstanden ist und aus gelb bis braun gefärbtem sandhaltigem Ton besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1005,'Löß, Lößlehm', '"Löß, Lößlehm" ist ein Abbaugut das aus feinsten gelblichen Sedimenten besteht und eine hohe Wasserspeicherfähigkeit aufweist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1006,'Mergel',      '"Mergel" ist ein Abbaugut das aus kalk- und tonartigem Sedimentgestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1007,'Kalk, Kalktuff, Kreide', '"Kalk, Kalktuff, Kreide" ist ein Abbaugut, das aus erdigem weißen Kalkstein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1008,'Sand',        '"Sand" ist ein Abbaugut, das aus kleinen, losen Mineralkörnern (häufig Quarz) besteht.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1009,'Kies, Kiessand', '"Kies, Kiessand" ist ein Abbaugut, das aus vom Wasser rund geschliffenen Gesteinsbrocken besteht.');
-
---Farberden 1011 --'Farberden' ist ein Abbaugut, das durch Verwitterung entstanden ist und vorrangig aus eisenhaltigem Gestein besteht.
---Quarzsand 1012 --'Quarzsand' ist ein Abbaugut, das vorwiegend aus kleinen, losen Quarzkörnern besteht.
---Kieselerde 1013 --'Kieselerde' ist ein Abbaugut, das durch tertiäre Binnenseeablagerungen aus Kieselschalen toter Kieselalgen entstanden ist.
-
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1011,'Farberden',    '"Farberden" ist ein Abbaugut, das durch Verwitterung entstanden ist und vorrangig aus eisenhaltigem Gestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1012,'Quarzsand',    '"Quarzsand" ist ein Abbaugut, das vorwiegend aus kleinen, losen Quarzkörnern besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 1013,'Kieselerde',   '"Kieselerde" ist ein Abbaugut, das durch tertiäre Binnenseeablagerungen aus Kieselschalen toter Kieselalgen entstanden ist.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2000,'Steine, Gestein, Festgestein', '"Steine, Gestein, Festgestein" bedeutet, dass grobkörnige oder feste Gesteine abgebaut werden.');
-
---Tonstein 2001 --'Tonstein' ist ein gelblich bis graues Abbaugut, das überwiegend aus Tonmineralien besteht.
---Schiefer, Dachschiefer 2002 --'Schiefer, Dachschiefer' ist ein toniges Abbaugut, das in dünne ebene Platten spaltbar ist.
---Metamorpher Schiefer 2003 --'Metamorpher Schiefer' ist ein Abbaugut, dessen ursprüngliche Zusammensetzung und Struktur durch Wärme und Druck innerhalb der Erdkruste verändert worden ist.
---Mergelstein 2004 --'Mergelstein' ist ein Abbaugut, das sich größtenteils aus Ton und Kalk zusammensetzt.
---Kalkstein 2005 --'Kalkstein' ist ein Abbaugut, das als weit verbreitetes Sedimentgestein überwiegend aus Calciumcarbonat besteht.
---Dolomitstein 2006 --'Dolomitstein' ist ein Abbaugut, das überwiegend aus calcium- und magnesiumhaltigen Mineralien besteht.
---Travertin 2007 --'Travertin' ist ein Abbaugut, das aus gelblichen Kiesel- oder Kalktuffen besteht.
---Marmor 2008 --'Marmor' ist ein Abbaugut, das als rein weißer kristalliner, körniger Kalkstein (Calciumcarbonat) vorkommt.
---Sandstein 2009 --'Sandstein' ist ein Abbaugut, das aus verfestigtem Sedimentgestein besteht.
---Grauwacke 2010 --'Grauwacke' ist ein Abbaugut, das aus tonhaltigem Sandstein besteht und mit Gesteinsbruchstücken angereichert sein kann.
---Quarzit 2011 --'Quarzit' ist ein sehr hartes metamorphes Abbaugut, das vorwiegend aus feinkörnigen Quarzmineralien besteht.
---Gneis 2012 --'Gneis' ist ein metamorphes Abbaugut mit Schieferung, das aus Feldspat, Quarz und Glimmer besteht.
---Basalt, Diabas 2013 --'Basalt, Diabas' ist ein Abbaugut, das aus basischem Ergussgestein besteht.
---Andesit 2014 --'Andesit' ist ein Abbaugut, das aus Ergussgestein besteht.
---Porphyr, Quarzporphyr 2015 --'Porphyr, Quarzporphyr' ist ein eruptiv entstandenes Abbaugut, das aus einer dichten Grundmasse und groben Einsprenglingen besteht.
---Granit 2016 --'Granit' ist ein eruptiv entstandenes Abbaugut, das aus körnigem Feldspat, Quarz, Glimmer besteht.
---Granodiorit 2017 --"Granodiorit" ist ein hell- bis dunkelgraues Abbaugut. Es ist ein mittelkörniges Tiefengestein mit den Hauptbestandteilen Feldspat, Quarz, Hornblende und Biotit.
---Tuff-, Bimsstein 2018 --'Tuff-, Bimsstein' ist ein helles, sehr poröses Abbaugut, das durch rasches Erstarren der Lava entstanden ist.
---Trass 2019 --'Trass' ist ein Abbaugut, das aus vulkanischem Aschentuff (Bimsstein) besteht.
-
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2020,'Lavaschlacke', '"Lavaschlacke" ist ein Abbaugut, das aus ausgestoßenem, geschmolzenen Vulkangestein besteht.');
-
---Talkschiefer, Speckstein 2021
---'Talkschiefer, Speckstein' ist ein farbloses bis graugrünes, sich fettig anfühlendes Abbaugut, das aus dem weichen Mineral Talk besteht.
-
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2001,'Tonstein',     '"Tonstein" ist ein gelblich bis graues Abbaugut, das überwiegend aus Tonmineralien besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2002,'Schiefer, Dachschiefer', '"Schiefer, Dachschiefer" ist ein toniges Abbaugut, das in dünne ebene Platten spaltbar ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2003,'Metamorpher Schiefer', '"Metamorpher Schiefer" ist ein Abbaugut, dessen ursprüngliche Zusammensetzung und Struktur durch Wärme und Druck innerhalb der Erdkruste verändert worden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2004,'Mergelstein',  '"Mergelstein" ist ein Abbaugut, das sich größtenteils aus Ton und Kalk zusammensetzt.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2005,'Kalkstein',    '"Kalkstein" ist ein Abbaugut, das als weit verbreitetes Sedimentgestein überwiegend aus Calciumcarbonat besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2006,'Dolomitstein', '"Dolomitstein" ist ein Abbaugut, das überwiegend aus calcium- und magnesiumhaltigen Mineralien besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2007,'Travertin',    '"Travertin" ist ein Abbaugut, das aus gelblichen Kiesel- oder Kalktuffen besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2008,'Marmor',       '"Marmor" ist ein Abbaugut, das als rein weißer kristalliner, körniger Kalkstein (Calciumcarbonat) vorkommt.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2009,'Sandstein',    '"Sandstein" ist ein Abbaugut, das aus verfestigtem Sedimentgestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2010,'Grauwacke',    '"Grauwacke" ist ein Abbaugut, das aus tonhaltigem Sandstein besteht und mit Gesteinsbruchstücken angereichert sein kann.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2011,'Quarzit',      '"Quarzit" ist ein sehr hartes metamorphes Abbaugut, das vorwiegend aus feinkörnigen Quarzmineralien besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2012,'Gneis',        '"Gneis" ist ein metamorphes Abbaugut mit Schieferung, das aus Feldspat, Quarz und Glimmer besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2013,'Basalt, Diabas', '"Basalt, Diabas" ist ein Abbaugut, das aus basischem Ergussgestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2014,'Andesit',      '"Andesit" ist ein Abbaugut, das aus Ergussgestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2015,'Porphyr, Quarzporphyr', '"Porphyr, Quarzporphyr" ist ein eruptiv entstandenes Abbaugut, das aus einer dichten Grundmasse und groben Einsprenglingen besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2016,'Granit',        '"Granit" ist ein eruptiv entstandenes Abbaugut, das aus körnigem Feldspat, Quarz, Glimmer besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2017,'Granodiorit',   '"Granodiorit" ist ein hell- bis dunkelgraues Abbaugut. Es ist ein mittelkörniges Tiefengestein mit den Hauptbestandteilen Feldspat, Quarz, Hornblende und Biotit.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2018,'Tuff-, Bimsstein', '"Tuff-, Bimsstein" ist ein helles, sehr poröses Abbaugut, das durch rasches Erstarren der Lava entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2019,'Trass',        '"Trass" ist ein Abbaugut, das aus vulkanischem Aschentuff (Bimsstein) besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2020,'Lavaschlacke',   '"Lavaschlacke" ist ein Abbaugut, das aus ausgestoßenem, geschmolzenen Vulkangestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 2021,'Talkschiefer, Speckstein', '"Talkschiefer, Speckstein" ist ein farbloses bis graugrünes, sich fettig anfühlendes Abbaugut, das aus dem weichen Mineral Talk besteht.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4000,'Treib- und Brennstoffe', '"Treib- und Brennstoffe" bedeutet, dass die in der Natur vorkommenden brennbaren organischen und anorganischen Substanzen abgebaut oder gewonnen werden.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4010,'Torf', '"Torf" ist ein Abbaugut, das aus der unvollkommenen Zersetzung abgestorbener pflanzlicher Substanz unter Luftabschluss in Mooren entstanden ist.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4020,'Kohle', '"Kohle" ist ein Abbaugut, das durch Inkohlung (Umwandlungsprozess pflanzlicher Substanzen) entstanden ist.');
-
-
---Braunkohle 4021 --'Braunkohle' ist ein Abbaugut, das durch einen bestimmten Grad von Inkohlung (Umwandlungsprozess pflanzlicher Substanzen) entstanden ist.
---Steinkohle 4022 --'Steinkohle' ist ein Abbaugut, das durch vollständige Inkohlung (Umwandlungsprozess pflanzlicher Substanzen) entstanden ist.
---Ölschiefer 4030 --'Ölschiefer' ist ein Abbaugut, das aus dunklem, bitumenhaltigen, tonigen Gestein besteht.
---Industrieminerale, Salze 5000 --'Industrieminerale, Salze' bedeutet, dass die in der Natur vorkommenden Mineralien abgebaut werden.
---Gipsstein 5001 --'Gipsstein' ist ein natürliches Abbaugut.
---Anhydritstein 5002 --'Anhydritstein' ist ein Abbaugut, das aus wasserfreiem Gips besteht.
---Kalkspat 5005 --'Kalkspat' ist ein weißes oder hell gefärbtes Abbaugut (Calciumcarbonat).
---Schwerspat 5007 --'Schwerspat' ist ein formenreiches, rhombisches weißes bis farbiges Abbaugut.
---Quarz 5008 --'Quarz' ist ein Abbaugut, das aus verschiedenen Gesteinsarten (Granit, Gneis, Sandstein) gewonnen wird.
---Feldspat 5009 --'Feldspat' ist ein weiß bis grauweißes gesteinsbildendes Mineral von blättrigem Bruch, das abgebaut wird.
---Pegmatitsand 5010 --'Pegmatitsand' ist ein Abbaugut, das durch Verwitterung von Granit und Gneis entstanden ist.
---Sonstiges 9999 --'Sonstiges' bedeutet, dass das Abbaugut bekannt, aber nicht in der Attributwertliste aufgeführt ist.
-
-
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4010,'Torf',          '"Torf" ist ein Abbaugut, das aus der unvollkommenen Zersetzung abgestorbener pflanzlicher Substanz unter Luftabschluss in Mooren entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4020,'Kohle',         '"Kohle" ist ein Abbaugut, das durch Inkohlung (Umwandlungsprozess pflanzlicher Substanzen) entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4021,'Braunkohle',    '"Braunkohle" ist ein Abbaugut, das durch einen bestimmten Grad von Inkohlung (Umwandlungsprozess pflanzlicher Substanzen) entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4022,'Steinkohle',    '"Steinkohle" ist ein Abbaugut, das durch vollständige Inkohlung (Umwandlungsprozess pflanzlicher Substanzen) entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 4030,'Ölschiefer',    '"Ölschiefer" ist ein Abbaugut, das aus dunklem, bitumenhaltigen, tonigen Gestein besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5000,'Industrieminerale, Salze', '-"Industrieminerale, Salze" bedeutet, dass die in der Natur vorkommenden Mineralien abgebaut werden.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5001,'Gipsstein',    '"Gipsstein" ist ein natürliches Abbaugut.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5002,'Anhydritstein', '"Anhydritstein" ist ein Abbaugut, das aus wasserfreiem Gips besteht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5005,'Kalkspat',      '"Kalkspat" ist ein weißes oder hell gefärbtes Abbaugut (Calciumcarbonat).');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5007,'Schwerspat',    '"Schwerspat" ist ein formenreiches, rhombisches weißes bis farbiges Abbaugut.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5008,'Quarz',         '"Quarz" ist ein Abbaugut, das aus verschiedenen Gesteinsarten (Granit, Gneis, Sandstein) gewonnen wird.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5009,'Feldspat',      '"Feldspat" ist ein weiß bis grauweißes gesteinsbildendes Mineral von blättrigem Bruch, das abgebaut wird.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 5010,'Pegmatitsand',  '"Pegmatitsand" ist ein Abbaugut, das durch Verwitterung von Granit und Gneis entstanden ist.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (5, 9999,'Sonstiges',     '"Sonstiges" bedeutet, dass das Abbaugut bekannt, aber nicht in der Attributwertliste aufgeführt ist.');
 
 -- 2. Feld: "Zustand"
 -- 2100   Außer Betrieb, stillgelegt, verlassen
@@ -304,6 +360,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (6, 'Siedlung','ax_flaechegemischternutzung','Fläche gemischter Nutzung', 'Funktion', null);
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6, 2100,'Gebäude- und Freifläche, Mischnutzung mit Wohnen');
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6, 2110,'Gebäude- und Freifläche, Mischnutzung mit Wohnen / Wohnen mit Öffentlich ');
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6, 2120,'Gebäude- und Freifläche, Mischnutzung mit Wohnen / Wohnen mit Handel und Dienstleistungen');
@@ -318,6 +375,7 @@ INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6, 2730,'Gebäude- und
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6, 6800,'Landwirtschaftliche Betriebsfläche');
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (6, 7600,'Forstwirtschaftliche Betriebsfläche');
 
+
 -- Art der Bebauung
 -- Offen       1000 -- "Offen" beschreibt die Bebauung von 'Fläche gemischter Nutzung', die vorwiegend durch einzelstehende Gebäude charakterisiert wird.
 -- Geschlossen 2000 -- "Geschlossen" beschreibt die Bebauung von 'Fläche gemischter Nutzung', die vorwiegend durch zusammenhängende Gebäude charakterisiert wird. Die Gebäudeabdeckung ist in der Regel > 50 Prozent der Fläche.
@@ -330,6 +388,7 @@ VALUES (7, 'Siedlung','ax_flaechebesondererfunktionalerpraegung','Fläche besond
 
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (7,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (7, 1100,'Öffentliche Zwecke');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (7, 1110,'Öffentliche Zwecke / Verwaltung', '"Verwaltung" bezeichnet eine Fläche auf der vorwiegend Gebäude der öffentlichen Verwaltung, z. B. Rathaus, Gericht, Kreisverwaltung stehen.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (7, 1120,'Öffentliche Zwecke / Bildung und Forschung', '"Bildung und Forschung" bezeichnet eine Fläche, auf der vorwiegend Gebäude stehen, in denen geistige, kulturelle und soziale Fähigkeiten vermittelt werden und/oder wissenschaftliche Forschung betrieben wird (z.B. Schulen, Universitäten, Forschungsinstitute).');
@@ -344,9 +403,6 @@ INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (7, 1310,'Histo
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (7, 1320,'Historische Anlage / Schlossanlage');
 
 
---  ++++++  ERFASSUNG BIS HIER AM 09.11.2010 ++++++++
-
-
 -- 08 REO: ax_SportFreizeitUndErholungsflaeche
 -- -------------------------------------
 -- 'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, 
@@ -357,6 +413,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (8, 'Siedlung','ax_sportfreizeitunderholungsflaeche','Sport-, Freizeit- und Erholungsfläche', 'Funktion', null);
 
 -- Classes:
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (8,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (8, 4100,'Sportanlage', '"Sportanlage" ist eine Fläche mit Bauwerken und Einrichtungen, die zur Ausübung von (Wettkampf-)sport und für Zuschauer bestimmt ist.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (8, 4101,'Gebäude- u. Freifläche Erholung, Sport');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (8, 4110,'Golfplatz', '"Golfplatz" ist eine Fläche mit Bauwerken und Einrichtungen, die zur Ausübung des Golfsports genutzt wird.');
@@ -402,6 +459,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass) -- kei
 VALUES (9, 'Siedlung','ax_friedhof','Friedhof', 'Funktion');
 
 -- Class (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (9,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (9, 9401,'Gebäude- und Freifläche Friedhof');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (9, 9402,'Friedhof (ohne Gebäude)');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (9, 9403,'Friedhof (Park)');
@@ -416,10 +474,11 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (10, 'Verkehr','ax_strassenverkehr','Straßenverkehr', 'Funktion', 'Zweitname');
 
 -- Class (Funktion):
-INSERT INTO nutzung_class (nutz_id, class, label) VALUES (10, 2311,'Gebäude- und Freifläche zu Verkehrsanlagen, Straße');
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (10,    0,''); 
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (10, 2311,'Gebäude- und Freifläche zu Verkehrsanlagen, Straße');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (10, 2312,'Verkehrsbegleitfläche Straße', '"Verkehrsbegleitfläche Straße" bezeichnet eine bebaute oder unbebaute Fläche, die einer Straße zugeordnet wird. Die "Verkehrsbegleitfläche Straße" ist nicht Bestandteil der Fahrbahn.');
-INSERT INTO nutzung_class (nutz_id, class, label) VALUES (10, 2313,'Straßenentwässerungsanlage');
-INSERT INTO nutzung_class (nutz_id, class, label) VALUES (10, 5130,'Fußgängerzone');
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (10, 2313,'Straßenentwässerungsanlage');
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (10, 5130,'Fußgängerzone');
 
 
 -- 11 ax_Weg
@@ -430,6 +489,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (11, 'Verkehr','ax_weg','Weg', 'Funktion', 'Bezeichnung');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (11,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (11, 5210,'Fahrweg');
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (11, 5211,'Hauptwirtschaftsweg');
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (11, 5212,'Wirtschaftsweg');
@@ -449,6 +509,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (12, 'Verkehr','ax_platz','Platz', 'Funktion', 'Zweitname');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (12,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (12, 5130,'Fußgängerzone', '"Fußgängerzone" ist ein dem Fußgängerverkehr vorbehaltener Bereich, in dem ausnahmsweise öffentlicher Personenverkehr, Lieferverkehr oder Fahrradverkehr zulässig sein kann.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (12, 5310,'Parkplatz', '"Parkplatz" ist eine zum vorübergehenden Abstellen von Fahrzeugen bestimmte Fläche.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (12, 5320,'Rastplatz', '"Rastplatz" ist eine Anlage zum Halten, Parken oder Rasten der Verkehrsteilnehmer mit unmittelbarem Anschluss zur Straße ohne Versorgungseinrichtung, ggf. mit Toiletten.');
@@ -465,8 +526,10 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (13, 'Verkehr','ax_bahnverkehr','Bahnverkehr', 'Funktion', 'Bahnkategorie');
 
 -- Classes (Funktion):)
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (13,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (13, 2321,'Gebäude- und Freifläche zu Verkehrsanlagen, Schiene');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (13, 2322,'Verkehrsbegleitfläche Bahnverkehr', '"Verkehrsbegleitfläche Bahnverkehr" bezeichnet eine bebaute oder unbebaute, an den Bahnkörper angrenzende Fläche, die dem Schienenverkehr dient.');
+
 
 -- alternative Kategorie:
 
@@ -507,6 +570,7 @@ VALUES (14, 'Verkehr','ax_flugverkehr','Flugverkehr', 'Art', 'Bezeichnung');
 --INSERT INTO nutzung_class (nutz_id, class, label) VALUES (14, 5501,'Gebäude- und Freifläche zu Verkehrsanlagen, Luftfahrt');
 
 -- Classes (Art):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (14,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5510,'Flughafen', '"Flughafen" ist eine Anlage mit Gebäuden, Bauwerken, Start- und Landebahnen sowie sonstigen flugtechnischen Einrichtungen zur Abwicklung des Flugverkehrs.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5511,'Internationaler Flughafen', '"Internationaler Flughafen" ist ein Flughafen, der in der Luftfahrtkarte 1 : 500000 (ICAO) als solcher ausgewiesen ist.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5512,'Regionalflughafen', '"Regionalflughafen" ist ein Flughafen der gemäß Raumordnungsgesetz als Regionalflughafen eingestuft ist.');
@@ -514,7 +578,6 @@ INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5520,'Verk
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5530,'Hubschrauberflugplatz', '"Hubschrauberflugplatz" ist ein Flugplatz, der in der Luftfahrtkarte 1:500000 (ICAO) als solcher ausgewiesen ist.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5540,'Landeplatz, Sonderlandeplatz', '"Landeplatz, Sonderlandeplatz" ist eine Fläche, die in der Luftfahrtkarte 1:500000 (ICAO) als Landeplatz, Sonderlandeplatz ausgewiesen ist.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (14, 5550,'Segelfluggelände', '"Segelfluggelände" ist eine Fläche, die in der Luftfahrtkarte 1:500000 (ICAO) als Segelfluggelände ausgewiesen ist.');
-
 
 -- Nutzung:
 
@@ -535,6 +598,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass)  -- ke
 VALUES (15, 'Verkehr','ax_schiffsverkehr','Schiffsverkehr', 'Funktion');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (15,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (15, 2341,'Gebäude und Freifläche zu Verkehrsanlagen, Schifffahrt');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (15, 5610,'Hafenanlage (Landfläche)', '"Hafenanlage (Landfläche)" bezeichnet die Fläche innerhalb von "Hafen", die nicht von Wasser bedeckt ist und die ausschließlich zum Betrieb des Hafens dient.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (15, 5620,'Schleuse (Landfläche)', '"Schleuse (Landfläche)" bezeichnet die Fläche innerhalb von "Schleuse", die nicht von Wasser bedeckt ist und die ausschließlich zum Betrieb der Schleuse dient..');
@@ -561,19 +625,20 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass)
 VALUES (16, 'Vegetation','ax_landwirtschaft','Landwirtschaft', 'Vegetationsmerkmal');
 
 -- Classes:
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1010,'Ackerland', '"Ackerland" ist eine Fläche für den Anbau von Feldfrüchten (z.B. Getreide, Hülsenfrüchte, Hackfrüchte) und Beerenfrüchten (z.B. Erdbeeren). Zum Ackerland gehören auch die Rotationsbrachen, Dauerbrachen sowie Flächen, die zur Erlangung der Ausgleichszahlungen der EU stillgelegt worden sind.');
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (16,    0,''); 
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1010,'Ackerland',     '"Ackerland" ist eine Fläche für den Anbau von Feldfrüchten (z.B. Getreide, Hülsenfrüchte, Hackfrüchte) und Beerenfrüchten (z.B. Erdbeeren). Zum Ackerland gehören auch die Rotationsbrachen, Dauerbrachen sowie Flächen, die zur Erlangung der Ausgleichszahlungen der EU stillgelegt worden sind.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1011,'Streuobstacker', '"Streuobstacker" beschreibt den Bewuchs einer Ackerfläche mit Obstbäumen.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1012,'Hopfen', '"Hopfen" ist eine mit speziellen Vorrichtungen ausgestattete Agrarfläche für den Anbau von Hopfen.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1012,'Hopfen',         '"Hopfen" ist eine mit speziellen Vorrichtungen ausgestattete Agrarfläche für den Anbau von Hopfen.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (16, 1013,'Spargel');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1020,'Grünland', '"Grünland" ist eine Grasfläche, die gemäht oder beweidet wird.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1020,'Grünland',       '"Grünland" ist eine Grasfläche, die gemäht oder beweidet wird.');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1021,'Streuobstwiese', '"Streuobstwiese" beschreibt den Bewuchs einer Grünlandfläche mit Obstbäumen.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1030,'Gartenland', '"Gartenland" ist eine Fläche für den Anbau von Gemüse, Obst und Blumen sowie für die Aufzucht von Kulturpflanzen.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1031,'Baumschule', '"Baumschule" ist eine Fläche, auf der Holzgewächse aus Samen, Ablegern oder Stecklingen unter mehrmaligem Umpflanzen (Verschulen) gezogen werden.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1040,'Weingarten', '"Weingarten" ist eine mit speziellen Vorrichtungen ausgestattete Agrarfläche auf der Weinstöcke angepflanzt sind.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1050,'Obstplantage', '"Obstplantage" ist eine landwirtschaftliche Fläche, die mit Obstbäumen und Obststräuchern bepflanzt ist');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1030,'Gartenland',     '"Gartenland" ist eine Fläche für den Anbau von Gemüse, Obst und Blumen sowie für die Aufzucht von Kulturpflanzen.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1031,'Baumschule',     '"Baumschule" ist eine Fläche, auf der Holzgewächse aus Samen, Ablegern oder Stecklingen unter mehrmaligem Umpflanzen (Verschulen) gezogen werden.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1040,'Weingarten',     '"Weingarten" ist eine mit speziellen Vorrichtungen ausgestattete Agrarfläche auf der Weinstöcke angepflanzt sind.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1050,'Obstplantage',   '"Obstplantage" ist eine landwirtschaftliche Fläche, die mit Obstbäumen und Obststräuchern bepflanzt ist');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1051,'Obstbaumplantage', '"Obstbaumplantage" ist eine landwirtschaftliche Fläche, die ausschließlich mit Obstbäumen bepflanzt ist.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (16, 1052,'Obststrauchplantage');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1200,'Brachland', '"Brachland" ist eine Fläche der Landwirtschaft, die seit längerem nicht mehr zu Produktionszwecken genutzt wird.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (16, 1200,'Brachland',      '"Brachland" ist eine Fläche der Landwirtschaft, die seit längerem nicht mehr zu Produktionszwecken genutzt wird.');
 
 
 -- 17 ax_Wald
@@ -585,9 +650,10 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (17, 'Vegetation','ax_wald','Wald', 'Vegetationsmerkmal', 'Bezeichnung');
 
 -- Classes (Vegetationsmerkmal):
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (17, 1100,'Laubholz', '"Laubholz" beschreibt den Bewuchs einer Vegetationsfläche mit Laubbäumen.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (17, 1200,'Nadelholz', '"Nadelholz" beschreibt den Bewuchs einer Vegetationsfläche mit Nadelbäumen.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (17, 1300,'Laub- und Nadelholz', '"Laub- und Nadelholz" beschreibt den Bewuchs einer Vegetationsfläche mit Laub- und Nadelbäumen.');
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (17,    0,''); 
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (17, 1100,'Laubholz',              '"Laubholz" beschreibt den Bewuchs einer Vegetationsfläche mit Laubbäumen.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (17, 1200,'Nadelholz',             '"Nadelholz" beschreibt den Bewuchs einer Vegetationsfläche mit Nadelbäumen.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (17, 1300,'Laub- und Nadelholz',   '"Laub- und Nadelholz" beschreibt den Bewuchs einer Vegetationsfläche mit Laub- und Nadelbäumen.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (17, 1310,'Laubwald mit Nadelholz');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (17, 1320,'Nadelwald mit Laubholz');
 
@@ -603,6 +669,7 @@ VALUES (18, 'Vegetation','ax_gehoelz','Gehölz','Funktion', 'Vegetationsmerkmal'
 --INSERT INTO nutzung_class (nutz_id, class, label) VALUES (18, 1400,'Latschenkiefer');
 
 -- Classes (Funktion)
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (18,    0,''); 
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (18, 1000,'Windschutz');
 
 
@@ -612,6 +679,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title)
 VALUES (19, 'Vegetation','ax_heide','Heide');
 
 -- Keine Classes
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (19,    0,'');
 
 
 -- 20 ax_Moor
@@ -620,6 +688,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title)
 VALUES (20, 'Vegetation','ax_moor','Moor');
 
 -- Keine Classes
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (20,    0,'');
 
 
 -- 21 ax_Sumpf
@@ -628,7 +697,8 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title)
 VALUES (21, 'Vegetation','ax_sumpf','Sumpf');
 
 -- Keine Classes
-
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (21,    0,'');
+ 
 
 -- 22 ax_UnlandVegetationsloseFlaeche
 -- -------------------------------------
@@ -638,11 +708,13 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (22, 'Vegetation','ax_unlandvegetationsloseflaeche','Unland, vegetationslose Fläche', 'Funktion', 'Oberflächenmaterial');
 
 -- Classes (Funktion):
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1000,'Vegetationslose Fläche', '"Vegetationslose Fläche" ist eine Fläche ohne nennenswerten Bewuchs aufgrund besonderer Bodenbeschaffenheit.');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1100,'Gewässerbegleitfläche', '"Gewässerbegleitfläche" bezeichnet eine bebaute oder unbebaute Fläche, die einem Fließgewässer zugeordnet wird. Die Gewässerbegleitfläche ist nicht Bestandteil der Gewässerfläche.');
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (22,    0,'');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1000,'Vegetationslose Fläche',  '"Vegetationslose Fläche" ist eine Fläche ohne nennenswerten Bewuchs aufgrund besonderer Bodenbeschaffenheit.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1100,'Gewässerbegleitfläche',   '"Gewässerbegleitfläche" bezeichnet eine bebaute oder unbebaute Fläche, die einem Fließgewässer zugeordnet wird. Die Gewässerbegleitfläche ist nicht Bestandteil der Gewässerfläche.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (22, 1110,'Bebaute Gewässerbegleitfläche');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (22, 1120,'Unbebaute Gewässerbegleitfläche');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1200,'Sukzessionsfläche', '"Sukzessionsfläche" ist eine Fläche, die dauerhaft aus der landwirtschaftlichen oder sonstigen bisherigen Nutzung herausgenommen ist und die in den Urzustand z. B. Gehölz, Moor, Heide übergeht.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1200,'Sukzessionsfläche',       '"Sukzessionsfläche" ist eine Fläche, die dauerhaft aus der landwirtschaftlichen oder sonstigen bisherigen Nutzung herausgenommen ist und die in den Urzustand z. B. Gehölz, Moor, Heide übergeht.');
+
 
 -- Info (Oberflächenmaterial)
 --INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (22, 1010,'Fels',             '"Fels" bedeutet, dass die Erdoberfläche aus einer festen Gesteinsmasse besteht.');
@@ -672,11 +744,12 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass)
 VALUES (24, 'Gewässer','ax_fliessgewaesser','Fließgewässer', 'Funktion');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24,    0,'');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24, 8200,'Fluss');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24, 8210,'Altwasser');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24, 8220,'Altarm');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (24, 8230,'Flussmündungstrichter', '"Flussmündungstrichter" ist der Bereich des Flusses im Übergang zum Meer. Er beginnt dort, wo die bis dahin etwa parallel verlaufenden Ufer des Flusses sich trichterförmig zur offenen See hin erweitern. Die Abgrenzungen der Flussmündungstrichter ergeben sich aus dem Bundeswasserstraßengesetz (meerseitig) und den Bekanntmachungen der Wasser- und Schifffahrtsverwaltung sowie höchst-richterlicher Rechtsprechung (binnenseitig).');
-INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (24, 8300,'Kanal', '"Kanal" ist ein für die Schifffahrt angelegter, künstlicher Wasserlauf.');
+INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (24, 8300,'Kanal',                 '"Kanal" ist ein für die Schifffahrt angelegter, künstlicher Wasserlauf.');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24, 8400,'Graben');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24, 8410,'Fleet');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (24, 8500,'Bach');
@@ -690,6 +763,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (25, 'Gewässer','ax_hafenbecken','Hafenbecken', 'Funktion', 'Nutzung');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label) VALUES (25,    0,'');
 INSERT INTO nutzung_class (nutz_id, class, label) VALUES (25, 8810,'Sportboothafenbecken');
 
 -- Nutzung:
@@ -710,6 +784,7 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (26, 'Gewässer','ax_stehendesgewaesser','stehendes Gewässer', 'Funktion', 'Gewässerkennziffer');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (26,    0,'');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (26, 8610,'See');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (26, 8620,'Teich');
 INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (26, 8630,'Stausee');
@@ -730,13 +805,12 @@ INSERT INTO nutzung_meta (nutz_id, gruppe, source_table, title, fldclass, fldinf
 VALUES (27, 'Gewässer','ax_meer','Meer', 'Funktion', 'Bezeichnung');
 
 -- Classes (Funktion):
+INSERT INTO nutzung_class (nutz_id, class, label)         VALUES (27,    0,'');
 INSERT INTO nutzung_class (nutz_id, class, label, blabla) VALUES (27, 8710,'Küstengewässer', '"Küstengewässer" ist die Fläche zwischen der Küstenlinie bei mittlerem Hochwasser oder der seewärtigen Begrenzung der oberirdischen Gewässer und der seewärtigen Begrenzung des deutschen Hoheitsgebietes. Dem mittleren Hochwasser ist der mittlere Wasserstand der Ostsee gleichzusetzen.');
-
 
 --tidemerkmal:
 
 -- Mit Tideeinfluss 1000
 -- "Mit Tideeinfluss" sind periodische Änderungen des Wasserspiegels und horizontale Bewegungen des Wassers, hervorgerufen durch die Massenanziehungs- und Fliehkräfte des Systems Sonne, Mond und Erde in Verbindung mit der Erdrotation.
-
 
 -- END --

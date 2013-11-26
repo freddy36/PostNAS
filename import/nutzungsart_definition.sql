@@ -15,6 +15,8 @@
 -- Stand 
 
 --  2012-02-10 PostNAS 07, Umbenennung
+--  2013-11-15 In nutzung_class.class können NULL-Werte auftreten.
+--  2013-11-26 NULL wird durch Zahl "0" ersetzt, "NOT NULL" wieder aktivieren
 
 SET client_encoding = 'UTF-8';
 
@@ -54,14 +56,14 @@ COMMENT ON COLUMN nutzung_meta.fldinfo        IS 'Name des Feldes aus "source_ta
 --DROP TABLE nutzung;
 CREATE TABLE nutzung (
 	gml_id		character(16),
-	beginnt		character(20),	-- mehrfache gml_id eindeutig machen, Datenfehler?
+	beginnt		character(20),	    -- mehrfache gml_id eindeutig machen, Datenfehler?
 	nutz_id		integer,
-	class		integer,
+	class		integer  NOT NULL,  -- NULL-Werte der Quelltabelle durch den num. Wert 0 ersetzen
 	info		integer,
 	zustand		integer,
 	"name"		varchar,
 	bezeichnung	varchar,
---	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id),		-- sollte so sein
+--	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id),		    -- sollte so sein
 	CONSTRAINT	nutzung_pk      PRIMARY KEY (gml_id, beginnt),	-- würg arround (gml_id mehrfach!)
 	CONSTRAINT	nutzung_meta_id FOREIGN KEY (nutz_id)
 		REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
@@ -95,25 +97,27 @@ COMMENT ON COLUMN nutzung.zustand     IS 'ZUS "Zustand" beschreibt, ob der Absch
 
 
 -- Schluesseltabelle: classes innerhalb einer Nutzungsart.
--- Wird nicht aus NAS geladen sondern durch das manuell zu pflegende Script.
---  "alkis_nutzungsart_metadaten.sql"
+-- Wird nicht aus NAS geladen sondern durch das manuell zu pflegende Script "nutzungsart_metadaten.sql"
 
+
+--DROP TABLE nutzung_class;
 CREATE TABLE nutzung_class (
 	nutz_id       integer NOT NULL,
-	class         integer NOT NULL,
+	class         integer, --  NOT NULL,
 	label         character varying(100),
 	blabla        character varying(1000),
-	CONSTRAINT nutzung_class_pk PRIMARY KEY (nutz_id, class),
+    CONSTRAINT nutzung_class_pk PRIMARY KEY (nutz_id, class),
 	CONSTRAINT nutzung_class_id FOREIGN KEY (nutz_id)
 		REFERENCES nutzung_meta (nutz_id) MATCH SIMPLE
 		ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
-COMMENT ON TABLE  nutzung_class            IS 'Schlüsseltabelle. Feinere Klassifizierung der zusammen gefassten Nutzungsarten.';
-COMMENT ON COLUMN nutzung_class.nutz_id    IS 'Index fuer die Quell-Tabelle bei der Zusammenfassung in der Tabelle nutzung.';
-COMMENT ON COLUMN nutzung_class.class      IS 'Key, Schlüsselwert.';
-COMMENT ON COLUMN nutzung_class.label      IS 'Entschlüsselung. Art der Nutzung, Dies Feld soll in der Auskunft angezeigt werden.';
-COMMENT ON COLUMN nutzung_class.blabla     IS 'Weitere Erläuterungen und Definitionen dazu.';
+  COMMENT ON TABLE  nutzung_class            IS 'Schlüsseltabelle. Feinere Klassifizierung der zusammen gefassten Nutzungsarten.';
+--COMMENT ON COLUMN nutzung_class.ser        IS 'Automatisches Schlüsselfeld';
+  COMMENT ON COLUMN nutzung_class.nutz_id    IS 'Index fuer die Quell-Tabelle bei der Zusammenfassung in der Tabelle nutzung.';
+  COMMENT ON COLUMN nutzung_class.class      IS 'Key, Schlüsselwert oder NULL';
+  COMMENT ON COLUMN nutzung_class.label      IS 'Entschlüsselung. Art der Nutzung, Dies Feld soll in der Auskunft angezeigt werden.';
+  COMMENT ON COLUMN nutzung_class.blabla     IS 'Weitere Erläuterungen und Definitionen dazu.';
 
 
 -- Fehlersuche nach GDAL Patch #5444:

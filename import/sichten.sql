@@ -21,6 +21,55 @@
 --  2013-04-16 Thema "Bodenschätzung" und fehlernde Kommentare zum Views ergänzt.
 --             Diese Datei aufgeteilt in "sichten.sql" und "sichten_wms.sql"
 --  2013-10-23 Fehlersuche Gebäude-Hausnummer-Relation
+--  2013-11-26 Neue Views (doppelverbindung)
+
+
+-- Bausteine für andere Views:
+-- ---------------------------
+
+-- Ein View, der die Verbindung von Flurstück zur Buchung für zwei verschiedene Fälle herstellt.
+-- Einmal die "normalen" (direkten) Buchungen.
+-- Zweitens über die Rechte von Buchungsstellen an anderen Buchungsstellen.
+-- Dies kann als "Mittelstück" in den anderen Views eingefügt werden.
+
+-- Einfach/Direkt:
+--   Flurstück   >istGebucht>                         (Buchungs-Stelle)
+--
+-- Mit "Recht an":
+--   Flurstück   >istGebucht>  Buchungs-Stelle  <an<  (Buchungs-Stelle)
+--                               (dienend)              (herrschend) 
+
+--           DROP VIEW public.doppelverbindung;
+CREATE OR REPLACE VIEW public.doppelverbindung
+AS
+  SELECT v1.beziehung_von AS fsgml,       -- gml_id auf Flurstück - Seite
+         v1.beziehung_zu  AS bsgml,       -- gml_id auf Buchungs  - Seite
+      --'direkt' AS fall,
+         0 AS ba_dien
+    FROM alkis_beziehungen v1
+   WHERE v1.beziehungsart = 'istGebucht'  -- FS --> Buchung
+ UNION
+  -- Buchungstelle  >an>  Buchungstelle  >istBestandteilVon>  BLATT 
+  SELECT v2.beziehung_von AS fsgml,        -- gml_id auf Flurstück - Seite
+         an.beziehung_von AS bsgml,        -- gml_id auf Buchungs  - Seite (herrschendes GB)
+      --'Recht an' AS fall,
+         dien.buchungsart AS ba_dien       -- Ein Feld aus der Zwischen-Buchung zur Fall-Unterscheidung
+    FROM alkis_beziehungen v2
+    JOIN ax_buchungsstelle dien
+      ON  v2.beziehung_zu = dien.gml_id
+    JOIN alkis_beziehungen an
+      ON dien.gml_id = an.beziehung_zu
+   WHERE v2.beziehungsart = 'istGebucht'   -- FS --> Buchung
+     AND an.beziehungsart = 'an';
+
+COMMENT ON VIEW public.doppelverbindung 
+ IS 'ALKIS-Beziehung von Flurstück zu Buchung. UNION-Zusammenfassung des einfachen Falls mit direkter Buchung und des Falles mit Recht einer Buchungsstelle an einer anderen Buchungsstelle.';
+
+-- Ende "Bausteine"
+
+
+-- Test-Ausgabe: Ein paar Fälle mit "Recht an"
+--   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;
 
 -- Welche Karten-Typen ?
 CREATE OR REPLACE VIEW kartentypen_der_texte_fuer_hnr
@@ -204,7 +253,7 @@ AS
      ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;
 COMMENT ON VIEW adressen_zum_flurstueck IS 'Datenanalyse: Zuordnung von Adressen zu Flurstuecken. Schlüssel der Gemeinde nach Bedarf anpassen.';
 
--- Punktförmige  P r ä s e n t a t i o n s o b j k t e  (ap_pto)
+-- Punktförmige  P r ä s e n t a t i o n s o b j e k t e  (ap_pto)
 -- Ermittlung der vorkommenden Arten
 CREATE OR REPLACE VIEW beschriftung_was_kommt_vor 
 AS 
@@ -484,5 +533,38 @@ AS
 
 COMMENT ON VIEW adressen_zu_gebauede_mit_mehreren_hausnummern
  IS 'Gebäude mit mehreren Hausnummern suchen (ist erlaubt) und dazu die Adressen anzeigen.';
+
+
+-- Analyse der Buchungs-Arten im Bestand
+CREATE OR REPLACE VIEW buchungsarten_vorkommend
+AS
+  SELECT a.wert, a.bezeichner, 
+         count(b.gml_id) AS anzahl_buchungen
+    FROM ax_buchungsstelle_buchungsart a
+    JOIN ax_buchungsstelle b  ON a.wert = b.buchungsart
+GROUP BY a.wert, a.bezeichner
+ORDER BY a.wert, a.bezeichner;
+
+COMMENT ON VIEW buchungsarten_vorkommend
+ IS 'Welche Arten von Buchungsart kommen in dieser Datenbank tätsächlich vor?.';
+
+
+-- Analyse: Fälle mit Erbbaurecht
+-- Benutzt den Baustein-View "doppelverbindung"
+CREATE OR REPLACE VIEW erbbaurechte_suchen
+AS
+  SELECT f.gml_id, 
+  --f.flurstueckskennzeichen,
+    f.gemarkungsnummer || '-' || f.flurnummer || '-' || f.zaehler AS fssuch, f.nenner
+   FROM ax_flurstueck    f 
+   JOIN doppelverbindung d     -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+     ON d.fsgml = f.gml_id 
+   JOIN ax_buchungsstelle s    -- Buchungs-Stelle
+     ON d.bsgml = s.gml_id 
+   WHERE s.buchungsart = 2101;
+
+COMMENT ON VIEW erbbaurechte_suchen
+ IS 'Suche nach Fällen mit Buchungsrt 2101=Erbbaurecht';
+
 
 -- END --

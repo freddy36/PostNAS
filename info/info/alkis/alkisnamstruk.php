@@ -5,13 +5,10 @@
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
 
 	Version:
-	02.11.2011  $sqla, $sqlg, Meldungen mit $debug steuern
-	17.11.2011  Parameter der Functions geändert
-	30.11.2011  import_request_variables
 	2013-04-08  deprecated "import_request_variables" ersetzt
+	2013-11-22	Namensbestandteil ("von") in Kompakt-Adresse vor den Namen setzen
 
-	ToDo: 
-	Sortierung der Grundbücher zum Namen
+	ToDo: Sortierung der Grundbücher zum Namen
 */
 session_start();
 //import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
@@ -62,6 +59,7 @@ if ($row = pg_fetch_array($res)) {
 	$nam=htmlentities($row["nachnameoderfirma"], ENT_QUOTES, "UTF-8");
 	$geb=htmlentities($row["geburtsname"], ENT_QUOTES, "UTF-8");
 	$anr=anrede($row["anrede"]);
+	$nbest=$row["namensbestandteil"];
 	$aka=$row["akademischergrad"];
 
 	echo "<table>\n";
@@ -70,7 +68,7 @@ if ($row = pg_fetch_array($res)) {
 		echo "\t<tr><td class='nhd'>Vorname:</td><td class='nam'>".$vor."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Geburtsname:</td><td class='nam'>".$geb."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Geburtsdatum:</td><td class='nam'>".$row["geburtsdatum"]."&nbsp;</td></tr>\n";
-		echo "\t<tr><td class='nhd'>Namensbestandteil:</td><td class='nam'>".$row["namensbestandteil"]."&nbsp;</td></tr>\n";
+		echo "\t<tr><td class='nhd'>Namensbestandteil:</td><td class='nam'>".$nbest."&nbsp;</td></tr>\n";
 		echo "\t<tr><td class='nhd'>akademischer Grad:</td><td class='nam'>".$aka."&nbsp;</td></tr>\n";
 	echo "\n</table>\n<hr>\n";
 
@@ -115,7 +113,7 @@ if ($row = pg_fetch_array($res)) {
 		// Name und Adresse Kompakt (im Rahmen)
 		// Alles was man fuer ein Anschreiben braucht
 		echo "<img src='ico/Namen.ico' width='16' height='16' alt='Brief' title='Anschrift'>"; // Symbol "Brief"
-		echo "\n<div class='adr' title='Anschrift'>".$anr." ".$aka." ".$vor." ".$nam."<br>";
+		echo "\n<div class='adr' title='Anschrift'>".$anr." ".$aka." ".$vor." ".$nbest." ".$nam."<br>";
 		echo "\n".$str." ".$hsnr."<br>";
 		echo "\n".$plz." ".$ort."</div>";
 	}
