@@ -9,6 +9,7 @@
 ##  2013-01-15 Zwischenstopp um Meldungen lesen zu können bevor, sie aus dem Scrollbereich verschwinden
 ##  2013-04-16 Vers.-Nr. "0.7" aus dem Dateinamen von Schema und Keytable entfernt, sichten_wms.sql
 ##  2013-10-16 F.J. krz: Neues Sript "pp_praesentation_sichten.sql" für Reparatur Präsentationsobjekte Straßennamen
+##  2013-12-03 F.J. krz: Script "sichten.sql" einbeziehen. Darin View "doppelverbindung" fuer WMS FS-Kommunal.
 
 POSTNAS_HOME=$(dirname $0)
 MANDANT_HOME=$PWD
@@ -115,8 +116,12 @@ echo "** Anlegen Post Processing Views (pp_praesentation_sichten.sql)"
 psql $con -U ${DBUSER} -f pp_praesentation_sichten.sql >$MANDANT_HOME/log/pp_praesentation_sichten.log
 
 echo " "
-echo "** Definition von Views (sichten_wms.sql)"
+echo "** Definition von Views fuer Kartendienste (sichten_wms.sql)"
 psql $con -U ${DBUSER} -f sichten_wms.sql >$MANDANT_HOME/log/sichten_wms.log
+
+echo " "
+echo "** Definition von Views (sichten.sql)"
+psql $con -U ${DBUSER} -f sichten.sql >$MANDANT_HOME/log/sichten.log
 
 echo " "
 echo  "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7';" | psql -p 5432 -d ${DBNAME} -U ${DBUSER} 
