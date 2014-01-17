@@ -100,9 +100,9 @@ while($row = pg_fetch_array($res)) {
 	$bu_art=$row["bu_art"];
 	
 	//	Namensnummer
-	$nam_lfd=$row["namnum_lfd"];
-	$nam_ant=$row["name_anteil"];
-	$nam_bes=$row["namnum_beschr"];
+	$nam_lfd=$row["nam_lfd"];
+	$nam_ant=$row["nam_ant"];
+	$nam_bes=$row["nam_bes"];
 	
 	// Person
 	$naname=$row["nachnameoderfirma"];
