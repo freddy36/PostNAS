@@ -31,7 +31,8 @@ include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
 $keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
 if ($keys == "j") {$showkey=true;} else {$showkey=false;}
-echo <<<END
+?>
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
@@ -43,17 +44,18 @@ echo <<<END
 	<title>ALKIS Flurst&uuml;cksnachweis</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Flurstueck.ico">
+	<script type="text/javascript">
+		function ALKISexport() {
+				window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=flurstueck&gmlid=".$gmlid."'"; ?>);
+		}
+	</script>
 	<style type='text/css' media='print'>
 		.noprint {visibility: hidden;}
 	</style>
-	<script type="text/javascript">
-	function ALKISexportFS() {window.open('alkisfsexp.php?gkz=$gkz&gmlid=$gmlid');}
-	function ALKISexportGB() {window.open('alkisfsgbexp.php?gkz=$gkz&gmlid=$gmlid');}
-	</script>
 </head>
 <body>
-END;
 
+<?php
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
@@ -853,9 +855,9 @@ echo <<<END
 	<hr>
 		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
 		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-		<a title="Export Flurst&uuml;cksdaten als CSV" href='javascript:ALKISexportFS()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-	 	<a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-<!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
+		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp;
+<!-- <a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp; -->
+<!-- <a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
 END;

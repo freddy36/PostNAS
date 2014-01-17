@@ -32,11 +32,17 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<title>ALKIS Person und Adresse</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Eigentuemer_2.ico">
+	<script type="text/javascript">
+		function ALKISexport() {
+				window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=person&gmlid=".$gmlid."'"; ?>);
+		}
+	</script>
 	<style type='text/css' media='print'>
 		.noprint {visibility: hidden;}
 	</style>
 </head>
 <body>
+
 <?php
 $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 // Balken
@@ -234,8 +240,8 @@ if ($row = pg_fetch_array($res)) {
 	<hr>
 		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
 		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-<!--	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="16" height="16" alt="Export" /></a>&nbsp;
-		<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
+		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="32" height="16" alt="Export" /></a>&nbsp;
+<!-- <a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>
 

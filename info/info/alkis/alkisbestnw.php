@@ -4,10 +4,10 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Bestandsnachweis fuer ein Grundbuch aus ALKIS PostNAS
 
-	Version:	17.11.2011  Parameter der Functions geändert
-	22.11.2011  Feldname land in ax_buchungsblattbezirk geändert
-	30.11.2011  import_request_variables
-	24.07.2012  Export CSV
+	Version:	2011-11-17  Parameter der Functions geändert
+	2011-11-22  Feldname land in ax_buchungsblattbezirk geändert
+	2011-11-30  import_request_variables
+	2012-07-24  Export CSV
 	2013-04-08  deprecated "import_request_variables" ersetzt
 
 	ToDo:
@@ -36,8 +36,9 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Grundbuch.ico">
 	<script type="text/javascript">
-	function ALKISexportGB() {window.open(<?php echo "'alkisgbexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
-	function ALKISexportFS() {window.open(<?php echo "'alkisgbfsexp.php?gkz=".$gkz."&gmlid=".$gmlid."'"; ?>);}
+		function ALKISexport() {
+				window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=grundbuch&gmlid=".$gmlid."'"; ?>);
+		}
 	</script>
 	<style type='text/css' media='print'>
 		.noprint {visibility: hidden;}
@@ -464,8 +465,7 @@ if ($i == 0) {
 	<hr>
 		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
 		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-	 	<a title="Export Flurst&uuml;cksdaten als CSV" href='javascript:ALKISexportFS()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-		<a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp;
+	 	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp;
 <!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
 	</div>
 </form>

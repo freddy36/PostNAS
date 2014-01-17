@@ -7,7 +7,7 @@
 --  -----------------------------------------
 
 --  Dieses SQL braucht nur bei Bedarf in einer PostNAS-DB verarbeitet werden.
---  Es werden zusätzliche Views einegerichtet, die nur bei Fehlersuche und Analys (vom Entwickler) benötigt werden.
+--  Es werden zusätzliche Views eingerichtet, die nur bei Fehlersuche und Analyse (vom Entwickler) benötigt werden.
 
 --  PostNAS 0.7
 
@@ -22,6 +22,7 @@
 --             Diese Datei aufgeteilt in "sichten.sql" und "sichten_wms.sql"
 --  2013-10-23 Fehlersuche Gebäude-Hausnummer-Relation
 --  2013-11-26 Neue Views (doppelverbindung)
+--  2014-01-17 View "exp_csv" für den Export von CSV-Daten aus der Auskunft mit Modul alkisexport.php.
 
 
 -- Bausteine für andere Views:
@@ -65,11 +66,117 @@ AS
 COMMENT ON VIEW public.doppelverbindung 
  IS 'ALKIS-Beziehung von Flurstück zu Buchung. UNION-Zusammenfassung des einfachen Falls mit direkter Buchung und des Falles mit Recht einer Buchungsstelle an einer anderen Buchungsstelle.';
 
+-- Test-Ausgabe: Ein paar Fälle mit "Recht an"
+--   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;
+
 -- Ende "Bausteine"
 
 
--- Test-Ausgabe: Ein paar Fälle mit "Recht an"
---   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;
+
+-- Generelle Export-Struktur Flurstück - Buchung - Grundbuch - Person
+-- ------------------------------------------------------------------
+-- Verwendet den gespeicherten View "doppelverbindung".
+-- Wird benötigt im Auskunft-Modul "alkisexport.php":
+-- Je nach aufrufendem Modul wird der Filter (WHERE) an anderer Stelle gesetzt (gml_id von FS, GB oder Pers.)
+
+-- Problem / Konflikt:
+-- Es kann nur eine lineare Struktur aus Spalten und Zeilen exportiert werden. 
+-- Wenn nicht nur die Daten des Ausgangs-Objektes exportiert werden, sondern auch verbundene Tabellen in 
+-- einer 1:N-Struktur, dann verdoppeln sich Zeileninhalte und es werden redundante Daten erzeugt. 
+-- Diese Redundanzen müssen vom dem Programm gefiltert werden, das die Daten über eine Schnittstelle einliest.
+
+-- Anwendungs-Beispiel: Abrechnung von Anliegerbeiträgen.
+
+--           DROP VIEW exp_csv;
+CREATE OR REPLACE VIEW exp_csv
+AS
+ SELECT
+  -- ** Flurstück
+     f.gml_id AS fsgml,                                   -- möglicher Filter Flurstücks-GML-ID
+     f.flurstueckskennzeichen             AS fs_kennz,
+     f.gemarkungsnummer,                                  -- Teile des FS-Kennz. noch mal einzeln
+     f.flurnummer, f.zaehler, f.nenner, 
+     f.amtlicheflaeche                    AS fs_flae,
+
+   -- * Adressen des FS -- Nein, diese werden im Export-Modul ermitteln und nachtragen
+ --  k.bezeichnung                          AS strasse,   -- Straßennamen
+ --  split_part(l.hausnummer,' ',1)         AS hausnr,    -- Nummer
+ --  upper(split_part(l.hausnummer,' ',2))  AS hausnr_zs, -- Zusatz in Großschreibung
+
+  -- ** Grundbuch
+     gb.gml_id                            AS gbgml,       -- möglicher Filter Grundbuch-GML-ID
+     gb.bezirk                            AS gb_bezirk,
+     gb.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt,
+
+ -- ** Buchung
+     s.laufendenummer                     AS bu_lfd,
+   -- s.zaehler, s.nenner,                                -- Anteil des GB am FS
+     '=' || s.zaehler|| '/' || s.nenner   AS bu_ant,      -- als Excel-Formel  (nur bei Wohnungsgrundbuch JOIN über 'Recht an')
+   --s.buchungsart,                                       -- verschlüsselt
+     b.bezeichner                         AS bu_art,      -- entschlüsselt
+
+   -- Felder aus der Subquery "Namens-Zweig"
+     nz.nam_lfd, nz.nam_ant, nz.nam_bes,                  -- nn.*
+     nz.psgml,                                            -- möglicher Filter Personen-GML-ID
+     nz.nachnameoderfirma, nz.vorname, nz.geburtsdatum    -- p.*
+
+  FROM ax_flurstueck    f               -- Flurstück
+  JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+    ON d.fsgml = f.gml_id 
+
+  JOIN ax_buchungsstelle s              -- Buchungs-Stelle
+    ON d.bsgml = s.gml_id 
+  JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
+    ON s.buchungsart = b.wert 
+
+--  JOIN alkis_beziehungen v2             -- ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
+--    ON v2.beziehung_von = f.gml_id AND v2.beziehungsart = 'weistAuf'
+--  JOIN ax_lagebezeichnungmithausnummer l
+--    ON v2.beziehung_zu = l.gml_id
+--  JOIN ax_lagebezeichnungkatalogeintrag k 
+--   ON l.kreis = k.kreis AND l.gemeinde = k.gemeinde AND l.lage = k.lage 
+
+  JOIN alkis_beziehungen v3              -- Grundbuch (zur Buchungs-Stelle)
+    ON s.gml_id = v3.beziehung_von  AND v3.beziehungsart = 'istBestandteilVon'  -- Buchung  --> Blatt
+  JOIN ax_buchungsblatt  gb 
+    ON v3.beziehung_zu = gb.gml_id 
+
+  LEFT JOIN -- LEFT: fiktives Blatt hat keine Namensnummern, dieser "Zweig" kann leer bleiben.
+  ( SELECT
+    -- Namensnummer
+     v4.beziehung_zu AS v4gml,
+     nn.laufendenummernachdin1421         AS nam_lfd, 
+     '=' || nn.zaehler|| '/' || nn.nenner AS nam_ant,         -- als Excel-Formel
+     nn.beschriebderrechtsgemeinschaft    AS nam_bes,
+
+     -- Person (zur Namensnummer)
+     p.gml_id                            AS psgml,            -- möglicher Filter
+     p.nachnameoderfirma,                                     -- Familienname
+     p.vorname,                                               -- Vorname
+     p.geburtsdatum
+
+     -- Adresse des Eigentümers  - Nein
+
+   FROM alkis_beziehungen v4         -- Namensnummer (zum GB-Blatt) 
+   JOIN ax_namensnummer nn 
+     ON v4.beziehung_von = nn.gml_id 
+   JOIN alkis_beziehungen v5         -- Person (zur Namensnummer)
+     ON v5.beziehung_von = nn.gml_id  AND v5.beziehungsart = 'benennt'  -- NamNum   --> Person
+   JOIN ax_person p
+     ON v5.beziehung_zu = p.gml_id
+   WHERE v4.beziehungsart = 'istBestandteilVon'  -- Blatt  --> NamNum
+  ) AS nz   -- Namens-Zweig
+   ON nz.v4gml = gb.gml_id      -- LEFT JOIN: Namenzweig an Grundbuch anbinden
+
+  ORDER BY f.flurstueckskennzeichen, gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, nz.nam_lfd ;
+
+COMMENT ON VIEW exp_csv 
+ IS 'View für einen CSV-Export aus der Buchauskunft mit alkisexport.php. Generelle Struktur. Für eine bestimmte gml_id noch den Filter setzen.';
+
+-- GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
+-- GRANT SELECT ON TABLE exp_csv TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
+
+
 
 -- Welche Karten-Typen ?
 CREATE OR REPLACE VIEW kartentypen_der_texte_fuer_hnr
@@ -565,6 +672,26 @@ AS
 
 COMMENT ON VIEW erbbaurechte_suchen
  IS 'Suche nach Fällen mit Buchungsrt 2101=Erbbaurecht';
+
+
+-- Probleme mit der Trigger-Function "update_fields_beziehungen()"
+-- Manchmal kann zu einer gml_id in "alkis_beziehungen" die zuständige Tabelle nicht gefunden werden.
+-- Nach Änderung der Trigger-Function am 10.12.2013 wird die Beziehung trotzdem eingetragen,
+-- nur die Felder "von_typename" und "beginnt" bleiben leer.
+
+-- Diese Fälle anzeigen:
+CREATE OR REPLACE VIEW beziehungsproblem_faelle
+AS
+  SELECT *
+    FROM alkis_beziehungen
+   WHERE beginnt IS NULL;
+
+-- Wie viele sind das?
+CREATE OR REPLACE VIEW beziehungsproblem_zaehler
+AS
+  SELECT count(ogc_fid) AS anzahl
+    FROM alkis_beziehungen
+   WHERE beginnt IS NULL;
 
 
 -- END --
