@@ -23,6 +23,7 @@
 --  2013-10-23 Fehlersuche Gebäude-Hausnummer-Relation
 --  2013-11-26 Neue Views (doppelverbindung)
 --  2014-01-17 View "exp_csv" für den Export von CSV-Daten aus der Auskunft mit Modul alkisexport.php.
+--  2014-01-20 Erweiterung "exp_csv" für alkisexport.php
 
 
 -- Bausteine für andere Views:
@@ -85,97 +86,103 @@ COMMENT ON VIEW public.doppelverbindung
 -- einer 1:N-Struktur, dann verdoppeln sich Zeileninhalte und es werden redundante Daten erzeugt. 
 -- Diese Redundanzen müssen vom dem Programm gefiltert werden, das die Daten über eine Schnittstelle einliest.
 
+-- Durch LEFT-JOIN werden wahlweise Namennummern mit Person und Adresse erzeugt, 
+-- oder auch Namensnummern einer einem Beschrieb der Rechtsgemeinschaft oder leere Felder zu einem fiktiven Grundbuch.
+-- Auch mit diesen Zeilen-Varianten muss das weiter verarbeitende Programm klar kommen.
+
 -- Anwendungs-Beispiel: Abrechnung von Anliegerbeiträgen.
 
 --           DROP VIEW exp_csv;
 CREATE OR REPLACE VIEW exp_csv
 AS
  SELECT
-  -- ** Flurstück
-     f.gml_id AS fsgml,                                   -- möglicher Filter Flurstücks-GML-ID
+  -- Flurstück
+     f.gml_id                             AS fsgml,       -- möglicher Filter Flurstücks-GML-ID
      f.flurstueckskennzeichen             AS fs_kennz,
      f.gemarkungsnummer,                                  -- Teile des FS-Kennz. noch mal einzeln
      f.flurnummer, f.zaehler, f.nenner, 
      f.amtlicheflaeche                    AS fs_flae,
+     g.bezeichnung                        AS gemarkung,
 
-   -- * Adressen des FS -- Nein, diese werden im Export-Modul ermitteln und nachtragen
- --  k.bezeichnung                          AS strasse,   -- Straßennamen
- --  split_part(l.hausnummer,' ',1)         AS hausnr,    -- Nummer
- --  upper(split_part(l.hausnummer,' ',2))  AS hausnr_zs, -- Zusatz in Großschreibung
-
-  -- ** Grundbuch
+  -- Grundbuch
      gb.gml_id                            AS gbgml,       -- möglicher Filter Grundbuch-GML-ID
      gb.bezirk                            AS gb_bezirk,
      gb.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt,
+     z.bezeichnung                        AS beznam,      -- GB-Bezirks-Name
 
- -- ** Buchung
-     s.laufendenummer                     AS bu_lfd,
-   -- s.zaehler, s.nenner,                                -- Anteil des GB am FS
-     '=' || s.zaehler|| '/' || s.nenner   AS bu_ant,      -- als Excel-Formel  (nur bei Wohnungsgrundbuch JOIN über 'Recht an')
-   --s.buchungsart,                                       -- verschlüsselt
-     b.bezeichner                         AS bu_art,      -- entschlüsselt
+  -- Buchungsstelle (Grundstück)
+     s.laufendenummer                     AS bu_lfd,      -- BVNR
+    --s.zaehler, s.nenner,                                -- Anteil des GB am FS, einzelne Felder
+     '=' || s.zaehler || '/' || s.nenner  AS bu_ant,      -- als Excel-Formel (nur bei Wohnungsgrundbuch JOIN über 'Recht an')
+     s.buchungsart,                                       -- verschlüsselt
+     b.bezeichner                         AS bu_art,      -- Buchungsart entschlüsselt
 
-   -- Felder aus der Subquery "Namens-Zweig"
-     nz.nam_lfd, nz.nam_ant, nz.nam_bes,                  -- nn.*
-     nz.psgml,                                            -- möglicher Filter Personen-GML-ID
-     nz.nachnameoderfirma, nz.vorname, nz.geburtsdatum    -- p.*
+   --NamensNummer
+     nn.laufendenummernachdin1421         AS nam_lfd, 
+     '=' || nn.zaehler|| '/' || nn.nenner AS nam_ant,         -- als Excel-Formel
+     nn.artderrechtsgemeinschaft          AS nam_adr,
+     nn.beschriebderrechtsgemeinschaft    AS nam_bes,
+
+     -- Person
+     p.gml_id                             AS psgml,           -- möglicher Filter Personen-GML-ID
+     p.anrede,
+     p.vorname,
+     p.namensbestandteil,
+     p.nachnameoderfirma,                                     -- Familienname
+     p.geburtsdatum,
+     --p.geburtsname, p.akademischergrad 
+ 
+     -- Adresse der Person
+     a.postleitzahlpostzustellung         AS plz,
+     a.ort_post                           AS ort,             -- Anschreifenzeile 1: PLZ+Ort
+     a.strasse,  a.hausnummer,                                -- Anschriftenzeile 2: Straße+HsNr
+     a.bestimmungsland                    AS land
 
   FROM ax_flurstueck    f               -- Flurstück
-  JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+  JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von Buchung an Buchung
     ON d.fsgml = f.gml_id 
+
+  JOIN ax_gemarkung g                   -- entschlüsseln
+    ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
 
   JOIN ax_buchungsstelle s              -- Buchungs-Stelle
     ON d.bsgml = s.gml_id 
   JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
     ON s.buchungsart = b.wert 
 
---  JOIN alkis_beziehungen v2             -- ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
---    ON v2.beziehung_von = f.gml_id AND v2.beziehungsart = 'weistAuf'
---  JOIN ax_lagebezeichnungmithausnummer l
---    ON v2.beziehung_zu = l.gml_id
---  JOIN ax_lagebezeichnungkatalogeintrag k 
---   ON l.kreis = k.kreis AND l.gemeinde = k.gemeinde AND l.lage = k.lage 
-
-  JOIN alkis_beziehungen v3              -- Grundbuch (zur Buchungs-Stelle)
-    ON s.gml_id = v3.beziehung_von  AND v3.beziehungsart = 'istBestandteilVon'  -- Buchung  --> Blatt
+  JOIN alkis_beziehungen v3              -- Buchung --> Grundbuchblatt
+    ON s.gml_id = v3.beziehung_von AND v3.beziehungsart = 'istBestandteilVon'
   JOIN ax_buchungsblatt  gb 
     ON v3.beziehung_zu = gb.gml_id 
 
-  LEFT JOIN -- LEFT: fiktives Blatt hat keine Namensnummern, dieser "Zweig" kann leer bleiben.
-  ( SELECT
-    -- Namensnummer
-     v4.beziehung_zu AS v4gml,
-     nn.laufendenummernachdin1421         AS nam_lfd, 
-     '=' || nn.zaehler|| '/' || nn.nenner AS nam_ant,         -- als Excel-Formel
-     nn.beschriebderrechtsgemeinschaft    AS nam_bes,
+  JOIN ax_buchungsblattbezirk z 
+    ON gb.land=z.land AND gb.bezirk=z.bezirk 
 
-     -- Person (zur Namensnummer)
-     p.gml_id                            AS psgml,            -- möglicher Filter
-     p.nachnameoderfirma,                                     -- Familienname
-     p.vorname,                                               -- Vorname
-     p.geburtsdatum
+  JOIN alkis_beziehungen v4              -- Blatt  --> NamNum
+    ON v4.beziehung_zu = gb.gml_id AND v4.beziehungsart = 'istBestandteilVon'  
+  JOIN ax_namensnummer nn 
+    ON v4.beziehung_von = nn.gml_id
 
-     -- Adresse des Eigentümers  - Nein
+  LEFT JOIN alkis_beziehungen v5         -- NamNum --> Person 
+   -- 2014-01-20: Mit LEFT ab hier werden auch NumNum-Zeilen mit "Beschreinbung der Rechtsgemeinschaft" geliefert (ohne Person)
+    ON v5.beziehung_von = nn.gml_id AND v5.beziehungsart = 'benennt'
+  LEFT JOIN ax_person p
+    ON v5.beziehung_zu = p.gml_id
 
-   FROM alkis_beziehungen v4         -- Namensnummer (zum GB-Blatt) 
-   JOIN ax_namensnummer nn 
-     ON v4.beziehung_von = nn.gml_id 
-   JOIN alkis_beziehungen v5         -- Person (zur Namensnummer)
-     ON v5.beziehung_von = nn.gml_id  AND v5.beziehungsart = 'benennt'  -- NamNum   --> Person
-   JOIN ax_person p
-     ON v5.beziehung_zu = p.gml_id
-   WHERE v4.beziehungsart = 'istBestandteilVon'  -- Blatt  --> NamNum
-  ) AS nz   -- Namens-Zweig
-   ON nz.v4gml = gb.gml_id      -- LEFT JOIN: Namenzweig an Grundbuch anbinden
-
-  ORDER BY f.flurstueckskennzeichen, gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, nz.nam_lfd ;
+  LEFT JOIN alkis_beziehungen v6        -- Person --> Anschrift
+    ON v6.beziehung_von = p.gml_id AND v6.beziehungsart = 'hat' 
+  LEFT JOIN ax_anschrift a 
+    ON v6.beziehung_zu = a.gml_id
+ 
+  ORDER BY f.flurstueckskennzeichen, 
+           gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer,
+           nn.laufendenummernachdin1421;
 
 COMMENT ON VIEW exp_csv 
  IS 'View für einen CSV-Export aus der Buchauskunft mit alkisexport.php. Generelle Struktur. Für eine bestimmte gml_id noch den Filter setzen.';
 
--- GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
--- GRANT SELECT ON TABLE exp_csv TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
-
+--GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
+--GRANT SELECT ON TABLE exp_csv TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
 
 
 -- Welche Karten-Typen ?
