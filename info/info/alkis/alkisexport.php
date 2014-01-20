@@ -111,7 +111,9 @@ while($row = pg_fetch_array($res)) {
 
 	// Namensnummer
 	$nam_lfd="'".kurz_namnr($row["nam_lfd"])."'"; // In Hochkomma. Wird sonst als Datum dargestellt.
-	$nam_ant=$row["nam_ant"]; // Wann darf als Anteil "1" statt leer gesetzt werden?
+	$nam_ant=$row["nam_ant"];
+	if ($nam_ant == '') {$nam_ant=1;} // Wann darf als Anteil "1" statt leer gesetzt werden?
+    // Das ist falsch, wenn z.B. eine Rechtsgemeinschaft verbal beschrieben ist (in anderem Datensatz).
 	$nam_adr=$row["nam_adr"]; // Art der Rechtsgemeischaft (Schlüssel)
 	$nam_bes=$row["nam_bes"]; // Beschrieb der Rechtsgemeinschaft
 
