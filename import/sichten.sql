@@ -24,6 +24,7 @@
 --  2013-11-26 Neue Views (doppelverbindung)
 --  2014-01-17 View "exp_csv" für den Export von CSV-Daten aus der Auskunft mit Modul alkisexport.php.
 --  2014-01-20 Erweiterung "exp_csv" für alkisexport.php
+--  2014-01-21 In "exp_csv": Rechtsgemeinsachaft zu allen Personen statt als eigener Satz.
 
 
 -- Bausteine für andere Views:
@@ -74,8 +75,8 @@ COMMENT ON VIEW public.doppelverbindung
 
 
 
--- Generelle Export-Struktur Flurstück - Buchung - Grundbuch - Person
--- ------------------------------------------------------------------
+-- Generelle Export-Struktur "Flurstück - Buchung - Grundbuch - Person"
+-- --------------------------------------------------------------------
 -- Verwendet den gespeicherten View "doppelverbindung".
 -- Wird benötigt im Auskunft-Modul "alkisexport.php":
 -- Je nach aufrufendem Modul wird der Filter (WHERE) an anderer Stelle gesetzt (gml_id von FS, GB oder Pers.)
@@ -86,44 +87,43 @@ COMMENT ON VIEW public.doppelverbindung
 -- einer 1:N-Struktur, dann verdoppeln sich Zeileninhalte und es werden redundante Daten erzeugt. 
 -- Diese Redundanzen müssen vom dem Programm gefiltert werden, das die Daten über eine Schnittstelle einliest.
 
--- Durch LEFT-JOIN werden wahlweise Namennummern mit Person und Adresse erzeugt, 
--- oder auch Namensnummern einer einem Beschrieb der Rechtsgemeinschaft oder leere Felder zu einem fiktiven Grundbuch.
--- Auch mit diesen Zeilen-Varianten muss das weiter verarbeitende Programm klar kommen.
-
 -- Anwendungs-Beispiel: Abrechnung von Anliegerbeiträgen.
 
+-- 2014-01-21: "Rechtsgemeinschaft" in den Datensatz aller anderen Namen
 --           DROP VIEW exp_csv;
 CREATE OR REPLACE VIEW exp_csv
 AS
  SELECT
   -- Flurstück
-     f.gml_id                             AS fsgml,       -- möglicher Filter Flurstücks-GML-ID
-     f.flurstueckskennzeichen             AS fs_kennz,
-     f.gemarkungsnummer,                                  -- Teile des FS-Kennz. noch mal einzeln
-     f.flurnummer, f.zaehler, f.nenner, 
-     f.amtlicheflaeche                    AS fs_flae,
-     g.bezeichnung                        AS gemarkung,
+    f.gml_id                             AS fsgml,       -- möglicher Filter Flurstücks-GML-ID
+    f.flurstueckskennzeichen             AS fs_kennz,
+    f.gemarkungsnummer,                                  -- Teile des FS-Kennz. noch mal einzeln
+    f.flurnummer, f.zaehler, f.nenner, 
+    f.amtlicheflaeche                    AS fs_flae,
+    g.bezeichnung                        AS gemarkung,
 
   -- Grundbuch
-     gb.gml_id                            AS gbgml,       -- möglicher Filter Grundbuch-GML-ID
-     gb.bezirk                            AS gb_bezirk,
-     gb.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt,
-     z.bezeichnung                        AS beznam,      -- GB-Bezirks-Name
+    gb.gml_id                            AS gbgml,       -- möglicher Filter Grundbuch-GML-ID
+    gb.bezirk                            AS gb_bezirk,
+    gb.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt,
+    z.bezeichnung                        AS beznam,      -- GB-Bezirks-Name
 
   -- Buchungsstelle (Grundstück)
-     s.laufendenummer                     AS bu_lfd,      -- BVNR
+    s.laufendenummer                     AS bu_lfd,      -- BVNR
     --s.zaehler, s.nenner,                                -- Anteil des GB am FS, einzelne Felder
-     '=' || s.zaehler || '/' || s.nenner  AS bu_ant,      -- als Excel-Formel (nur bei Wohnungsgrundbuch JOIN über 'Recht an')
-     s.buchungsart,                                       -- verschlüsselt
-     b.bezeichner                         AS bu_art,      -- Buchungsart entschlüsselt
+    '=' || s.zaehler || '/' || s.nenner  AS bu_ant,      -- als Excel-Formel (nur bei Wohnungsgrundbuch JOIN über 'Recht an')
+    s.buchungsart,                                       -- verschlüsselt
+    b.bezeichner                         AS bu_art,      -- Buchungsart entschlüsselt
 
-   --NamensNummer
-     nn.laufendenummernachdin1421         AS nam_lfd, 
-     '=' || nn.zaehler|| '/' || nn.nenner AS nam_ant,         -- als Excel-Formel
-     nn.artderrechtsgemeinschaft          AS nam_adr,
-     nn.beschriebderrechtsgemeinschaft    AS nam_bes,
+  -- NamensNummer (Normalfall mit Person)
+    nn.laufendenummernachdin1421         AS nam_lfd, 
+    '=' || nn.zaehler|| '/' || nn.nenner AS nam_ant,         -- als Excel-Formel
 
-     -- Person
+  -- Rechtsgemeinsachaft (Sonderfall von Namensnummer, ohne Person, ohne Nummer)
+    rg.artderrechtsgemeinschaft          AS nam_adr,
+    rg.beschriebderrechtsgemeinschaft    AS nam_bes,
+
+  -- Person
      p.gml_id                             AS psgml,           -- möglicher Filter Personen-GML-ID
      p.anrede,
      p.vorname,
@@ -132,11 +132,11 @@ AS
      p.geburtsdatum,
      --p.geburtsname, p.akademischergrad 
  
-     -- Adresse der Person
-     a.postleitzahlpostzustellung         AS plz,
-     a.ort_post                           AS ort,             -- Anschreifenzeile 1: PLZ+Ort
-     a.strasse,  a.hausnummer,                                -- Anschriftenzeile 2: Straße+HsNr
-     a.bestimmungsland                    AS land
+  -- Adresse der Person
+    a.postleitzahlpostzustellung         AS plz,
+    a.ort_post                           AS ort,             -- Anschreifenzeile 1: PLZ+Ort
+    a.strasse,  a.hausnummer,                                -- Anschriftenzeile 2: Straße+HsNr
+    a.bestimmungsland                    AS land
 
   FROM ax_flurstueck    f               -- Flurstück
   JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von Buchung an Buchung
@@ -150,7 +150,7 @@ AS
   JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
     ON s.buchungsart = b.wert 
 
-  JOIN alkis_beziehungen v3              -- Buchung --> Grundbuchblatt
+  JOIN alkis_beziehungen v3             -- Buchung --> Grundbuchblatt
     ON s.gml_id = v3.beziehung_von AND v3.beziehungsart = 'istBestandteilVon'
   JOIN ax_buchungsblatt  gb 
     ON v3.beziehung_zu = gb.gml_id 
@@ -158,22 +158,38 @@ AS
   JOIN ax_buchungsblattbezirk z 
     ON gb.land=z.land AND gb.bezirk=z.bezirk 
 
-  JOIN alkis_beziehungen v4              -- Blatt  --> NamNum
+  JOIN alkis_beziehungen v4             -- Blatt  --> NamNum
     ON v4.beziehung_zu = gb.gml_id AND v4.beziehungsart = 'istBestandteilVon'  
   JOIN ax_namensnummer nn 
     ON v4.beziehung_von = nn.gml_id
 
-  LEFT JOIN alkis_beziehungen v5         -- NamNum --> Person 
-   -- 2014-01-20: Mit LEFT ab hier werden auch NumNum-Zeilen mit "Beschreinbung der Rechtsgemeinschaft" geliefert (ohne Person)
+  JOIN alkis_beziehungen v5             -- NamNum --> Person 
+   -- 2014-01-20: Mit LEFT ab hier werden auch NumNum-Zeilen mit "Beschreibung der Rechtsgemeinschaft" geliefert (ohne Person)
     ON v5.beziehung_von = nn.gml_id AND v5.beziehungsart = 'benennt'
-  LEFT JOIN ax_person p
+  JOIN ax_person p
     ON v5.beziehung_zu = p.gml_id
 
   LEFT JOIN alkis_beziehungen v6        -- Person --> Anschrift
     ON v6.beziehung_von = p.gml_id AND v6.beziehungsart = 'hat' 
   LEFT JOIN ax_anschrift a 
     ON v6.beziehung_zu = a.gml_id
- 
+
+  -- 2mal "LEFT JOIN" verdoppelt die Zeile in der Ausgabe. Darum als Subquery:
+
+  -- Noch mal "GB -> NamNum", aber dieses Mal für "Rechtsgemeinschaft".
+  -- Kommt max. 1 mal je GB vor und hat keine Relation auf Person.
+  LEFT JOIN
+   ( SELECT v7.beziehung_zu,
+            rg.artderrechtsgemeinschaft, 
+            rg.beschriebderrechtsgemeinschaft 
+       FROM ax_namensnummer rg 
+       JOIN alkis_beziehungen v7              -- Blatt  --> NamNum (Rechtsgemeinschaft) 
+         ON v7.beziehung_von = rg.gml_id
+      WHERE v7.beziehungsart = 'istBestandteilVon'
+        AND NOT rg.artderrechtsgemeinschaft IS NULL
+   ) AS rg                         -- Rechtsgemeinschaft
+   ON rg.beziehung_zu = gb.gml_id  -- zum GB
+
   ORDER BY f.flurstueckskennzeichen, 
            gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer,
            nn.laufendenummernachdin1421;
@@ -181,8 +197,59 @@ AS
 COMMENT ON VIEW exp_csv 
  IS 'View für einen CSV-Export aus der Buchauskunft mit alkisexport.php. Generelle Struktur. Für eine bestimmte gml_id noch den Filter setzen.';
 
---GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
+  GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
 --GRANT SELECT ON TABLE exp_csv TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
+
+
+-- Analyse: Kann es mehr als 1 "Rechtsgemeinschaft" zu einem GB-Blatt geben? 
+-- (Diese Frage stellte sich beim Design des View "exp_csv".)
+-- Schritt 1: alle vorhandenen
+CREATE OR REPLACE VIEW rechtsgemeinschaften_zum_grundbuch
+AS
+ SELECT
+     gb.gml_id,
+     gb.bezirk,
+     gb.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt,
+     nn.artderrechtsgemeinschaft,
+     nn.beschriebderrechtsgemeinschaft
+  FROM ax_buchungsblatt  gb 
+  JOIN alkis_beziehungen v
+    ON v.beziehung_zu = gb.gml_id AND v.beziehungsart = 'istBestandteilVon'  
+  JOIN ax_namensnummer nn 
+    ON v.beziehung_von = nn.gml_id
+  WHERE NOT nn.artderrechtsgemeinschaft IS NULL
+  ORDER BY gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung,
+           nn.laufendenummernachdin1421;
+
+COMMENT ON VIEW rechtsgemeinschaften_zum_grundbuch 
+ IS 'Rechtsgemeinschaften zum Grundbuchblatt.';
+
+-- Schritt 2: Wo gibt es mehrere zu einem GB-Blatt
+CREATE OR REPLACE VIEW rechtsgemeinschaften_zaehlen
+AS
+ SELECT gml_id, bezirk, gb_blatt, count(artderrechtsgemeinschaft) AS anzahl
+   FROM rechtsgemeinschaften_zum_grundbuch
+   GROUP BY gml_id, bezirk, gb_blatt
+   HAVING count(artderrechtsgemeinschaft) > 1
+   ORDER BY bezirk, gb_blatt;
+
+COMMENT ON VIEW rechtsgemeinschaften_zaehlen 
+ IS 'Rechtsgemeinschaften zum Grundbuchblatt zaehlen. Anzeigen, wenn es mehrere gibt.';
+-- Ja, kann es geben
+
+-- Schritt 3: alle vorhandenen Zeilen anzeigen zu den GB-Blättern, bei denen es mehrere gibt.
+CREATE OR REPLACE VIEW rechtsgemeinschaften_mehrfachzeilen
+AS
+ SELECT * 
+   FROM rechtsgemeinschaften_zum_grundbuch
+  WHERE gml_id IN (SELECT gml_id FROM rechtsgemeinschaften_zaehlen);
+
+COMMENT ON VIEW rechtsgemeinschaften_mehrfachzeilen 
+ IS 'Grundbuchblätter mit mehr als einer Zeile Rechtsgemeinschaft.';
+-- Fazit:
+-- Man findet einige wenige identische oder ähnlich aussehende Zeilen zu einem Grundbuch.
+-- Das sieht also eher nach einem PostNAS-Fortführungsproblem aus, als nach unabhängigen Zeilen.
+-- Wurde hier eine Relation nicht sauber gelöscht?
 
 
 -- Welche Karten-Typen ?
