@@ -4,10 +4,11 @@
 	Functions
 
 	Version:
-	17.12.2010  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	01.02.2011  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	02.11.2011  Parameter debug in function eigentuemer
-	17.11.2011  Variable ($debug, $idanzeige, $showkey) von Parameter nach global. Die heißen in allen Programmteilen gleich.
+	2010-12-17  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	2011-11-01  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	2011-11-02  Parameter debug in function eigentuemer
+	2011-11-17  Variable ($debug, $idanzeige, $showkey) von Parameter nach global. Die heißen in allen Programmteilen gleich.
+	2014-01-22	Eigentuemerart: Mehr Werte und Zugriff auf DB-Schlüssel-Tabelle 
 */
 function footer($gmlid, $link, $append) {
 	// Einen Seitenfuss ausgeben.
@@ -348,7 +349,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				if ($rechtsg != 9999) {
 					echo "\n<p class='dbg'>Keine Person zur Namensnummer ".$namnum."</p>";
 				}
-				if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1=gml(NamNum)= '".$gmlnn."'</p>";}
+				//if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1=gml(NamNum)= '".$gmlnn."'</p>";}
 			}
 			echo "</td>\n\t<td>&nbsp;</td>\n<tr>";
 		}
@@ -386,18 +387,44 @@ function rechtsgemeinschaft($key) {
 	}
 	return $wert;
 }
+
 // Entschluesslung AX_Namensnummer.eigentuemerart
-// Abweichend hier in singular fuer Link-Text
 function eigentuemerart($key) {
+	// Die häufigsten Werte direkt aus den Programmcode liefern, ggf. angepasst.
+	// Für seltene Werte in der Datenbank nachschlagen.
+	// Schlüsseltabelle dazu aus GeoInfoDok ist vorhanden seit 2014-01-22.
+	// Hier Verwendung für Text zum Link.
+	// Für korrekte Wiedergabe der amtlichen Werte einen Join auf Tabelle verwenden statt dieser Function. 
 	switch ($key) {
-		case 1000: $wert = "Nat&uuml;rliche Person"; break;
-		case 2000: $wert = "Juristische Person"; break;
-		case 3000: $wert = "K&ouml;rperschaft"; break;
+		case 1000: $wert = "Nat&uuml;rliche Person"; break; // singular fuer Link-Text
+		case 2000: $wert = "Juristische Person"; break; // singl.
+		case 3000: $wert = "Körperschaft"; break; // singl.
+		case 4000: $wert = "Kirchliches Eigentum"; break;
+		case 4100: $wert = "Evangelische Kirche"; break;
+		case 4200: $wert = "Katholische Kirche"; break;
+		case 5100: $wert = "Bundesrepublik Deutschland"; break;
+		case 5400: $wert = "Kreis"; break;
+		case 5500: $wert = "Gemeinde"; break;
+		case 5920: $wert = "Land"; break; // "Eigenes Bundesland"
 		case "":   $wert = "Person"; break; // falls (noch) nicht gefuellt
-		default:   $wert = "** Unbekannte Eigent&uuml;merart '".$key."' **"; break;
+		default: // Datenbank-Abfrage
+			$sql="SELECT bezeichner FROM ax_namensnummer_eigentuemerart WHERE wert= $1 ;";
+			$v=array($key);
+			$res=pg_prepare("", $sql);
+			$res=pg_execute("", $v);
+			if ($res) {
+				$row=pg_fetch_array($res);
+				$wert==htmlentities($row["bezeichner"], ENT_QUOTES, "UTF-8");
+			} else {
+				echo "\n\t<p class='err'>Fehler bei DB-Zugriff auf Schlüssel Eigentümerart.</p>\n";
+				$wert = "** Unbekannte Eigent&uuml;merart '".$key."' **";
+			}
+			break;
 	}
 	return $wert;
 }
+
+
 // Entschluesslung ax_buchungsblatt.blattart
 function blattart($key) {
 	switch ($key) {

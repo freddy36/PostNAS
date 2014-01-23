@@ -11,7 +11,6 @@
 	ToDo: Sortierung der Grundbücher zum Namen
 */
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
@@ -34,7 +33,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Eigentuemer_2.ico">
 	<script type="text/javascript">
 		function ALKISexport() {
-				window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=person&gmlid=".$gmlid."'"; ?>);
+			window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=person&gmlid=".$gmlid."'"; ?>);
 		}
 	</script>
 	<style type='text/css' media='print'>

@@ -8,6 +8,7 @@
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Hervorhebung aktuelles Objekt. Title "Nachweis" auch auf Icon.
+	2013-12-12	Limit in EinBlatt von 200 weit hoch gesetzt (bis Blättern möglich wird)
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -288,7 +289,9 @@ function EinBlatt($showParent) {
 		zeile_blatt ($zgbbez, $gbbeznam, $blattgml, $zblatt, false, "", true);
 	}
 	// Body
-	GB_Buchung_FS(200, $zgbbez."-".$zblatt); // Blatt -> Buchung -> Flurstueck (max. 200)
+	// 2013-12-12 Limit von ursprünglich 200 weit hoch gesetzt
+	GB_Buchung_FS(1000, $zgbbez."-".$zblatt); // Blatt -> Buchung -> Flurstueck (Limitiert)
+	// ++ besser Limit wieder runter und "Blättern"-Funktion einführen
 	return; 
 }
 

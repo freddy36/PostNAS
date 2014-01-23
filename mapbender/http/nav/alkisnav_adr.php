@@ -4,16 +4,20 @@
 					Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms
-	2013-05-14  Feinkorrekturen.
-
+	2013-05-14  Feinkorrekturen
+	2013-05-15  Gruppierung nach Gemeinde, mehrfache HsNr (ap_pto.advstandardmodell) unterdrücken, Icon f. Straße
+	2014-01-23	Link zum Auskunft-Modul für Straße
 	ToDo:
+	-	Gruppierung (mit Zeile) der Straßenliste nach Gemeinde
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
+		-- lfd (Nebengebäude) als Untergliederung der geklickten Haus-Nr anzeigen
 		Analog zur Zerlegung des FS-Kennz in _fls
 	-	Mouse-Over in Straßenliste soll Position zeigen.
 		Dazu in der DB eine Tabelle mit Koordinate zum Straßenschlüssel aufbauen. 
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
+include("alkisnav_fkt.php"); // Funktionen
 $con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$$dbname.$dbvers.$gkz);
 echo <<<END
@@ -31,6 +35,10 @@ echo <<<END
 		function transtitle (trans) { // Titel der letzten Transaktion anzeigen
 			document.getElementById('transaktiontitle').innerHTML = trans;
 		}
+		function imFenster(dieURL) {
+			var link = encodeURI(dieURL);
+			window.open(link,'','left=10,top=10,width=620,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
+		}
 	</script>
 </head>
 <body>
@@ -41,9 +49,8 @@ echo <<<END
 
 END;
 
-function suchStrName() {
-	// Strassen nach Name(-nsanfang)
-	global $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug;
+function suchStrName() { // Strassen nach Name(-nsanfang)
+	global $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug, $auskpath;
 	$linelimit=120;  // -> in die Conf?
 	preg_match("/^(\D+)(\d*)(\D*)/",$street,$matches); # 4 matches name/nr/zusatz echo "match: ".$matches[1].",".$matches[2].",".$matches[3];
 	$matches[1] = preg_replace("/strasse/i","str", $matches[1]);
@@ -53,7 +60,7 @@ function suchStrName() {
 	} else {
 		$match=trim($matches[1])."%";
 	}
-	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.schluesselgesamt, k.lage ";
+	$sql ="SELECT g.gemeinde, g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.bezeichnung ILIKE $1 ";
@@ -67,34 +74,36 @@ function suchStrName() {
 		default: // kein Filter
 			break;
 	}
-	$sql.="ORDER BY k.bezeichnung, g.bezeichnung, k.lage LIMIT $2 ;";
+	$sql.="ORDER BY g.bezeichnung, k.bezeichnung, k.lage LIMIT $2 ;";
  	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {return "\n<p class='err'>Fehler bei Name</p>";}
 	$cnt = 0;
+	$gwgem="";
 	while($row = pg_fetch_array($res)) {
-		$sname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");		
-		$gkey=$row["schluesselgesamt"]; // Land-Kreis-Gem-Strasse
-		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
-		$skey=$row["lage"];
+		$gemname=$row["gemname"];
+		$gemnr=$row["gemeinde"] ;
+		if ($gwgem != $gemname) {
+			if ($gfilter != 1) {
+				zeile_gemeinde($gemnr, $gemname, false); // ToDo: aber ohne Link oder Link verarbeiten können
+			}
+			$gwgem=$gemname;
+		}
+		$gkey=$row["schluesselgesamt"]; // Land-RegBez-Kreis-Gem-Strasse - für weitere Suche
+		$skey=$row["lage"]; // Nur Str.-schl. daraus
+		$kgml=$row["gml_id"]; // ID von Katalog
+
+// +++ in function_zeile_strasse()
+		$sname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");	
 		echo "\n\t<div class='stl' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
-			if (trim($skey, "0..9") == "") { // Integer
-				echo "<a class='stl' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$gkey."'>".$sname."</a>";
-			} else { // Klassifizierung?
-				echo $sname; // nicht brauchbar fuer ax_lagebezeichnungmithausnummer.lage (Integer)
-			}	
-			switch ($gfilter) {
-				case 0: // Kein Filter
-					echo " in ".$gemname;
-					break;
-				case 2: // Liste
-					echo " in ".$gemname;
-					break;
-				default: // Einzelwert
-					break;
-			}			
+		// Icon -> Buchnachweis
+		echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$kgml."\")'>";
+			echo "\n\t\t<img class='nwlink' src='ico/Lage_mit_Haus.ico' width='16' height='16' alt='STR' title='Stra&szlig;e'>";
+		echo "\n\t</a>";
+		echo "<a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$gkey."'>".$sname."</a>";
 		echo "</div>";
+// +++ function ende
 		$cnt++;
 	}
 	if($cnt == 0) {
@@ -109,18 +118,16 @@ function suchStrName() {
 	return;
 }
 
-function suchStrKey() {
-	// Strassen nach Strassen-Schluessel
-	global $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug;
-	$linelimit=50;
+function suchStrKey() { // Strassen nach num. Schluessel
+	global $street, $scalestr, $str_schl, $gkz, $gemeinde, $epsg, $gfilter, $debug, $auskpath;
+	$linelimit=60;
 	if(preg_match("/\*/",$street)) {
 		$match=trim(preg_replace("/\*/i","%",$street));
-		// -> Anwender muss fuehrende Nullen eingeben oder fuehrende Wildcard
+		// fuehrende Nullen eingeben oder fuehrende Wildcard
 	} else {
 		$match=str_pad($street, 5, "0", STR_PAD_LEFT); // "Wie eine Zahl" verarbeiten 
 	}
-   //if ($debug >= 2) {echo "<p>sql-Match='".$match."'</p>";}
-	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.schluesselgesamt, k.lage ";
+	$sql ="SELECT g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.lage LIKE $1 ";
@@ -131,10 +138,7 @@ function suchStrKey() {
 		case 2: // Liste
 			$sql.="AND k.gemeinde in (".$gemeinde.") ";
 			break;
-		default: // kein Filter
-			break;
 	}
-
 	$sql.="ORDER BY k.lage, k.bezeichnung LIMIT $2 ;";
  	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
@@ -146,7 +150,16 @@ function suchStrKey() {
 		$gkey=$row["schluesselgesamt"];
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		$skey=$row["lage"];
+		$kgml=$row["gml_id"]; // ID von Katalog	
+		
+// +++ in function_zeile_strasse()
 		echo "\n\t<div class='stl' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
+
+			// Icon -> Buchnachweis
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$kgml."\")'>";
+				echo "\n\t\t<img class='nwlink' src='ico/Lage_mit_Haus.ico' width='16' height='16' alt='STR' title='Stra&szlig;e'>";
+			echo "\n\t</a>";		
+		
 			echo $skey." <a class='st' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$gkey."' title='".$gemname."'>".$sname;
 			echo "</a>";
 			switch ($gfilter) {
@@ -158,6 +171,7 @@ function suchStrKey() {
 					break;
 			}
 		echo "</div>";
+// function ende
 		$cnt++;
 	}
 	if($cnt == 0) {
@@ -172,27 +186,28 @@ function suchStrKey() {
 	return;
 }
 
-function suchHausZurStr($showParent){
-	// Haeuser zu einer Strasse
+function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 	global $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $debug;
+
+	// Head
 	// Strasse zum Strassenschluessel
 	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.schluesselgesamt = $1 LIMIT 1"; 
-  	$v=array($str_schl);
+  	$v=array($str_schl);	// Schluessel-Gesamt ..
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
-	if($row = pg_fetch_array($res)) { // Strassenschluessel gefunden
+	if($row = pg_fetch_array($res)) { // .. gefunden
 		$sname=$row["bezeichnung"];
-		$land =$row["land"];
+		$land =$row["land"];	// Einzel-Felder für JOIN _lagebezeichnung_
 		$regb =$row["regierungsbezirk"];
 		$kreis=$row["kreis"];
 		$gemnd=$row["gemeinde"];
-		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		$nr=$row["lage"];
+		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		if ($showParent) {
-			// eine Koordinate zur Strasse besorgen
+			// EINE Koordinate zur Strasse besorgen
 			// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
 			$sqlko ="SELECT ";
 			if($epsg == "25832") { // Transform nicht notwendig
@@ -223,7 +238,7 @@ function suchHausZurStr($showParent){
 						echo "transtitle(\"auf Stra&szlig;e positioniert\"); ";
 						echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalestr."); ";
 						echo "parent.parent.showHighlight(".$x.",".$y."); ";
-						//echo "document.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$str_schl."\"";
+					//	echo "document.location.href=\"".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$str_schl."\"";
 					echo "' "; // end href
 					echo "\n\t\tonmouseover='parent.parent.showHighlight(" .$x. "," .$y. ")' ";
 					echo "\n\t\tonmouseout='parent.parent.hideHighlight()'";
@@ -242,24 +257,35 @@ function suchHausZurStr($showParent){
 			echo "\n</div>";
 		}
 		echo "\n<hr>";
+
+		// Body
 		// Haeuser zum Strassenschluessel
-		$sql="SELECT replace(h.hausnummer,' ','') AS hsnr, ";
+		$sql="SELECT min(replace(h.hausnummer,' ','')) AS hsnr, ";
 		if($epsg == "25832") { // Transform nicht notwendig
-			$sql.="st_x(p.wkb_geometry) AS x, ";
-			$sql.="st_y(p.wkb_geometry) AS y ";		
+			$sql.="avg (st_x(p.wkb_geometry)) AS x, ";
+			$sql.="avg (st_y(p.wkb_geometry)) AS y ";		
 		} else {  
-			$sql.="st_x(st_transform(p.wkb_geometry,".$epsg.")) AS x, ";
-			$sql.="st_y(st_transform(p.wkb_geometry,".$epsg.")) AS y ";		
+			$sql.="avg (st_x(st_transform(p.wkb_geometry,".$epsg."))) AS x, ";
+			$sql.="avg (st_y(st_transform(p.wkb_geometry,".$epsg."))) AS y ";		
 		}
 		$sql.="FROM ap_pto p JOIN alkis_beziehungen v ON p.gml_id = v.beziehung_von ";
 		$sql.="JOIN ax_lagebezeichnungmithausnummer h ON v.beziehung_zu = h.gml_id ";
 		$sql.="WHERE v.beziehungsart='dientZurDarstellungVon' AND p.art = 'HNR' ";
 		$sql.="AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
+		$sql.="GROUP BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2) ";
 		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
+		// Problem: mehrere Koordinaten für verschiedene Maßstäbe der Kartendarstellung
+		// Diese sollten nicht mehrfach gelistet werden. Für Positionierung "irgendeine" nehmen.
+		// Lösung: über GROUP BY in SQL. Alternative Lösungen wären: 
+		//  1. Gruppenwechsel bei Abarbeitung des Result
+		//  2. Subquery mit LIMIT 1 statt JOIN
+		//  3. Geometrie aus Gebäude-Mittelpunkt statt aus Präsentationsobjekt der Hausnummer
 
  		$v=array($land,$regb,$kreis,$gemnd,$nr);
 		$resh=pg_prepare("", $sql);
 		$resh=pg_execute("", $v);
+		#echo "<p class='dbg'>SQL='".$sql."'<br>Array=".$v[]."</p>"; // TEST
+
 		$cnt=0;
 		$count=0;
 		echo "\n<table>";
@@ -271,7 +297,7 @@ function suchHausZurStr($showParent){
 			echo "\n\t<td class='hsnr'>";
 				echo "<a href='";
 					echo "javascript:";
-					echo "transtitle(\"auf Haus positioniert\"); ";
+					echo "transtitle(\"auf Haus ".$hsnr." positioniert\"); ";
 					echo "parent.parent.parent.mb_repaintScale(\"mapframe1\",".$x.",".$y.",".$scalehs."); ";
 					echo "parent.parent.showHighlight(".$x.",".$y.");' ";
 				echo "onmouseover='parent.parent.showHighlight(".$x.",".$y.")' ";
@@ -287,7 +313,9 @@ function suchHausZurStr($showParent){
 		}
 		if($count > 0) {echo "\n</tr>";}
 		echo "\n</table>";
-		echo "\n<p class='anz'>".$cnt." Hausnummern</p>";
+		if ($cnt > 1) {
+			echo "\n<p class='anz'>".$cnt." Hausnummern</p>";
+		}
 	} else {
 		echo "\n<p class='anz'>Keine Stra&szlig;e</p>";
 	}
@@ -297,13 +325,10 @@ function suchHausZurStr($showParent){
 // Start hier!
 // ===========
 if(isset($epsg)) {
-	#if ($debug >= 2) {echo "\n<p>aktueller EPSG='".$epsg."'</p>";} // aus MB
 	$epsg = str_replace("EPSG:", "" , $_REQUEST["epsg"]);	
 } else {
-	#if ($debug >= 1) {echo "\n<p class='err'>kein EPSG gesetzt</p>";}	
 	$epsg=$gui_epsg; // aus Conf
 }
-#if ($debug >= 2) {echo "<p>Filter Gemeinde = ".$gemeinde."</p>";}
 if ($gemeinde == "") {
 	$gfilter = 0; // ungefiltert
 } elseif(strpos($gemeinde, ",") === false) {
@@ -311,10 +336,14 @@ if ($gemeinde == "") {
 } else {
 	$gfilter = 2; // Liste
 }
-if (isset($str_schl)) { // aus Link
+
+// +++	Zerlegung Eingabe aus "Balken" von Buchauskunft "Lage":
+//			Numerisch: Gem-Str-Haus-lfd
+
+if ($str_schl != "") { // aus Link
 	$trans="Hausnummern zur Stra&szlig;e";
 	suchHausZurStr(true);
-} elseif(isset($street)) { // Eingabe in Form
+} elseif($street != "") { // Eingabe in Form
 	if (trim($street, "*,0..9") == "") { // Zahl, ggf. mit Wildcard
 		$trans="Suche Stra&szlig;enschl&uuml;ssel \"".$street."\"";
 		suchStrKey();

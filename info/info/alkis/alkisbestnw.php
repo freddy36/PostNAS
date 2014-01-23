@@ -14,7 +14,6 @@
 	Zahler fuer Anzahl GB und FS in der Liste (ausgeben wenn > 10)
 */
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
@@ -37,7 +36,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Grundbuch.ico">
 	<script type="text/javascript">
 		function ALKISexport() {
-				window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=grundbuch&gmlid=".$gmlid."'"; ?>);
+			window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=grundbuch&gmlid=".$gmlid."'"; ?>);
 		}
 	</script>
 	<style type='text/css' media='print'>
@@ -57,7 +56,6 @@ $sql.="b.gml_id, b.bezirk, b.bezeichnung AS beznam, "; // Bezirk
 $sql.="a.gml_id, a.land, a.bezeichnung, a.stelle, a.stellenart "; // Amtsgericht
 $sql.="FROM ax_buchungsblatt g ";
 $sql.="LEFT JOIN ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk ";  // BBZ
-//$sql.="LEFT JOIN ax_dienststelle a ON b.\"gehoertzu|ax_dienststelle_schluessel|land\"=a.land AND b.stelle=a.stelle ";
 $sql.="LEFT JOIN ax_dienststelle a ON b.land = a.land AND b.stelle = a.stelle ";
 $sql.="WHERE g.gml_id= $1 ";
 $sql.="AND a.stellenart=1000;"; // Amtsgericht

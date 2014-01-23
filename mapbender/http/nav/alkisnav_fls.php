@@ -7,6 +7,7 @@
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Variablen-Namen geordnet, Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
+	2013-10-15  missing Parameter
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
@@ -120,20 +121,6 @@ function flurstueckskoordinaten($gml) {
 	return $koor;
 }
 
-function zeile_gemeinde ($gmdnr, $gmdname, $aktuell) {
-	// Eine Zeile zu Gemeinde ausgeben, Schlüssel und Name wird übergeben
-	global $gkz, $gemeinde, $epsg;
-	$stadt=htmlentities($gmdname, ENT_QUOTES, "UTF-8");
-	$bez=urlencode($gmdname);
-	if ($aktuell) {$cls=" aktuell";}
-	echo "\n<div class='gm".$cls."' title='Gemeinde'>";
-		echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";
-		echo " Gem. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gm=".$gmdnr."&amp;bez=".$bez."'>";		
-		echo  " ".$stadt."</a> (".$gmdnr.")";
-	echo "\n</div>";
-	return;
-}
-
 function zeile_gemarkung($gkgnr, $gkgname, $aktuell) {
 	// Eine Zeile zu Gemarkung ausgeben
 	global $con, $gkz, $gemeinde, $epsg, $gfilter;
@@ -164,7 +151,7 @@ function zeile_flur($gkgnr, $flurnr, $histlnk, $aktuell) { // Eine Zeile zur Flu
 	echo "\n\t\t<img class='nwlink' src='ico/Flur.ico' width='16' height='16' alt='FL' title='Flur'> ";
 	$url=$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gkgnr."-".$flurnr;
 	echo "<a title='Aktuelle Flurst&uuml;cke suchen' href='".$url."'>Flur ".$flurnr." </a>"; 
-	If ($histlnk) { // Link zur hist. Suche anbieten
+	if ($histlnk) { // Link zur hist. Suche anbieten
 		echo " <a class='hislnk' title='Historische Flurst&uuml;cke der Flur' href='".$url."&amp;hist=j'>Hist.</a>";
 	}
 	echo "\n</div>";	
@@ -443,7 +430,8 @@ function EineFlur() {
 		zeile_flurstueck($fs_gml, $fskenn, $row["x"], $row["y"], "", "", false);
 		$zfs++;
 	}
-	// Foot
+
+	// Flur-Foot
 	if($zfs == 0) {
 		echo "\n<p class='anz'>Kein Flurst&uuml;ck.</p>";
 	} elseif($zfs >= $linelimit) {
@@ -503,7 +491,7 @@ function EinFlurstueck() {
 
 	// Head
 	gg_head($zgemkg, false);
-	zeile_flur($zgemkg, $zflur, true);
+	zeile_flur($zgemkg, $zflur, true, false);
 
 	// Body
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";

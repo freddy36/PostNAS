@@ -46,7 +46,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Flurstueck.ico">
 	<script type="text/javascript">
 		function ALKISexport() {
-				window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=flurstueck&gmlid=".$gmlid."'"; ?>);
+			window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=flurstueck&gmlid=".$gmlid."'"; ?>);
 		}
 	</script>
 	<style type='text/css' media='print'>

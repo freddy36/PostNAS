@@ -2,8 +2,7 @@
 /*	alkishaus.php - Daten zum ALKIS-Gebäude-Objekt
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
-	Version:
-	2011-11-30 NEU! Variante von alkisgebaeudenw: Aufruf für EIN Haus, nicht für ein FS
+	Version:	2011-11-30 NEU! Variante von alkisgebaeudenw: Aufruf für EIN Haus, nicht für ein FS
 	2011-01-31 ax_gebaeude.weiteregebaeudefunktion ist jetzt Array
 	2013-04-08  deprecated "import_request_variables" ersetzt
 
@@ -14,14 +13,11 @@
 	- Auch diese Relationen abbilden:
 		ax_gebaeude >gehoertZu> ax_gebaeude  (ringförmige Verbindung Gebäudekomplex)
 		ax_gebaeude (umschliesst) ax_bauteil
-		ax_gebaeude >gehoert> ax_person  (Ausnahme)
-*/
+		ax_gebaeude >gehoert> ax_person  (Ausnahme)*/
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {require_once($mapbender);}
-include("alkisfkt.php");
+if ($auth == "mapbender") {require_once($mapbender);}include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
 $keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
 if ($keys == "j") {$showkey=true;} else {$showkey=false;}
@@ -53,8 +49,7 @@ $sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, g.anzahlderober
 $sqlg.="g.lagezurerdoberflaeche, g.dachgeschossausbau, g.zustand, g.weiteregebaeudefunktion, g.dachform, g.hochhaus, g.objekthoehe, g.geschossflaeche, g.grundflaeche, g.umbauterraum, g.baujahr, g.dachart, g.qualitaetsangaben, ";
 $sqlg.="h.bauweise_beschreibung, u.bezeichner AS bfunk, z.bezeichner AS bzustand, ";
 // "w.bezeichner AS bweitfunk, ";
-$sqlg.="d.bezeichner AS bdach, round(area(g.wkb_geometry)::numeric,2) AS gebflae ";
-$sqlg.="FROM ax_gebaeude g ";
+$sqlg.="d.bezeichner AS bdach, round(area(g.wkb_geometry)::numeric,2) AS gebflae ";$sqlg.="FROM ax_gebaeude g ";
 
 // Entschluesseln
 $sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
@@ -72,14 +67,12 @@ if (!$resg) {
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sqlg."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 
-// Balken
-echo "<p class='geb'>ALKIS Haus ".$gmlid."&nbsp;</p>\n"; // +++ Kennzeichen = ?
+// Balkenecho "<p class='geb'>ALKIS Haus ".$gmlid."&nbsp;</p>\n"; // +++ Kennzeichen = ?
 
 echo "\n<h2><img src='ico/Haus.ico' width='16' height='16' alt=''> Haus (Geb&auml;ude)</h2>\n";
 
 // Kennzeichen in Rahmen 
-// - Welches Kennzeichen zum Haus ?
-if ($idanzeige) {linkgml($gkz, $gmlid, "Haus"); }
+// - Welches Kennzeichen zum Haus ?if ($idanzeige) {linkgml($gkz, $gmlid, "Haus"); }
 echo "\n<hr>";
 // Umschalter: auch leere Felder ausgeben?
 echo "<p class='nwlink noprint'>";
@@ -89,13 +82,10 @@ echo "<a class='nwlink' href='".$_SERVER['PHP_SELF']."?gkz=".$gkz."&amp;gmlid=".
 	if ($allefelder) {echo "&amp;allfld=n'>nur Felder mit Inhalt";} 
 	else {echo "&amp;allfld=j'>auch leere Felder";}
 echo "</a></p>";
-
-while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus sein.
+while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus sein.
 	$gebnr++;
 	echo "\n<table class='geb'>";
-	echo "\n<tr>\n";
-		echo "\n\t<td class='head' title=''>Attribut</td>";
-		echo "\n\t<td class='head' title=''>Wert</td>";
+	echo "\n<tr>\n";		echo "\n\t<td class='head' title=''>Attribut</td>";		echo "\n\t<td class='head' title=''>Wert</td>";
 	echo "\n</tr>";
 
 	$aog=$rowg["aog"];
@@ -140,8 +130,7 @@ while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus s
 	$sqll.="SELECT 'p' AS ltyp, v.beziehung_zu, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
 	$sqll.="FROM alkis_beziehungen v "; 
 	$sqll.="JOIN ax_lagebezeichnungmitpseudonummer l ON v.beziehung_zu=l.gml_id ";
-	$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-	$sqll.="WHERE v.beziehungsart = 'hat' AND v.beziehung_von = $1 "; // ID des Hauses"
+	$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";	$sqll.="WHERE v.beziehungsart = 'hat' AND v.beziehung_von = $1 "; // ID des Hauses"
 
 	$sqll.="ORDER BY bezeichnung, hausnummer ";
 
@@ -201,22 +190,19 @@ while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus s
 	if ($aog != "" OR $allefelder) {
 		echo "\n<tr>";
 			echo "\n\t<td title='Anzahl oberirdischer Geschosse'>Geschosse</td>";
-			echo "\n\t<td>".$aog."</td>";
-		echo "\n</tr>";
+			echo "\n\t<td>".$aog."</td>";		echo "\n</tr>";
 	}
 
 	if ($aug != "" OR $allefelder) {
 		echo "\n<tr>";
 			echo "\n\t<td title='Anzahl unterirdischer Geschosse'>U-Geschosse</td>";
-			echo "\n\t<td>".$aug."</td>";
-		echo "\n</tr>";
+			echo "\n\t<td>".$aug."</td>";		echo "\n</tr>";
 	}
 
 	if ($hoh != "" OR $allefelder) {
 		echo "\n<tr>";
 			echo "\n\t<td title='\"Hochhaus\" ist ein Geb&auml;ude, das nach Geb&auml;udeh&ouml;he und Auspr&auml;gung als Hochhaus zu bezeichnen ist. F&uuml;r Geb&auml;ude im Geschossbau gilt dieses i.d.R. ab 8 oberirdischen Geschossen, f&uuml;r andere Geb&auml;ude ab einer Geb&auml;udeh&ouml;he von 22 m.'>Hochhaus</td>";
-			echo "\n\t<td>".$hoh."</td>";
-		echo "\n</tr>";
+			echo "\n\t<td>".$hoh."</td>";		echo "\n</tr>";
 	}
 
 	if ($ofl != "" OR $allefelder) {
@@ -229,8 +215,7 @@ while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus s
 				// "Unter der Erdoberfl&auml;che" bedeutet, dass sich das Geb&auml;ude unter der Erdoberfl&auml;che befindet
 				case 1400: echo "Aufgest&auml;ndert"; break;
 				// "Aufgest&auml;ndert" bedeutet, dass ein Geb&auml;ude auf St&uuml;tzen steht
-				case "": echo "&nbsp;"; break;
-				default: echo "** Unbekannte Lage zur Erdoberfl&auml;che '".$ofl."' **"; break;
+				case "": echo "&nbsp;"; break;				default: echo "** Unbekannte Lage zur Erdoberfl&auml;che '".$ofl."' **"; break;
 			}
 			echo "&nbsp;</td>";
 		echo "\n</tr>";
@@ -240,14 +225,12 @@ while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus s
 		echo "\n<tr>";
 			echo "\n\t<td title='\"Dachgeschossausbau\" ist ein Hinweis auf den Ausbau bzw. die Ausbauf&auml;higkeit des Dachgeschosses.'>Dachgeschossausbau</td>";
 			echo "\n\t<td>";
-			if ($showkey) {echo "<span class='key'>".$dga."</span>&nbsp;";}
-			switch ($dga) {
+			if ($showkey) {echo "<span class='key'>".$dga."</span>&nbsp;";}			switch ($dga) {
 				case 1000: echo "Nicht ausbauf&auml;hig"; break;
 				case 2000: echo "Ausbauf&auml;hig"; break;
 				case 3000: echo "Ausgebaut"; break;
 				case 4000: echo "Ausbauf&auml;higkeit unklar"; break;
-				case "": echo "&nbsp;"; break;
-				default: echo "** Unbekannter Wert Dachgeschossausbau '".$dga."' **"; break;
+				case "": echo "&nbsp;"; break;				default: echo "** Unbekannter Wert Dachgeschossausbau '".$dga."' **"; break;
 			}
 			echo "</td>";
 		echo "\n</tr>";
@@ -270,24 +253,12 @@ while($rowg = pg_fetch_array($resg)) { // Als Schleife, kann aber nur EIN Haus s
 			if ($wgf != "") {
 				// weiteregebaeudefunktion ist jetzt ein Array
 				$wgflist=trim($wgf, "{}"); // kommagetrennte(?) Liste der Schluesselwerte
-				$wgfarr=explode(",", $wgflist);
-				$sqlw="SELECT wert, bezeichner FROM ax_gebaeude_weiterefunktion WHERE wert in ( ";
-				foreach($wgfarr as $key => $val) {
-						$v[$key] = $val;
-						if ($key > 0){
-							$sqlw.=",";
-						}
-						$sqlw.=" $".($key+1);
-
-        			}
-				 
-				$sqlw.= ") ORDER BY wert;";
-								
-				
-				#echo $sqlw;
+				//$wgfarr=explode(",", $wgflist);
+				//for each ...
+				$sqlw="SELECT wert, bezeichner FROM ax_gebaeude_weiterefunktion WHERE wert in ( $1 ) ORDER BY wert;";
+				$v = array($wgflist);
 				$resw = pg_prepare("", $sqlw);
 				$resw = pg_execute("", $v);
-				
 				if (!$resw) {
 					echo "\n<p class='err'>Fehler bei Geb&auml;ude - weitere Funktion.</p>\n";
 					if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sqlw."<br>$1 = Werteliste = '".$wgflist."'</p>";}

@@ -6,12 +6,11 @@
 	Link durch "&id=j;" in den anderen Modulen zuschaltbar.
 	Dies ist fuer die Entwicklung der Auskunft gedacht (Sonderfaelle) nicht fuer den Anwender.
 
-	Version:	10.11.2011  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
-	30.11.2011  import_request_variables
+	Version:	2011-11-10  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
+	2011-11-30  import_request_variables
 	2013-04-08  deprecated "import_request_variables" ersetzt
 */
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}

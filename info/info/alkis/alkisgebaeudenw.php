@@ -2,14 +2,11 @@
 /*	alkisgebaeudenw.php - Gebaeudenachweis
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
-	Version:	22.11.2011  Feld ax_gebaeude.description ist entfallen, neue Spalte Zustand
-	30.11.2011
-		Fehlerkorrektur Gebaeude mit mehreren Adressen nicht mehrfach
-		Sonderfall lage aus PostNAS 05 entfernt, import_request_variables
+	Version:	2011-11-22  Feld ax_gebaeude.description ist entfallen, neue Spalte Zustand
+	2011-11-30	Fehlerkorrektur Gebaeude mit mehreren Adressen nicht mehrfach
 	2013-04-08  deprecated "import_request_variables" ersetzt
 */
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}include("alkisfkt.php");
