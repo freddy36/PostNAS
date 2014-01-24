@@ -24,6 +24,8 @@
 --                   ax_sonstigesrecht_artdf, ax_anderefestlegungnachwasserrecht_artdf
 --  2013-04-17  F.J. Kurzbezeichnungen der Bodenschättung für die Kartendarstellung
 
+--	2014-01-24	F.J. "Eigentuemerart" entschchlüsseln
+
   SET client_encoding = 'UTF8';
 
 -- G e b a e u d e - B a u w e i s e
@@ -505,13 +507,111 @@ INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (5203,'Anlie
 INSERT INTO ax_buchungsstelle_buchungsart (wert, bezeichner) VALUES (6101,'Nicht gebuchtes Fischereirecht');
 
 
--- E i g e n t u e m e r a r t
+-- N a m e n s n u m m e r  -  E i g e n t u e m e r a r t
+-- -------------------------------------------------------
+-- Kennung   = 21006,
+-- Objektart = 'AX_Namensnummer'
+-- 2014-01-24 NEU. Bisher nur 3 Werte ueber Function (case) entschluesselt.
 
--- Laut GeoInfoDok nur 3 Werte.
--- In RLP-Mustersdaten aber viele verschiedene Werte.
+CREATE TABLE ax_namensnummer_eigentuemerart (
+   wert integer,
+   bezeichner character varying,
+   CONSTRAINT pk_ax_nnea_wert PRIMARY KEY (wert)
+  );
 
--- Fuer "viele Werte" wuerde sich eine Tabelle lohnen.
--- 3 Werte koennen ueber Function (case) entschluesselt werden.
+COMMENT ON TABLE  ax_namensnummer_eigentuemerart 
+ IS 'Schlüsseltabelle mit Werten aus GeoInfoDok NW, geladen mit SQL-Script. Zu Tabelle "ax_namensnummer", Feld "eigentuemerart".';
+
+COMMENT ON COLUMN ax_namensnummer_eigentuemerart.wert       IS 'numerischer Schlüssel';
+COMMENT ON COLUMN ax_namensnummer_eigentuemerart.bezeichner IS 'Lange Bezeichnung';
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (1000,'Natürliche Personen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (1100,'Natürliche Person - Alleineigentum oder Ehepartner');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (1200,'Natürliche Person - Wohnsitz im Land');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (1300,'Natürliche Person - Wohnsitz außerhalb des Landes');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (1500,'Natürliche Person - Gemeinschaftseigentum');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2000,'Juristische Personen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2100,'Gemeinnützige Bau-, Wohnungs- oder Siedlungsgesellschaft oder -genossenschaft einschließlich Heimstätte');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2200,'Sonstige gemeinnützige Institution (Träger von Krankenhäusern, Altenheimen usw.) ');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2300,'Privates Wohnungsunternehmen, private Baugesellschaft u.ä.');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2400,'Kreditinstitut');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2500,'Versicherungsunternehmen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (2900,'Andere Unternehmen, Gesellschaften usw.');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (3000,'Körperschaften');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (3100,'Stiftung');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (4000,'Kirchliches Eigentum');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (4100,'Evangelische Kirche');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (4200,'Katholische Kirche ');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (4900,'Andere Kirchen, Religionsgemeinschaften usw.');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5100,'Bundesrepublik Deutschland');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5101,'Bundesrepublik Deutschland, Bundesstraßenverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5102,'Bundesrepublik Deutschland, Bundeswehrverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5103,'Bundesrepublik Deutschland, Forstverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5104,'Bundesrepublik Deutschland, Finanzverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5105,'Bundesrepublik Deutschland, Zivilschutz');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5106,'Bundesrepublik Deutschland, Wasserstraßenverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5107,'Bundesrepublik Deutschland, Bundeseisenbahnvermögen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5210,'Eigentum des Volkes nach DDR-Recht');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5220,'Eigentum der Genossenschaften und deren Einrichtungen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5230,'Eigentum der gesellschaftlichen Organisationen und deren Einrichtungen ');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5240,'Kommunale Gebietskörperschaften nach DDR-Recht');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5300,'Ausländischer Staat');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5400,'Kreis');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5500,'Gemeinde');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5600,'Kommunale Gebietskörperschaften ');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5700,'Andere Gebietskörperschaften, Regionalverbände usw.');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5800,'Zweckverbände, Kommunale Betriebe');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5920,'Eigenes Bundesland');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5921,'Eigenes Bundesland, Denkmalpflege');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5922,'Eigenes Bundesland, Domänenverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5923,'Eigenes Bundesland, Eichverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5924,'Eigenes Bundesland, Finanzverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5925,'Eigenes Bundesland, Forstverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5926,'Eigenes Bundesland, Gesundheitswesen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5927,'Eigenes Bundesland, Polizeiverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5928,'Eigenes Bundesland, innere Verwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5929,'Eigenes Bundesland, Justizverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5930,'Eigenes Bundesland, Kultusverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5931,'Eigenes Bundesland, Landespflanzenschutzverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5932,'Eigenes Bundesland, Arbeitsverwaltung ');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5933,'Eigenes Bundesland, Sozialwesen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5934,'Eigenes Bundesland, Landesbetrieb Straßen und Verkehr');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5935,'Eigenes Bundesland, Umweltverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5936,'Eigenes Bundesland, Vermessungs- und Katasterverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5937,'Eigenes Bundesland, Wasserwirtschaftsverwaltung ');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5938,'Eigenes Bundesland, Wirtschaftsverwaltung');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (5939,'Eigenes Bundesland, Liegenschafts- und Baubetreuung (LBB)');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6000,'Anderes Bundesland (allg.)');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6001,'Schleswig-Holstein');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6002,'Hamburg');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6003,'Niedersachsen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6004,'Bremen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6005,'Nordrhein-Westfalen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6006,'Hessen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6007,'Rheinland-Pfalz');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6008,'Baden-Württemberg');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6009,'Bayern');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6010,'Saarland');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6012,'Brandenburg');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6011,'Berlin');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6013,'Mecklenburg-Vorpommern');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6014,'Sachsen');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6015,'Sachsen-Anhalt');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (6016,'Thüringen');
+
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (7100,'Deutsche Bahn AG');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (8000,'Herrenlos');
+INSERT INTO ax_namensnummer_eigentuemerart (wert, bezeichner) VALUES (9000,'Eigentümer unbekannt');
+
+-- In der Praxis kommt vor:
+--   SELECT DISTINCT eigentuemerart FROM ax_namensnummer ORDER BY eigentuemerart;
 
 
 -- B a u - , R a u m -  oder  B o d e n - O r d n u n g s r e c h t  -  A r t  d e r  F e s t l e g u n g

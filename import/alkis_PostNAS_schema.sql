@@ -62,6 +62,11 @@
 -- 2013-04-22 FJ  Tabelle ax_wirtschaftlicheeinheit, Kommentare ergänzt,
 --                Felad "ax_historischesflurstueck.buchungsart" varchar statt integer
 
+-- 2013-07-10 FJ  Erweiterung alkis_beziehungen nach Vorschlag Marvin Brandt (Kreis Unna)
+--                Füllen der Felder langfristig durch PostNAS (Erweiterung?)
+--                Vorläufig mit Trigger-Funktions "update_fields_beziehungen"
+
+-- 2014-01-24 FJ  Feld "ax_datenerhebung_punktort" in "Punktort/TA/AG/AU" nach Vorschlag Marvin Brandt (Kreis Unna)
 
 
 --  VERSIONS-NUMMER:
@@ -102,13 +107,13 @@
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
 CREATE TABLE "delete"
 (
-	ogc_fid		serial NOT NULL,
-	typename	varchar,
-	featureid	character(32),
-	context		varchar,		-- delete/replace
+	ogc_fid			serial NOT NULL,
+	typename		varchar,
+	featureid		character(32),
+	context			varchar,		-- delete/replace
 	safetoignore	varchar,		-- replace.safetoignore 'true'/'false'
-	replacedBy	varchar,		-- gmlid
-	ignored		boolean DEFAULT false,	-- Satz wurde nicht verarbeitet
+	replacedBy		varchar,		-- gmlid
+	ignored			boolean DEFAULT false,	-- Satz wurde nicht verarbeitet
 	CONSTRAINT delete_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -139,12 +144,17 @@ COMMENT ON COLUMN delete.ignored      IS 'Löschsatz wurde ignoriert';
 
 -- Zusätzlich enthält 'beziehungsart' noch ein Verb für die Art der Beziehung.
 
+-- 2013-07-10 Erweiterung nach Vorschlag Marvin Brandt (Kreis Unna)
+-- Durch Typenamen bessere Zuordnung der verlinkten Tabellen möglich.
 CREATE TABLE alkis_beziehungen (
-	ogc_fid			serial NOT NULL,
-	beziehung_von		character(16),         --> gml_id
-	beziehungsart		varchar,               --  Liste siehe unten
-	beziehung_zu		character(16),         --> gml_id
-	CONSTRAINT alkis_beziehungen_pk PRIMARY KEY (ogc_fid)
+   ogc_fid          serial NOT NULL,
+   beziehung_von    character(16),         --> gml_id
+   von_typename     varchar,               -- 2013-07-10
+   beginnt          character(20),         -- 2013-07-10
+   beziehungsart    varchar,               --  Liste siehe unten
+   beziehung_zu     character(16),         --> gml_id
+   zu_typename      varchar,               -- 2013-07-10
+   CONSTRAINT alkis_beziehungen_pk PRIMARY KEY (ogc_fid)
 );
 
 CREATE INDEX alkis_beziehungen_von_idx ON alkis_beziehungen USING btree (beziehung_von);
@@ -158,6 +168,11 @@ COMMENT ON TABLE  alkis_beziehungen               IS 'zentrale Multi-Verbindungs
 COMMENT ON COLUMN alkis_beziehungen.beziehung_von IS 'Join auf Feld gml_id verschiedener Tabellen';
 COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf Feld gml_id verschiedener Tabellen';
 COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung zwischen der von- und zu-Tabelle';
+
+COMMENT ON COLUMN alkis_beziehungen.von_typename  IS 'Name der Tabelle der VON-Beziehung'; -- 2013-07-10
+COMMENT ON COLUMN alkis_beziehungen.beginnt       IS 'Mit Trigger kopiertes Beginnt-Datum des Datensatzes auf der Seite beziehung_von'; -- 2013-07-10
+COMMENT ON COLUMN alkis_beziehungen.zu_typename   IS 'Name der Tabelle der ZU-Beziehung';  -- 2013-07-10
+
 
 -- Beziehungsarten:
 --
@@ -1341,20 +1356,20 @@ COMMENT ON COLUMN ax_sonstigervermessungspunkt.gml_id IS 'Identifikator, global 
 -- P u n k t o r t   AG
 -- ----------------------------------------------
 CREATE TABLE ax_punktortag (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet 			character(20),
-	advstandardmodell	varchar,
-	anlass			varchar,
-	art				varchar[],
-	name			varchar[],
-	kartendarstellung	varchar,	-- boolean
---	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer, -- varchar[],
-	genauigkeitsstufe	integer,
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
+	advstandardmodell		varchar,
+	anlass					varchar,
+	art						varchar[],
+	name					varchar[],
+	kartendarstellung		varchar,	-- boolean
+	ax_datenerhebung_punktort integer,
+	genauigkeitsstufe		integer,
 	vertrauenswuerdigkeit	integer,
-	koordinatenstatus	integer,
+	koordinatenstatus		integer,
 	CONSTRAINT ax_punktortag_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1370,22 +1385,20 @@ COMMENT ON COLUMN ax_punktortag.gml_id IS 'Identifikator, global eindeutig';
 -- P u n k t o r t   A U
 -- ----------------------------------------------
 CREATE TABLE ax_punktortau (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character(44),
-	beginnt				character(20),
-	endet 				character(20),
-	advstandardmodell	varchar,
-	anlass				varchar,
-	kartendarstellung	varchar,	-- boolean
---	art					varchar, -- entbehrlich
-	name				varchar[],
---	"qualitaetsangaben|ax_dqpunktort|herkunft|li_lineage|processstep" integer,  --varchar[],
---	datetime		character(24)[],
-	individualname		varchar,
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
+	advstandardmodell		varchar,
+	anlass					varchar,
+	kartendarstellung		varchar,	-- boolean
+	ax_datenerhebung_punktort integer,
+	name					varchar[],
+	individualname			varchar,
 	vertrauenswuerdigkeit	integer,
-	genauigkeitsstufe	integer,
-	koordinatenstatus	integer,
+	genauigkeitsstufe		integer,
+	koordinatenstatus		integer,
 	CONSTRAINT ax_punktortau_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1401,20 +1414,21 @@ COMMENT ON COLUMN ax_punktortau.gml_id IS 'Identifikator, global eindeutig';
 -- P u n k t o r t   T A
 -- ----------------------------------------------
 CREATE TABLE ax_punktortta (
-	ogc_fid				serial NOT NULL,
-	gml_id				character(16),
-	identifier			character(44),
-	beginnt				character(20),
-	endet 				character(20),
-	advstandardmodell	varchar,
-	anlass				varchar,
-	kartendarstellung	varchar, -- boolean
-	description			integer,
-	art					varchar[],
-	name				varchar[],
-	genauigkeitsstufe	integer,
+	ogc_fid					serial NOT NULL,
+	gml_id					character(16),
+	identifier				character(44),
+	beginnt					character(20),
+	endet 					character(20),
+	advstandardmodell		varchar,
+	anlass					varchar,
+	kartendarstellung		varchar, -- boolean
+	ax_datenerhebung_punktort integer,
+	description				integer,
+	art						varchar[],
+	name					varchar[],
+	genauigkeitsstufe		integer,
 	vertrauenswuerdigkeit	integer,
-	koordinatenstatus	integer,
+	koordinatenstatus		integer,
 	CONSTRAINT ax_punktortta_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -1441,7 +1455,6 @@ CREATE TABLE ax_fortfuehrungsnachweisdeckblatt (
 	endet				character(20),
 	advstandardmodell	varchar,
 	anlass				varchar,
---	art					varchar,		-- entbehrlich
 	uri					varchar,
 	fortfuehrungsfallnummernbereich	varchar,
 	land				integer,
@@ -1472,7 +1485,6 @@ CREATE TABLE ax_fortfuehrungsfall (
 	endet						character(20),
 	advstandardmodell			varchar,
 	anlass						varchar,
---	art							varchar,  -- entbehrlich
 	uri							varchar,
 	fortfuehrungsfallnummer		integer,
 	laufendenummer				integer,
@@ -1501,7 +1513,7 @@ CREATE TABLE ax_reservierung (
 	beginnt			character(20),
 	endet			character(20),
 	advstandardmodell	varchar,
-	art			integer,
+	art				integer,
 	nummer			varchar,
 	land			integer,
 	stelle			integer,
@@ -1519,16 +1531,16 @@ COMMENT ON TABLE  ax_reservierung IS 'R e s e r v i e r u n g';
 -- P u n k t k e n n u n g   U n t e r g e g a n g e n
 -- ---------------------------------------------------
 CREATE TABLE ax_punktkennunguntergegangen (
-	ogc_fid			serial NOT NULL,
-	gml_id			character(16),
-	identifier		character(44),
-	beginnt			character(20),
-	endet			character(20),
+	ogc_fid				serial NOT NULL,
+	gml_id				character(16),
+	identifier			character(44),
+	beginnt				character(20),
+	endet				character(20),
 	advstandardmodell	varchar,
 	sonstigesmodell		varchar,
-	anlass			varchar,
+	anlass				varchar,
 	punktkennung		varchar,
-	art			integer,
+	art					integer,
 	CONSTRAINT ax_punktkennunguntergegangen_pk PRIMARY KEY (ogc_fid)
 );
 
@@ -4474,8 +4486,8 @@ COMMENT ON TABLE  ax_verwaltung  IS 'V e r w a l t u n g';
 
 
 -- wenn schon, dann auch alle Tabellen mit Kommentaren versehen:
---COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
---COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
+COMMENT ON TABLE geometry_columns IS 'Metatabelle der Geometrie-Tabellen, Tabellen ohne Geometrie bekommen Dummy-Eintrag für PostNAS-Konverter (GDAL/OGR)';
+COMMENT ON TABLE spatial_ref_sys  IS 'Koordinatensysteme und ihre Projektionssparameter';
 
 -- Schema aktualisieren (setzt auch die Indizes neu)
 -- SELECT alkis_update_schema();
