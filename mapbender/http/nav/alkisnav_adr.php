@@ -158,7 +158,7 @@ function suchStrKey() { // Strassen nach num. Schluessel
 			// Icon -> Buchnachweis
 			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$kgml."\")'>";
 				echo "\n\t\t<img class='nwlink' src='ico/Lage_mit_Haus.ico' width='16' height='16' alt='STR' title='Stra&szlig;e'>";
-			echo "\n\t</a>";		
+			echo "\n\t</a>";
 		
 			echo $skey." <a class='st' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;str_schl=".$gkey."' title='".$gemname."'>".$sname;
 			echo "</a>";
@@ -187,11 +187,11 @@ function suchStrKey() { // Strassen nach num. Schluessel
 }
 
 function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
-	global $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $debug;
+	global $str_schl, $gkz, $scalestr, $scalehs, $epsg, $gemeinde, $epsg, $gfilter, $debug, $auskpath;
 
 	// Head
 	// Strasse zum Strassenschluessel
-	$sql ="SELECT g.bezeichnung AS gemname, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
+	$sql ="SELECT g.bezeichnung AS gemname, k.gml_id AS kgml, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.schluesselgesamt = $1 LIMIT 1"; 
@@ -199,6 +199,7 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if($row = pg_fetch_array($res)) { // .. gefunden
+		$kgml=$row["kgml"]; // ID aus Katalog
 		$sname=$row["bezeichnung"];
 		$land =$row["land"];	// Einzel-Felder für JOIN _lagebezeichnung_
 		$regb =$row["regierungsbezirk"];
@@ -208,7 +209,7 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 		$gemname=htmlentities($row["gemname"], ENT_QUOTES, "UTF-8");
 		if ($showParent) {
 			// EINE Koordinate zur Strasse besorgen
-			// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
+			// ax_Flurstueck >zeigtAuf> ax_LagebezeichnungOhneHausnummer
 			$sqlko ="SELECT ";
 			if($epsg == "25832") { // Transform nicht notwendig
 				$sqlko.="st_x(st_Centroid(f.wkb_geometry)) AS x, ";
@@ -232,7 +233,14 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 			} else {		
 				echo "\n<p class='err'>Fehler bei Koordinate zur Stra&szlig;e</p>";
 			}
-			echo "\n<div class='stu'>";		
+
+// +++ IN ARBEIT:
+			echo "\n\t<div class='stu' title='Stra&szlig;enschl&uuml;ssel ".$skey."'>";
+			// Icon -> Buchnachweis
+			echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$kgml."\")'>";
+				echo "\n\t\t<img class='nwlink' src='ico/Lage_mit_Haus.ico' width='16' height='16' alt='STR' title='Stra&szlig;e'>";
+			echo "\n\t</a>";
+
 			if ($x > 0) { // Koord. bekommen?
 				echo "\n\t<a title='Positionieren 1:".$scalestr."' href='javascript:"; // mit Link
 						echo "transtitle(\"auf Stra&szlig;e positioniert\"); ";
