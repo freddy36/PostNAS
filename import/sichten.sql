@@ -25,7 +25,7 @@
 --  2014-01-17 View "exp_csv" für den Export von CSV-Daten aus der Auskunft mit Modul alkisexport.php.
 --  2014-01-20 Erweiterung "exp_csv" für alkisexport.php
 --  2014-01-21 In "exp_csv": Rechtsgemeinsachaft zu allen Personen statt als eigener Satz.
-
+--  2014-01-27 Neuer Baustein "flst_an_strasse". Neuer View "exp_csv_str" für CSV-Export von Flst. an einer Straße
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -71,8 +71,58 @@ COMMENT ON VIEW public.doppelverbindung
 -- Test-Ausgabe: Ein paar Fälle mit "Recht an"
 --   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;
 
--- Ende "Bausteine"
 
+
+-- Ein View, der die Verbindung von Flurstück zur Straßentabelle für zwei verschiedene Fälle herstellt.
+-- Einmal über die Lagebezeichnung MIT Hausnummer und einmal OHNE.
+-- Dies kann als "Mittelstück" in den anderen Views eingefügt werden.
+
+--   Flurstück  >weistAuf> ax_lagebezeichnungmithausnummer  <JOIN> ax_lagebezeichnungkatalogeintrag
+--   Flurstück  >zeigtAuf> ax_lagebezeichnungohnehausnummer <JOIN> ax_lagebezeichnungkatalogeintrag
+
+--           DROP VIEW public.flst_an_strasse;
+CREATE OR REPLACE VIEW public.flst_an_strasse
+AS
+  SELECT vm.beziehung_von AS fsgml,          -- Join auf "gml_id" aus "ax_flurstück"
+         sm.gml_id AS stgml,                 -- Filter: gml_id der Straße
+      -- sm.gemeinde, sm.lage,               -- Gemeinde- und Straßenschluessel als Filter?
+         'm' AS fall                         -- Sätze unterschieden: Mit HsNr
+    FROM alkis_beziehungen vm                -- Verbindung Mit
+    JOIN ax_lagebezeichnungmithausnummer lm  -- Lage MIT
+      ON lm.gml_id=vm.beziehung_zu
+     AND vm.beziehungsart= 'weistAuf' 
+    JOIN ax_lagebezeichnungkatalogeintrag sm -- Ausnahmsweise mal direkt und nicht über die "alkis_beziehungen"
+      ON lm.land=sm.land 
+     AND lm.regierungsbezirk=sm.regierungsbezirk 
+     AND lm.kreis=sm.kreis 
+     AND lm.gemeinde=sm.gemeinde 
+     AND lm.lage=sm.lage 
+ UNION
+  SELECT vo.beziehung_von AS fsgml,          -- Join auf gml_id aus ax_flurstück
+         so.gml_id AS stgml,                 -- Filter: gml_id der Straße
+      -- so.gemeinde, so.lage                -- Gemeinde- und Straßenschluessel als Filter?
+         'o' AS fall                         -- Sätze unterschieden: Ohne HsNr
+    FROM alkis_beziehungen vo                -- Verbindung OHNE
+    JOIN ax_lagebezeichnungohnehausnummer lo -- Lage OHNE
+      ON lo.gml_id=vo.beziehung_zu
+     AND vo.beziehungsart= 'zeigtAuf' 
+    JOIN ax_lagebezeichnungkatalogeintrag so -- Straße OHNE
+      ON lo.land=so.land 
+     AND lo.regierungsbezirk=so.regierungsbezirk 
+     AND lo.kreis=so.kreis 
+     AND lo.gemeinde=so.gemeinde 
+     AND lo.lage=so.lage;
+
+COMMENT ON VIEW public.flst_an_strasse 
+ IS 'ALKIS-Beziehung von Flurstück zu Straßentabelle. UNION-Zusammenfassung der Fälle MIT und OHNE Hausnummer.';
+
+-- Muss man noch dafür sorgen, dass Flurstück nicht doppelt vorkommt? z.B. mit DISTINCT
+-- Oder müssen ggf. mehrfache FS im Programm übersprungen werden?
+
+-- Test-Ausgabe:
+--   SELECT * FROM flst_an_strasse WHERE stgml='DENW18AL000004Fl' LIMIT 40;
+
+-- Ende "Bausteine"
 
 
 -- Generelle Export-Struktur "Flurstück - Buchung - Grundbuch - Person"
@@ -80,6 +130,7 @@ COMMENT ON VIEW public.doppelverbindung
 -- Verwendet den gespeicherten View "doppelverbindung".
 -- Wird benötigt im Auskunft-Modul "alkisexport.php":
 -- Je nach aufrufendem Modul wird der Filter (WHERE) an anderer Stelle gesetzt (gml_id von FS, GB oder Pers.)
+-- Für Filter nach "Straße" siehe die nachfolgende Sonderversion "exp_csv_str".
 
 -- Problem / Konflikt:
 -- Es kann nur eine lineare Struktur aus Spalten und Zeilen exportiert werden. 
@@ -124,13 +175,13 @@ AS
     rg.beschriebderrechtsgemeinschaft    AS nam_bes,
 
   -- Person
-     p.gml_id                             AS psgml,           -- möglicher Filter Personen-GML-ID
-     p.anrede,
-     p.vorname,
-     p.namensbestandteil,
-     p.nachnameoderfirma,                                     -- Familienname
-     p.geburtsdatum,
-     --p.geburtsname, p.akademischergrad 
+    p.gml_id                             AS psgml,           -- möglicher Filter Personen-GML-ID
+    p.anrede,
+    p.vorname,
+    p.namensbestandteil,
+    p.nachnameoderfirma,                                     -- Familienname
+    p.geburtsdatum,
+    --p.geburtsname, p.akademischergrad 
  
   -- Adresse der Person
     a.postleitzahlpostzustellung         AS plz,
@@ -199,6 +250,131 @@ COMMENT ON VIEW exp_csv
 
   GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
 --GRANT SELECT ON TABLE exp_csv TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
+
+
+-- Variante des View "exp_csv":
+-- Hier wird zusätzlich der Baustein "flst_an_strasse" verwendet.
+-- Der Filter "WHERE stgml= " auf die "gml_id" von "ax_lagebezeichnungkatalogeintrag" sollte gesetzt werden
+-- um alle Flurstücke zu bekommen, die an einer Straße liegen.
+-- DROP           VIEW exp_csv_str;
+CREATE OR REPLACE VIEW exp_csv_str
+AS
+ SELECT
+    l.stgml,                                             -- Filter: Straßen-GML-ID
+
+  -- Flurstück
+    f.gml_id                             AS fsgml,       -- Gruppenwechsel für "function lage_zum_fs" in alkisexport.php
+    f.flurstueckskennzeichen             AS fs_kennz,
+    f.gemarkungsnummer,                                  -- Teile des FS-Kennz. noch mal einzeln
+    f.flurnummer, f.zaehler, f.nenner, 
+    f.amtlicheflaeche                    AS fs_flae,
+    g.bezeichnung                        AS gemarkung,
+
+  -- Grundbuch
+  --gb.gml_id                            AS gbgml,       -- möglicher Filter Grundbuch-GML-ID
+    gb.bezirk                            AS gb_bezirk,
+    gb.buchungsblattnummermitbuchstabenerweiterung AS gb_blatt,
+    z.bezeichnung                        AS beznam,      -- GB-Bezirks-Name
+
+  -- Buchungsstelle (Grundstück)
+    s.laufendenummer                     AS bu_lfd,      -- BVNR
+    --s.zaehler, s.nenner,                                -- Anteil des GB am FS, einzelne Felder
+    '=' || s.zaehler || '/' || s.nenner  AS bu_ant,      -- als Excel-Formel (nur bei Wohnungsgrundbuch JOIN über 'Recht an')
+    s.buchungsart,                                       -- verschlüsselt
+    b.bezeichner                         AS bu_art,      -- Buchungsart entschlüsselt
+
+  -- NamensNummer (Normalfall mit Person)
+    nn.laufendenummernachdin1421         AS nam_lfd, 
+    '=' || nn.zaehler|| '/' || nn.nenner AS nam_ant,         -- als Excel-Formel
+
+  -- Rechtsgemeinsachaft (Sonderfall von Namensnummer, ohne Person, ohne Nummer)
+    rg.artderrechtsgemeinschaft          AS nam_adr,
+    rg.beschriebderrechtsgemeinschaft    AS nam_bes,
+
+  -- Person
+  --p.gml_id                             AS psgml,           -- möglicher Filter Personen-GML-ID
+    p.anrede,
+    p.vorname,
+    p.namensbestandteil,
+    p.nachnameoderfirma,                                     -- Familienname
+    p.geburtsdatum,
+    --p.geburtsname, p.akademischergrad 
+ 
+  -- Adresse der Person
+    a.postleitzahlpostzustellung         AS plz,
+    a.ort_post                           AS ort,             -- Anschreifenzeile 1: PLZ+Ort
+    a.strasse,  a.hausnummer,                                -- Anschriftenzeile 2: Straße+HsNr
+    a.bestimmungsland                    AS land
+
+  FROM ax_flurstueck    f               -- Flurstück
+
+  JOIN flst_an_strasse  l               -- Lage (hier zusätzlicher JOIN gegenüber Version "exp_csv") 
+	ON l.fsgml = f.gml_id 
+
+  JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von Buchung an Buchung
+    ON d.fsgml = f.gml_id 
+
+  JOIN ax_gemarkung g                   -- entschlüsseln
+    ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+
+  JOIN ax_buchungsstelle s              -- Buchungs-Stelle
+    ON d.bsgml = s.gml_id 
+  JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
+    ON s.buchungsart = b.wert 
+
+  JOIN alkis_beziehungen v3             -- Buchung --> Grundbuchblatt
+    ON s.gml_id = v3.beziehung_von AND v3.beziehungsart = 'istBestandteilVon'
+  JOIN ax_buchungsblatt  gb 
+    ON v3.beziehung_zu = gb.gml_id 
+
+  JOIN ax_buchungsblattbezirk z 
+    ON gb.land=z.land AND gb.bezirk=z.bezirk 
+
+  JOIN alkis_beziehungen v4             -- Blatt  --> NamNum
+    ON v4.beziehung_zu = gb.gml_id AND v4.beziehungsart = 'istBestandteilVon'  
+  JOIN ax_namensnummer nn 
+    ON v4.beziehung_von = nn.gml_id
+
+  JOIN alkis_beziehungen v5             -- NamNum --> Person 
+   -- 2014-01-20: Mit LEFT ab hier werden auch NumNum-Zeilen mit "Beschreibung der Rechtsgemeinschaft" geliefert (ohne Person)
+    ON v5.beziehung_von = nn.gml_id AND v5.beziehungsart = 'benennt'
+  JOIN ax_person p
+    ON v5.beziehung_zu = p.gml_id
+
+  LEFT JOIN alkis_beziehungen v6        -- Person --> Anschrift
+    ON v6.beziehung_von = p.gml_id AND v6.beziehungsart = 'hat' 
+  LEFT JOIN ax_anschrift a 
+    ON v6.beziehung_zu = a.gml_id
+
+  -- 2mal "LEFT JOIN" verdoppelt die Zeile in der Ausgabe. Darum als Subquery:
+
+  -- Noch mal "GB -> NamNum", aber dieses Mal für "Rechtsgemeinschaft".
+  -- Kommt max. 1 mal je GB vor und hat keine Relation auf Person.
+  LEFT JOIN
+   ( SELECT v7.beziehung_zu,
+            rg.artderrechtsgemeinschaft, 
+            rg.beschriebderrechtsgemeinschaft 
+       FROM ax_namensnummer rg 
+       JOIN alkis_beziehungen v7              -- Blatt  --> NamNum (Rechtsgemeinschaft) 
+         ON v7.beziehung_von = rg.gml_id
+      WHERE v7.beziehungsart = 'istBestandteilVon'
+        AND NOT rg.artderrechtsgemeinschaft IS NULL
+   ) AS rg                         -- Rechtsgemeinschaft
+   ON rg.beziehung_zu = gb.gml_id  -- zum GB
+
+  ORDER BY f.flurstueckskennzeichen, 
+           gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer,
+           nn.laufendenummernachdin1421;
+
+COMMENT ON VIEW exp_csv_str 
+ IS 'View für einen CSV-Export aus der Buchauskunft mit alkisexport.php. Liefert nur Flurstücke, die eine Lagebezeichnung MIT/OHNE Hausnummer haben. Dazu noch den Filter auf GML-ID der Straßentabelle setzen.';
+
+  GRANT SELECT ON TABLE exp_csv_str TO mb27;       -- User für Auskunfts-Programme
+--GRANT SELECT ON TABLE exp_csv_str TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
+
+
+-- Test-Ausgabe:
+--   SELECT * FROM exp_csv_str WHERE stgml='DENW18AL000004Fl' LIMIT 40;
 
 
 -- Analyse: Kann es mehr als 1 "Rechtsgemeinschaft" zu einem GB-Blatt geben? 

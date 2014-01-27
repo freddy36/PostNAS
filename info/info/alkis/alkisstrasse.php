@@ -3,12 +3,10 @@
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Alle Flurstücke an einer Strasse anzeigen, egal ob "mit" oder "ohne" Hausnummer
-	Parameter: gml_id aus der Tabelle ax_lagebezeichnungkatalogeintrag
+	Parameter: "gml_id" aus der Tabelle "ax_lagebezeichnungkatalogeintrag"
 
 	Version:	2014-01-23  Neu
-
-	ToDo:
-		auch alkisexport.php als CSV-Export auf alle FS an Strasse erweitern. Dann unten ent-kommentieren.
+	2014-01-24  CSV-Export
 */
 session_start();
 $cntget = extract($_GET);
@@ -33,7 +31,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Lage_an_Strasse.ico">
 	<script type="text/javascript">
 		function ALKISexport() {
-			window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=lage&gmlid=".$gmlid."'"; ?>);
+			window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=strasse&gmlid=".$gmlid."'"; ?>);
 		}
 	</script>
 	<style type='text/css' media='print'>
@@ -133,9 +131,9 @@ echo "\n<p>Zusammenfassung von 'Lage mit Hausnummer' und 'Lage ohne Hausnummer' 
 // ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer > > Lage "Ohne HsNr" = Strasse
 $sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, duett.lgml, duett.hausnummer FROM ax_flurstueck f ";
 $sql.="JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="JOIN (SELECT v1.beziehung_von AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk ,lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer ";
+$sql.="JOIN (SELECT v1.beziehung_von AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk, lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer ";
 $sql.="FROM alkis_beziehungen v1 JOIN ax_lagebezeichnungmithausnummer lm ON lm.gml_id=v1.beziehung_zu AND v1.beziehungsart= 'weistAuf' ";
-$sql.="UNION SELECT v2.beziehung_von AS fsgml, '' AS lgml, lo.land, lo.regierungsbezirk ,lo.kreis, lo.gemeinde, lo.lage, '' AS hausnummer ";
+$sql.="UNION SELECT v2.beziehung_von AS fsgml, '' AS lgml, lo.land, lo.regierungsbezirk, lo.kreis, lo.gemeinde, lo.lage, '' AS hausnummer ";
 $sql.="FROM alkis_beziehungen v2 JOIN ax_lagebezeichnungohnehausnummer lo ON lo.gml_id=v2.beziehung_zu AND v2.beziehungsart= 'zeigtAuf' ";
 $sql.=") AS duett ON f.gml_id=duett.fsgml "; 
 $sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON duett.land=s.land AND duett.regierungsbezirk=s.regierungsbezirk AND duett.kreis=s.kreis AND duett.gemeinde=s.gemeinde AND duett.lage=s.lage "; 
@@ -202,7 +200,7 @@ echo "\n</table>";
 	<hr>
 		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck"></a>&nbsp;
 		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken"></a>&nbsp;
-<!--	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="16" height="16" alt="Export" /></a>&nbsp; -->
+		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="16" height="16" alt="Export" /></a>&nbsp;
 	</div>
 </form>
 

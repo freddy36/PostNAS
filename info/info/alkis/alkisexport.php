@@ -11,6 +11,7 @@
 	2014-01-20 weitere Spalten und verbesserte Formatierung
 	2014-01-21 Der View liefert "Rechtsgemeinschaft" nun als Feld in allen Personen-Sätzen 
 			eines GB-Blattes statt als eigenen "Satz ohne Person".
+	2014-01-27 Erweiterung auf Filter "strasse" ("gml_id" aus "ax_lagebezeichnungkatalogeintrag")
 */
 
 function lage_zum_fs($gmlid) {
@@ -26,7 +27,7 @@ function lage_zum_fs($gmlid) {
 	$res=pg_execute("", $v);
 	if (!$res) {
 		echo "Fehler bei Lagebezeichnung \n";
-		echo $sql."\n";
+		//echo $sql."\n";
 	}
 	$j=0;
 	$lagehsnr="";
@@ -63,17 +64,23 @@ pg_set_client_encoding($con, LATIN1); // Für Excel kein UTF8 ausgeben
 
 // Der Parameter "Tabellentyp" bestimmt den Namen des Filter-Feldes aus dem View "exp_csv".
 switch ($tabtyp) { // zulaessige Werte fuer &tabtyp=
-	case 'flurstueck': $filter = "fsgml"; break;
-	case 'grundbuch':  $filter = "gbgml"; break;
-	case 'person':     $filter = "psgml"; break;
+	case 'flurstueck': $filter = "fsgml"; break; // ax_flurstueck.gml_id
+	case 'grundbuch':  $filter = "gbgml"; break; // ax_buchungsblatt.gml_id
+	case 'person':     $filter = "psgml"; break; // ax_person.gml_id
+	case 'strasse':    $filter = "stgml"; break; // ax_lagebezeichnungkatalogeintrag.gml_id = Straße-GML-ID
 	default: exit("Falscher Parameter '".$tabtyp."'"); break;
 }
 
-// Daten aus gespeichertem View
-$sql ="SELECT * FROM exp_csv WHERE ".$filter." = $1 ";
-$v = array($gmlid);
-$res = pg_prepare("", $sql);
-$res = pg_execute("", $v);
+// Daten aus gespeichertem View, zusaetzlich Filter: "feld"='wert' mitgeben
+if ($tabtyp == 'strasse') { // Sonderversion
+	$sql="SELECT * FROM exp_csv_str WHERE ".$filter." = $1 ";
+} else {
+	$sql="SELECT * FROM exp_csv WHERE ".$filter." = $1 ";
+}
+
+$v=array($gmlid);
+$res=pg_prepare("", $sql);
+$res=pg_execute("", $v);
 if (!$res) {exit("Fehler bei Datenbankabfrage");}
 $i=1; // Kopfzeile zählt mit
 $fsalt='';
@@ -111,15 +118,17 @@ while($row = pg_fetch_array($res)) {
 	}
 
 	// Namensnummer
-	$nam_lfd="'".kurz_namnr($row["nam_lfd"])."'"; // In Hochkomma, sonst wie Datum dargestellt.
+	$nam_lfd="'".kurz_namnr($row["nam_lfd"])."'"; // In Hochkomma, wird sonst wie Datum dargestellt.
 	$nam_ant=$row["nam_ant"];
 	$nam_adr=$row["nam_adr"]; // Art der Rechtsgemeischaft (Schlüssel)
-	if ($nam_adr == '') {     // keine Rechtsgemeinsachft
+
+	if ($nam_adr == '') {     // keine Rechtsgemeinschaft
+		$rechtsg='';
 		if ($nam_ant == '') { // und kein Bruch-Anteil
 			$nam_ant=1; // dann ganzer Anteil
 		}
 	} else {
-		$rechnen=false; // bei Rechtsgemeinschaft manuell interpretieren
+		$rechnen=false; // bei Rechtsgemeinschaft die Anteile manuell interpretieren
 		if ($nam_adr == 9999) { // sonstiges
 			$rechtsg=$row["nam_bes"]; // Beschrieb der Rechtsgemeinschaft
 		} else {
@@ -128,21 +137,14 @@ while($row = pg_fetch_array($res)) {
 	}
 
 	// Person
+	$vnam=$row["vorname"];
 	$nana=$row["nachnameoderfirma"];
-	if ($nana == "") {
-		$name="";
-	} else {
-		$name=anrede($row["anrede"]);
-		$namteil=$row["namensbestandteil"];
-		if ($namteil != "") { // von und zu
-			$name.=" ".$namteil;
-		} 
-		$name.=" ".$nana;
-		$vnam=$row["vorname"];
-		if ($vnam != "") { // keine Firma
-			$name.=", ".$vnam;
-		}
-	}
+	$namteil=$row["namensbestandteil"];
+	$name=anrede($row["anrede"]);
+	if ($name != "") {$name.=" ";} // Trenner
+	if ($namteil != "") {$name.=$namteil." ";} // von und zu
+	$name.=$nana;
+	if ($vnam != "") {$name.=", ".$vnam;} // Vorname nach hinten
 	$gebdat=$row["geburtsdatum"];
 
 	// Adresse der Person (Eigentuemer))
