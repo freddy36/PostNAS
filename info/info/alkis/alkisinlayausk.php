@@ -3,19 +3,19 @@
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Dies Programm wird in einen iFrame im Mapserver-Template (FeatureInfo) geladen.
-	Parameter:&gkz, &gml_id
+	Parameter: &gkz, &gml_id
 	Dies Programm gibt einen kurzen Ueberblick zum Flurstueck.
 	Eigentuemer ohne Adresse.
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
-	Dies ist eine Variante von alkisausk.ph welches als vollstaendige Seite aufgerufen wird.
+	Dies ist eine Variante von alkisausk.php welches als vollstaendige Seite aufgerufen wird.
 
 	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geändert
 	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
 	2011-12-14  "window.open(..,width=680)"
 	2013-04-08  deprecated "import_request_variables" ersetzt
-	2013-05-06	Fehlende Leerstelle*/
+	2013-05-06	Fehlende Leerstelle
+	2014-01-28	Link zu alkisstrasse.php*/
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
@@ -45,11 +45,9 @@ $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
 // *** F L U R S T U E C K ***
-$sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, ";
-$sql.=" g.gemarkungsnummer, g.bezeichnung ";
-$sql.="FROM ax_flurstueck f ";
-$sql.="LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="WHERE f.gml_id= $1;";
+$sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, g.gemarkungsnummer, g.bezeichnung ";
+$sql.="FROM ax_flurstueck f LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sql.="WHERE f.gml_id= $1 ;";
 // Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -85,7 +83,7 @@ echo "\n</td>\n<td>";
 echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 
 // Flurstuecksnachweis (mit Eigentümer)
-echo "\n\t<a href='javascript:imFenster(\"alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j\")' ";
+echo "\n\t\t<a href='javascript:imFenster(\"alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."&amp;eig=j\")' ";
 	echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck&nbsp;";
 	echo "<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
 echo "</a><br>";
@@ -104,34 +102,75 @@ echo "</a>";
 
 echo "\n\t</p>\n</td>";
 
-// Lagebezeichnung Mit Hausnummer (Adresse)
-// Analog zu alkisfsnachw.php, Kommentare siehe dort$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
-$sql.="FROM alkis_beziehungen v ";
-$sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND l.lage=s.lage ";
-$sql.="WHERE v.beziehung_von= $1 "; // id FS";
-$sql.="AND v.beziehungsart='weistAuf' ";
-$sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
-$v = array($gmlid);
-$res = pg_prepare("", $sql);
-$res = pg_execute("", $v);
+// Lage MIT HausNr (Adresse)
+$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.hausnummer ";
+$sql.="FROM alkis_beziehungen v JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
+$sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
+$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='weistAuf' "; // id FS";
+$sql.="ORDER BY s.bezeichnung, l.hausnummer;";
+$v=array($gmlid);
+$res=pg_prepare("", $sql);
+$res=pg_execute("", $v);
 if (!$res) {
 	echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer.</p>";
 	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $j=0;
+$kgmlalt='';
 while($row = pg_fetch_array($res)) {
 	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
-	echo "\n<tr>\n\t";
-		echo "\n\t<td class='lr'>".$sname."&nbsp;".$row["hausnummer"]."</td>";
-		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' ";
-			echo "href='javascript:imFenster(\"alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."\")'>Lage ";
-			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
-		echo "\n\t\t</p>\n\t</td>";
-	echo "\n</tr>";
+	echo "\n<tr>\n\t\n\t<td class='lr'>".$sname."&nbsp;".$row["hausnummer"]."</td>";
+	echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
+	$kgml=$row["kgml"]; // Wiederholung vermeiden
+	if ($kgml != $kgmlalt) { // NEUE Strasse vor Lage
+		$kgmlalt=$kgml; // Katalog GML-ID
+		echo "\n\t\t\t<a title='Flurst&uuml;cke an der Stra&szlig;e' ";
+		echo "href='javascript:imFenster(\"alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$row["kgml"]."\")'>Stra&szlig;e ";
+		echo "<img src='ico/Strassen.ico' width='16' height='16' alt='STRA'></a>";
+	}
+		echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' ";
+		echo "href='javascript:imFenster(\"alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."\")'>Lage ";
+		echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt='HAUS'></a>&nbsp;";
+	echo "\n\t\t</p>\n\t</td>\n</tr>";
 	$j++;
+}
+if ($j == 0) { // keine HsNr gefunden
+	// Lage OHNE HausNr
+	$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.unverschluesselt ";
+	$sql.="FROM alkis_beziehungen v JOIN ax_lagebezeichnungohnehausnummer l ON v.beziehung_zu=l.gml_id ";
+	$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
+	$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='zeigtAuf' ORDER BY s.bezeichnung ;";
+	$v=array($gmlid);
+	$res=pg_prepare("", $sql);
+	$res=pg_execute("", $v);
+	if (!$res) {
+		echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer.</p>";
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	}
+	while($row = pg_fetch_array($res)) {
+		$sname =htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
+		$gewann=htmlentities($row["unverschluesselt"], ENT_QUOTES, "UTF-8");
+		echo "\n<tr>";
+		if ($sname != "") { // Typ=Strasse
+			echo "\n\t<td class='lr' title='An Stra&szlig;e aber ohne Hausnummer'>".$sname."&nbsp;</td>";
+			$ico="Lage_an_Strasse.ico";
+		} else {
+			echo "\n\t<td class='lr' title='Gewanne'>".$gewann."&nbsp;</td>";
+			$ico="Lage_Gewanne.ico";
+		}
+		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
+		$kgml=$row["kgml"]; // Wiederholung vermeiden
+		if ($kgml != $kgmlalt) { // NEUE Strasse vor Lage-O
+			$kgmlalt=$kgml; // Katalog GML-ID
+			echo "\n\t\t\t<a title='Flurst&uuml;cke an der Stra&szlig;e' ";
+			echo "href='javascript:imFenster(\"alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$row["kgml"]."\")'>Stra&szlig;e ";
+			echo "<img src='ico/Strassen.ico' width='16' height='16' alt='STRA'></a>";
+		}
+		echo "\n\t\t\t<a title='Lagebezeichnung ohne Hausnummer' ";
+		echo "href='javascript:imFenster(\"alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$row["gml_id"]."\")'>Lage ";
+		echo "<img src='ico/".$ico."' width='16' height='16' alt='OHNE'></a>&nbsp;";
+		echo "\n\t\t</p>\n\t</td>\n</tr>";
+	}
 }
 echo "\n</table>\n";
 
@@ -142,17 +181,14 @@ echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
 echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundbuch</h2>";
 // ALKIS: FS --> bfs --> GS --> bsb --> GB.
 $sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
-$sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, ";
-$sql.="z.bezeichnung, a.bezeichner AS bart ";  // stelle -> amtsgericht
+$sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart ";
 $sql.="FROM alkis_beziehungen bfs "; // Bez Flurst.- Stelle.
 $sql.="JOIN ax_buchungsstelle s ON bfs.beziehung_zu=s.gml_id ";
-$sql.="JOIN alkis_beziehungen bsb ON s.gml_id=bsb.beziehung_von "; // Bez. Stelle - Blatt
+$sql.="JOIN alkis_beziehungen bsb ON s.gml_id=bsb.beziehung_von "; // Bez.Stelle-Blatt
 $sql.="JOIN ax_buchungsblatt b ON bsb.beziehung_zu=b.gml_id ";
 $sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-$sql.="WHERE bfs.beziehung_von= $1 ";
-$sql.="AND bfs.beziehungsart='istGebucht' ";
-$sql.="AND bsb.beziehungsart='istBestandteilVon' ";
+$sql.="WHERE bfs.beziehung_von= $1 AND bfs.beziehungsart='istGebucht' AND bsb.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 
 $v = array($gmlid);
@@ -164,10 +200,7 @@ if (!$resg) {
 }
 while($rowg = pg_fetch_array($resg)) {
 	$beznam=$rowg["bezeichnung"];
-	echo "\n<hr>\n<table class='outer'>";
-	echo "\n<tr>";
-	echo "\n<td>";
-
+	echo "\n<hr>\n<table class='outer'>\n<tr>\n<td>";
 		$blattkey=$rowg["blattart"];
 		$blattart=blattart($blattkey);
 		if ($blattkey == 1000) {
@@ -200,9 +233,7 @@ while($rowg = pg_fetch_array($resg)) {
 				echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
 			echo "</a>";
 		echo "\n\t</p>";
-	echo "\n</td>";
-	echo "\n</tr>";
-	echo "\n</table>";
+	echo "\n</td>\n</tr>\n</table>";
 
 	// E I G E N T U E M E R
 	if ($blattkey == 5000) { // Schluessel Blattart
@@ -212,11 +243,9 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		// ToDo: Link in Function auch umstellen auf (optional) "javascript:imFenster"
-		//       oder base_ / target="_blank"
 		$n = eigentuemer($con, $rowg["gml_id"], false, "imFenster"); // ohne Adressen
 
-		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
+		if ($n == 0) { // keine NamensNr, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
 			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
 			linkgml($gkz, $gmlid, "Buchungsblatt");

@@ -12,9 +12,9 @@
 	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geändert
 	2011-11-30  import_request_variables
 	2013-04-08  deprecated "import_request_variables" ersetzt
+	2014-01-28	Link zu alkisstrasse.php
 */
 session_start();
-//import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
@@ -131,14 +131,12 @@ echo "\n\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
 echo "</a>";
 
 echo "\n\t</p>\n</td>";
-// Lagebezeichnung Mit Hausnummer (Adresse)
-// Analog zu alkisfsnachw.php, Kommentare siehe dort$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
+// Lagebezeichnung MIT Hausnummer (Adresse)
+$sql ="SELECT DISTINCT l.gml_id, s.gml_id AS kgml, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND l.lage = s.lage ";
-$sql.="WHERE v.beziehung_von= $1 "; // id FS";
-$sql.="AND v.beziehungsart='weistAuf' ";
+$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
+$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='weistAuf' ";// id FS";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -154,7 +152,10 @@ while($row = pg_fetch_array($res)) {
 		echo "\n\t<td class='lr'>".$sname."&nbsp;".$row["hausnummer"]."</td>";
 		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"]."'>Lage ";
-			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
+			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>&nbsp;";
+
+			echo "\n\t\t\t<a href='alkisstrasse.php?gkz=".$gkz."&amp;gmlid=".$row["kgml"]; // Katalog GML-ID
+			echo "' title='Stra&szlig;e'>Stra&szlig;e <img src='ico/Strassen.ico' width='16' height='16' alt=''></a>";
 		echo "\n\t\t</p>\n\t</td>";
 	echo "\n</tr>";
 	$j++;
