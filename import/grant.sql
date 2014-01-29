@@ -16,6 +16,8 @@
 --  2013-03-25  View "grenzpunkt" und "gebaeude_txt"
 --  2013-04-19  Neues zum Thema "Bodenschätzung", Views entfallen
 --  2013-10-24  Table "pp_strassenname" ersetzt View "ap_pto_stra" im WMS (ms6)
+--  2014-01-22  Neue Views für CSV-Export, neue Schlüsseltabelle "ax_namensnummer_eigentuemerart"
+
 
 -- Tabellen
 -- ========
@@ -271,6 +273,7 @@
   GRANT SELECT ON TABLE  gemeinde_person                   TO ms6;
   GRANT SELECT ON TABLE  gemeinde_person                   TO mb27;
 
+
 -- Schluesseltabellen
 -- ------------------
 
@@ -334,9 +337,11 @@ GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf    TO mb27;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO ms6;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO mb27;
 
--- Sonstiges
+-- Sonstige Schlüsseltabellen
 GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart        TO ms6;
 GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart        TO mb27;
+GRANT SELECT ON TABLE ax_namensnummer_eigentuemerart       TO ms6;
+GRANT SELECT ON TABLE ax_namensnummer_eigentuemerart       TO mb27;
 GRANT SELECT ON TABLE ax_datenerhebung                     TO ms6;
 GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
 
@@ -365,5 +370,8 @@ GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
   GRANT SELECT ON TABLE sk2020_regierungsbezirksgrenze     TO ms6;
   GRANT SELECT ON TABLE sk2022_gemeindegrenze              TO ms6;
   GRANT SELECT ON TABLE sk201x_politische_grenze           TO ms6;
+
+  GRANT SELECT ON TABLE doppelverbindung                   TO mb27;
+  GRANT SELECT ON TABLE exp_csv                            TO mb27;
 
 -- END --
