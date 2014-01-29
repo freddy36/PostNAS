@@ -26,6 +26,8 @@
 --  2014-01-20 Erweiterung "exp_csv" für alkisexport.php
 --  2014-01-21 In "exp_csv": Rechtsgemeinsachaft zu allen Personen statt als eigener Satz.
 --  2014-01-27 Neuer Baustein "flst_an_strasse". Neuer View "exp_csv_str" für CSV-Export von Flst. an einer Straße
+--	2014-01-29 Neuer View "strasse_als_gewanne" zur Fehlersuche.
+
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -942,6 +944,58 @@ AS
   SELECT count(ogc_fid) AS anzahl
     FROM alkis_beziehungen
    WHERE beginnt IS NULL;
+
+
+-- Suchen von Gewannenbezeichnungen, die auch als Straßenname verwendet werden.
+-- Diese Fälle führen möglicherweise zu unvollständiger Ausgabe beim Export "alle Flurstücke an einer Straße"
+-- weil nur Lagebezeichnung MIT und OHNE Hausnummer gesucht wird, aber keine gleich lautende Gewanne.
+CREATE OR REPLACE VIEW strasse_als_gewanne
+AS
+  SELECT k.gemeinde, k.lage AS strassenschluessel,
+      -- k.bezeichnung      AS strassenname,
+         o.unverschluesselt AS gewanne,
+         count(fo.gml_id) AS anzahl_fs_gewanne
+  FROM ax_lagebezeichnungkatalogeintrag k   -- Straßentabelle
+  JOIN ax_lagebezeichnungohnehausnummer o   -- Gewanne
+    ON k.bezeichnung = o.unverschluesselt   -- Gleiche Namen
+  -- Join Gewanne auf Flurstücke um nur solche Fälle anzuzeigen, die verwendet werden 
+  -- UND die auch in der gleichen Gemeinde liegen.
+  -- Sonst könnte zufällige Namensgleichheiten aus verschiedenen Gemeinden geben. 
+  JOIN alkis_beziehungen vo
+    ON o.gml_id=vo.beziehung_zu AND vo.beziehungsart= 'zeigtAuf' 
+  JOIN ax_flurstueck fo
+    ON fo.gml_id=vo.beziehung_von
+ WHERE fo.gemeinde = k.gemeinde  -- Gewanne wird für ein Flst. in gleicher Gemeinde verwendet, wie der Straßenschlüssel
+  GROUP BY k.gemeinde, k.lage, o.unverschluesselt --, k.bezeichnung
+  ORDER BY k.gemeinde, k.lage, o.unverschluesselt --, k.bezeichnung
+  ;
+
+COMMENT ON VIEW strasse_als_gewanne
+ IS 'Gewannenbezeichnungen, die auch als Straßenname verwendet werden. Mit Flurstücks-Zähler.';
+
+
+-- Wie zuvor, aber die Flurstücke werden hier nicht nur gezählt sondern auch aufgelistet.
+-- das Format des Flusrtückskennzeichens kann in die Mapbender-Navigation eingegeben werden.
+CREATE OR REPLACE VIEW strasse_als_gewanne_flst
+AS
+  SELECT -- fo.gml_id, 
+         fo.gemarkungsnummer || '-' || fo.flurnummer || '-' || fo.zaehler::text || COALESCE ('/' || fo.nenner::text, '') AS flstkennz,
+         k.gemeinde, 
+         o.unverschluesselt AS gewanne,
+      -- k.bezeichnung AS strassenname,
+         k.lage        -- AS strassen_schluessel
+  FROM ax_lagebezeichnungkatalogeintrag k   -- Straßentabelle
+  JOIN ax_lagebezeichnungohnehausnummer o   -- Gewanne
+    ON k.bezeichnung = o.unverschluesselt   -- Gleiche Namen 
+  JOIN alkis_beziehungen vo
+    ON o.gml_id=vo.beziehung_zu AND vo.beziehungsart= 'zeigtAuf' 
+  JOIN ax_flurstueck fo
+    ON fo.gml_id=vo.beziehung_von
+ WHERE fo.gemeinde = k.gemeinde  -- Gewanne wird für ein Flst. in gleicher Gemeinde verwendet, wie der Straßenschlüssel
+  ORDER BY fo.gemarkungsnummer, fo.flurnummer, fo.zaehler, k.gemeinde, k.bezeichnung;
+
+COMMENT ON VIEW strasse_als_gewanne_flst
+ IS 'Flurstücke mit Gewannenbezeichnungen, die auch als Straßenname verwendet werden.';
 
 
 -- END --
