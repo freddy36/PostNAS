@@ -5,8 +5,10 @@
 	Alle Flurstücke an einer Strasse anzeigen, egal ob "mit" oder "ohne" Hausnummer
 	Parameter: "gml_id" aus der Tabelle "ax_lagebezeichnungkatalogeintrag"
 
-	Version:	2014-01-23  Neu
-	2014-01-24  CSV-Export
+	Version:
+	2014-01-23 Neu
+	2014-01-24 CSV-Export
+    2014-01-30 pg_free_result
 */
 session_start();
 $cntget = extract($_GET);
@@ -122,13 +124,14 @@ if ($ogml != "") {
 }
 
 echo "\n\t</td>\n</tr>\n</table>";
+pg_free_result($res);
 // Ende Seitenkopf
 
 // F L U R S T U E C K E
 echo "\n\n<a name='fs'></a><h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;cke</h3>\n";
 echo "\n<p>Zusammenfassung von 'Lage mit Hausnummer' und 'Lage ohne Hausnummer' an dieser Straße</p>";
-// ax_Flurstueck  >weistAuf>  ax_LagebezeichnungMitHausnummer  > > Lage "Mit HsNr"  = Hauptgebaeude 
-// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer > > Lage "Ohne HsNr" = Strasse
+// ax_Flurstueck >weistAuf> ax_LagebezeichnungMitHausnummer  > = Hauptgebaeude 
+// ax_Flurstueck >zeigtAuf> ax_LagebezeichnungOhneHausnummer > = Strasse
 $sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, duett.lgml, duett.hausnummer FROM ax_flurstueck f ";
 $sql.="JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sql.="JOIN (SELECT v1.beziehung_von AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk, lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer ";
@@ -192,7 +195,7 @@ while($rowf = pg_fetch_array($resf)) {
 	$j++;
 }
 echo "\n</table>";
-
+pg_free_result($res);
 ?>
 
 <form action=''>

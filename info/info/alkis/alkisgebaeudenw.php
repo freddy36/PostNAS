@@ -2,14 +2,17 @@
 /*	alkisgebaeudenw.php - Gebaeudenachweis
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
-	Version:	2011-11-22  Feld ax_gebaeude.description ist entfallen, neue Spalte Zustand
-	2011-11-30	Fehlerkorrektur Gebaeude mit mehreren Adressen nicht mehrfach
-	2013-04-08  deprecated "import_request_variables" ersetzt
+	Version:
+	2011-11-22 Feld ax_gebaeude.description ist entfallen, neue Spalte Zustand
+	2011-11-30 Fehlerkorrektur Gebaeude mit mehreren Adressen nicht mehrfach
+	2013-04-08 deprecated "import_request_variables" ersetzt
+    2014-01-30 pg_free_result
 */
 session_start();
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
-if ($auth == "mapbender") {require_once($mapbender);}include("alkisfkt.php");
+if ($auth == "mapbender") {require_once($mapbender);}
+include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
 $keys = isset($_GET["showkey"]) ? $_GET["showkey"] : "n";
 if ($keys == "j") {$showkey=true;} else {$showkey=false;}
@@ -35,14 +38,12 @@ $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // Flurstueck
-$sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.zeitpunktderentstehung, ";
-$sqlf.="g.gemarkungsnummer, g.bezeichnung ";
-$sqlf.="FROM ax_flurstueck f ";
-$sqlf.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.zeitpunktderentstehung, g.gemarkungsnummer, g.bezeichnung ";
+$sqlf.="FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sqlf.="WHERE f.gml_id= $1;";
-$v = array($gmlid);
-$resf = pg_prepare("", $sqlf);
-$resf = pg_execute("", $v);
+$v=array($gmlid);
+$resf=pg_prepare("", $sqlf);
+$resf=pg_execute("", $v);
 if (!$resf) {
 	echo "\n<p class='err'>Fehler bei Flurst&uuml;cksdaten.</p>\n";
 	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqlf."<br>$1 = gml_id = '".$gmlid."'</p>";}
@@ -62,25 +63,25 @@ if ($rowf = pg_fetch_array($resf)) {
 	echo "<p class='err'>Fehler! Kein Treffer fuer gml_id=".$gmlid."</p>";
 }
 
-// Balkenecho "<p class='geb'>ALKIS Flurst&uuml;ck (Geb&auml;ude) ".$gmkgnr."-".$flurnummer."-".$flstnummer."&nbsp;</p>\n";
+// Balken
+echo "<p class='geb'>ALKIS Flurst&uuml;ck (Geb&auml;ude) ".$gmkgnr."-".$flurnummer."-".$flstnummer."&nbsp;</p>\n";
 
 echo "\n<h2><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;ck (Geb&auml;ude)</h2>\n";
 
 // Kennzeichen in Rahmen
 echo "\n<table class='outer'>\n<tr>\n<td>";
 	echo "\n\t<table class='kennzfs' title='Flurst&uuml;ckskennzeichen'>";
-		echo "\n\t<tr>";
-			echo "\n\t\t<td class='head'>Gmkg</td>";
-			echo "\n\t\t<td class='head'>Flur</td>";
-			echo "\n\t\t<td class='head'>Flurst-Nr.</td>";
-		echo "\n\t</tr>";
-		echo "\n\t<tr>";
-			echo "\n\t\t<td title='Gemarkung'>";
-			if  ($showkey) {echo "<span class='key'>".$gmkgnr."</span><br>";}
-			echo $gemkname."&nbsp;</td>";
-			echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
-			echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>";
-		echo "\n\t</tr>";
+    echo "\n\t<tr>";
+        echo "\n\t\t<td class='head'>Gmkg</td>";
+        echo "\n\t\t<td class='head'>Flur</td>";
+        echo "\n\t\t<td class='head'>Flurst-Nr.</td>";
+    echo "\n\t</tr>\n\t<tr>";
+        echo "\n\t\t<td title='Gemarkung'>";
+        if  ($showkey) {echo "<span class='key'>".$gmkgnr."</span><br>";}
+        echo $gemkname."&nbsp;</td>";
+        echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
+        echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>";
+    echo "\n\t</tr>";
 	echo "\n\t</table>";
 echo "\n</td>\n<td>";
 
@@ -88,13 +89,15 @@ echo "\n</td>\n<td>";
 echo "\n\t<p class='nwlink noprint'>";
 	echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
 	if ($idanzeige) {echo "&amp;id=j";}
-	if ($showkey)   {echo "&amp;showkey=j";}	echo "&amp;eig=n' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
+	if ($showkey)   {echo "&amp;showkey=j";}
+	echo "&amp;eig=n' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
 echo "\n\t</p>";
 if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 // Ende Seitenkopf
 
 echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".number_format($flstflaeche,0,",",".") . " m&#178;</b></p>";
+pg_free_result($resf);
 
 echo "\n\n<h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ude</h3>";
 echo "\n<p>.. auf oder an dem Flurst&uuml;ck. Ermittelt durch Verschneidung der Geometrie.</p>";
@@ -130,9 +133,9 @@ $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
 	//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
 $sqlg.="ORDER BY schnittflae DESC;";
 
-$v = array($gmlid);
-$resg = pg_prepare("", $sqlg);
-$resg = pg_execute("", $v);
+$v=array($gmlid);
+$resg=pg_prepare("", $sqlg);
+$resg=pg_execute("", $v);
 if (!$resg) {
 	echo "\n<p class='err'>Keine Geb&auml;ude ermittelt.</p>\n";
 	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqlg."<br>$1 = gml_id = '".$gmlid."'</p>";}
@@ -146,16 +149,14 @@ echo "\n<hr>\n<table class='geb'>";
 		echo "\n\t<td class='head' title='Geb&auml;udefl&auml;che'>&nbsp;</td>";
 		echo "\n\t<td class='head' title='Geb&auml;udefunktion ist die zum Zeitpunkt der Erhebung vorherrschend funktionale Bedeutung des Geb&auml;udes'>Funktion</td>";
 		echo "\n\t<td class='head' title='Bauweise (Schl&uuml;ssel und Beschreibung)'>Bauweise</td>";
-		echo "\n\t<td class='head' title='Zustand (Schl&uuml;ssel und Beschreibung)'>Zustand</td>";		echo "\n\t<td class='head nwlink' title='Lagebezeichnung mit Stra&szlig;e und Hausnummer'>Lage</td>";
+		echo "\n\t<td class='head' title='Zustand (Schl&uuml;ssel und Beschreibung)'>Zustand</td>";
+		echo "\n\t<td class='head nwlink' title='Lagebezeichnung mit Stra&szlig;e und Hausnummer'>Lage</td>";
 		echo "\n\t<td class='head nwlink' title='Link zu den kompletten Hausdaten'>Haus</td>";
 	echo "\n</tr>";
 	// T-Body
 	while($rowg = pg_fetch_array($resg)) {
 		$gebnr = $gebnr + 1;
-// ++ ToDo:
-// Die Zeilen abwechselnd verschieden einfärben 
-// Angrenzend anders einfärben 
-
+// ++ ToDo: Die Zeilen abwechselnd verschieden einfärben, Angrenzend anders einfärben 
 		$ggml=$rowg["gml_id"];
 		$gebflsum = $gebflsum + $rowg["schnittflae"];
 		$skey=$rowg["lage"]; // Strassenschluessel		
@@ -206,7 +207,8 @@ echo "\n<hr>\n<table class='geb'>";
 			$sqll.="SELECT 'p' AS ltyp, v.beziehung_zu, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
 			$sqll.="FROM alkis_beziehungen v "; 
 			$sqll.="JOIN ax_lagebezeichnungmitpseudonummer l ON v.beziehung_zu=l.gml_id ";
-			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";			$sqll.="WHERE v.beziehungsart = 'hat' AND v.beziehung_von = $1 "; // ID des Hauses"
+			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
+			$sqll.="WHERE v.beziehungsart = 'hat' AND v.beziehung_von = $1 "; // ID des Hauses"
 		
 			$sqll.="ORDER BY bezeichnung, hausnummer ";
 		
@@ -240,7 +242,7 @@ echo "\n<hr>\n<table class='geb'>";
 				if ($idanzeige) {linkgml($gkz, $gmllag, "Lage"); }
 				echo "<br>";
 			} // Ende Loop Lagezeilen m.H.
-
+            pg_free_result($resl);
 			echo "\n\t</td>";
 
 			echo "\n\t<td class='nwlink noprint'>";
@@ -251,7 +253,8 @@ echo "\n<hr>\n<table class='geb'>";
 			echo "\n\t</td>";
 
 		echo "\n</tr>";
-	}// Footer
+	}
+// Footer
 	if ($gebnr == 0) {
 		echo "\n</table>";
 		echo "<p class='err'><br>Keine Geb&auml;ude auf diesem Flurst&uuml;ck.<br>&nbsp;</p>";
@@ -266,18 +269,17 @@ echo "\n<hr>\n<table class='geb'>";
 			echo "\n\t<td>&nbsp;</td>"; // 7
 		echo "\n</tr>";
 	echo "\n</table>";
-	$unbebaut = number_format(($flstflaeche - $gebflsum),0,",",".") . " m&#178;";	echo "\n<p>Flurst&uuml;cksfl&auml;che abz&uuml;glich Geb&auml;udefl&auml;che: <b>".$unbebaut."</b></p><br>";
+	$unbebaut = number_format(($flstflaeche - $gebflsum),0,",",".") . " m&#178;";
+	echo "\n<p>Flurst&uuml;cksfl&auml;che abz&uuml;glich Geb&auml;udefl&auml;che: <b>".$unbebaut."</b></p><br>";
 }
-
+pg_free_result($resg);
 ?>
 
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
 		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
-		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-<!--	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="16" height="16" alt="Export" /></a>&nbsp;
-		<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>
 	</div>
 </form>
 

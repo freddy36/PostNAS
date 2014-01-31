@@ -5,23 +5,24 @@
 	Flurstücksnachweis fuer ein Flurstückskennzeichen aus ALKIS PostNAS
 
 	Version:
-	2011-11-16  Neuer Style class='dbg', Link Historie
-	2011-11-17  Parameter der Functions geändert
-	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
-	2011-12-01  Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
-	2011-12-16  Zeilenumbruch in Nutzungsart, Spaltenbreite Link
-	2012-07-24  Export als CSV, pg_free_result(), pg_close()
-	2012-11-27  split deprecated, besser: explode
-	2013-01-17  FS-Kennzeichen (ALB-Format) als Parameter statt gmlid möglich
-	2013-04-08  deprecated "import_request_variables" ersetzt
-	2013-04-11  ID-Links (im Testmodus) auch an Lagebezeichnung (mit/ohne HsNr) und an Nutzungs-Abschnitt
-	2013-06-24  Unna: Bodenneuordnung, strittige Grenze
-	2013-06-27	Bodenneuordnung u. stritt.Gr. in Tabellen-Struktur, Link zur Bodenerneuerung (neues Modul)
+	2011-11-16 Neuer Style class='dbg', Link Historie
+	2011-11-17 Parameter der Functions geändert
+	2011-11-30 import_request_variables, $dbvers PostNAS 0.5 entfernt
+	2011-12-01 Summe der Abschnittsflächen (NUA) an amtl. Buchfläche des FS angleichen 
+	2011-12-16 Zeilenumbruch in Nutzungsart, Spaltenbreite Link
+	2012-07-24 Export als CSV, pg_free_result(), pg_close()
+	2012-11-27 split deprecated, besser: explode
+	2013-01-17 FS-Kennzeichen (ALB-Format) als Parameter statt gmlid möglich
+	2013-04-08 deprecated "import_request_variables" ersetzt
+	2013-04-11 ID-Links (im Testmodus) auch an Lagebezeichnung (mit/ohne HsNr) und an Nutzungs-Abschnitt
+	2013-06-24 Unna: Bodenneuordnung, strittige Grenze
+	2013-06-27 Bodenneuordnung u. stritt.Gr. in Tabellen-Struktur, Link zur Bodenerneuerung (neues Modul)
+    2014-01-30 Korrektur Nutzungsart (z.B. Friedhof mit class=0 hatte Anzeige "unbekannt")
 
 	ToDo:
 	- Bodenschätzung anzeigen
-	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
-	- NamNum >bestehtAusRechtsverhaeltnissenZu> NamNum
+	- Entschlüsseln "Bahnkategorie" bei Bahnverkehr, "Oberflächenmaterial" bei Unland
+	  Dazu evtl. diese Felder ins Classfld verschieben (Meta-Tabellen!)
 */
 session_start();
 $cntget = extract($_GET);
@@ -163,7 +164,8 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite
 	// FS-Daten 2 Spalten
 	echo "\n\t<table class='fsd'>";
 		echo "\n\t<tr>\n\t\t<td>Entstehung</td>";
-		echo "\n\t\t<td>".$entsteh."</td>\n\t</tr>";		echo "\n\t<tr>";
+		echo "\n\t\t<td>".$entsteh."</td>\n\t</tr>";
+		echo "\n\t<tr>";
 			echo "\n\t\t<td>letz. Fortf</td>";
 			echo "\n\t\t<td title='Jahrgang / Fortf&uuml;hrungsnummer - Fortf&uuml;hrungsart'>";
 				foreach($arrn AS $val) { // Zeile f. jedes Element des Array
@@ -172,7 +174,8 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite
 			echo "</td>";
 		echo "\n\t</tr>";
 
-	echo "\n\t</table>";	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+	echo "\n\t</table>";
+	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 //	echo "\n<tr>\n\t<td>Finanzamt</td>\n\t<td>".$finanzamt." ".$finame  . "</td>\n</tr>";
 // Ende Seitenkopf
@@ -363,17 +366,13 @@ while($row = pg_fetch_array($res)) {
 pg_free_result($res);
 // ENDE  L a g e b e z e i c h n u n g
 
-// ** N U T Z U N G **
+// ** N U T Z U N G ** Gemeinsame Fläche von NUA und FS
 // Tabellenzeilen (3 Spalten) mit tats. Nutzung zu einem FS ausgeben
-$sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, c.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, ";
-// Gemeinsame Fläche von NUA und FS
-$sql.="st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) AS schnittflae, ";
-$sql.="c.label, c.blabla ";
-$sql.="FROM ax_flurstueck f, nutzung n ";
-$sql.="JOIN nutzung_meta m ON m.nutz_id=n.nutz_id ";
+$sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, n.nutz_id, n.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, ";
+$sql.="st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) AS schnittflae, c.label, c.blabla ";
+$sql.="FROM ax_flurstueck f, nutzung n JOIN nutzung_meta m ON m.nutz_id=n.nutz_id ";
 $sql.="LEFT JOIN nutzung_class c ON c.nutz_id=n.nutz_id AND c.class=n.class ";
-$sql.="WHERE f.gml_id= $1 "; // id FS";
-$sql.="AND st_intersects(n.wkb_geometry,f.wkb_geometry) = true "; // ueberlappende Flaechen
+$sql.="WHERE f.gml_id= $1 AND st_intersects(n.wkb_geometry,f.wkb_geometry) = true "; // id FS, ueberlappende Flaechen
 $sql.="AND st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) > 0.05 "; // unter Rundung
 $sql.="ORDER BY schnittflae DESC;";
 
@@ -387,19 +386,21 @@ if (!$res) {
 $the_Xfactor=$fsbuchflae / $fsgeomflae; // geom. ermittelte Fläche auf amtl. Buchfläche angleichen
 $j=0;
 while($row = pg_fetch_array($res)) {
-	$grupp = $row["gruppe"];  // Individuelles Icon?
-	$title = htmlentities($row["title"], ENT_QUOTES, "UTF-8"); // NUA-Titel
-	$fldclass=$row["fldclass"]; // Feldname 1.  Zusatzfeld
-	$fldinfo= $row["fldinfo"];  // Feldname 2. Zusatzfeld
+	$grupp=$row["gruppe"]; // 4 Gruppen
+    $nutzid=$row["nutz_id"]; // 27 Tabellen, num. Key
+	$title=htmlentities($row["title"], ENT_QUOTES, "UTF-8"); // Titel der 27 Tabellen
+	$fldclass=$row["fldclass"]; // Name 1. Zusatzfeld
+	$fldinfo= $row["fldinfo"];  // Name 2. Zus.
 	$gml=$row["gml_id"];
-	$class=$row["class"];  // 1. Zusatzfeld verschlüsselt -> nutzung_class
+	$class=$row["class"]; // 1. Zusatzfeld verschlüsselt -> nutzung_class
 	$info=$row["info"]; // 2. Zus. verschlüsselt (noch keine Info zum entschl.)
 	$schnittflae=$row["schnittflae"];
 	$label=$row["label"]; // Nutzungsart entschlüsselt
 	$zus=$row["zustand"]; // im Bau
 	$nam=$row["name"]; // Eigenname
 	$bez=$row["bezeichnung"]; // weiterer Name (unverschl.)
-	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8");	$label=str_replace("/", "<br>", $label); // Ersetzen "/" durch Zeilenwechsel?
+	$blabla=htmlentities($row["blabla"], ENT_QUOTES, "UTF-8");
+	$label=str_replace("/", "<br>", $label); // Ersetzt "/" durch html-Zeilenwechsel
 
 	echo "\n<tr>\n\t";
 		if ($j == 0) {
@@ -413,8 +414,11 @@ while($row = pg_fetch_array($res)) {
 		echo "\n\t<td class='fla' title='geometrisch berechnet: ".$schnittflae."'>".$absflaebuch."</td>";
 
 		echo "\n\t<td class='lr'>";
-			If ( ($fldclass == "Funktion" OR $fldclass == "Vegetationsmerkmal") AND $label != "") { // Kurze Anzeige
-				if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
+            if ($class == 0) {
+                if ($showkey) {echo "<span class='key'>(".$nutzid.")</span> ";}
+                echo $title; // Name der Tabelle
+            } elseif ( ($fldclass == "Funktion" OR $fldclass == "Vegetationsmerkmal") AND $label != "") { // Kurze Anzeige
+				if ($showkey) {echo "<span class='key' title='".$fldclass."'>(".$nutzid."-".$class.")</span> ";}
 				if ($blabla = "") {
 					echo $label;
 				} else {
@@ -424,7 +428,7 @@ while($row = pg_fetch_array($res)) {
 				echo $title; // NUA-Tabelle
 				if ($class != "") { // NUA-Schlüssel
 					echo ", ".$fldclass.": "; // Feldname
-					if ($showkey) {echo "<span class='key'>(".$class.")</span> ";}
+					if ($showkey) {echo "<span class='key' title='".$fldclass."'>(".$nutzid."-".$class.")</span> ";}
 					if ($label != "") { // Bedeutung dazu wurde erfasst
 						if ($blabla = "") {
 							echo $label;
@@ -483,7 +487,8 @@ echo "\n<tr>"; // Summenzeile
 	echo "\n\t<td>&nbsp;</td>\n\t<td>";
 		echo "\n\t\t<p class='nwlink noprint'>"; // Gebaeude-Verschneidung
 			echo "\n\t\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
-			if ($idanzeige) {echo "&amp;id=j";}			if ($showkey) {echo "&amp;showkey=j";}
+			if ($idanzeige) {echo "&amp;id=j";}
+			if ($showkey) {echo "&amp;showkey=j";}
 			echo "' title='Geb&auml;udenachweis'>Geb&auml;ude <img src='ico/Haus.ico' width='16' height='16' alt=''></a>";
 		echo "\n\t\t</p>";
 	echo "\n\t</td>";
@@ -528,7 +533,8 @@ if (pg_num_rows($res_bodeneuordnung) > 0 OR pg_num_rows($res_strittigeGrenze) > 
 				// LINK:
 				echo "\n\t\t<p class='nwlink noprint'>";
 					echo "\n\t\t\t<a href='alkisbaurecht.php?gkz=".$gkz."&amp;gmlid=".$row['verf_gml'];
-					if ($idanzeige) {echo "&amp;id=j";}					if ($showkey) {echo "&amp;showkey=j";}
+					if ($idanzeige) {echo "&amp;id=j";}
+					if ($showkey) {echo "&amp;showkey=j";}
 					echo "' title='Bau-, Raum- oder Bodenordnungsrecht'>Recht <img src='ico/Gericht.ico' width='16' height='16' alt=''></a>";
 				echo "\n\t\t</p>";			
 				echo "</td>";
@@ -770,7 +776,8 @@ while($rows = pg_fetch_array($ress)) {
 	while($rowan = pg_fetch_array($resan)) {
 		$beznam=$rowan["bezeichnung"];
 		$blattkeyan=$rowan["blattart"]; // Schluessel von Blattart
-		$blattartan=blattart($blattkeyan);		echo "\n<hr>\n<table class='outer'>";
+		$blattartan=blattart($blattkeyan);
+		echo "\n<hr>\n<table class='outer'>";
 		echo "\n<tr>"; // 1 row only
 			echo "\n<td>"; // outer linke Spalte
 				// Rahmen mit Kennzeichen GB

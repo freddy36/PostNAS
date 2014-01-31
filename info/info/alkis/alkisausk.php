@@ -9,10 +9,11 @@
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
 	Siehe auch alkisinlayausk.php - eine Variante für den Einbau in einen iFrame
 
-	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geändert
-	2011-11-30  import_request_variables
-	2013-04-08  deprecated "import_request_variables" ersetzt
-	2014-01-28	Link zu alkisstrasse.php
+	Version:
+	2011-11-17 Link FS-Historie, Parameter der Functions geändert
+	2011-11-30 import_request_variables
+	2013-04-08 deprecated "import_request_variables" ersetzt
+	2014-01-28 Link zu alkisstrasse.php
 */
 session_start();
 $cntget = extract($_GET);
@@ -131,7 +132,8 @@ echo "\n\t\t<a href='alkisgebaeudenw.php?gkz=".$gkz."&amp;gmlid=".$gmlid;
 echo "</a>";
 
 echo "\n\t</p>\n</td>";
-// Lagebezeichnung MIT Hausnummer (Adresse)
+
+// Lagebezeichnung MIT Hausnummer (Adresse)
 $sql ="SELECT DISTINCT l.gml_id, s.gml_id AS kgml, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
@@ -231,7 +233,8 @@ while($rowg = pg_fetch_array($resg)) {
 			echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 		}
 		echo "\n</td>\n<td>";
-		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt");}		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
+		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt");}
+		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 			echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
@@ -259,7 +262,8 @@ while($rowg = pg_fetch_array($resg)) {
 			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
 			linkgml($gkz, $gmlid, "Buchungsblatt");
 		}
-	}	$j++;
+	}
+	$j++;
 }
 if ($j == 0) { // Entwicklungshilfe
 	echo "\n<p class='err'>Keine Buchungen gefunden.</p>";

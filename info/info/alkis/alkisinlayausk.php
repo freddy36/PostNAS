@@ -9,12 +9,14 @@
 	Fuer detaillierte Angaben wird zum GB- oder FS-Nachweis verlinkt.
 	Dies ist eine Variante von alkisausk.php welches als vollstaendige Seite aufgerufen wird.
 
-	Version:	2011-11-17  Link FS-Historie, Parameter der Functions geändert
+	Version:
+	2011-11-17  Link FS-Historie, Parameter der Functions geändert
 	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
 	2011-12-14  "window.open(..,width=680)"
 	2013-04-08  deprecated "import_request_variables" ersetzt
 	2013-05-06	Fehlende Leerstelle
-	2014-01-28	Link zu alkisstrasse.php*/
+	2014-01-28	Link zu alkisstrasse.php
+*/
 session_start();
 $cntget = extract($_GET);
 require_once("alkis_conf_location.php");
@@ -32,7 +34,8 @@ echo <<<END
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
 	<link rel="shortcut icon" type="image/x-icon" href="ico/Flurstueck.ico">
-	<title>ALKIS-Auskunft</title>	<script type="text/javascript">
+	<title>ALKIS-Auskunft</title>
+	<script type="text/javascript">
 	function imFenster(dieURL) {
 		var link = encodeURI(dieURL);
 		window.open(link,'','left=10,top=10,width=680,height=800,resizable=yes,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes');
@@ -101,6 +104,7 @@ echo "\n\t\t<a href='javascript:imFenster(\"alkisgebaeudenw.php?gkz=".$gkz."&amp
 echo "</a>";
 
 echo "\n\t</p>\n</td>";
+pg_free_result($res);
 
 // Lage MIT HausNr (Adresse)
 $sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.hausnummer ";
@@ -134,6 +138,7 @@ while($row = pg_fetch_array($res)) {
 	echo "\n\t\t</p>\n\t</td>\n</tr>";
 	$j++;
 }
+pg_free_result($res);
 if ($j == 0) { // keine HsNr gefunden
 	// Lage OHNE HausNr
 	$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.unverschluesselt ";
@@ -176,24 +181,23 @@ echo "\n</table>\n";
 
 // Flurstuecksflaeche
 echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
+pg_free_result($res);
 
 // *** G R U N D B U C H ***
 echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundbuch</h2>";
 // ALKIS: FS --> bfs --> GS --> bsb --> GB.
 $sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
 $sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart ";
-$sql.="FROM alkis_beziehungen bfs "; // Bez Flurst.- Stelle.
-$sql.="JOIN ax_buchungsstelle s ON bfs.beziehung_zu=s.gml_id ";
+$sql.="FROM alkis_beziehungen bfs JOIN ax_buchungsstelle s ON bfs.beziehung_zu=s.gml_id ";
 $sql.="JOIN alkis_beziehungen bsb ON s.gml_id=bsb.beziehung_von "; // Bez.Stelle-Blatt
 $sql.="JOIN ax_buchungsblatt b ON bsb.beziehung_zu=b.gml_id ";
 $sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
 $sql.="WHERE bfs.beziehung_von= $1 AND bfs.beziehungsart='istGebucht' AND bsb.beziehungsart='istBestandteilVon' ";
 $sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
-
-$v = array($gmlid);
-$resg = pg_prepare("", $sql);
-$resg = pg_execute("", $v);
+$v=array($gmlid);
+$resg=pg_prepare("", $sql);
+$resg=pg_execute("", $v);
 if (!$resg) {
 	echo "\n<p class='err'>Keine Buchungen.</p>\n";
 	if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
@@ -226,7 +230,8 @@ while($rowg = pg_fetch_array($resg)) {
 		if ($rowg["zahler"] <> "") {
 			echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 		}
-		echo "\n</td>\n<td>";		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
+		echo "\n</td>\n<td>";
+		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 			echo "\n\t\t<a href='javascript:imFenster(\"alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0]."\")' ";
 				echo "title='Grundbuchnachweis'>";
 				echo $blattart;
@@ -252,6 +257,7 @@ while($rowg = pg_fetch_array($resg)) {
 		}
 	}
 }
+pg_free_result($resg);
 
 ?>
 </body>
