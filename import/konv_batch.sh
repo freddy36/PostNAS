@@ -29,6 +29,7 @@
 ##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" für Reparatur der 
 ##              Präsentationsobjekte Straßenname im Post-Processing
 ##   2013-10-24 F.J. krz: Zwischenlösung "praesentation_action.sql" wieder deaktiviert.
+##   2014-01-31 F.J. krz: Import Eintrag erzeugen (nach Vorschlag Marvin Brandt, Unna)
 ##
 ## ToDo: Option "-skipfailures" nach Test entfernen ?
 ##
@@ -99,6 +100,14 @@ fi
 # noch alte delete-Eintraege in DB?
   echo "Leeren der delete-Tabelle"
   echo 'TRUNCATE table "delete";' | psql $con 
+
+#
+# Import Eintrag erzeugen
+#
+# Die dadurch erzeugte Import-ID dient zur Steuerung des Löschens alter Relationen im Trigger. 
+# Wird die Datenbank MIT Historie geladen, muss die folgende Zeile auskommentiert werden.
+echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-%d %H:%M:%S')"','"${ORDNER}"','"${verarb}"');" | psql $con
+
 #
 # Ordner abarbeiten
 #

@@ -17,21 +17,6 @@
 -- Stand
 -- -----
 
--- letzte Änderungen an Version 0.6:
-
--- 2011-11-02 FJ: Neue Tabellen
--- 2011-11-04 FJ: Anpassungen fuer Buchauskunft "Historie"
--- 2011-11-21 FJ: siehe Version 0.6
--- 2011-12-16 FJ: Neue Tabelle "ax_sicherungspunkt"
--- 2012-01-16 FJ: Spalte "ap_pto.art" wird doch gebraucht.
-
--- ** Neuer Zweig PostNAS 0.7 (gdal > 1.9) **
-
--- 2012-02-28 FJ: Zusammenführen von Änderungen aus SVN (AE: Anfang Februar) mit eigener Version
---                Auskommentierte Zeilen "identifier" entfernt.
---                Feld "gemeindezugehoerigkeit" auskommentiert.
---                Bereinigung Kommentare.
-
 -- 2012-04-23 FJ  Diff zum GDAL-Patch #4555 angewendet:
 --                Siehe Mail J.E.Fischer in PostNAS-Liste vom 12.03.2012
 --                - Alle Objekte bekommen "endet"-Feld.
@@ -67,24 +52,25 @@
 --                Vorläufig mit Trigger-Funktions "update_fields_beziehungen"
 
 -- 2014-01-24 FJ  Feld "ax_datenerhebung_punktort" in "Punktort/TA/AG/AU" nach Vorschlag Marvin Brandt (Kreis Unna)
+
 -- 2014-01-29 FJ  Spalte "zeitpunktderentstehung" an allen Vorkommen auf Format "varchar".
 --                Alte auskommentierte Varianten entrümpelt. 
 --                Tabs durch Space ersetzt und Code wieder hübsch ausgerichtet.
+
+-- 2014-01-31 FJ  Erweiterungen Marvin Brand (Unna) fuer sauberes Entfernen alter Beziehungen bei "replace".
+--                Lösung über import_id.
 
 
 --  VERSIONS-NUMMER:
 
 --  Dies Schema kann NICHT mehr mit der installierbaren gdal-Version 1.9 verwendet werden.
---  Derzeit muss ogr2ogr (gdal) aus den Quellen compiliert werden, die o.g. Patch enthalten.
+--  Derzeit muss ogr2ogr (gdal) aus den Quellen compiliert werden, die o.g. Patch #4555 enthalten.
 --  Weiterführung dieses Zweiges als PostNAS 0.7
 
-
--- Zur Datenstruktur siehe Dokument:
--- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/Profile_NRW/5-1-1_ALKIS-OK-NRW_GDB.html
--- http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/ALKIS_NRW/Pflichtenheft/Anlage03/Anlage3_ALKIS-OK-NRW_MAX.html
-
--- Übersicht "Landesspezifische Festlegungen zu ALKIS in NRW":
--- http://www.bezreg-koeln.nrw.de/extra/33alkis/alkis_nrw.htm
+-- ALKIS-Dokumentation (NRW):
+--  http://www.bezreg-koeln.nrw.de/extra/33alkis/alkis_nrw.htm
+--  http://www.bezreg-koeln.nrw.de/extra/33alkis/geoinfodok.htm
+--  http://www.bezreg-koeln.nrw.de/extra/33alkis/dokumente/GeoInfoDok/ALKIS/ALKIS_OK_V6-0.html
 
   SET client_encoding = 'UTF8';
   SET default_with_oids = false;
@@ -107,9 +93,26 @@
 -- Alle Tabellen löschen
 --SELECT alkis_drop();
 
+
+-- Importtabelle für Verarbeitungen
+CREATE TABLE import (
+  id serial NOT NULL,
+  datum timestamp without time zone,
+  verzeichnis text,
+  importart text,
+  CONSTRAINT import_pk PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX import_id ON import USING btree (id);
+
+COMMENT ON TABLE  import             IS 'Verwaltung der Import-Programmläufe. Wird nicht vom Konverter gefüllt sondern aus der Start-Prozedur (z.B. konv_batch.sh).';
+COMMENT ON COLUMN import.id          IS 'Laufende Nummer der Konverter-Datei-Verarbeitung. Der Max-Wert von "id" wird als "alkis_beziehungen.import_id" verwendet, um ein vollständiges Löschen alter Beziehungen zu ermöglichen.';
+COMMENT ON COLUMN import.datum       IS 'Zeitpunkt des Beginns des Konverter-Laufes für einen Stapel von NAS-Dateien.';
+COMMENT ON COLUMN import.verzeichnis IS 'Ort von dem die NAS-Dateien verarbeitet wurden.';
+COMMENT ON COLUMN import.importart   IS 'Modus des Konverter-Laufes: e="Erstladen" oder a="NBA-Aktualisierung"';
+
 -- Tabelle delete für Lösch- und Fortführungsdatensätze
-CREATE TABLE "delete"
-(
+CREATE TABLE "delete" (
      ogc_fid             serial NOT NULL,
      typename            varchar,
      featureid           character(32),
@@ -125,7 +128,6 @@ CREATE TABLE "delete"
 SELECT AddGeometryColumn('delete','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX delete_fid ON "delete"(featureid);
-
 
 COMMENT ON TABLE "delete"             IS 'Hilfstabelle für das Speichern von Löschinformationen.';
 COMMENT ON COLUMN delete.typename     IS 'Objektart, also Name der Tabelle, aus der das Objekt zu löschen ist.';
@@ -147,22 +149,19 @@ COMMENT ON COLUMN delete.ignored      IS 'Löschsatz wurde ignoriert';
 
 -- Zusätzlich enthält 'beziehungsart' noch ein Verb für die Art der Beziehung.
 
--- 2013-07-10 Erweiterung nach Vorschlag Marvin Brandt (Kreis Unna)
--- Durch Typenamen bessere Zuordnung der verlinkten Tabellen möglich.
 CREATE TABLE alkis_beziehungen (
    ogc_fid          serial NOT NULL,
    beziehung_von    character(16),   --> gml_id
-   von_typename     varchar,
-   beginnt          character(20),
    beziehungsart    varchar,         --  Liste siehe unten
    beziehung_zu     character(16),
-   zu_typename      varchar,
+   import_id        integer,         -- 2014-01-31 
    CONSTRAINT alkis_beziehungen_pk PRIMARY KEY (ogc_fid)
 );
 
 CREATE INDEX alkis_beziehungen_von_idx ON alkis_beziehungen USING btree (beziehung_von);
 CREATE INDEX alkis_beziehungen_zu_idx  ON alkis_beziehungen USING btree (beziehung_zu);
 CREATE INDEX alkis_beziehungen_art_idx ON alkis_beziehungen USING btree (beziehungsart);
+
 
 -- Dummy-Eintrag in Metatabelle
 SELECT AddGeometryColumn('alkis_beziehungen','dummy',:alkis_epsg,'POINT',2);
@@ -171,10 +170,9 @@ COMMENT ON TABLE  alkis_beziehungen               IS 'zentrale Multi-Verbindungs
 COMMENT ON COLUMN alkis_beziehungen.beziehung_von IS 'Join auf Feld gml_id verschiedener Tabellen';
 COMMENT ON COLUMN alkis_beziehungen.beziehung_zu  IS 'Join auf Feld gml_id verschiedener Tabellen';
 COMMENT ON COLUMN alkis_beziehungen.beziehungsart IS 'Typ der Beziehung zwischen der von- und zu-Tabelle';
+--MMENT ON COLUMN alkis_beziehungen.beginnt       IS 'Mit Trigger kopiertes Beginnt-Datum des Datensatzes auf der Seite beziehung_von';
+COMMENT ON COLUMN alkis_beziehungen.import_id     IS 'laufende Nummer des Konverter-Laufes aus "import.id".';
 
-COMMENT ON COLUMN alkis_beziehungen.von_typename  IS 'Name der Tabelle der VON-Beziehung'; -- 2013-07-10
-COMMENT ON COLUMN alkis_beziehungen.beginnt       IS 'Mit Trigger kopiertes Beginnt-Datum des Datensatzes auf der Seite beziehung_von'; -- 2013-07-10
-COMMENT ON COLUMN alkis_beziehungen.zu_typename   IS 'Name der Tabelle der ZU-Beziehung';  -- 2013-07-10
 
 
 -- Beziehungsarten:

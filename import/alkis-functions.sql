@@ -4,9 +4,13 @@
 -- 2013-07-10: Erweiterung zur Verarbeitung der Replace-Sätze in ALKIS-Beziehungen 
 
 -- 2013-12-10:	In der Function "update_fields_beziehungen" den Fall behandeln, dass ein Objekt einer 
---				neuen Beziehung in keiner Tabelle gefunden wird.
---				Wenn ein einzelnes Objekt fehlt, soll dies keine Auswirkungen auf andere Objekte haben.
---              Füllen von "zu_typename" auskommentiert.
+--             neuen Beziehung in keiner Tabelle gefunden wird.
+--             Wenn ein einzelnes Objekt fehlt, soll dies keine Auswirkungen auf andere Objekte haben.
+--             Füllen von "zu_typename" auskommentiert.
+
+-- 2014-01-31: Deaktivieren von "update_fields_beziehungen", 
+--             statt dessen verwenden der "import_id" um alte Relationen zu identifizieren und zu löschen.
+
 
 -- Table/View/Sequence löschen, wenn vorhanden
 CREATE OR REPLACE FUNCTION alkis_dropobject(t TEXT) RETURNS varchar AS $$
@@ -372,18 +376,15 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- Löschsatz verarbeiten (OHNE Historie)
--- historische Objekte werden sofort gelöscht.
--- Siehe Mail W. Jacobs vom 23.03.2012 in PostNAS-Mailingliste
--- geaendert krz FJ 2012-10-31
--- geändertt krz FJ 2013-07-10 auf Vorschlag MB Krs. Unna
+-- "delete" und "replace" verarbeiten (OHNE Historie). Historische Objekte werden sofort gelöscht.
+-- Geaendert 2014-02-03 auf Vorschlag M.B. Krs. Unna
 CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
 DECLARE
 	query TEXT;
 	begsql TEXT;
 	aktbeg TEXT;
 	gml_id TEXT;
-	query_bez TEXT; -- 2013-07-10 Erweiterung
+	query_bez TEXT;
 BEGIN
 	NEW.typename := lower(NEW.typename);
 	NEW.context := lower(NEW.context);
@@ -393,86 +394,28 @@ BEGIN
 		NEW.context := 'delete';
 	END IF;
 
-	IF NEW.context='delete' THEN
-		-- ersatzloses Loeschen eines Objektes
+	IF NEW.context='delete' THEN -- Ersatzloses Loeschen des Objektes
+          -- In der Objekt-Tabelle
+		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id = ''' || gml_id || '''';
+          -- Beziehungen von und zu dem Objekt sind hinfaellig
+		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id || ''' OR beziehung_zu = ''' || gml_id || '''';
+		--RAISE NOTICE 'Lösche gml_id % in % und Beziehungen', gml_id, NEW.typename;
 
-		query := 'DELETE FROM ' || NEW.typename
-			|| ' WHERE gml_id = ''' || gml_id || '''';
-		EXECUTE query;
-
-		query := 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id
-			|| ''' OR beziehung_zu = ''' || gml_id || '''';
-		EXECUTE query;
-		RAISE NOTICE 'Lösche gml_id % in % und Beziehungen', gml_id, NEW.typename;
-
-	ELSE
-		-- Ersetzen eines Objektes (Replace)
-		-- In der objekt-Tabelle sind bereits 2 Objekte vorhanden (alt und neu).
-		-- Die 2 Datensätze unterscheiden sich nur in ogc_fid und beginnt
-
+	ELSE -- Ersetzen eines Objektes (Replace). In der Objekt-Tabelle sind jetzt bereits 2 Objekte vorhanden (alt und neu).
 		-- beginnt-Wert des aktuellen Objektes ermitteln
-		-- RAISE NOTICE 'Suche beginnt von neuem gml_id % ', substr(NEW.replacedBy, 1, 16);
 		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id = ''' || substr(NEW.replacedBy, 1, 16) || ''' AND endet IS NULL';
 		EXECUTE begsql INTO aktbeg;
-
-		-- Nur alte Objekte entfernen
-		query := 'DELETE FROM ' || NEW.typename
-			|| ' WHERE gml_id = ''' || gml_id || ''' AND beginnt < ''' || aktbeg || '''';
-		EXECUTE query;
-
-		-- Tabelle "alkis_beziehungen"
-        -- Löschen der Beziehungen des in einer anderen Tabelle ersetzten Objektes.
-		IF gml_id = substr(NEW.replacedBy, 1, 16) THEN -- gml_id gleich
-			-- Beziehungen des Objektes wurden redundant noch einmal eingetragen
-			-- ToDo:         HIER sofort die Redundanzen zum aktuellen Objekt beseitigen.
-			-- Workaround: Nach der Konvertierung werden im Post-Processing
-			--             ALLE Redundanzen mit einem SQL-Statement beseitigt.
-		--	RAISE NOTICE 'Ersetze gleiche gml_id % in %', gml_id, NEW.typename;
-
-		-- ENTWURF FJ, noch ungetestet:
-        -- Bei Replace wird zur aktuellen gml_id nach redundanten Sätzen in alkis_beziehungen gesucht.
-        -- Die Version mit dem kleineren serial-Feld wird gelöscht.
-		--query := 'DELETE FROM alkis_beziehungen AS bezalt
-		--	WHERE (bezalt.beziehung_von = ' || gml_id || ' OR bezalt.beziehung_zu = ' || gml_id ||')
-		--	AND EXISTS (SELECT ogc_fid FROM alkis_beziehungen AS bezneu
-		--		WHERE bezalt.beziehung_von = bezneu.beziehung_von
-		--		AND bezalt.beziehung_zu = bezneu.beziehung_zu
-		--		AND bezalt.beziehungsart = bezneu.beziehungsart
-		--		AND bezalt.ogc_fid < bezneu.ogc_fid);'
-		--EXECUTE query;
-
-		-- Funktioniert wahrscheinlich nicht wegen:
-		--   Der zu löschende Satz in "alkis_beziehungen" muss nicht komplett redandant sein (von+zu+art). 
-        -- Es ist entweder ein Replace des von-objektes passiert oder ein Replace des zu-Objektes.
-		-- In beiden Fällen kann auf der entgegen gesetzten Seite der Beziehung auch ein anderes Objekt sein.
-		-- Dummerweise sind die neuen Beziehungen mit der gleichen gml_id schon eingetragen worden.
-
-        -- 2013-07-10 Alternative Version von Marvon Brandt (Krs. Unna) 
-        -- Diese Version setzt voraus, dass das Feld 'beginnt' beim Einfügen der Beziehung aus 
-        -- dem Satz des von-Objektes kopiert wurde.
-        -- Dies geschieht in "update_fields_beziehungen" als Trigger beim Einfügen der alkis_beziehung.
-           -- alte Beziehungen löschen
-           query_bez := 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id  
-                        || ''' AND beginnt < ''' || aktbeg || '''';
-           RAISE NOTICE 'Lösche in beziehungen alte gml_id % vor %', gml_id, aktbeg;
-           EXECUTE query_bez;
-
-          -- Was ist, wenn das in der delete-Tabelle ersetzte Objekt nur/auch auf der zu-Seite der Beziehung auftaucht.
-          -- Hier wird es nur auf der von-Seite gesucht.
- 
-        -- 2013-07-10 Erweiterung Ende
-
-		ELSE
-			-- replace mit ungleicher gml_id
-			-- Falls dies vorkommt, die Function erweitern
-			RAISE EXCEPTION '%: neue gml_id % bei Replace in %. alkis_beziehungen muss aktualisiert werden!', gml_id, NEW.replacedBy, NEW.typename;
-		END IF;
+		-- Alte Objekte entfernen
+		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id = ''' || gml_id || ''' AND beginnt < ''' || aktbeg || '''';
+		-- Beziehungen vom alten Objekt entfernen, die aus frueheren Importen stammen
+		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id || ''' AND import_id < (SELECT max(id) FROM import)';
 	END IF;
 
 	NEW.ignored := false;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 -- Beziehungssätze aufräumen
 CREATE OR REPLACE FUNCTION alkis_beziehung_inserted() RETURNS TRIGGER AS $$
@@ -481,6 +424,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 -- Wenn die Datenbank MIT Historie angelegt wurde, kann nach dem Laden hiermit aufgeräumt werden.
 CREATE OR REPLACE FUNCTION alkis_delete_all_endet() RETURNS void AS $$
@@ -501,316 +445,30 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- 2013-07-10: Erweiterung zur Verarbeitung der Replace-Sätze in ALKIS-Beziehungen 
-
--- Zusätzliche Felder für alkis_beziehungen auswerten.
--- In die Tabelle alkis_beziehungen wird zusätzlich zu den gml_ids der Objekte auf von- und zu-Seite 
--- auch noch eingetragen, aus welcher Tabelle die gml_id stammt. Dies sollte langfristig direkt 
--- vom PostNAS (ogr2ogr) gemacht werden so dass dieser Trigger als Provisorium anzusehen ist.
-
--- Eventuell kann auch die Sammlung der bekannten Tabellen-Namen als Kette von UNION-Zeilen ersetzt werden
--- durch eine smarte Function, die eine gefilterte Liste der vorhandenen Tabellen (-namen) durchsucht.
--- Somit würden auch solche Tabellen einbezogen, die von PostNAS nachträglich angelegt wurden.
-
--- Das Beginnt-Datum des Datensatzes auf der Seite "beziehung_von" wird zu der Beziehung kopiert (redundant).
-CREATE OR REPLACE FUNCTION update_fields_beziehungen() RETURNS TRIGGER AS $$
+-- Wenn die Datenbank ohne Historie geführt wird, ist das Feld "identifier" verzichtbar.
+-- Diese wird nur von der Trigger-Version für die Version MIT Historie verwendet.
+-- Es kann aus allen Tabellen entfernt werden.
+CREATE OR REPLACE FUNCTION alkis_drop_all_identifier() RETURNS void AS $$
 DECLARE
-	sql_vonTypename TEXT;
-	sql_zuTypename TEXT;
-	sql_beginnt TEXT;
+	c RECORD;
 BEGIN
-    -- Die folgende Liste von Tabellen-Namen kann reduziert werden, auf solche Tabellen, die auf
-    -- von-Seite von Beziehungen auftauchen können.
-    sql_vonTypename := 
-       'SELECT ''ap_darstellung'' FROM ap_darstellung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ap_lpo'' FROM ap_lpo WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ap_lto'' FROM ap_lto WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ap_ppo'' FROM ap_ppo WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ap_pto'' FROM ap_pto WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_anderefestlegungnachwasserrecht'' FROM ax_anderefestlegungnachwasserrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_anschrift'' FROM ax_anschrift WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_aufnahmepunkt'' FROM ax_aufnahmepunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bahnverkehr'' FROM ax_bahnverkehr WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bahnverkehrsanlage'' FROM ax_bahnverkehrsanlage WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_baublock'' FROM ax_baublock WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bauraumoderbodenordnungsrecht'' FROM ax_bauraumoderbodenordnungsrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bauteil'' FROM ax_bauteil WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bauwerkimgewaesserbereich'' FROM ax_bauwerkimgewaesserbereich WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bauwerkimverkehrsbereich'' FROM ax_bauwerkimverkehrsbereich WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bauwerkoderanlagefuerindustrieundgewerbe'' FROM ax_bauwerkoderanlagefuerindustrieundgewerbe WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bauwerkoderanlagefuersportfreizeitunderholung'' FROM ax_bauwerkoderanlagefuersportfreizeitunderholung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bergbaubetrieb'' FROM ax_bergbaubetrieb WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_besondereflurstuecksgrenze'' FROM ax_besondereflurstuecksgrenze WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_besonderegebaeudelinie'' FROM ax_besonderegebaeudelinie WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_besondererbauwerkspunkt'' FROM ax_besondererbauwerkspunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_besonderergebaeudepunkt'' FROM ax_besonderergebaeudepunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_besondererhoehenpunkt'' FROM ax_besondererhoehenpunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_besonderertopographischerpunkt'' FROM ax_besonderertopographischerpunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bewertung'' FROM ax_bewertung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bodenschaetzung'' FROM ax_bodenschaetzung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_boeschungkliff'' FROM ax_boeschungkliff WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_boeschungsflaeche'' FROM ax_boeschungsflaeche WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_buchungsblatt'' FROM ax_buchungsblatt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_buchungsblattbezirk'' FROM ax_buchungsblattbezirk WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_buchungsstelle'' FROM ax_buchungsstelle WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_bundesland'' FROM ax_bundesland WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_dammwalldeich'' FROM ax_dammwalldeich WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_denkmalschutzrecht'' FROM ax_denkmalschutzrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_dienststelle'' FROM ax_dienststelle WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_duene'' FROM ax_duene WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_einrichtungenfuerdenschiffsverkehr'' FROM ax_einrichtungenfuerdenschiffsverkehr WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_einrichtunginoeffentlichenbereichen'' FROM ax_einrichtunginoeffentlichenbereichen WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_felsenfelsblockfelsnadel'' FROM ax_felsenfelsblockfelsnadel WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_firstlinie'' FROM ax_firstlinie WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_flaechebesondererfunktionalerpraegung'' FROM ax_flaechebesondererfunktionalerpraegung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_flaechegemischternutzung'' FROM ax_flaechegemischternutzung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_fliessgewaesser'' FROM ax_fliessgewaesser WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_flugverkehr'' FROM ax_flugverkehr WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_flugverkehrsanlage'' FROM ax_flugverkehrsanlage WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_flurstueck'' FROM ax_flurstueck WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_forstrecht'' FROM ax_forstrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_fortfuehrungsfall'' FROM ax_fortfuehrungsfall WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_fortfuehrungsnachweisdeckblatt'' FROM ax_fortfuehrungsnachweisdeckblatt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_friedhof'' FROM ax_friedhof WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gebaeude'' FROM ax_gebaeude WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gebaeudeausgestaltung'' FROM ax_gebaeudeausgestaltung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gehoelz'' FROM ax_gehoelz WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gelaendekante'' FROM ax_gelaendekante WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gemarkung'' FROM ax_gemarkung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gemarkungsteilflur'' FROM ax_gemarkungsteilflur WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gemeinde'' FROM ax_gemeinde WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gemeindeteil'' FROM ax_gemeindeteil WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_georeferenziertegebaeudeadresse'' FROM ax_georeferenziertegebaeudeadresse WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gewaessermerkmal'' FROM ax_gewaessermerkmal WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_gleis'' FROM ax_gleis WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_grablochderbodenschaetzung'' FROM ax_grablochderbodenschaetzung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_grenzpunkt'' FROM ax_grenzpunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_hafenbecken'' FROM ax_hafenbecken WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_halde'' FROM ax_halde WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_heide'' FROM ax_heide WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_heilquellegasquelle'' FROM ax_heilquellegasquelle WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_historischesbauwerkoderhistorischeeinrichtung'' FROM ax_historischesbauwerkoderhistorischeeinrichtung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_historischesflurstueck'' FROM ax_historischesflurstueck WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_historischesflurstueckalb'' FROM ax_historischesflurstueckalb WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_historischesflurstueckohneraumbezug'' FROM ax_historischesflurstueckohneraumbezug WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_hoehenlinie'' FROM ax_hoehenlinie WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_hoehleneingang'' FROM ax_hoehleneingang WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_industrieundgewerbeflaeche'' FROM ax_industrieundgewerbeflaeche WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_klassifizierungnachstrassenrecht'' FROM ax_klassifizierungnachstrassenrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_klassifizierungnachwasserrecht'' FROM ax_klassifizierungnachwasserrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_kleinraeumigerlandschaftsteil'' FROM ax_kleinraeumigerlandschaftsteil WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_kommunalesgebiet'' FROM ax_kommunalesgebiet WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_kreisregion'' FROM ax_kreisregion WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_lagebezeichnungkatalogeintrag'' FROM ax_lagebezeichnungkatalogeintrag WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_lagebezeichnungmithausnummer'' FROM ax_lagebezeichnungmithausnummer WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_lagebezeichnungmitpseudonummer'' FROM ax_lagebezeichnungmitpseudonummer WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_lagebezeichnungohnehausnummer'' FROM ax_lagebezeichnungohnehausnummer WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_landwirtschaft'' FROM ax_landwirtschaft WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_leitung'' FROM ax_leitung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_meer'' FROM ax_meer WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_moor'' FROM ax_moor WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_musterlandesmusterundvergleichsstueck'' FROM ax_musterlandesmusterundvergleichsstueck WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_namensnummer'' FROM ax_namensnummer WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_naturumweltoderbodenschutzrecht'' FROM ax_naturumweltoderbodenschutzrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_person'' FROM ax_person WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_platz'' FROM ax_platz WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_punktkennunguntergegangen'' FROM ax_punktkennunguntergegangen WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_punktortag'' FROM ax_punktortag WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_punktortau'' FROM ax_punktortau WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_punktortta'' FROM ax_punktortta WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_regierungsbezirk'' FROM ax_regierungsbezirk WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_reservierung'' FROM ax_reservierung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_schifffahrtsliniefaehrverkehr'' FROM ax_schifffahrtsliniefaehrverkehr WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_schiffsverkehr'' FROM ax_schiffsverkehr WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_schutzgebietnachnaturumweltoderbodenschutzrecht'' FROM ax_schutzgebietnachnaturumweltoderbodenschutzrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_schutzgebietnachwasserrecht'' FROM ax_schutzgebietnachwasserrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_schutzzone'' FROM ax_schutzzone WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_seilbahnschwebebahn'' FROM ax_seilbahnschwebebahn WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_sicherungspunkt'' FROM ax_sicherungspunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_soll'' FROM ax_soll WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_sonstigervermessungspunkt'' FROM ax_sonstigervermessungspunkt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_sonstigesbauwerkodersonstigeeinrichtung'' FROM ax_sonstigesbauwerkodersonstigeeinrichtung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_sonstigesrecht'' FROM ax_sonstigesrecht WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_sportfreizeitunderholungsflaeche'' FROM ax_sportfreizeitunderholungsflaeche WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_stehendesgewaesser'' FROM ax_stehendesgewaesser WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_strassenverkehr'' FROM ax_strassenverkehr WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_strassenverkehrsanlage'' FROM ax_strassenverkehrsanlage WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_sumpf'' FROM ax_sumpf WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_tagebaugrubesteinbruch'' FROM ax_tagebaugrubesteinbruch WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_tagesabschnitt'' FROM ax_tagesabschnitt WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_topographischelinie'' FROM ax_topographischelinie WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_transportanlage'' FROM ax_transportanlage WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_turm'' FROM ax_turm WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_unlandvegetationsloseflaeche'' FROM ax_unlandvegetationsloseflaeche WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_untergeordnetesgewaesser'' FROM ax_untergeordnetesgewaesser WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_vegetationsmerkmal'' FROM ax_vegetationsmerkmal WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_vertretung'' FROM ax_vertretung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_verwaltung'' FROM ax_verwaltung WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_verwaltungsgemeinschaft'' FROM ax_verwaltungsgemeinschaft WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_vorratsbehaelterspeicherbauwerk'' FROM ax_vorratsbehaelterspeicherbauwerk WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_wald'' FROM ax_wald WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_wasserspiegelhoehe'' FROM ax_wasserspiegelhoehe WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_weg'' FROM ax_weg WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_wegpfadsteig'' FROM ax_wegpfadsteig WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_wohnbauflaeche'' FROM ax_wohnbauflaeche WHERE gml_id = ''' || NEW.beziehung_von || ''' UNION
-		SELECT ''ax_wohnplatz'' FROM ax_wohnplatz WHERE gml_id = ''' || NEW.beziehung_von || '''';
-	EXECUTE sql_vonTypename INTO NEW.von_typename;
+	FOR c IN
+		SELECT table_name
+		FROM information_schema.columns a
+		WHERE a.column_name='identifier'
+		ORDER BY table_name
+	LOOP
+		EXECUTE 'ALTER TABLE ' || c.table_name || ' DROP COLUMN identifier';
+		RAISE NOTICE 'Entferne ''identifier'' aus: %', c.table_name;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;
 
-	-- 2013-12-10: Den Fall behandeln, dass das Objekt in keiner Tabelle gefunden wird.
-	-- NULL-Wert führt zu Abbruch des 2. Execute. Dies führt in einer Kettenreaktion dazu,
-	-- dass auch weitere Objekte nicht eingefügt werden können.
-	IF NEW.von_typename IS NULL THEN
-		RAISE NOTICE 'Neue gml_id fuer "beziehung_von" in "alkis_beziehungen" ist keiner Tabelle zuzuordnen. "beziehung_von" und "beginnt" bleiben leer. gml_id: %', NEW.beziehung_von;
-	ELSE
-		-- Der von_typename (= Tabellen-Name) muss zuvor ermittelt worden sein. Dort wird nach der gml_id gesucht. 
-		sql_beginnt := 'SELECT max(beginnt) FROM ' || NEW.von_typename || ' WHERE gml_id = ''' || NEW.beziehung_von ||'''';
-		EXECUTE sql_beginnt INTO NEW.beginnt;
-		-- Was passiert bei Replace eines Objektes, das nur auf der zu-Seite einer Beziehung auftaucht.
-	END IF;
 
-    -- Die folgende Liste von Tabellen-Namen kann reduziert werden, auf solche Tabellen, die auf
-    -- zu-Seite von Beziehungen auftauchen können.
-	-- Diese Spalte erleichtert die Analyse, wird aber nicht für die aktuelle Version des Triggers nicht verwendet.
-    -- Diese Anweisung liefert nur teilweise ein Ergebnis.
-
--- -- 2013-12-10 Wird nicht benötigt und ist auch nur teilweise erfolgreich. 
--- --            Dann den Aufwand sparen. Auskommentiert.
---	sql_zuTypename := 
---       'SELECT ''ap_darstellung'' FROM ap_darstellung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ap_lpo'' FROM ap_lpo WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ap_lto'' FROM ap_lto WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ap_ppo'' FROM ap_ppo WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ap_pto'' FROM ap_pto WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_anderefestlegungnachwasserrecht'' FROM ax_anderefestlegungnachwasserrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_anschrift'' FROM ax_anschrift WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_aufnahmepunkt'' FROM ax_aufnahmepunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bahnverkehr'' FROM ax_bahnverkehr WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bahnverkehrsanlage'' FROM ax_bahnverkehrsanlage WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_baublock'' FROM ax_baublock WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bauraumoderbodenordnungsrecht'' FROM ax_bauraumoderbodenordnungsrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bauteil'' FROM ax_bauteil WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bauwerkimgewaesserbereich'' FROM ax_bauwerkimgewaesserbereich WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bauwerkimverkehrsbereich'' FROM ax_bauwerkimverkehrsbereich WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bauwerkoderanlagefuerindustrieundgewerbe'' FROM ax_bauwerkoderanlagefuerindustrieundgewerbe WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bauwerkoderanlagefuersportfreizeitunderholung'' FROM ax_bauwerkoderanlagefuersportfreizeitunderholung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bergbaubetrieb'' FROM ax_bergbaubetrieb WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_besondereflurstuecksgrenze'' FROM ax_besondereflurstuecksgrenze WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_besonderegebaeudelinie'' FROM ax_besonderegebaeudelinie WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_besondererbauwerkspunkt'' FROM ax_besondererbauwerkspunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_besonderergebaeudepunkt'' FROM ax_besonderergebaeudepunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_besondererhoehenpunkt'' FROM ax_besondererhoehenpunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_besonderertopographischerpunkt'' FROM ax_besonderertopographischerpunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bewertung'' FROM ax_bewertung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bodenschaetzung'' FROM ax_bodenschaetzung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_boeschungkliff'' FROM ax_boeschungkliff WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_boeschungsflaeche'' FROM ax_boeschungsflaeche WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_buchungsblatt'' FROM ax_buchungsblatt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_buchungsblattbezirk'' FROM ax_buchungsblattbezirk WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_buchungsstelle'' FROM ax_buchungsstelle WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_bundesland'' FROM ax_bundesland WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_dammwalldeich'' FROM ax_dammwalldeich WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_denkmalschutzrecht'' FROM ax_denkmalschutzrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_dienststelle'' FROM ax_dienststelle WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_duene'' FROM ax_duene WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_einrichtungenfuerdenschiffsverkehr'' FROM ax_einrichtungenfuerdenschiffsverkehr WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_einrichtunginoeffentlichenbereichen'' FROM ax_einrichtunginoeffentlichenbereichen WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_felsenfelsblockfelsnadel'' FROM ax_felsenfelsblockfelsnadel WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_firstlinie'' FROM ax_firstlinie WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_flaechebesondererfunktionalerpraegung'' FROM ax_flaechebesondererfunktionalerpraegung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_flaechegemischternutzung'' FROM ax_flaechegemischternutzung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_fliessgewaesser'' FROM ax_fliessgewaesser WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_flugverkehr'' FROM ax_flugverkehr WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_flugverkehrsanlage'' FROM ax_flugverkehrsanlage WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_flurstueck'' FROM ax_flurstueck WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_forstrecht'' FROM ax_forstrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_fortfuehrungsfall'' FROM ax_fortfuehrungsfall WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_fortfuehrungsnachweisdeckblatt'' FROM ax_fortfuehrungsnachweisdeckblatt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_friedhof'' FROM ax_friedhof WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gebaeude'' FROM ax_gebaeude WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gebaeudeausgestaltung'' FROM ax_gebaeudeausgestaltung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gehoelz'' FROM ax_gehoelz WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gelaendekante'' FROM ax_gelaendekante WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gemarkung'' FROM ax_gemarkung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gemarkungsteilflur'' FROM ax_gemarkungsteilflur WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gemeinde'' FROM ax_gemeinde WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gemeindeteil'' FROM ax_gemeindeteil WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_georeferenziertegebaeudeadresse'' FROM ax_georeferenziertegebaeudeadresse WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gewaessermerkmal'' FROM ax_gewaessermerkmal WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_gleis'' FROM ax_gleis WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_grablochderbodenschaetzung'' FROM ax_grablochderbodenschaetzung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_grenzpunkt'' FROM ax_grenzpunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_hafenbecken'' FROM ax_hafenbecken WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_halde'' FROM ax_halde WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_heide'' FROM ax_heide WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_heilquellegasquelle'' FROM ax_heilquellegasquelle WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_historischesbauwerkoderhistorischeeinrichtung'' FROM ax_historischesbauwerkoderhistorischeeinrichtung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_historischesflurstueck'' FROM ax_historischesflurstueck WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_historischesflurstueckalb'' FROM ax_historischesflurstueckalb WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_historischesflurstueckohneraumbezug'' FROM ax_historischesflurstueckohneraumbezug WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_hoehenlinie'' FROM ax_hoehenlinie WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_hoehleneingang'' FROM ax_hoehleneingang WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_industrieundgewerbeflaeche'' FROM ax_industrieundgewerbeflaeche WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_klassifizierungnachstrassenrecht'' FROM ax_klassifizierungnachstrassenrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_klassifizierungnachwasserrecht'' FROM ax_klassifizierungnachwasserrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_kleinraeumigerlandschaftsteil'' FROM ax_kleinraeumigerlandschaftsteil WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_kommunalesgebiet'' FROM ax_kommunalesgebiet WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_kreisregion'' FROM ax_kreisregion WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_lagebezeichnungkatalogeintrag'' FROM ax_lagebezeichnungkatalogeintrag WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_lagebezeichnungmithausnummer'' FROM ax_lagebezeichnungmithausnummer WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_lagebezeichnungmitpseudonummer'' FROM ax_lagebezeichnungmitpseudonummer WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_lagebezeichnungohnehausnummer'' FROM ax_lagebezeichnungohnehausnummer WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_landwirtschaft'' FROM ax_landwirtschaft WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_leitung'' FROM ax_leitung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_meer'' FROM ax_meer WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_moor'' FROM ax_moor WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_musterlandesmusterundvergleichsstueck'' FROM ax_musterlandesmusterundvergleichsstueck WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_namensnummer'' FROM ax_namensnummer WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_naturumweltoderbodenschutzrecht'' FROM ax_naturumweltoderbodenschutzrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_person'' FROM ax_person WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_platz'' FROM ax_platz WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_punktkennunguntergegangen'' FROM ax_punktkennunguntergegangen WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_punktortag'' FROM ax_punktortag WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_punktortau'' FROM ax_punktortau WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_punktortta'' FROM ax_punktortta WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_regierungsbezirk'' FROM ax_regierungsbezirk WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_reservierung'' FROM ax_reservierung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_schifffahrtsliniefaehrverkehr'' FROM ax_schifffahrtsliniefaehrverkehr WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_schiffsverkehr'' FROM ax_schiffsverkehr WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_schutzgebietnachnaturumweltoderbodenschutzrecht'' FROM ax_schutzgebietnachnaturumweltoderbodenschutzrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_schutzgebietnachwasserrecht'' FROM ax_schutzgebietnachwasserrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_schutzzone'' FROM ax_schutzzone WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_seilbahnschwebebahn'' FROM ax_seilbahnschwebebahn WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_sicherungspunkt'' FROM ax_sicherungspunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_soll'' FROM ax_soll WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_sonstigervermessungspunkt'' FROM ax_sonstigervermessungspunkt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_sonstigesbauwerkodersonstigeeinrichtung'' FROM ax_sonstigesbauwerkodersonstigeeinrichtung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_sonstigesrecht'' FROM ax_sonstigesrecht WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_sportfreizeitunderholungsflaeche'' FROM ax_sportfreizeitunderholungsflaeche WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_stehendesgewaesser'' FROM ax_stehendesgewaesser WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_strassenverkehr'' FROM ax_strassenverkehr WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_strassenverkehrsanlage'' FROM ax_strassenverkehrsanlage WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_sumpf'' FROM ax_sumpf WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_tagebaugrubesteinbruch'' FROM ax_tagebaugrubesteinbruch WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_tagesabschnitt'' FROM ax_tagesabschnitt WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_topographischelinie'' FROM ax_topographischelinie WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_transportanlage'' FROM ax_transportanlage WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_turm'' FROM ax_turm WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_unlandvegetationsloseflaeche'' FROM ax_unlandvegetationsloseflaeche WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_untergeordnetesgewaesser'' FROM ax_untergeordnetesgewaesser WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_vegetationsmerkmal'' FROM ax_vegetationsmerkmal WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_vertretung'' FROM ax_vertretung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_verwaltung'' FROM ax_verwaltung WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_verwaltungsgemeinschaft'' FROM ax_verwaltungsgemeinschaft WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_vorratsbehaelterspeicherbauwerk'' FROM ax_vorratsbehaelterspeicherbauwerk WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_wald'' FROM ax_wald WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_wasserspiegelhoehe'' FROM ax_wasserspiegelhoehe WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_weg'' FROM ax_weg WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_wegpfadsteig'' FROM ax_wegpfadsteig WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_wohnbauflaeche'' FROM ax_wohnbauflaeche WHERE gml_id = ''' || NEW.beziehung_zu || ''' UNION
---		SELECT ''ax_wohnplatz'' FROM ax_wohnplatz WHERE gml_id = ''' || NEW.beziehung_zu || '''';
---	EXECUTE sql_zuTypename INTO NEW.zu_typename;
--- -- 2013-12-10 Ende
-
+-- Funktion zum Ermitteln der letzten import_id
+CREATE OR REPLACE FUNCTION get_import_id() RETURNS TRIGGER AS $$
+BEGIN
+	EXECUTE 'SELECT max(id) FROM import' INTO NEW.import_id;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

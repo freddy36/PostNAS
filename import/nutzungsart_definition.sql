@@ -59,7 +59,7 @@ CREATE TABLE nutzung (
 	beginnt		character(20),	    -- mehrfache gml_id eindeutig machen, Datenfehler?
 	nutz_id		integer,
 	class		integer  NOT NULL,  -- NULL-Werte der Quelltabelle durch den num. Wert 0 ersetzen
-	info		integer,
+	info		     integer,
 	zustand		integer,
 	"name"		varchar,
 	bezeichnung	varchar,

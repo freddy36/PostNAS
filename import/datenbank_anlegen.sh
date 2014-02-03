@@ -10,6 +10,7 @@
 ##  2013-04-16 Vers.-Nr. "0.7" aus dem Dateinamen von Schema und Keytable entfernt, sichten_wms.sql
 ##  2013-10-16 F.J. krz: Neues Sript "pp_praesentation_sichten.sql" für Reparatur Präsentationsobjekte Straßennamen
 ##  2013-12-03 F.J. krz: Script "sichten.sql" einbeziehen. Darin View "doppelverbindung" fuer WMS FS-Kommunal.
+##  2014-01-31 F.J. krz: Unterschiede der Datenbank-Struktur für die Varianten MIT/OHNE Historie.
 
 POSTNAS_HOME=$(dirname $0)
 MANDANT_HOME=$PWD
@@ -57,7 +58,7 @@ cd $POSTNAS_HOME
 
 if ! [ -e alkis-trigger.sql ]; then
 	if ln -s alkis-trigger-kill.sql alkis-trigger.sql; then
-		echo "** Symlink zu alkis-trigger-kill.sql (KEINE HISTORIE) angelegt"
+		echo "** Symlink zu alkis-trigger-kill.sql (KEINE HISTORIE) wurde angelegt"
 	else
 		echo "** alkis-trigger.sql FEHLT!"
 		exit 1
@@ -68,6 +69,7 @@ fi
 # -h localhost
 con="-p 5432 -d ${DBNAME} "
 echo "connection " $con
+
 echo "******************************"
 echo "**  Neue ALKIS-Datenbank    **"
 echo "******************************"
@@ -93,6 +95,21 @@ if test $CHECK != "j"; then
 	echo " Abbruch!"
 	exit 1
 fi
+
+## Kommentar zur Datenbank (allgemein)
+psql $con -U ${DBUSER} -c "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7';"
+
+## Kann man das Ziel des Symlinks abfragen? Wenn Kill, dann ...
+##   if [ -e alkis-trigger.sql ]; then
+echo " "
+echo "** Besonderheiten der Datenbank OHNE Historie"
+## auskommentieren, wenn die Datenbank MIT Historie geführt wird
+## Import-ID: Tabelle und Spalte in "alkis_beziehungen" anlegen
+psql $con -U ${DBUSER} -f alkis_PostNAS_schema_ohneHist.sql >$MANDANT_HOME/log/schema.log
+## Spalte "identifier" aus allen Tabellen entfernen (die wird nur vom Trigger MIT Historie benoetigt)
+##psql $con -U ${DBUSER} -c "SELECT alkis_drop_all_identifier();"
+psql $con -U ${DBUSER} -c "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7 - Ohne Historie';"
+## fi
 
 echo " "
 echo "** Anlegen der Datenbank-Struktur - zusaetzliche Schluesseltabellen"
@@ -122,10 +139,6 @@ psql $con -U ${DBUSER} -f sichten_wms.sql >$MANDANT_HOME/log/sichten_wms.log
 echo " "
 echo "** Definition von Views (sichten.sql)"
 psql $con -U ${DBUSER} -f sichten.sql >$MANDANT_HOME/log/sichten.log
-
-echo " "
-echo  "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter PostNAS 0.7';" | psql -p 5432 -d ${DBNAME} -U ${DBUSER} 
-echo " "
 
 echo "** Berechtigung (grant.sql) Protokoll siehe log"
 psql $con -U ${DBUSER} -f grant.sql >$MANDANT_HOME/log/log_grant.log

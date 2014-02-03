@@ -26,8 +26,8 @@
 --  2014-01-20 Erweiterung "exp_csv" für alkisexport.php
 --  2014-01-21 In "exp_csv": Rechtsgemeinsachaft zu allen Personen statt als eigener Satz.
 --  2014-01-27 Neuer Baustein "flst_an_strasse". Neuer View "exp_csv_str" für CSV-Export von Flst. an einer Straße
---	2014-01-29 Neuer View "strasse_als_gewanne" zur Fehlersuche.
-
+--  2014-01-29 Neuer View "strasse_als_gewanne" zur Fehlersuche.
+--  2014-01-31 Kommentar
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -930,20 +930,25 @@ COMMENT ON VIEW erbbaurechte_suchen
 -- Manchmal kann zu einer gml_id in "alkis_beziehungen" die zuständige Tabelle nicht gefunden werden.
 -- Nach Änderung der Trigger-Function am 10.12.2013 wird die Beziehung trotzdem eingetragen,
 -- nur die Felder "von_typename" und "beginnt" bleiben leer.
+-- 2014-01-31: Dieser Trigger wird nicht mehr verwendet.
 
--- Diese Fälle anzeigen:
-CREATE OR REPLACE VIEW beziehungsproblem_faelle
-AS
-  SELECT *
-    FROM alkis_beziehungen
-   WHERE beginnt IS NULL;
+     -- Diese Fälle anzeigen:
+--     CREATE OR REPLACE VIEW beziehungsproblem_faelle
+--    AS
+--       SELECT *
+--        FROM alkis_beziehungen
+--        WHERE beginnt IS NULL;
+--     COMMENT ON VIEW beziehungsproblem_faelle
+--      IS 'Fehlersuche: Im Trigger "update_fields_beziehungen()" wurde das Objekt in seiner Tabelle nicht gefunden, darum kein "beginnt" in "alkis_beziehungen" eingetragen.';
 
--- Wie viele sind das?
-CREATE OR REPLACE VIEW beziehungsproblem_zaehler
-AS
-  SELECT count(ogc_fid) AS anzahl
-    FROM alkis_beziehungen
-   WHERE beginnt IS NULL;
+     -- Wie viele sind das?
+--     CREATE OR REPLACE VIEW beziehungsproblem_zaehler
+--     AS
+--       SELECT count(ogc_fid) AS anzahl
+--         FROM alkis_beziehungen
+--        WHERE beginnt IS NULL;
+--     COMMENT ON VIEW beziehungsproblem_faelle
+--      IS 'Fehlersuche: Wie oft fehlt das beginnt-Feld in alkis_beziehungen?';
 
 
 -- Suchen von Gewannenbezeichnungen, die auch als Straßenname verwendet werden.
