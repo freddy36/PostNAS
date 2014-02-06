@@ -28,6 +28,7 @@
 --  2014-01-27 Neuer Baustein "flst_an_strasse". Neuer View "exp_csv_str" für CSV-Export von Flst. an einer Straße
 --  2014-01-29 Neuer View "strasse_als_gewanne" zur Fehlersuche.
 --  2014-01-31 Kommentar
+--  2014-02-06 nachmigration_aehnliche_anschriften
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -1001,6 +1002,32 @@ AS
 
 COMMENT ON VIEW strasse_als_gewanne_flst
  IS 'Flurstücke mit Gewannenbezeichnungen, die auch als Straßenname verwendet werden.';
+
+
+
+-- Suche nach Fehlern in den Daten, die moeglicherweise aus der Migration stammen und
+-- im Rahmen der Nachmigration noch korrigiert werden muessen.
+
+CREATE OR REPLACE VIEW nachmigration_aehnliche_anschriften
+AS
+  SELECT DISTINCT p.gml_id, p.nachnameoderfirma, p.vorname, 
+        a1.ort_post, a1.strasse AS strasse1, a2.strasse AS strasse2, a1.hausnummer
+     -- , b1.import_id AS import1, b2.import_id AS import2
+    FROM ax_person         p
+    JOIN alkis_beziehungen b1 ON b1.beziehung_von=p.gml_id
+    JOIN ax_anschrift      a1 ON a1.gml_id=b1.beziehung_zu
+    JOIN alkis_beziehungen b2 ON b2.beziehung_von=p.gml_id
+    JOIN ax_anschrift      a2 ON a2.gml_id=b2.beziehung_zu
+    WHERE b1.beziehungsart='hat' 
+      AND b2.beziehungsart='hat'
+      AND a1.gml_id    <>  a2.gml_id
+      AND a1.ort_post   =  a2.ort_post
+      AND a1.strasse    like trim(a2.strasse, '.') || '%'
+      AND a1.hausnummer =  a2.hausnummer
+    ORDER BY p.nachnameoderfirma, p.vorname;
+
+COMMENT ON VIEW nachmigration_aehnliche_anschriften
+ IS 'Zu einer Person gibt es mehrere Anschriften, die in Ort und Hausnummer identisch sind und beim Straßennemen entweder auch identisch sind oder eine Abkürzung mit Punkt enthalten.';
 
 
 -- END --

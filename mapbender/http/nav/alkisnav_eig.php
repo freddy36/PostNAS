@@ -2,15 +2,15 @@
 /* Version vom
 	2013-04-16 "import_request_variables" entfällt in PHP 5.4
 	2013-04-26	Ersetzen View "gemeinde_gemarkung" durch Tabelle "pp_gemarkung".
-					Stufe 2: GB *und* FS mit einem Klick anzeigen.
-					Blätterfunktion (Folgeseiten) für lange Listen. 
-					Function extern gemeinsam genutzt in _eig und _grd.
-					Dazu Var-Namen harmonisieren: $gb wird $blattgml.
-					Zurück-Link, Titel der Transaktion anzeigen.
+				Stufe 2: GB *und* FS mit einem Klick anzeigen.
+				Blätterfunktion (Folgeseiten) für lange Listen. 
+				Function extern gemeinsam genutzt in _eig und _grd.
+				Dazu Var-Namen harmonisieren: $gb wird $blattgml.
+				Zurück-Link, Titel der Transaktion anzeigen.
 	2013-04-29	Darstellung mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
-					Title auch auf Icon, IE zeigt sonst alt= als Title dar.
+				Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -567,19 +567,19 @@ $kennztyp=ZerlegungGBKennz($gbkennz); // Grundbuch-Kennzeichen aus Parameter zer
 // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
 
 // Quo Vadis?
-if($blattgml != "") {		// Flurstücke zum Grundbuch
+if($blattgml != "") { // Flurstücke zum Grundbuch
 
 	// Das Programm hat sich selbst verlinkt aus einer Liste der GB zu einem Eigentümer.
 	// Wenn Parameter mitgegeben wurden, können diese für einen "Link zurück" verwendet werden.
 	$trans="Flurst&uuml;cke zum Grundbuch";
-	getFSbyGB(true);				// mit BackLink
+	getFSbyGB(true); // mit BackLink
 
-} elseif($person != "") { 		// Grundbücher zur Person
+} elseif($person != "") { // Grundbücher zur Person
 	// Das Programm hat sich selbst verlinkt aus einer Liste der Personen zu einer Suchmaske.
 	if ($debug >= 2) {echo "\n<p class='dbg'>Gemeinde-Filter-Steuerung = '".$gfilter."'</p>";}
 
 	// Die Filtereinstellung beeinflusst die Such-Strategie:
-	if ($gfilter == 0) {			// Keine Filterung auf "Gemeinde": große Datenmenge
+	if ($gfilter == 0) { // Keine Filterung auf "Gemeinde": große Datenmenge
 		if ($kennztyp > 1) {
 			$trans = "Grundb&uuml;cher in ".$zgbbez." von .."; // Filter GB-Bez
 		} else {
@@ -591,7 +591,7 @@ if($blattgml != "") {		// Flurstücke zum Grundbuch
 			$trans = "1 Blatt zum Eigent&uuml;mer";
 			getFSbyGB(false); 	// Dann dazu auch gleich die Stufe 3 hinterher, aber ohne Backlink.
 		}
-	} else { 						// mit Filter auf Gemeinde: weniger Daten?
+	} else { // mit Filter auf Gemeinde: weniger Daten?
 		if ($kennztyp > 1) {
 			#trans="Grundb. und Flurst. in ".$zgbbez." von .. "; // zu lang
 			$trans="Grdb. und Flst. von .. in .."; // Filter GB-Bez,
@@ -599,18 +599,18 @@ if($blattgml != "") {		// Flurstücke zum Grundbuch
 		} else {
 			$trans="Grundb. und Flurst. von .."; // der Eigentümer steht darunter
 		}
-		getGBuFSbyPerson();		// Schritte 2+3 gleichzeitig, dabei Gemeinde-Filter auf Stufe 3
+		getGBuFSbyPerson(); // Schritte 2+3 gleichzeitig, dabei Gemeinde-Filter auf Stufe 3
 	}
 
-} elseif(isset($name)) {		// Suchbegriff aus Form: Suche nach Name
+} elseif(isset($name)) { // Suchbegriff aus Form: Suche nach Name
 
 	$trans="Namensuche \"".$name."\"";
-	getEigByName(); 				// Suchen nach Namensanfang
+	getEigByName(); // Suchen nach Namensanfang
 
-	if($person != "") {			// genau EIN Treffer zum Namen
+	if($person != "") { // genau EIN Treffer zum Namen
 		if ($gfilter == 0) {
 			$trans="Grundb&uuml;cher zum Namen";
-			getGBbyPerson();		// Dann gleich das Grundbuch hinterher
+			getGBbyPerson(); // Dann gleich das Grundbuch hinterher
 		} else {
 			$trans="Grdb. und Flst. zum Namen";
 			getGBuFSbyPerson();	// .. oder auch GB + FS

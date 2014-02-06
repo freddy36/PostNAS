@@ -5,8 +5,9 @@
 	Namens- und Adressdaten fuer einen Eigentuemer aus ALKIS PostNAS
 
 	Version:
-	2013-04-08  deprecated "import_request_variables" ersetzt
-	2013-11-22	Namensbestandteil ("von") in Kompakt-Adresse vor den Namen setzen
+	2013-04-08 deprecated "import_request_variables" ersetzt
+	2013-11-22 Namensbestandteil ("von") in Kompakt-Adresse vor den Namen setzen
+	2014-02-06 Redundante Adressen kommen vor. Nur eine davon anzeigen.
 
 	ToDo: Sortierung der Grundbücher zum Namen
 */
@@ -63,15 +64,18 @@ if ($row = pg_fetch_array($res)) {
 	$vor=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
 	$nam=htmlentities($row["nachnameoderfirma"], ENT_QUOTES, "UTF-8");
 	$geb=htmlentities($row["geburtsname"], ENT_QUOTES, "UTF-8");
-	$anr=anrede($row["anrede"]);
+	$anrk=$row["anrede"];
+	$anr=anrede($anrk);
 	$nbest=$row["namensbestandteil"];
 	$aka=$row["akademischergrad"];
 
 	echo "<table>\n";
-		echo "\t<tr><td class='nhd'>Anrede:</td><td class='nam'>".$anr."</td></tr>\n";
+		echo "\t<tr><td class='nhd'>Anrede:</td><td class='nam'>";
+		if ($showkey) {echo "<span class='key' title='Anredekennung'>(".$anrk.")</span> ";}
+		echo $anr."</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Nachname oder Firma:</td><td class='nam'>".$nam."</td></tr>\n";
-		echo "\t<tr><td class='nhd'>Vorname:</td><td class='nam'>".$vor."</td></tr>\n";
-		echo "\t<tr><td class='nhd'>Geburtsname:</td><td class='nam'>".$geb."</td></tr>\n";
+		echo "\t<tr><td class='nhd'>Vorname:</td><td class='nam'>".$vor."&nbsp;</td></tr>\n";
+		echo "\t<tr><td class='nhd'>Geburtsname:</td><td class='nam'>".$geb."&nbsp;</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Geburtsdatum:</td><td class='nam'>".$row["geburtsdatum"]."&nbsp;</td></tr>\n";
 		echo "\t<tr><td class='nhd'>Namensbestandteil:</td><td class='nam'>".$nbest."&nbsp;</td></tr>\n";
 		echo "\t<tr><td class='nhd'>akademischer Grad:</td><td class='nam'>".$aka."&nbsp;</td></tr>\n";
@@ -80,15 +84,14 @@ if ($row = pg_fetch_array($res)) {
 	// A d r e s s e
 	echo "\n<h3><img src='ico/Strasse_mit_Haus.ico' width='16' height='16' alt=''> Adresse</h3>\n";
 	$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-	$sqla.="FROM ax_anschrift a ";
-	$sqla.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-	$sqla.="WHERE b.beziehung_von= $1 ";
-	$sqla.="AND b.beziehungsart='hat';"; //"ORDER  BY ?;";
+	$sqla.="FROM ax_anschrift a JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
+	$sqla.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat' ";
+	// Es können redundante Adressen vorhanden sein, z.B. aus Migration, temporär aus LBESAS. Die letzte davon anzeigen.
+	$sqla.="ORDER BY a.gml_id DESC ;";
 
 	$v = array($gmlid);
 	$resa = pg_prepare("", $sqla);
 	$resa = pg_execute("", $v);
-
 	if (!$resa) {
 		echo "\n<p class='err'>Fehler bei Adressen</p>\n";
 		if ($debug > 2) {	
@@ -97,48 +100,62 @@ if ($row = pg_fetch_array($res)) {
 	}
 
 	$j=0;
+	// Parameter $multiadress = j zeigt alle Adressen an
 	while($rowa = pg_fetch_array($resa)) {
-		$gmla=$rowa["gml_id"];
-		$plz=$rowa["plz"];
-		$ort=htmlentities($rowa["ort_post"], ENT_QUOTES, "UTF-8");
-		$str=htmlentities($rowa["strasse"], ENT_QUOTES, "UTF-8");
-		$hsnr=$rowa["hausnummer"];
-		$land=htmlentities($rowa["bestimmungsland"], ENT_QUOTES, "UTF-8");
-		if ($idanzeige) { linkgml($gkz, $gmla, "Adresse"); }
-
-		echo "<table>\n";
-			echo "\t<tr><td class='nhd'>PLZ:</td><td class='nam'>".$plz."</td></tr>\n";
-			echo "\t<tr><td class='nhd'>Ort:</td><td class='nam'>".$ort."</td></tr>\n";
-			echo "\t<tr><td class='nhd'>Strasse:</td><td class='nam'>".$str."</td></tr>\n";
-			echo "\t<tr><td class='nhd'>Hausnummer:</td><td class='nam'>".$hsnr."</td></tr>\n";
-			echo "\t<tr><td class='nhd'>Land:</td><td class='nam'>".$land."</td></tr>\n";
-		echo "\n</table>\n<br>\n";
 		$j++;
+		if ($multiadress == "j" OR $j == 1) {
+			$gmla=$rowa["gml_id"];
+			$plz=$rowa["plz"];
+			$ort=htmlentities($rowa["ort_post"], ENT_QUOTES, "UTF-8");
+			$str=htmlentities($rowa["strasse"], ENT_QUOTES, "UTF-8");
+			$hsnr=$rowa["hausnummer"];
+			$land=htmlentities($rowa["bestimmungsland"], ENT_QUOTES, "UTF-8");
+			if ($idanzeige) { linkgml($gkz, $gmla, "Adresse"); }
 
-		// Name und Adresse Kompakt (im Rahmen)
-		// Alles was man fuer ein Anschreiben braucht
-		echo "<img src='ico/Namen.ico' width='16' height='16' alt='Brief' title='Anschrift'>"; // Symbol "Brief"
-		echo "\n<div class='adr' title='Anschrift'>".$anr." ".$aka." ".$vor." ".$nbest." ".$nam."<br>";
-		echo "\n".$str." ".$hsnr."<br>";
-		echo "\n".$plz." ".$ort."</div>";
+			echo "<table>\n";
+				echo "\t<tr><td class='nhd'>PLZ:</td><td class='nam'>".$plz."</td></tr>\n";
+				echo "\t<tr><td class='nhd'>Ort:</td><td class='nam'>".$ort."</td></tr>\n";
+				echo "\t<tr><td class='nhd'>Strasse:</td><td class='nam'>".$str."</td></tr>\n";
+				echo "\t<tr><td class='nhd'>Hausnummer:</td><td class='nam'>".$hsnr."</td></tr>\n";
+				echo "\t<tr><td class='nhd'>Land:</td><td class='nam'>".$land."</td></tr>\n";
+			echo "\n</table>\n<br>\n";
+
+			// Name und Adresse Kompakt (im Rahmen) - Alles was man fuer ein Anschreiben braucht
+			echo "<img src='ico/Namen.ico' width='16' height='16' alt='Brief' title='Anschrift'>"; // Symbol "Brief"
+			echo "\n<div class='adr' title='Anschrift'>".$anr." ".$aka." ".$vor." ".$nbest." ".$nam."<br>";
+			echo "\n".$str." ".$hsnr."<br>";
+			echo "\n".$plz." ".$ort."</div>";
+		}
 	}
-	if ($j == 0) {echo "\n<p class='err'>Keine Adressen.</p>\n";}
+	pg_free_result($resa);
+	if ($j == 0) {
+		echo "\n<p class='err'>Keine Adressen.</p>\n";
+	} elseif ($j > 1) {
+		echo "\n\t\t<p class='nwlink noprint'>";
+		echo "\n\t\t\t<a href='".$_SERVER['PHP_SELF']. "?gkz=".$gkz."&amp;gmlid=".$gmlid;
+		if ($idanzeige) {echo "&amp;id=j";}
+		if ($showkey) {echo "&amp;showkey=j";}
+		if ($multiadress == "j") {
+			echo "&amp;multiadress=n' title='mehrfache Adressen unterdr&uuml;cken'>erste Adresse ";
+		} else {
+			echo "&amp;multiadress=j' title='Adressen ggf. mehrfach vorhanden'>alle Adressen ";
+		}
+		echo "\n\t\t\t</a>";
+		echo "\n\t\t</p>";
+	}
 
 	// *** G R U N D B U C H ***
 	echo "\n<hr>\n<h3><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundb&uuml;cher</h3>\n";
 	// person <benennt< namensnummer >istBestandteilVon>                Buchungsblatt
 	//                               >bestehtAusRechtsverhaeltnissenZu> namensnummer   (Nebenzweig/Sonderfälle?)
 
-	$sqlg ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
-	$sqlg.="g.gml_id AS gml_g, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, ";
-	$sqlg.="b.bezeichnung AS beznam ";
-	$sqlg.="FROM alkis_beziehungen bpn ";
-	$sqlg.="JOIN ax_namensnummer n ON bpn.beziehung_von=n.gml_id ";
+	$sqlg ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, g.gml_id AS gml_g, ";
+	$sqlg.="g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, b.bezeichnung AS beznam ";
+	$sqlg.="FROM alkis_beziehungen bpn JOIN ax_namensnummer n ON bpn.beziehung_von=n.gml_id ";
 	$sqlg.="JOIN alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
 	$sqlg.="JOIN ax_buchungsblatt g ON bng.beziehung_zu=g.gml_id ";
 	$sqlg.="LEFT JOIN ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
-	$sqlg.="WHERE bpn.beziehung_zu= $1 ";
-	$sqlg.="AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
+	$sqlg.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
 	$sqlg.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung;";
 	// buchungsblatt... mal mit und mal ohne fuehrende Nullen, bringt die Sortierung durcheinander
 
@@ -190,7 +207,8 @@ if ($row = pg_fetch_array($res)) {
 			echo "\n\t<td class='gbl'>"; // Blatt
 				echo "<span class='wichtig'>".$rowg["nr"]."</span>";
 				if ($idanzeige) {
-					linkgml($gkz, $gmlg, "Grundbuchblatt");				}
+					linkgml($gkz, $gmlg, "Grundbuchblatt");
+				}
 			echo "</td>";
 
 			echo "\n\t<td class='gbl'>"; // Namensnummer
@@ -220,13 +238,15 @@ if ($row = pg_fetch_array($res)) {
 						echo "' title='Bestandsnachweis'>";
 						echo $blattart;
 					echo "\n\t\t\t<img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''></a>";
-				echo "\n\t\t</p>";			echo "\n\t</td>";
+				echo "\n\t\t</p>";
+			echo "\n\t</td>";
 
 		echo "\n</tr>";
-		// +++ >bestehtAusRechtsverhaeltnissenZu> namensnummer ??
-		//     z.B. eine Namennummer "Erbengemeinschaft" zeigt auf Namensnummern mit Eigentümern
+		// +++ >bestehtAusRechtsverhaeltnissenZu> namensnummer ?
+		// z.B. eine Namennummer "Erbengemeinschaft" zeigt auf Namensnummern mit Eigentümern
 		$i++;
 	}
+	pg_free_result($resg);
 	echo "</table>";
 	if ($i == 0) {echo "\n<p class='err'>Kein Grundbuch.</p>\n";}
 } else {
@@ -237,10 +257,9 @@ if ($row = pg_fetch_array($res)) {
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
-		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-<!-- <a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck"></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken"></a>&nbsp;
+		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download.ico" width="32" height="16" alt="Export"></a>&nbsp;
 	</div>
 </form>
 

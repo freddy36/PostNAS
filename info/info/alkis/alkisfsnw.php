@@ -17,7 +17,8 @@
 	2013-04-11 ID-Links (im Testmodus) auch an Lagebezeichnung (mit/ohne HsNr) und an Nutzungs-Abschnitt
 	2013-06-24 Unna: Bodenneuordnung, strittige Grenze
 	2013-06-27 Bodenneuordnung u. stritt.Gr. in Tabellen-Struktur, Link zur Bodenerneuerung (neues Modul)
-    2014-01-30 Korrektur Nutzungsart (z.B. Friedhof mit class=0 hatte Anzeige "unbekannt")
+	2014-01-30 Korrektur Nutzungsart (z.B. Friedhof mit class=funktion=0 hatte Anzeige "unbekannt")
+	2014-02-06 Korrektur
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -89,7 +90,7 @@ if ($gmlid == '' and $fskennz != '') {
 		// nun die Teile stellengerecht wieder zusammen setzen		
 		$fskzdb=$land.$zgemkg.$zflur.$zzaehler.$znenner.'__'; // FS-Kennz. Format Datenbank
 	}
-	// Feld flurstueckskennzeichen ist in DB indiziert  
+	// Feld flurstueckskennzeichen ist in DB indiziert
 	// Format z.B.'052647002001910013__' oder '05264700200012______'
 	$sql ="SELECT gml_id FROM ax_flurstueck WHERE flurstueckskennzeichen= $1 ;";
 
@@ -258,8 +259,7 @@ pg_free_result($res);
 // ** L a g e b e z e i c h n u n g **
 
 // Lagebezeichnung Mit Hausnummer
-//   ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
-//                  <gehoertZu<
+// ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
 $sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
@@ -290,7 +290,7 @@ while($row = pg_fetch_array($res)) {
 		echo "\n\t<td>&nbsp;</td>";
 		echo "\n\t<td class='lr'>";
 		if ($showkey) {
-			echo "<span class='key'>(".$row["lage"].")</span>&nbsp;";
+			echo "<span class='key' title='Straßenschl&uuml;ssel'>(".$row["lage"].")</span>&nbsp;";
 		}
 		echo $sname."&nbsp;".$row["hausnummer"];
 		if ($idanzeige) {linkgml($gkz, $row["gml_id"], "Lagebezeichnung mit Hausnummer");}
@@ -308,8 +308,7 @@ pg_free_result($res);
 // Verbesserung: mehrere HsNr zur gleichen Straße als Liste?
 
 // L a g e b e z e i c h n u n g   O h n e   H a u s n u m m e r  (Gewanne oder nur Strasse)
-//   ax_flurstueck  >zeigtAuf>  AX_LagebezeichnungOhneHausnummer
-//                  <gehoertZu<
+// ax_flurstueck  >zeigtAuf>  AX_LagebezeichnungOhneHausnummer
 $sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
 $sql.="JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=v.beziehung_zu ";
@@ -387,7 +386,7 @@ $the_Xfactor=$fsbuchflae / $fsgeomflae; // geom. ermittelte Fläche auf amtl. Bu
 $j=0;
 while($row = pg_fetch_array($res)) {
 	$grupp=$row["gruppe"]; // 4 Gruppen
-    $nutzid=$row["nutz_id"]; // 27 Tabellen, num. Key
+	$nutzid=$row["nutz_id"]; // 27 Tabellen, num. Key
 	$title=htmlentities($row["title"], ENT_QUOTES, "UTF-8"); // Titel der 27 Tabellen
 	$fldclass=$row["fldclass"]; // Name 1. Zusatzfeld
 	$fldinfo= $row["fldinfo"];  // Name 2. Zus.
@@ -414,10 +413,10 @@ while($row = pg_fetch_array($res)) {
 		echo "\n\t<td class='fla' title='geometrisch berechnet: ".$schnittflae."'>".$absflaebuch."</td>";
 
 		echo "\n\t<td class='lr'>";
-            if ($class == 0) {
-                if ($showkey) {echo "<span class='key'>(".$nutzid.")</span> ";}
-                echo $title; // Name der Tabelle
-            } elseif ( ($fldclass == "Funktion" OR $fldclass == "Vegetationsmerkmal") AND $label != "") { // Kurze Anzeige
+			if ($class == 0) {
+				if ($showkey) {echo "<span class='key'>(".$nutzid.")</span> ";}
+				echo $title; // Name der Tabelle
+			} elseif ( ($fldclass == "Funktion" OR $fldclass == "Vegetationsmerkmal") AND $label != "") { // Kurze Anzeige
 				if ($showkey) {echo "<span class='key' title='".$fldclass."'>(".$nutzid."-".$class.")</span> ";}
 				if ($blabla = "") {
 					echo $label;
@@ -497,9 +496,8 @@ echo "\n</tr>";
 // Hinweis auf Bodenneuordnung oder eine strittige Grenze
 //  b.name, b.artderfestlegung, 
 
-$sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, ";
-$sql_boden.="b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, b.name AS verf_name, ";
-$sql_boden.="d.bezeichnung AS stelle_bez, d.stelle AS stelle_key ";
+$sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, ";
+$sql_boden.="b.name AS verf_name, d.bezeichnung AS stelle_bez, d.stelle AS stelle_key ";
 $sql_boden.="FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert = b.artderfestlegung ";
 $sql_boden.="LEFT JOIN ax_dienststelle d ON b.stelle = d.stelle ";
 $sql_boden.="WHERE ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry) ";
@@ -613,13 +611,9 @@ echo "\n</table>\n";
 // B U C H U N G S S T E L L E N  zum FS (istGebucht)
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer as lfd, s.zaehler, s.nenner, ";
 $sql.="s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, b.bezeichner AS bart ";
-//  s.beschreibungdesumfangsderbuchung as umf,  ?
-$sql.="FROM alkis_beziehungen v "; // Bez Flurst.- Stelle.
-$sql.="JOIN ax_buchungsstelle s ON v.beziehung_zu=s.gml_id ";
+$sql.="FROM alkis_beziehungen v JOIN ax_buchungsstelle s ON v.beziehung_zu=s.gml_id ";
 $sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-$sql.="WHERE v.beziehung_von= $1 "; // id FS
-$sql.="AND v.beziehungsart= $2 ";
-$sql.="ORDER BY s.laufendenummer;";
+$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart= $2 ORDER BY s.laufendenummer;";
 
 $v = array($gmlid,'istGebucht');
 $ress = pg_prepare("", $sql);
@@ -751,10 +745,9 @@ while($rows = pg_fetch_array($ress)) {
 
 	// Buchungstelle  >an>  Buchungstelle  >istBestandteilVon>  BLATT  ->  Bezirk
 	$sql ="SELECT s.gml_id AS s_gml, s.buchungsart, s.laufendenummer as lfd, ";
-	// , s.beschreibungdesumfangsderbuchung as umf   ?
 	$sql.="s.zaehler, s.nenner, s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, ";
 	$sql.="b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
-	$sql.="z.bezeichnung, a.bezeichner AS bart ";  // stelle -> amtsgericht
+	$sql.="z.bezeichnung, a.bezeichner AS bart "; // stelle -> amtsgericht
 	$sql.="FROM alkis_beziehungen an "; // Bez. Stelle - Stelle
 	$sql.="JOIN ax_buchungsstelle s ON an.beziehung_von = s.gml_id ";
 	$sql.="JOIN alkis_beziehungen v ON s.gml_id = v.beziehung_von "; // Bez. Stelle - Blatt
@@ -762,8 +755,7 @@ while($rows = pg_fetch_array($ress)) {
 	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land = b.land AND z.bezirk = b.bezirk ";
 	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
 	$sql.="WHERE an.beziehung_zu = $1 "; // id herrschende Buchungsstelle
-	$sql.="AND an.beziehungsart = 'an' ";
-	$sql.="AND v.beziehungsart = 'istBestandteilVon' ";
+	$sql.="AND an.beziehungsart = 'an' AND v.beziehungsart = 'istBestandteilVon' ";
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 	$v = array($gmls);
 	$resan = pg_prepare("", $sql);
@@ -834,7 +826,7 @@ while($rows = pg_fetch_array($ress)) {
 		if ($blattkeyan != 1000) {
 			echo "\n<p>Blattart: ".$blattartan." (".$blattkeyan.").<br>\n"; 
 		}
-		// +++ BeschreibungDesUmfangsDerBuchung ?
+		//++ BeschreibungDesUmfangsDerBuchung?
 		if ($rowan["nrpl"] != "") {
 			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rowan["nrpl"]."</span> im Aufteilungsplan.</p>";
 		}
@@ -860,11 +852,9 @@ echo <<<END
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
-		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-<!-- <a title="Export Grundbuchdaten als CSV" href='javascript:ALKISexportGB()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp; -->
-<!-- <a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck"></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken"></a>&nbsp;
+		<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download_fs.ico" width="32" height="16" alt="Export"></a>&nbsp;
 	</div>
 </form>
 END;

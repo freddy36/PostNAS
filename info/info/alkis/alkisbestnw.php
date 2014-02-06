@@ -461,10 +461,9 @@ if ($i == 0) {
 <form action=''>
 	<div class='buttonbereich noprint'>
 	<hr>
-		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck" /></a>&nbsp;
-		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken" /></a>&nbsp;
-	 	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export" /></a>&nbsp;
-<!--	<a title="Seite schlie&szlig;en" href="javascript:window.close()"><img src="ico/close.ico" width="16" height="16" alt="Ende" /></a>	-->
+		<a title="zur&uuml;ck" href='javascript:history.back()'><img src="ico/zurueck.ico" width="16" height="16" alt="zur&uuml;ck"></a>&nbsp;
+		<a title="Drucken" href='javascript:window.print()'><img src="ico/print.ico" width="16" height="16" alt="Drucken"></a>&nbsp;
+	 	<a title="Export als CSV" href='javascript:ALKISexport()'><img src="ico/download_gb.ico" width="32" height="16" alt="Export"></a>&nbsp;
 	</div>
 </form>
 

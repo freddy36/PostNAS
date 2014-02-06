@@ -4,13 +4,15 @@
 	Functions
 
 	Version:
-	2010-12-17  Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
-	2011-11-01  *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
-	2011-11-02  Parameter debug in function eigentuemer
-	2011-11-17  Variable ($debug, $idanzeige, $showkey) von Parameter nach global. Die heißen in allen Programmteilen gleich.
-	2014-01-22	Eigentuemerart: Mehr Werte und Zugriff auf DB-Schlüssel-Tabelle 
+	2010-12-17 Astrid Emde: Prepared Statements (pg_query -> pg_prepare + pg_execute)
+	2011-11-01 *Left* Join - Fehlertoleranz bei unvollstaendigen Schluesseltabellen
+	2011-11-02 Parameter debug in function eigentuemer
+	2011-11-17 Variable ($debug, $idanzeige, $showkey) von Parameter nach global. Die heißen in allen Programmteilen gleich.
+	2014-01-22 Eigentuemerart: Mehr Werte und Zugriff auf DB-Schlüssel-Tabelle
+	2014-02-06 Korrektur Eigentümerart
 */
-function footer($gmlid, $link, $append) {
+
+function footer($gmlid, $link, $append) {
 	// Einen Seitenfuss ausgeben.
 	// Den URL-Parameter "&id=j/n" und "&showkey=j/n" in allen Kombinationen umschalten lassen.
 	// Die Parameter &gkz= und &gmlid= kommen in allen Modulen einheitlich vor
@@ -56,12 +58,14 @@
 	// Spalte 3
 	echo "\n\t<td title='Hilfe'>";
 	echo "\n\t\t<p class='nwlink'>\n\t\t\t<a target='_blank' href='".$hilfeurl."' title='Dokumentation'>Hilfe zur ALKIS-Auskunft</a>\n\t\t</p>\n\t</td>";
-	echo "\n</tr>\n</table>\n</div>\n";	return 0;
+	echo "\n</tr>\n</table>\n</div>\n";
+	return 0;
 }
 
 function linkgml($gkz, $gml, $typ)  {
 	// Einen Link zur Verfolgung der Beziehungen mit dem Modul alkisrelationen.php
-	$kurzid=substr($gml, 12); // ID in Anzeige kuerzen (4 Zeichen), der Anfang ist immer gleich	echo "\n\t\t<a target='_blank' title='ID ".$typ."' class='gmlid noprint' ";
+	$kurzid=substr($gml, 12); // ID in Anzeige kuerzen (4 Zeichen), der Anfang ist immer gleich
+	echo "\n\t\t<a target='_blank' title='ID ".$typ."' class='gmlid noprint' ";
 	echo "href='alkisrelationen.php?gkz=".$gkz."&amp;gmlid=".$gml."&amp;otyp=".$typ."'>";
 	echo "<img src='ico/Beziehung_link.ico' width='16' height='16' alt=''>".$kurzid."</a>";
 	return 0;
@@ -69,10 +73,10 @@ function linkgml($gkz, $gml, $typ)  {
 
 function kurz_namnr($lang) {
 	// Namensnummer kuerzen. Nicht benoetigte Stufen der Dezimalklassifikation abschneiden
-	$kurz=str_replace(".00","",$lang);	// leere Stufen (nur am Ende)
-	$kurz=str_replace("0000","",$kurz);	// ganz leer (am Anfang)
-	$kurz=ltrim($kurz, "0");				// fuehrende Nullen am Anfang
-	$kurz=str_replace(".0",".",$kurz);	// fuehrende Null jeder Stufe
+	$kurz=str_replace(".00","",$lang); // leere Stufen (nur am Ende)
+	$kurz=str_replace("0000","",$kurz); // ganz leer (am Anfang)
+	$kurz=ltrim($kurz, "0"); // fuehrende Nullen am Anfang
+	$kurz=str_replace(".0",".",$kurz); // fuehrende Null jeder Stufe
 	return $kurz;
 }
 
@@ -165,6 +169,7 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 
 		$j++;
 	} // Ende Flurstueck
+	pg_free_result($resf);
 	return $j;
 }
 
@@ -172,8 +177,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	// Tabelle mit Eigentuemerdaten zu einem Grundbuchblatt ausgeben
 	// Sp.1 = Namennummer, Sp. 2 = Name / Adresse, Sp. 3 = Link
 	// Parameter:
-	//		$gmlid = ID des GB-Blattes
-	//		$mitadresse = Option (true/false) ob auch die Adresszeile ausgegeben werden soll
+	//	$gmlid = ID des GB-Blattes
+	//	$mitadresse = Option (true/false) ob auch die Adresszeile ausgegeben werden soll
 	// Return = Anzahl Namensnummern
 
 	// Schleife 1: N a m e n s n u m m e r
@@ -191,11 +196,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 
 	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
 	$sqln.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
-	$sqln.="FROM ax_namensnummer n ";
-	$sqln.="JOIN alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
-	$sqln.="WHERE b.beziehung_zu= $1 "; // id blatt
-	$sqln.="AND b.beziehungsart='istBestandteilVon' ";
-	$sqln.="ORDER BY laufendenummernachdin1421;";
+	$sqln.="FROM ax_namensnummer n JOIN alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
+	$sqln.="WHERE b.beziehung_zu= $1 AND b.beziehungsart='istBestandteilVon' ORDER BY laufendenummernachdin1421;";
 
 	$v = array($gmlid);
 	$resn = pg_prepare("", $sqln);
@@ -205,7 +207,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 		echo "<p class='err'>Fehler bei Eigent&uuml;mer</p>\n";
 		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".$gmlid."'</p>";}
 	}
-	echo "\n\n<table class='eig'>";
+
+	echo "\n\n<table class='eig'>";
 	$n=0; // Z.NamNum.
 
 	while($rown = pg_fetch_array($resn)) {
@@ -224,7 +227,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				if ($rechtsg == 9999) { // sonstiges
 					echo "\n\t\t<p class='zus' title='Beschrieb der Rechtsgemeinschaft'>".htmlentities($rown["beschr"], ENT_QUOTES, "UTF-8")."</p>";
 				} else {
-					echo "\n\t\t<p class='zus' title='Art der Rechtsgemeinschaft'>".htmlentities(rechtsgemeinschaft($rown["adr"]), ENT_QUOTES, "UTF-8")."</p>";				}
+					echo "\n\t\t<p class='zus' title='Art der Rechtsgemeinschaft'>".htmlentities(rechtsgemeinschaft($rown["adr"]), ENT_QUOTES, "UTF-8")."</p>";
+				}
 			}
 			//if ($rown["anlass"] > 0 ) {echo "<p>Anlass=".$rown["anlass"]."</p>";} // TEST:
 
@@ -239,7 +243,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			// Die Relation 'Namensnummer' hat Vorgänger 'Namensnummer' gibt Auskunft darüber, 
 			// aus welchen Namensnummern die aktuelle entstanden ist.
 
-		// Schleife 2: P e r s o n  
+		// Schleife 2: P e r s o n
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
 		$sqlp ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
 		$sqlp.="FROM ax_person p JOIN alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
@@ -254,7 +258,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqlp."<br>$1=gml= '".$gmlnn."'</p>";}
 		}
 
-		$i=0; // cnt Person		while($rowp = pg_fetch_array($resp)) {
+		$i=0; // cnt Person
+		while($rowp = pg_fetch_array($resp)) {
 			$diePerson="";
 			if ($rowp["akademischergrad"] <> "") {$diePerson=$rowp["akademischergrad"]." ";}
 			$diePerson.=$rowp["nachnameoderfirma"];
@@ -269,11 +274,14 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				echo "\n<tr>\n\t<td>&nbsp;</td>\n\t<td>";
 			}
 			// Spalte 2 = Angaben
-			$eiart=eigentuemerart($rown["eigentuemerart"]);
-			echo "\n\t\t<p class='geig' title='Eigent&uuml;merart ".$eiart."'>".$diePerson."</p>\n\t</td>";
+			$eiartkey=$rown["eigentuemerart"];
+			$eiart=eigentuemerart($eiartkey);
+			echo "\n\t\t<p class='geig' title='Eigent&uuml;merart: ".$eiart."'>".$diePerson."</p>\n\t</td>";
 
-			// Spalte 3 = Link			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
+			// Spalte 3 = Link
+			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 				if ($idanzeige) {linkgml($gkz, $rowp["gml_id"], "Person"); echo "&nbsp";}
+				if ($showkey) {echo "<span class='key'>(".$eiartkey.")</span> ";}
 				echo "\n\t\t<a href='".$lnkvor."alkisnamstruk.php?gkz=".$gkz."&amp;gmlid=".$rowp[0];
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
@@ -284,21 +292,18 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			if ($mitadresse) {
 				// Schleife 3:  A d r e s s e  (OPTIONAL)
 				$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-				$sqla.="FROM ax_anschrift a ";
-				$sqla.="JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
+				$sqla.="FROM ax_anschrift a JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
 				$sqla.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat';"; // ORDER?
-
 				$gmlp=$rowp["gml_id"]; // Person
 				$v = array($gmlp);
 				$resa = pg_prepare("", $sqla);
 				$resa = pg_execute("", $v);
-
 				if (!$resa) {
 					echo "\n\t<p class='err'>Fehler bei Adressen</p>\n";
 					if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqla."<br>$1=gml= '".$gmlp."'</p>";}
 				}
-
-				$j=0;				while($rowa = pg_fetch_array($resa)) {
+				$j=0;
+				while($rowa = pg_fetch_array($resa)) {
 					$gmla=$rowa["gml_id"];
 					$plz=$rowa["plz"]; // integer
 					if($plz == 0) {
@@ -333,7 +338,10 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 					}
 					echo "</td>\n</tr>";
 					$j++;
-				}			} // End if
+				}
+				pg_free_result($resa);
+			} // End if
+
 			// 'keine Adresse' kann vorkommen, z.B. "Deutsche Telekom AG"
 			$i++; // cnt Person
 			// als eigene Tab-Zeile?
@@ -343,7 +351,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				echo "\n\t<td><p class='avh' title='Anteil'>".$rown["zaehler"]."/".$rown["nenner"]." Anteil</p></td>";
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
-		} // End Loop Person		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, dann kein Fehler
+		} // End Loop Person
+		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, dann kein Fehler
 			if ($debug > 0) {
 				echo "\n<p class='dbg'>Rechtsgemeinschaft = '".$rechtsg."'</p>";
 				if ($rechtsg != 9999) {
@@ -359,7 +368,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	if ($n == 0) {
 		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
 		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
-	}	
+	}
+	pg_free_result($resn);
 	return $n; 
 } // End Function eigentuemer
 
@@ -392,9 +402,10 @@ function rechtsgemeinschaft($key) {
 function eigentuemerart($key) {
 	// Die häufigsten Werte direkt aus den Programmcode liefern, ggf. angepasst.
 	// Für seltene Werte in der Datenbank nachschlagen.
-	// Schlüsseltabelle dazu aus GeoInfoDok ist vorhanden seit 2014-01-22.
+	// Schlüsseltabelle dazu ist vorhanden seit 2014-01-22.
 	// Hier Verwendung für Text zum Link.
 	// Für korrekte Wiedergabe der amtlichen Werte einen Join auf Tabelle verwenden statt dieser Function. 
+	global $debug;
 	switch ($key) {
 		case 1000: $wert = "Nat&uuml;rliche Person"; break; // singular fuer Link-Text
 		case 2000: $wert = "Juristische Person"; break; // singl.
@@ -414,16 +425,17 @@ function eigentuemerart($key) {
 			$res=pg_execute("", $v);
 			if ($res) {
 				$row=pg_fetch_array($res);
-				$wert==htmlentities($row["bezeichner"], ENT_QUOTES, "UTF-8");
+				$wert=htmlentities($row["bezeichner"], ENT_QUOTES, "UTF-8");
+				if ($wert == "") {$wert="** Eigent&uuml;merart '".$key."' nicht gefunden **";}
 			} else {
-				echo "\n\t<p class='err'>Fehler bei DB-Zugriff auf Schlüssel Eigentümerart.</p>\n";
-				$wert = "** Unbekannte Eigent&uuml;merart '".$key."' **";
+				echo "\n\t<p class='err'>Fehler bei DB-Zugriff auf Eigentümerart.</p>\n";
+				$wert="** Unbekannte Eigent&uuml;merart '".$key."' **";
 			}
+			pg_free_result($res);
 			break;
 	}
 	return $wert;
 }
-
 
 // Entschluesslung ax_buchungsblatt.blattart
 function blattart($key) {

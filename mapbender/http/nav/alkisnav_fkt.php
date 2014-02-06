@@ -2,6 +2,8 @@
 /* Version vom 
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
+	2013-05-15  Function verlegt
+    2014-02-06  Korrektur zeile_person
 */
 
 // function Typ "zeile_**"  = Ausgabe eines Knotens
@@ -166,9 +168,24 @@ function zeile_buchung($buchunggml, $bvnr, $blattkennz, $dienend, $aktuell) {
 	return;
 }
 
+function zeile_gemeinde ($gmdnr, $gmdname, $aktuell) {
+	// Eine Zeile zu Gemeinde ausgeben, Schlüssel und Name wird übergeben
+	global $gkz, $gemeinde, $epsg;
+	$stadt=htmlentities($gmdname, ENT_QUOTES, "UTF-8");
+	$bez=urlencode($gmdname);
+	if ($aktuell) {$cls=" aktuell";}
+	echo "\n<div class='gm".$cls."' title='Gemeinde'>";
+		echo "\n\t\t<img class='nwlink' src='ico/Gemeinde.ico' width='16' height='16' alt='Stadt'>";
+		echo " Gem. <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;gm=".$gmdnr."&amp;bez=".$bez."'>";		
+		echo  " ".$stadt."</a> (".$gmdnr.")";
+	echo "\n</div>";
+	return;
+}
+
 function zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur, $aktuell) {
 	// Zeile mit Icon (Link zum Buch-Nachweis) und Text (Link zum Positionieren)
 	global $gkz, $gemeinde, $epsg, $auskpath, $scalefs;
+
 	if ($aktuell) {$cls=" aktuell";}
 	echo "\n<div class='fs".$cls."'>";
 	echo "\n\t<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$fs_gml."\")'>";
@@ -195,14 +212,14 @@ function zeile_flurstueck ($fs_gml, $fskenn, $x, $y, $gmkg, $flur, $aktuell) {
 
 function zeile_person ($persongml, $nachname, $vorname) {
 	global $gkz, $gemeinde, $epsg, $auskpath;
-	// Zeile  P e r s o n   (oder Firma)
+	// Zeile  P e r s o n (oder Firma)
 	$nnam=htmlentities($nachname, ENT_QUOTES, "UTF-8");
 	$namlnk=urlencode($nachname);
 	$vnam=htmlentities($vorname, ENT_QUOTES, "UTF-8");
-	// Link zur Auskunft Person ++ Icon differenzieren? Firma/Person
+	// Link zur Auskunft Person ++ Icon differenzieren nach Eigentuemerart?
 
 echo "<div class='pe'>
-	<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$gml."\")'>
+	<a title='Nachweis' href='javascript:imFenster(\"".$auskpath."alkisnamstruk.php?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;gmlid=".$persongml."\")'>
 		<img class='nwlink' src='ico/Eigentuemer.ico' width='16' height='16' alt='EIG' title='Nachweis'>
 	</a> 		
 	<a title='Person' href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;person=".$persongml."&amp;name=".$namlnk."'>".$nnam.", ".$vnam."</a>
