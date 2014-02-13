@@ -30,6 +30,7 @@
 ##              Präsentationsobjekte Straßenname im Post-Processing
 ##   2013-10-24 F.J. krz: Zwischenlösung "praesentation_action.sql" wieder deaktiviert.
 ##   2014-01-31 F.J. krz: Import Eintrag erzeugen (nach Vorschlag Marvin Brandt, Unna)
+##   2014-02-13 A.Emde WhereGroup: EinfÃ¼hrung DBUSER, damit im Skript der Datenbankbenutzer angegeben werden kann
 ##
 ## ToDo: Option "-skipfailures" nach Test entfernen ?
 ##
@@ -46,16 +47,16 @@ DBUSER=postgres
 
 if [ $DBUSER == "" ]
 then
-  $PGUSER=" -U ${DBUSER} "
+  echo "kein DBUSER gesetzt"
 else
-  $PGUSER=""
+  PGUSER=" -U ${DBUSER} "
 fi
 
 if [ $DBUSER == "" ]
 then
-  OGRPGUSER=" user=${DBUSER}"
+  echo "kein DBUSER gesetzt"
 else
-  OGRPGUSER=""
+  OGRPGUSER=" user=${DBUSER}"
 fi
 
 echo "**************************************************"
@@ -108,8 +109,13 @@ fi
 # DB-Connection
   con="${PGUSER} -p 5432 -d ${DBNAME} "
   echo "Datenbank-Name . . = ${DBNAME}"
+  echo "DBUSER ${DBUSER}"
+  echo "PGUSER ${PGUSER}"
+  echo "OGRPGUSER ${OGRPGUSER}"
   echo "Ordner NAS-Daten . = ${ORDNER}"
   echo "Verarbeitungs-Modus= ${verarb}"
+  echo " "
+  echo "POSTNAS_HOME ${POSTNAS_HOME}"
   echo " "
 # noch alte delete-Eintraege in DB?
   echo "Leeren der delete-Tabelle"
@@ -172,7 +178,7 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
 
     echo "** - Optimierte Nutzungsarten neu Laden:"
     (cd $POSTNAS_HOME; psql $con -f nutzungsart_laden.sql)
-
+    echo "-----------" 
 
     echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
     (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
