@@ -42,7 +42,21 @@ POSTNAS_HOME=$(dirname $0)
 # Konverterpfad
 PATH=/opt/gdal-2.0/bin:$PATH
 EPSG=25832
+DBUSER=postgres
 
+if [ $DBUSER == "" ]
+then
+  $PGUSER=" -U ${DBUSER} "
+else
+  $PGUSER=""
+fi
+
+if [ $DBUSER == "" ]
+then
+  OGRPGUSER=" user=${DBUSER}"
+else
+  OGRPGUSER=""
+fi
 
 echo "**************************************************"
 echo "**   K o n v e r t i e r u n g     PostNAS 0.7a **"
@@ -92,7 +106,7 @@ fi
   errprot=${POSTNAS_HOME}'/log/postnas_err_'$DBNAME'.prot'
 #
 # DB-Connection
-  con="-p 5432 -d ${DBNAME} "
+  con="${PGUSER} -p 5432 -d ${DBNAME} "
   echo "Datenbank-Name . . = ${DBNAME}"
   echo "Ordner NAS-Daten . = ${ORDNER}"
   echo "Verarbeitungs-Modus= ${verarb}"
@@ -137,7 +151,7 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
       # -skipfailures    #
       # -overwrite       #
       ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures \
-         PG:"dbname=${DBNAME} host=localhost port=5432" -a_srs EPSG:$EPSG ${nasdatei} 2>> $errprot
+         PG:"dbname=${DBNAME} host=localhost port=5432 ${OGRPGUSER}" -a_srs EPSG:$EPSG ${nasdatei} 2>> $errprot
       nasresult=$?
       echo "* Resultat: " $nasresult " fuer " ${nasdatei} | tee -a $errprot
     done # Ende Zipfile
@@ -157,15 +171,15 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
     echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
 
     echo "** - Optimierte Nutzungsarten neu Laden:"
-    (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f nutzungsart_laden.sql)
+    (cd $POSTNAS_HOME; psql $con -f nutzungsart_laden.sql)
 
 
     echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
-    (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_laden.sql)
+    (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
 
 
     # echo "** - Präsentationsobjekte generieren:"
-    # (cd $POSTNAS_HOME; psql -p 5432 -d ${DBNAME} -f pp_praesentation_action.sql)
+    # (cd $POSTNAS_HOME; psql $con -f pp_praesentation_action.sql)
 
   fi
 #
