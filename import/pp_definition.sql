@@ -3,6 +3,10 @@
 
 -- Post Processing (pp_) Teil 1: Anlegen der Tabellen und Views
 
+-- ACHTUNG!
+-- Systemvariable vorher setzen für das Koordinatensystem, z.B.
+-- EPSG=25832
+
 -- Stand 
 
 --  2012-02-13 PostNAS 07, Umbenennung
@@ -64,11 +68,11 @@ SET client_encoding = 'UTF-8';
 CREATE UNIQUE INDEX pp_gemeinde_gid_ix ON pp_gemeinde (gid);
 
 -- Gesamtflaeche
-SELECT AddGeometryColumn('pp_gemeinde','the_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_gemeinde','the_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemeinde_gidx ON pp_gemeinde USING gist(the_geom);
 
 -- vereinfachte Gesamtflaeche
-SELECT AddGeometryColumn('pp_gemeinde','simple_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_gemeinde','simple_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 
 
@@ -104,11 +108,11 @@ CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 CREATE UNIQUE INDEX pp_gemarkung_gid_ix ON pp_gemarkung (gid);
 
 -- Gesamtfläche
-SELECT AddGeometryColumn('pp_gemarkung','the_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_gemarkung','the_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemarkung_gidx ON pp_gemarkung USING gist(the_geom);
 
 -- vereinfachte Gesamtfläche
-SELECT AddGeometryColumn('pp_gemarkung','simple_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_gemarkung','simple_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemarkung_sgidx ON pp_gemarkung USING gist(simple_geom);
 
 
@@ -137,11 +141,11 @@ COMMENT ON COLUMN pp_gemarkung.simple_geom   IS 'vereinfachte Geometrie für die
 CREATE UNIQUE INDEX pp_flur_gid_ix ON pp_flur (gid);
 
 -- Gesamtfläche
-SELECT AddGeometryColumn('pp_flur','the_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_flur','the_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_flur_gidx ON pp_flur USING gist(the_geom);
 
 -- vereinfachte Gesamtflaeche
-SELECT AddGeometryColumn('pp_flur','simple_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_flur','simple_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_flur_sgidx ON pp_flur USING gist(simple_geom);
 
 
@@ -204,7 +208,7 @@ CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
 -- Ersatzweise einen ForeignKey über 2 Felder?
   );
 
-SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom','25832','POINT',2);
+SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom',:alkis_epsg,'POINT',2);
 
 -- Geometrischer Index
 CREATE INDEX pp_flurstueck_nr_gidx ON pp_flurstueck_nr USING gist(the_geom);
@@ -378,7 +382,7 @@ CREATE TABLE pp_strassenname
     CONSTRAINT pp_snam_pk  PRIMARY KEY (gid)
 ) WITH (OIDS=FALSE);
 
-SELECT AddGeometryColumn('pp_strassenname','the_geom','25832','POINT',2);
+SELECT AddGeometryColumn('pp_strassenname','the_geom',:alkis_epsg,'POINT',2);
 CREATE INDEX pp_snam_gidx ON pp_strassenname USING gist(the_geom); 
 
   COMMENT ON TABLE  pp_strassenname                IS 'Post-Processing: Label der Straßennamen in der Karte. Auszug aus ap_pto.';

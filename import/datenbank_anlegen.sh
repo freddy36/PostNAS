@@ -126,7 +126,7 @@ psql $con -U ${DBUSER} -f nutzungsart_metadaten.sql >$MANDANT_HOME/log/meta.log
 
 echo " "
 echo "** Anlegen Post Processing Tabellen (pp_definition.sql)"
-psql $con -U ${DBUSER} -f pp_definition.sql >$MANDANT_HOME/log/pp_definition.log
+psql $con -U ${DBUSER} -v alkis_epsg=$EPSG -f pp_definition.sql >$MANDANT_HOME/log/pp_definition.log
 
 echo " "
 echo "** Anlegen Post Processing Views (pp_praesentation_sichten.sql)"
