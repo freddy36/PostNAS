@@ -26,5 +26,5 @@ $mapbender="/data/mapwww/http/php/mb_validateSession.php";
 $hilfeurl = 'http://map.krz.de/mapwww/?Themen:ALKIS';
 
 // Entwicklungsumgebung
-$debug=3; // 0=Produktion, 1=mit Fehlermeldungen, 2=mit Informationen, 3=mit SQL
+$debug=0; // 0=Produktion, 1=mit Fehlermeldungen, 2=mit Informationen, 3=mit SQL
 ?>

@@ -10,12 +10,13 @@
 	Dies ist eine Variante von alkisausk.php welches als vollstaendige Seite aufgerufen wird.
 
 	Version:
-	2011-11-17  Link FS-Historie, Parameter der Functions geändert
-	2011-11-30  import_request_variables, $dbvers PostNAS 0.5 entfernt
-	2011-12-14  "window.open(..,width=680)"
-	2013-04-08  deprecated "import_request_variables" ersetzt
-	2013-05-06	Fehlende Leerstelle
-	2014-01-28	Link zu alkisstrasse.php
+	2011-11-17 Link FS-Historie, Parameter der Functions geändert
+	2011-11-30 import_request_variables, $dbvers PostNAS 0.5 entfernt
+	2011-12-14 "window.open(..,width=680)"
+	2013-04-08 deprecated "import_request_variables" ersetzt
+	2013-05-06 Fehlende Leerstelle
+	2014-01-28 Link zu alkisstrasse.php
+	2014-02-06 pg_free_result
 */
 session_start();
 $cntget = extract($_GET);
@@ -176,12 +177,12 @@ if ($j == 0) { // keine HsNr gefunden
 		echo "<img src='ico/".$ico."' width='16' height='16' alt='OHNE'></a>&nbsp;";
 		echo "\n\t\t</p>\n\t</td>\n</tr>";
 	}
+	pg_free_result($res);
 }
 echo "\n</table>\n";
 
 // Flurstuecksflaeche
 echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
-pg_free_result($res);
 
 // *** G R U N D B U C H ***
 echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundbuch</h2>";

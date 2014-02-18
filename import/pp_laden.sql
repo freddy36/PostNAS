@@ -16,7 +16,7 @@
 --  2013-07-10 F.J. Bereinigen der alkis_beziehungen auskommentiert, wird jetzt im Trigger gelöst.
 --  2012-10-24 Neue Tabelle für die Präsentation von Straßennamen und -Klassifikationen
 --  2014-02-05 Bereits auskommentierte Aktionen gelöscht für die Beseitigung von Rdundanzen aus fehlerhaften Triggern
-
+--  2014-02-12 Zusammen fassen Flur->Gemarkung->Gemeinde nicht aus simple_geom weil dadurch Löscher entstehen können.
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -51,7 +51,7 @@ SET client_encoding = 'UTF-8';
 -- ersetzt den View "s_flurstueck_nr" für WMS-Layer "ag_t_flurstueck"
 
 --DELETE FROM pp_flurstueck_nr;
-  TRUNCATE pp_flurstueck_nr;    -- effektiver als DELETE
+  TRUNCATE pp_flurstueck_nr;  -- effektiver als DELETE
 
   INSERT INTO pp_flurstueck_nr
           ( fsgml, fsnum, the_geom )
@@ -182,25 +182,15 @@ UPDATE pp_gemeinde a
 
 -- Ausführungszeit: 1 mittlere Stadt mit ca. 14.000 Flurstücken > 100 Sek
 
--- ToDo:
---   Nur "geprüfte Flurstücke" verwenden?  Filter?
-
---   070: TopologyException: found non-noded intersection between   ...
-
-
 DELETE FROM pp_flur;
 
 INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
    SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
            count(gml_id) as anz_fs,
-           st_multi(st_union(st_buffer(f.wkb_geometry,0.05))) AS the_geom -- 5 cm Zugabe um Zwischenräume zu vermeiden
+           st_multi(st_union(st_buffer(f.wkb_geometry,0.05))) AS the_geom -- Zugabe um Zwischenräume zu vermeiden
      FROM  ax_flurstueck f
      WHERE f.endet IS NULL
   GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer, f.flurnummer;
-
--- Geometrie vereinfachen, auf 1 Meter glätten
-UPDATE pp_flur SET simple_geom = st_simplify(the_geom, 1.0);
-
 
 -- Fluren zu Gemarkungen zusammen fassen
 -- -------------------------------------
@@ -209,14 +199,13 @@ UPDATE pp_flur SET simple_geom = st_simplify(the_geom, 1.0);
 -- bufferOriginalPrecision failed (TopologyException: unable to assign hole to a shell), trying with reduced precision
 -- UPDATE: ../../source/headers/geos/noding/SegmentString.h:175: void geos::noding::SegmentString::testInvariant() const: Zusicherung »pts->size() > 1« nicht erfüllt.
 
-
--- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
+-- Flächen vereinigen
 UPDATE pp_gemarkung a
   SET the_geom = 
-   ( SELECT st_multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal 10 cm Zugabe
-     FROM    pp_flur b
-     WHERE a.land      = b.land 
-       AND a.gemarkung = b.gemarkung
+   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.1))) AS the_geom -- Puffer/Zugabe um Löcher zu vermeiden
+       FROM pp_flur b
+      WHERE a.land      = b.land 
+        AND a.gemarkung = b.gemarkung
    );
 
 -- Fluren zaehlen
@@ -228,9 +217,6 @@ UPDATE pp_gemarkung a
        AND a.gemarkung = b.gemarkung
    ); -- Gemarkungsnummer ist je BundesLand eindeutig
 
--- Geometrie vereinfachen (Wirkung siehe pp_gemarkung_analyse)
-UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 8.0);
-
 
 -- Gemarkungen zu Gemeinden zusammen fassen
 -- ----------------------------------------
@@ -238,7 +224,7 @@ UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 8.0);
 -- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
 UPDATE pp_gemeinde a
   SET the_geom = 
-   ( SELECT st_multi(st_union(st_buffer(b.simple_geom,0.1))) AS the_geom -- noch mal Zugabe 10 cm
+   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.1))) AS the_geom -- noch mal Zugabe
      FROM    pp_gemarkung b
      WHERE a.land     = b.land 
        AND a.gemeinde = b.gemeinde
@@ -253,8 +239,16 @@ UPDATE pp_gemeinde a
        AND a.gemeinde = b.gemeinde
    );
 
--- Geometrie vereinfachen (Wirkung siehe pp_gemeinde_analyse)
-UPDATE pp_gemeinde SET simple_geom = st_simplify(the_geom, 20.0);
+
+-- Geometrie glätten / vereinfachen
+-- Diese "simplen" Geometrien sollen nur für die Darstellung einer Übersicht verwendet werden.
+-- Ablage der simplen Geometrie in einem alternativen Geometriefeld im gleichen Datensatz.
+
+UPDATE pp_flur      SET simple_geom = st_simplify(the_geom, 0.4); -- Flur 
+
+UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 2.0); -- Gemarkung  (Wirkung siehe pp_gemarkung_analyse)
+
+UPDATE pp_gemeinde  SET simple_geom = st_simplify(the_geom, 5.0); -- Gemeinde (Wirkung siehe pp_gemeinde_analyse)
 
 
 -- =======================================================
