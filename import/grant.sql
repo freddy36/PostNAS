@@ -373,5 +373,6 @@ GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
 
   GRANT SELECT ON TABLE doppelverbindung                   TO mb27;
   GRANT SELECT ON TABLE exp_csv                            TO mb27;
+  GRANT SELECT ON TABLE exp_csv_str                        TO mb27;
 
 -- END --
