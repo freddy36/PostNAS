@@ -15,8 +15,9 @@
 --  2013-02-21 F.J. doppelte Buchungen zum Flurstück aus alkis_beziehungen beseitigen, die nach NAS replace auftreten
 --  2013-07-10 F.J. Bereinigen der alkis_beziehungen auskommentiert, wird jetzt im Trigger gelöst.
 --  2012-10-24 Neue Tabelle für die Präsentation von Straßennamen und -Klassifikationen
---  2014-02-05 Bereits auskommentierte Aktionen gelöscht für die Beseitigung von Rdundanzen aus fehlerhaften Triggern
+--  2014-02-05 Bereits auskommentierte Aktionen gelöscht für die Beseitigung von Redundanzen aus fehlerhaften Triggern
 --  2014-02-12 Zusammen fassen Flur->Gemarkung->Gemeinde nicht aus simple_geom weil dadurch Löscher entstehen können.
+--  2014-08-25 Straßennamen aufteilen in _P und L
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -83,29 +84,62 @@ SET client_encoding = 'UTF-8';
 -- Der View übernimmt die Auswahl des passenden "advstandardmodell" und rechnet den Winkel passend um.
 -- In der Tabelle werden dann die leer gebliebenen Label aus dem Katalog noch ergänzt. 
 
--- Tabelle aus View befüllen
-TRUNCATE pp_strassenname;
-INSERT INTO pp_strassenname (schriftinhalt, hor, ver, art, winkel, the_geom)
-       SELECT schriftinhalt, hor, ver, art, winkel, wkb_geometry
-       FROM ap_pto_stra; -- View sucht das passende advstandardmodell
+-- Alles auf Anfang
+TRUNCATE pp_strassenname_p;
+
+-- Zunächst die Sonderschreibweisen (Abkürzungen) und die Standardschreibweisen, 
+-- die von der Migration redundant abgelegt wurden.
+INSERT INTO pp_strassenname_p (gml_id, schriftinhalt, hor, ver, art, winkel, the_geom)
+       SELECT gml_id, schriftinhalt, hor, ver, art, winkel, wkb_geometry
+       FROM ap_pto_stra; -- Der View sucht das passende advstandardmodell
 
 -- Schriftinhalt ergänzen
---DATE ap_pto           p  -- Präsentationsobjekte Punktförmig
-UPDATE pp_strassenname  p
-   SET schriftinhalt =     -- Hier fehlt der Label
+-- Das sind die Standardschreibweisen aus dem Katalog, die nicht mehr redundant in ap_pto sind.
+UPDATE pp_strassenname_p  p
+   SET schriftinhalt =     -- Hier ist der Label noch leer
    -- Subquery "Gib mir den Straßennamen":
-   ( SELECT k.bezeichnung                       -- Straßenname ..
-       FROM ax_lagebezeichnungkatalogeintrag k  --  .. aus Katalog
-       JOIN ax_lagebezeichnungohnehausnummer l  -- verwendet als Lage o.H.
-         ON (k.land=l.land AND k.regierungsbezirk=l.regierungsbezirk 
-             AND k.kreis=l.kreis AND k.gemeinde=l.gemeinde AND k.lage=l.lage )
-       JOIN alkis_beziehungen x ON l.gml_id = x.beziehung_zu  -- Relation zum Präsentationsobjekt
-      WHERE p.gml_id = x.beziehung_von
-        AND x.beziehungsart = 'dientZurDarstellungVon'
-      -- LIMIT 1 -- war in einem Fall notwendig, wo 2mal der gleiche Text zugeordnet war, Ursache?
-   )
+   ( SELECT k.bezeichnung                         -- Straßenname ..
+       FROM ax_lagebezeichnungkatalogeintrag k    --  .. aus Katalog
+       JOIN ax_lagebezeichnungohnehausnummer l    -- verwendet als Lage o.H.
+         ON (k.land=l.land AND k.regierungsbezirk=l.regierungsbezirk AND k.kreis=l.kreis AND k.gemeinde=l.gemeinde AND k.lage=l.lage )
+      WHERE p.gml_id = l.gml_id                   -- die gml_id wurde aus View importiert
+    )
  WHERE     p.schriftinhalt IS NULL
    AND NOT p.the_geom      IS NULL;
+
+-- Die immer noch leeren Texte sind nun sinnlos.
+-- Die finden sich ggf. in der Variante "_l" mit Liniengeometrie.
+DELETE FROM pp_strassenname_p WHERE schriftinhalt IS NULL;
+
+-- Nun das Gleiche noch einmal für Linien-Geometrie
+
+-- Auf Anfang
+TRUNCATE pp_strassenname_l;
+
+-- Zunächst die Sonderschreibweisen (Abkürzungen) und die Standardschreibweisen, 
+-- die von der Migration redundant abgelegt wurden.
+INSERT INTO pp_strassenname_l (gml_id, schriftinhalt, hor, ver, art, the_geom)
+       SELECT gml_id, schriftinhalt, hor, ver, art, wkb_geometry
+       FROM ap_lto_stra; -- Der View sucht das passende advstandardmodell
+
+-- Schriftinhalt ergänzen (korrigiert 2014-08-25)
+-- Das sind die Standardschreibweisen aus dem Katalog, die nicht mehr redundant in ap_pto sind.
+-- Der Satz mit der passenen gml_id (Lage o.H.) ist aus dem View bereits importiert.
+-- Jetzt noch den dazu passenen Schriftinhalt aus dem Katalog holen.
+UPDATE pp_strassenname_l  p
+   SET schriftinhalt =     -- Hier ist der Label noch leer
+   -- Subquery "Gib mir den Straßennamen":
+   ( SELECT k.bezeichnung                         -- Straßenname ..
+       FROM ax_lagebezeichnungkatalogeintrag k    --  .. aus Katalog
+       JOIN ax_lagebezeichnungohnehausnummer l    -- verwendet als Lage o.H.
+         ON (k.land=l.land AND k.regierungsbezirk=l.regierungsbezirk AND k.kreis=l.kreis AND k.gemeinde=l.gemeinde AND k.lage=l.lage )
+      WHERE p.gml_id = l.gml_id                   -- die gml_id wurde aus View importiert
+    )
+ WHERE     p.schriftinhalt IS NULL
+   AND NOT p.the_geom      IS NULL;
+
+-- Die immer noch leeren Texte sind sinnlos.
+DELETE FROM pp_strassenname_l WHERE schriftinhalt IS NULL;
 
 
 -- ========================================================

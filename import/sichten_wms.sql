@@ -21,7 +21,8 @@
 --             Diese Datei aufgeteilt in "sichten.sql" und "sichten_wms.sql"
 --  2013-04-22 art="PNR" (Pseudonummer)
 --  2013-10-24 View ap_pto_stra wird ersetzt durch die Tabellen "pp_strassenname" und "pp_strassenklas", die im postProcessing gefüllt werden.
-
+--  2014-02-24 Kein Filter auf advstandardmodell bei Flurstücks-Zuordnungspfeil
+--  2014-08-25 Straßennamen aufteilen in _P und L
 
 -- WMS-Layer "ag_t_flurstueck"
 -- ---------------------------
@@ -206,6 +207,7 @@ COMMENT ON VIEW s_zugehoerigkeitshaken_flurstueck
 
 -- Layer "s_zuordungspfeil_flurstueck" (Signaturnummer 2004)
 -- -----------------------------------
+-- geä.: 2014-02-24: Kein Filter auf advstandardmodell
 CREATE OR REPLACE VIEW s_zuordungspfeil_flurstueck 
 AS 
  SELECT l.ogc_fid, 
@@ -217,14 +219,14 @@ AS
      ON v.beziehung_zu = f.gml_id
   WHERE l.art = 'Pfeil'
     AND v.beziehungsart = 'dientZurDarstellungVon'
-    AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
+  --AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
     AND f.endet IS NULL
     AND l.endet IS NULL;
 -- Die OBK-Alternative "sk2004_zuordnungspfeil" wird NICHT verwendet. Siehe dort.
 COMMENT ON VIEW s_zuordungspfeil_flurstueck 
   IS 'Sicht für Kartendarstellung: Zuordnungspfeil zur Flurstücksnummer, Liniengeometrie.';
 
-
+-- geä.: 2014-02-24: Kein Filter auf advstandardmodell
 CREATE OR REPLACE VIEW s_zuordungspfeilspitze_flurstueck 
 AS 
  SELECT l.ogc_fid, 
@@ -238,7 +240,7 @@ AS
      ON v.beziehung_zu = f.gml_id
   WHERE l.art = 'Pfeil'
     AND v.beziehungsart = 'dientZurDarstellungVon'
-    AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
+  --AND ('DKKM1000' ~~ ANY (l.advstandardmodell))
     AND f.endet IS NULL
     AND l.endet IS NULL;
 -- Die OBK-Alternativen "sk2004_zuordnungspfeil_spitze" wird NICHT verwendet. Siehe dort.
@@ -295,8 +297,7 @@ COMMENT ON VIEW s_zuordungspfeilspitze_flurstueck IS 'Sicht für Kartendarstellu
 CREATE OR REPLACE VIEW ap_pto_stra 
 AS 
   SELECT p.ogc_fid,
-	  -- p.advstandardmodell       AS modell,    -- TEST
-      -- l.gml_id, l.unverschluesselt, l.lage AS schluessel, -- zur Lage  TEST
+         l.gml_id,                               -- wird im PP zum Nachladen aus Katalog gebraucht
          p.schriftinhalt,                        -- WMS: LABELITEM
          p.art,                                  -- WMS: CLASSITEM
          p.horizontaleausrichtung  AS hor,       -- Verfeinern der Text-Position ..
@@ -308,15 +309,16 @@ AS
       ON p.gml_id = v.beziehung_von
     JOIN ax_lagebezeichnungohnehausnummer l
       ON v.beziehung_zu = l.gml_id
-   WHERE NOT p.schriftinhalt IS NULL 
-     AND  p.endet IS NULL                            -- nichts historisches
+   WHERE  p.endet IS NULL                            -- nichts historisches
      AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- Diese Werte als CLASSES in LAYER behandeln. 
      AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
-     AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
+     AND (   'DKKM1000' = ANY (p.advstandardmodell)  -- "Lika 1000" bevorzugen
+          OR 'DLKM'     = ANY (p.advstandardmodell)   
+     -- Leopoldshöhe, Heinestraße: 'DLKM'
            -- Ersatzweise auch "keine Angabe", aber nur wenn es keinen besseren Text zur Lage gibt
            OR (p.advstandardmodell IS NULL
                AND (SELECT s.ogc_fid                -- irgend ein Feld
-					  FROM ap_pto s                 -- eines anderen Textes (suchen)
+                      FROM ap_pto s                 -- eines anderen Textes (suchen)
                       JOIN alkis_beziehungen vs     -- zur gleichen Lage o.HsNr
                         ON s.gml_id = vs.beziehung_von
                       JOIN ax_lagebezeichnungohnehausnummer ls
@@ -325,16 +327,70 @@ AS
                        AND vs.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
                        AND NOT s.advstandardmodell IS NULL 
                      LIMIT 1  -- einer reicht als Beweis
-					) IS NULL 
+                   ) IS NULL 
               ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
          )
 ;
-COMMENT ON VIEW ap_pto_stra 
-  IS 'Sicht für Kartendarstellung: Beschriftung aus ap_pto für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung. Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe. Siehe auch pp_strassenname und pp_strassenklas';
 
--- 2013-10-24: Daten aus dem View "ap_pto_stra" werden im PostProcessing gespeichert in den Tabellen "pp_strassenname" und "pp_strassenklas".
+COMMENT ON VIEW ap_pto_stra 
+  IS 'Sicht für Kartendarstellung: Beschriftung aus "ap_pto" für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung.
+ Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe. Dient im Script pp_laden.sql zum ersten Füllen der Tabelle "pp_strassenname_p".';
+
+
+-- Daten aus dem View "ap_pto_stra" werden im PostProcessing gespeichert in der Tabelle "pp_strassenname_p".
 -- Der View übernimmt die Auswahl des passenden advstandardmodell und rechnet den Winkel passend um,
 -- In der Tabelle werden dann die leer gebliebenen Label aus dem Katalog noch ergänzt.
+
+DROP VIEW ap_lto_stra;
+
+CREATE OR REPLACE VIEW ap_lto_stra 
+AS 
+  SELECT p.ogc_fid,
+         l.gml_id,                               -- wird im PP zum Nachladen aus Katalog gebraucht
+         p.schriftinhalt,                        -- WMS: LABELITEM
+         p.art,                                  -- WMS: CLASSITEM
+         p.horizontaleausrichtung  AS hor,       -- Verfeinern der Text-Position ..
+         p.vertikaleausrichtung    AS ver,       --  .. durch Klassifizierung hor/ver
+         p.wkb_geometry
+    FROM ap_lto p
+    JOIN alkis_beziehungen v   -- Relation zur Lagebezeichnung o. HsNr.
+      ON p.gml_id = v.beziehung_von
+    JOIN ax_lagebezeichnungohnehausnummer l
+      ON v.beziehung_zu = l.gml_id
+   WHERE  p.endet IS NULL                            -- nichts historisches
+     AND  p.art   IN ('Strasse','Weg','Platz','BezKlassifizierungStrasse') -- Diese Werte als CLASSES in LAYER behandeln. 
+     AND  v.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+
+--   AND (   ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
+--        OR ('DLKM'     = ANY (p.advstandardmodell)  ) 
+
+     -- ++ Muss als Array angelegt sein!!
+     AND ( NOT p.advstandardmodell  IS NULL          -- ++ Zwischenlösung bis DB mit neuem Schema (2014-08-22) angelegt und geladen wurde ++
+
+           -- Ersatzweise auch "keine Angabe", aber nur wenn es keinen besseren Text zur Lage gibt
+           OR (p.advstandardmodell IS NULL
+               AND (SELECT s.ogc_fid                -- irgend ein Feld
+                      FROM ap_lto s                 -- eines anderen Textes (suchen)
+                      JOIN alkis_beziehungen vs     -- zur gleichen Lage o.HsNr
+                        ON s.gml_id = vs.beziehung_von
+                      JOIN ax_lagebezeichnungohnehausnummer ls
+                        ON vs.beziehung_zu = ls.gml_id
+                     WHERE ls.gml_id = l.gml_id
+                       AND vs.beziehungsart = 'dientZurDarstellungVon' -- kann, muss aber nicht
+                       AND NOT s.advstandardmodell IS NULL 
+                     LIMIT 1  -- einer reicht als Beweis
+                   ) IS NULL 
+              ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
+         )
+;
+COMMENT ON VIEW ap_lto_stra 
+  IS 'Sicht für Kartendarstellung: Beschriftung aus "ap_lto" für Lagebezeichnung mit Art "Straße", "Weg", "Platz" oder Klassifizierung.
+ Vorzugsweise mit advstandardmodell="DKKM1000", ersatzweise ohne Angabe. Dient im Script pp_laden.sql zum ersten Füllen der Tabelle "pp_strassenname_l".';
+
+-- 2014-08-22: Daten aus dem View "ap_lto_stra" werden im PostProcessing gespeichert in den Tabellen "pp_strassenname_l".
+-- Der View übernimmt die Auswahl des passenden advstandardmodell.
+-- In der Tabelle werden dann die leer gebliebenen Label aus dem Katalog noch ergänzt.
+
 
 -- Layer NAME "ap_pto_nam" GROUP "praesentation"
 -- -------------------------------------------------------

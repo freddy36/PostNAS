@@ -17,6 +17,7 @@
 --  2013-04-19  Neues zum Thema "Bodenschätzung", Views entfallen
 --  2013-10-24  Table "pp_strassenname" ersetzt View "ap_pto_stra" im WMS (ms6)
 --  2014-01-22  Neue Views für CSV-Export, neue Schlüsseltabelle "ax_namensnummer_eigentuemerart"
+--  2014-08-25  Straßennamen aufteilen in _P und L
 
 
 -- Tabellen
@@ -269,7 +270,8 @@
   GRANT SELECT ON TABLE  pp_flur                           TO ms6;
   GRANT SELECT ON TABLE  pp_flur                           TO mb27;
   GRANT SELECT ON TABLE  pp_flurstueck_nr                  TO ms6;
-  GRANT SELECT ON TABLE  pp_strassenname                   TO ms6;
+  GRANT SELECT ON TABLE  pp_strassenname_p                 TO ms6;
+  GRANT SELECT ON TABLE  pp_strassenname_l                 TO ms6;
   GRANT SELECT ON TABLE  gemeinde_person                   TO ms6;
   GRANT SELECT ON TABLE  gemeinde_person                   TO mb27;
 
@@ -373,6 +375,5 @@ GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
 
   GRANT SELECT ON TABLE doppelverbindung                   TO mb27;
   GRANT SELECT ON TABLE exp_csv                            TO mb27;
-  GRANT SELECT ON TABLE exp_csv_str                        TO mb27;
 
 -- END --

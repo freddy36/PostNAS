@@ -1,10 +1,6 @@
 # WMS: ALKIS PostNAS Muster mit Platzhalter *gkz* für Mandant - Druckversion zur Entwickler-Version
-# 2013-06-19 F.J. krz  Layer "ax_untergeordnetesgewaesser_polygon"/"*_line" nach Geometrietyp filtern nicht nach funktion
-# 2013-10-16 F.J. krz  FS-Nr dunkler, besser sichtbar auf SW-Drucker.
-# 2013-10-24 F.J. krz  Präsentation der Straßennamen aus der Tabelle "pp_strassenname" statt aus dem View "ap_pto_stra".
-#                      Die Tabelle wird im PostProcessing redundant befüllt um schneller darstellen zu können.
-# 2014-01-08 F.J. krz  alle Arten von "sonstige Bauwerke" anzeigen (z.B. Carports), auch Linien (neuer Layer)
-#                      In einer _4-Version Kein wms_abstract, kein DUMP TRUE und kein gml_include_items 
+# Änderungen: siehe Bildschirm-Version, letzte:
+# 2014-08-25 F.J. krz  Straßennamen als P- und L-Variante, hinter "ap_pto_stra" neuer Layer "ap_lto_stra"
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -14,21 +10,13 @@ MAP
 	SYMBOLSET "symbols/symbols_alkis.sym"
 	FONTSET "fonts/fonts_alkis.fnt"	
 	UNITS METERS
-	# Nur fuer Test
-	#CONFIG "MS_ERRORFILE" "/opt/gdi/log/umn.log"
-	#DEBUG 3
 	WEB
 		METADATA
 			wms_title "ALKIS_"
-			#ows_abstract "ALKIS - Konverter PostNAS Version 0.7, Mapfile Entwicklungs-Version vom Januar 2014"
 			wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 			wms_encoding "UTF-8"
 			wms_onlineresource "http://ows.krz.de/cgi-bin/mapserv6?map=/opt/gdi/alkis07/alkis07*gkz*a_4.map"
-			#wms_feature_info_mime_type "text/html"
 			ows_schema_location ".."
-			#ows_keywordlist "ALKIS,Flurstück,NAS"
-			#ows_fees "none"
-			#ows_accessconstraints "für den Dienstgebrauch"
 			wms_enable_request "getmap"
 			wms_box_extended "true"
 			#include "meta_contact.map"
@@ -51,13 +39,12 @@ LAYER
 	NAME "nutzung_alle"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT gml_id, nutz_id, class, wkb_geometry FROM nutzung) as foo using unique gml_id using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "alle Nutzungsarten"
-		#wms_abstract "Zusammenfassung aller Nutzungsarten-Flächen"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -339,15 +326,13 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wohnbauflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Wohnbaufläche"
-		#wms_abstract "'Wohnbaufläche' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freiflächen (z.B. Vorgärten, Ziergärten, Zufahrten, Stellplätze und Hofraumflächen), die ausschließlich oder vorwiegend dem Wohnen dient."
 		wms_group_title "Nutzung " # nur im ersten Layer der Gruppe
-		#wms_group_abstract "ALKIS tatsächliche Nutzung (Siedlung, Verkehr, Gewässer, Vegetation)"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -367,13 +352,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_industrieundgewerbeflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Industrie- und Gewerbefläche"
-		#wms_abstract "'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -395,13 +379,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_halde) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Halde"
-		#wms_abstract "Halde"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -421,13 +404,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_bergbaubetrieb) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bergbaubetrieb"
-		#wms_abstract "'Bergbaubetrieb' ist eine Fläche, die für die Förderung des Abbaugutes unter Tage genutzt wird."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -446,7 +428,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_tagebaugrubesteinbruch) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -472,15 +454,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechegemischternutzung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Fläche gemischter Nutzung"
-		#wms_abstract "'Fläche gemischter Nutzung' ist eine bebaute Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche (Hofraumfläche, Hausgarten), auf der keine Art
-#der baulichen Nutzung vorherrscht. Solche Flächen sind insbesondere ländlich-dörflich geprägte Flächen mit land- und forstwirtschaftlichen Betrieben, Wohngebäuden u.a.
-#sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -500,13 +479,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechebesondererfunktionalerpraegung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Fläche besonderer funktionaler Prägung"
-		#wms_abstract "'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -526,13 +504,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_sportfreizeitunderholungsflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sport-, Freizeit- und Erholungsfläche"
-		#wms_abstract "'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -553,13 +530,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_friedhof) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Friedhof"
-		#wms_abstract "Friedhof"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -581,13 +557,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_strassenverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Straßenverkehr"
-		#wms_abstract "'Straßenverkehr' umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -640,13 +615,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_weg) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Weg"
-		#wms_abstract "Weg"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -666,13 +640,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_platz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Platz"
-		#wms_abstract " 'Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen)."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -700,13 +673,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_bahnverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bahnverkehr"
-		#wms_abstract "Bahnverkehr"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -727,13 +699,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flugverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Flugverkehr"
-		#wms_abstract "Flugverkehr"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -754,7 +725,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_schiffsverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -781,15 +752,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, vegetationsmerkmal, wkb_geometry FROM ax_landwirtschaft) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Landwirtschaft"
-		#wms_abstract "'Landwirtschaft' ist eine Fläche für den Anbau von Feldfrüchten sowie eine Fläche,
-#die beweidet und gemäht werden kann, einschließlich der mit besonderen Pflanzen angebauten Fläche. 
-#Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als 'Landwirtschaft' bzw. 'Ackerland' zu erfassen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -826,13 +794,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wald) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Wald"
-		#wms_abstract "'Wald' ist eine Fläche, die mit Forstpflanzen (Waldbäume und Waldsträucher) bestockt ist."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -851,13 +818,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_gehoelz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gehölz"
-		#wms_abstract "Gehölz"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -876,13 +842,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_heide) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Heide"
-		#wms_abstract "Heide"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -901,13 +866,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_moor) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Moor"
-		#wms_abstract "Moor ist eine unkultivierte Fläche, deren obere Schicht aus vertorften oder zersetzten Pflanzenresten besteht. Torfstich bzw. Torfabbaufläche wird der Objektart 41005 'Tagebau, Grube, Steinbruch' mit AGT 'Torf' zugeordnet."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -926,13 +890,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_sumpf) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sumpf"
-		#wms_abstract "Sumpf"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -952,13 +915,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_unlandvegetationsloseflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Unland"
-		#wms_abstract "Unland, vegetationslose Fläche"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -978,13 +940,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_vegetationsmerkmal) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Vegetationsmerkmal"
-		#wms_abstract "'Vegetationsmerkmal' beschreibt den zusätzlichen Bewuchs oder besonderen Zustand einer Grundfläche."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1004,13 +965,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_fliessgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Fließgewässer"
-		#wms_abstract "Fließgewässer"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1030,13 +990,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_hafenbecken) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Hafenbecken"
-		#wms_abstract "Hafenbecken' ist ein natürlicher oder künstlich angelegter oder abgetrennter Teil eines Gewässers, in dem Schiffe be- und entladen werden."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1056,13 +1015,12 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_stehendesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "stehendes Gewässer"
-		#wms_abstract "stehendes Gewässer"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1084,13 +1042,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser WHERE st_geometrytype(wkb_geometry) = 'ST_Polygon') as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Untergeordnetes Gewässer (Flächen)"
-		#wms_abstract "UntergeordnetesGewaesser' ist ein stehendes oder fließendes Gewässer mit untergeordneter Bedeutung."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1135,13 +1092,12 @@ LAYER
 	GROUP "ax_nutzungen"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser WHERE st_geometrytype(wkb_geometry) = 'ST_LineString') as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Untergeordnetes Gewässer (Line)"
-		#wms_abstract "UntergeordnetesGewaesser' ist ein stehendes oder fließendes Gewässer mit untergeordneter Bedeutung."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1184,15 +1140,13 @@ LAYER
 	GROUP "pp_gebiete"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_title "Flur"
-		#wms_abstract "Katasterbezirk Flur, Fläche durch Zusammenfassen der Flurstücke."
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_group_title "Gebiete"
-		#wms_group_abstract "Zusammenfassung der Flurstücke mit gleichen Schlüssel: Fluren, Gemarkungen und Gemeinden. vereinfachte Geometrie. Nur für Übersicht im kleinen Maßstab."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1225,13 +1179,12 @@ LAYER
 	GROUP "pp_gebiete"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemarkungsname, simple_geom FROM pp_gemarkung) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gemarkung"
-		#wms_abstract "Katasterbezirk Gemarkung (vereinfachte Geometrie). Fläche durch Zusammenfassen der Fluren."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1264,13 +1217,12 @@ LAYER
 	GROUP "pp_gebiete"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gemeinde"
-		#wms_abstract "Gemeindefläche (vereinfachte Geometrie). Fläche durch Zusammenfassen der Gemarkungen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1306,15 +1258,13 @@ LAYER
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gebäude (Fläche)"
-		#wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient."
 		wms_group_title "Gebäude"
-		#wms_group_abstract "ALKIS Gebäude (Fläche)"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1653,13 +1603,12 @@ LAYER
 	REQUIRES "![ax_gebaeude_fl]" # ent oder weder
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gebäude (Umring)"
-		#wms_abstract "'Gebäude' ist ein dauerhaft errichtetes Bauwerk, dessen Nachweis wegen  seiner Bedeutung als Liegenschaft erforderlich ist sowie dem Zweck der Basisinformation des Liegenschaftskatasters dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1778,13 +1727,12 @@ LAYER
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM gebaeude_txt) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Funktion und Name)"
-		#wms_abstract "Funktion zum 'Gebäude'. In amtlicher Karte teilweise als Symbole dargestellt, hier ersatzweise als Text."
 	END
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 2000
@@ -1828,13 +1776,12 @@ LAYER
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauart, lagezurerdoberflaeche, wkb_geometry FROM ax_bauteil) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bauteil"
-		#wms_abstract "'Bauteil' ist ein charakteristisches Merkmal eines Gebäudes mit gegenüber dem jeweiligen Objekt 'Gebäude' abweichenden bzw. besonderen Eigenschaften."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1887,13 +1834,12 @@ LAYER
 	GROUP "gebaeude"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, beschaffenheit, wkb_geometry FROM ax_besonderegebaeudelinie) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Besondere Gebäudelinie"
-		#wms_abstract "'Besondere Gebäudelinie' ist der Teil der Geometrie des Objekts 'Gebäude' oder des Objekts 'Bauteil', der besondere Eigenschaften besitzt."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1915,13 +1861,12 @@ LAYER # Hausnummer
 	GROUP "gebaeude"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel,hausnummer FROM s_hausnummer_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Hausnummer"
-		#wms_abstract "Gebäude Hausnummer"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1949,63 +1894,22 @@ LAYER # Hausnummer
 		END
 	END
 END
-#LAYER # Pseudonummer
-#	NAME "ag_t_nebengeb"
-#	GROUP "gebaeude"
-#	TYPE POINT
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-#	PROCESSING "CLOSE_CONNECTION=DEFER"
-#	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel, laufendenummer FROM s_nummer_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
-#	METADATA
-#		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-#		wms_title "lfd. Nr Nebengebäude"
-#		#wms_abstract "laufende Nummer Nebengebäude (Pseudonummer)"
-#	END
-#	#PROJECTION "init=epsg:25832" END
-#	#EXTENT 349000 5529000 356000 5533000
-#	MINSCALEDENOM 12 # 50
-#	MAXSCALEDENOM 325 # 1500
-#	SYMBOLSCALEDENOM 250 # 1000
-#	#LABELITEM "laufendenummer"
-#	CLASS
-#		NAME "Hausnummer"
-#		TEXT '([laufendenummer])'
-#		STYLE
-#			SYMBOL 'point' SIZE 4 # 1
-#		END
-#		LABEL
-#			TYPE TRUETYPE FONT 'arialnarrow'
-#			SIZE 28 MINSIZE 20 MAXSIZE 40 # 7 5 10
-#			POSITION uc
-#			OFFSET 0 -12 # 0 -3
-#			ANGLE [drehwinkel] 
-#			COLOR 50 50 50
-#			ANTIALIAS true PARTIALS false FORCE true
-#			BUFFER 4 # 1
-#			OUTLINECOLOR 254 254 254
-#		END
-#	END
-#END
+
 LAYER # Lagebezeichnung mit Pseudonummer, Anzeige der lfd-Nr.
 	NAME "ag_t_nebengeb"
 	GROUP "gebaeude"
 	TYPE POLYGON
-	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM lfdnr_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "lfd. Nr Nebengebäude"
-		#wms_abstract "Lagebezeichnung mit Pseudonummer, Anzeige laufende Nummer zum Nebengebäude"
-		#gml_include_items "all"
 	END
 	MINSCALEDENOM 12 # 50
 	MAXSCALEDENOM 325 # 1500
 	SYMBOLSCALEDENOM 1000
-	#LABELITEM "laufendenummer"
 	CLASS
 		NAME "Hausnummer"
 		TEXT '([laufendenummer])' # Die Klammern auch mit darstellen!
@@ -2027,14 +1931,12 @@ LAYER
 	REQUIRES "[ag_t_nebengeb]" # nur beides
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_gebaeude) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Zuordnungspfeile Gebäude"
-		#wms_abstract "Gebäude Zuordnungspfeile für Hausnummer oder Nebengebäude-Nummer (nur Linie, Pfeilspitze fehlt noch)"
-		#gml_include_items "all"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2054,21 +1956,18 @@ LAYER
 	#GROUP "ax_bauwerkimverkehrsbereich"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bauwerk im Verkehrsbereich (Füllung)"
-		#wms_abstract "'Bauwerk im Verkehrsbereich' ist ein Bauwerk, das dem Verkehr dient."
 		wms_group_title "Bauwerke"
-		#wms_group_abstract "Bauwerke gruppiert alle Ebene zu den Themen 'Bauwerke und Einrichtungen in Siedlungsflächen' und 'Bauwerke, Anlagen und Einrichtungen für den Verkehr'" 
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
-	#CLASSITEM 'bauwerksfunktion'
 	CLASS
 		NAME "Brücke"
 		STYLE
@@ -2081,19 +1980,17 @@ LAYER
 	GROUP "bauwerk" # "ax_bauwerkimverkehrsbereich"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bauwerk im Verkehrsbereich (Umrandung)"
-		#wms_abstract "'Bauwerk im Verkehrsbereich' ist ein Bauwerk, das dem Verkehr dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
-	#CLASSITEM 'bauwerksfunktion'
 	CLASS
 		NAME "Brücke"
 		STYLE
@@ -2108,7 +2005,7 @@ LAYER
 	GROUP "bauwerk"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimgewaesserbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2133,14 +2030,13 @@ LAYER
 	GROUP "bauwerk"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuerindustrieundgewerbe) as foo using unique ogc_fid using SRID=25832"
 	FILTER "st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bauwerk oder Anlage für Industrie und Gewerbe"
-		#wms_abstract "'Bauwerk oder Anlage für Industrie und Gewerbe' ist ein Bauwerk oder eine Anlage, die überwiegend industriellen und gewerblichen Zwecken dient oder Einrichtung an Ver- und Entsorgungsleitungen ist."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2170,13 +2066,12 @@ LAYER
 	GROUP "bauwerk"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuersportfreizeitunderholung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bauwerk oder Anlage für Sport, Freizeit und Erholung"
-		#wms_abstract "'Bauwerk oder Anlage für Sport, Freizeit und Erholung' ist ein Bauwerk oder eine Anlage in Sport-, Freizeit- und Erholungsanlagen."
 	END	
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2196,13 +2091,12 @@ LAYER
 	GROUP "bauwerk"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_vorratsbehaelterspeicherbauwerk) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Vorratsbehälter, Speicherbauwerk"
-		#wms_abstract "'Vorratsbehälter, Speicherbauwerk' ist ein geschlossenes Bauwerk zum Aufbewahren von festen, flüssigen oder gasförmigen Stoffen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2222,7 +2116,7 @@ LAYER
 	GROUP "bauwerk"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_sonstigesbauwerkodersonstigeeinrichtung WHERE st_geometrytype(wkb_geometry) = 'ST_Polygon') as foo using unique ogc_fid using SRID=25832"
 	#FILTER "st_geometrytype(wkb_geometry) = 'ST_Polygon'"
@@ -2266,7 +2160,7 @@ LAYER
 	GROUP "bauwerk"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_sonstigesbauwerkodersonstigeeinrichtung WHERE st_geometrytype(wkb_geometry) = 'ST_LineString') as foo using unique ogc_fid using SRID=25832"
 	#FILTER "st_geometrytype(wkb_geometry) = 'ST_LineString'"
@@ -2291,19 +2185,17 @@ LAYER
 	GROUP "bauwerk"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, spannungsebene, wkb_geometry FROM ax_leitung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Leitung"
-		#wms_abstract "'Leitung' ist eine aus Drähten oder Fasern hergestellte Leitung zum Transport von elektrischer Energie und zur Übertragung von elektrischen Signalen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 0
 	MAXSCALEDENOM 2500 #10000
-	#CLASSITEM 'bauwerksfunktion'
 	CLASS
 		NAME "Freileitung"
 		EXPRESSION ('[bauwerksfunktion]' = '1110')
@@ -2327,13 +2219,12 @@ LAYER
 	GROUP "bauwerk"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, lagezurerdoberflaeche, wkb_geometry  FROM ax_transportanlage) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Transportanlage"
-		#wms_abstract "'Transportanlage' ist eine Anlage zur Förderung oder zum Transport von Flüssigkeiten, Gasen und Gütern."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2370,13 +2261,12 @@ LAYER
 	GROUP "bauwerk"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_turm) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Turm"
-		#wms_abstract "'Turm' ist ein hoch aufragendes, auf einer verhältnismäßig kleinen Fläche freistehendes Bauwerk."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2401,15 +2291,13 @@ LAYER
 	GROUP "bodenschaetzung"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from s_bodensch_po using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_group_title "Bodenschätzung"
-		#wms_group_abstract "Bodenschätzung" 
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Klassenfläche"
-		#wms_abstract "Fläche der Bodenschätzung, das Ergebnis der Schätzung kann abgefragt werden."
 	END
 	PROJECTION "init=epsg:25832" END
 	MINSCALEDENOM 12 #50
@@ -2430,13 +2318,12 @@ LAYER
 	REQUIRES "[bodensch_po]" # Grenzen aufzeigen?
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from s_bodensch_tx using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Schätzungsergebnis"
-		#wms_abstract "Kompakte Anzeige von: (1. Zeile) Bodenart, Zustandsstufe, Entstehungsart oder Klimastufe/Wasserverhältnisse und (2. Zeile) Bodenzahl oder Grünlandgrundzahl / Ackerzahl oder Grünlandzahl."
 	END
 	PROJECTION "init=epsg:25832" END
 	MINSCALEDENOM 12 #50
@@ -2479,13 +2366,12 @@ LAYER
 	#REQUIRES "[ag_t_flurstueck]" # zur Nummer
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM s_zuordungspfeil_bodensch) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Zuordnungspfeile" # Linie
-		#wms_abstract "Zuordnungspfeil Bodenschätzung Linie"
 	END
 	MINSCALEDENOM 12 #50
 	MAXSCALEDENOM 875 #3500
@@ -2505,13 +2391,12 @@ LAYER
 	TYPE Annotation
 	STATUS ON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_bodensch) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Zuordnungspfeil Spitze"
-		#wms_abstract "Zuordnungspfeil Flurstücksnummer Spitze"
 	END
 	MINSCALEDENOM 12 #50
 	MAXSCALEDENOM 875 #3500
@@ -2536,7 +2421,7 @@ END
 #	GROUP "bodenschaetzung"
 #	TYPE POINT
 #	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 #	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -2565,7 +2450,7 @@ END
 #	GROUP "bodenschaetzung"
 #	TYPE POLYGON
 #	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 #	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -2591,15 +2476,13 @@ LAYER
 	GROUP "flurstueck"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, wkb_geometry FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Flurstück"
-		#wms_abstract "'Flurstück' ist ein Teil der Erdoberfläche, der von einer im Liegenschaftskataster festgelegten Grenzlinie umschlossen und mit einer Nummer bezeichnet ist. Es ist die Buchungseinheit des Liegenschaftskatasters."
 		wms_group_title "Flurstück"
-		#wms_group_abstract "ALKIS Flurstück"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2619,13 +2502,12 @@ LAYER
 	GROUP "flurstueck"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderflurstuecksgrenze, wkb_geometry FROM ax_besondereflurstuecksgrenze) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Besondere Flurstücksgrenze"
-		#wms_abstract "'Besondere Flurstücksgrenze' ist ein Teil der Grenzlinie eines Flurstücks, der von genau zwei benachbarten Grenzpunkten begrenzt wird und für den besondere Informationen vorliegen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2739,13 +2621,12 @@ LAYER
 	REQUIRES "[ag_t_flurstueck]" # zur Nummer
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Zuordnungspfeil Linie"
-		#wms_abstract "Zuordnungspfeil Flurstücksnummer Linie"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2767,13 +2648,12 @@ LAYER
 	TYPE Annotation
 	STATUS ON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_flurstueck) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Zuordnungspfeil Spitze"
-		#wms_abstract "Zuordnungspfeil Flurstücksnummer Spitze"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2801,13 +2681,12 @@ LAYER
 	GROUP "flurstueck"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT * FROM pp_flurstueck_nr) as foo using unique gid using SRID=25832" # Tabelle aus PostProcessing
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Flurstuecksnummer"
-		#wms_abstract "Flurstück Flurstücksnummer"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2838,13 +2717,12 @@ LAYER
 	GROUP "flurstueck"
 	TYPE ANNOTATION
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Zugehörigkeitshaken Flurstueck"
-		#wms_abstract "Flurstück Zugehörigkeitshaken"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2869,15 +2747,13 @@ LAYER
 	GROUP "recht"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_klassifizierungnachstrassenrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Klassifizierung nach Strassenrecht"
-		#wms_abstract "Klassifizierung nach Straßenrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, straßenrechtlichen Vorschriften."
 		wms_group_title "Recht"
-		#wms_group_abstract "'Recht' gruppiert die Ebenen zur Klassifizierung und der auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2909,13 +2785,12 @@ LAYER
 	GROUP "recht"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_naturumweltoderbodenschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Natur, Umwelt oder Bodenschutzrecht"
-		#wms_abstract "'Natur-, Umwelt- oder Bodenschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche oder eines Gegenstandes nach öffentlichen, natur-, umwelt- oder bodenschutzrechtlichen Vorschriften."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2935,13 +2810,12 @@ LAYER
 	GROUP "recht"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_anderefestlegungnachwasserrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Andere Festlegung nach Wasserrecht"
-		#wms_abstract "Die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche nach öffentlichen, wasserrechtlichen Vorschriften."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2967,13 +2841,12 @@ LAYER
 	GROUP "recht"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gml_id, artderfestlegung, wkb_geometry FROM ax_bauraumoderbodenordnungsrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bau-, Raum- oder Bodenordnungsrecht"
-		#wms_abstract "'Bau-, Raum- oder Bodenordnungsrecht' ist ein fachlich übergeordnetes Gebiet von Flächen mit bodenbezogenen Beschränkungen, Belastungen oder anderen Eigenschaften nach öffentlichen Vorschriften."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3053,13 +2926,12 @@ LAYER
 	GROUP "recht"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_denkmalschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Denkmalschutzrecht"
-		#wms_abstract "'Denkmalschutzrecht' ist die auf den Grund und Boden bezogene Beschränkung, Belastung oder andere Eigenschaft einer Fläche oder Gegenstand nach öffentlichen, denkmalschutzrechtlichen Vorschriften."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3077,13 +2949,12 @@ LAYER
 	GROUP "recht"
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_sonstigesrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sonstiges Recht"
-		#wms_abstract "'Sonstiges Recht' sind die auf den Grund und Boden bezogenen Beschränkungen, Belastungen oder anderen Eigenschaften einer Fläche nach weiteren, nicht unter die Objektarten 71001 bis 71010 zu subsumierenden öffentlich - rechtlichen Vorschriften."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3105,18 +2976,14 @@ LAYER
 	NAME "ax_punktortta"
 	GROUP "punktort"
 	TYPE POINT
-	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM grenzpunkt) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Grenzpunkt"
-		#wms_abstract "Grenzpunkt in einer Flurstücksgrenze."
 		wms_group_title "Vermessungspunkte"
-		#wms_group_abstract "ALKIS Punktorte"
-		#gml_include_items "all"
 	END
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 2000
@@ -3153,13 +3020,12 @@ LAYER
 	GROUP "punktort"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortag) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bes. Gebäudepunkt"
-		#wms_abstract "'Punktort AG' ist ein Punktort mit redundanzfreier Geometrie (Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt) innerhalb eines Geometriethemas."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3179,15 +3045,12 @@ LAYER
 	GROUP "punktort"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortau) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Punktort AU"
-		#wms_abstract "'Punktort AU' ist ein Punktort mit unabhängiger Geometrie ohne Zugehörigkeit zu einem Geometriethema. 
-#Er kann zu ZUSOs der folgenden Objektarten gehören: Grenzpunkt, Besonderer Gebäudepunkt, Besonderer Bauwerkspunkt, Aufnahmepunkt, Sicherungspunkt,
-#Sonstiger Vermessungspunkt, Besonderer topographischer Punkt, Lagefestpunkt, Höhenfestpunkt, Schwerefestpunkt, Referenzstationspunkt."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3208,23 +3071,19 @@ LAYER
 	GROUP "praesentation"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	#ATA "wkb_geometry from (SELECT * FROM ap_pto_stra) as foo using unique ogc_fid using SRID=25832"
-	DATA "the_geom from (SELECT * FROM pp_strassenname) as foo using unique gid using SRID=25832"
+	DATA "the_geom from (SELECT * FROM pp_strassenname_p) as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		wms_title "Straßen"
-		#wms_abstract "Beschriftung mit Art = Straße, Weg, Platz, Klassifizierung"
+		wms_title "Straßen ."
 		wms_group_title "Präsentation"
-		#wms_group_abstract "Gruppierung der Ebenen mit ALKIS Präsentationsobjekten"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 12 #50
 	MAXSCALEDENOM 1000 #4000
 	LABELITEM "schriftinhalt"
-	#CLASSITEM "art"
 
 	# Strasse
 	CLASS
@@ -3380,17 +3239,179 @@ LAYER
 	END
 END
 LAYER
+	NAME "ap_lto_stra"
+	GROUP "praesentation"
+	TYPE LINE
+	REQUIRES "[ap_pto_stra]" # P- und L gemeinsam
+	STATUS DEFAULT # automatisch mit
+	CONNECTIONTYPE POSTGIS
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	PROCESSING "CLOSE_CONNECTION=DEFER"
+	DATA "the_geom from (SELECT * FROM pp_strassenname_l) as foo using unique gid using SRID=25832"
+	METADATA
+		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
+		wms_title "Straßen _"
+	END
+	#PROJECTION "init=epsg:25832" END
+	#EXTENT 349000 5529000 356000 5533000
+	MINSCALEDENOM 12 #50
+	MAXSCALEDENOM 1000 #4000
+	LABELITEM "schriftinhalt"
+
+	# Strasse
+	CLASS
+		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
+		STYLE
+			SYMBOL "point" SIZE 1
+		END
+		LABEL
+			SIZE 40 MINSIZE 24 MAXSIZE 80 # 10 6 20
+			TYPE TRUETYPE FONT "arialbold"
+			POSITION ur # linksbündig/Basis
+			COLOR 0 0 0
+			FORCE true
+		END
+	END
+	CLASS
+		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
+		STYLE
+			SYMBOL "point" SIZE 1
+		END
+		LABEL
+			SIZE 40 MINSIZE 24 MAXSIZE 80 # 10 6 20
+			TYPE TRUETYPE FONT "arialbold"
+			POSITION cc # zentrisch/Mitte
+			COLOR 0 0 0
+			FORCE true
+		END
+	END
+	CLASS
+		EXPRESSION ('[art]' eq 'Strasse') 
+		NAME 'Straße'
+		STYLE
+			SYMBOL "point" SIZE 1 MINSIZE 1
+		END
+		LABEL
+			SIZE 40 MINSIZE 24 MAXSIZE 80 # 10 6 20
+			TYPE TRUETYPE FONT "arialbold"
+			POSITION uc # zentrisch/Basis
+			COLOR 0 0 0
+			FORCE true
+		END
+	END
+
+	# Weg
+	CLASS
+		EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
+		STYLE
+			SYMBOL "point" SIZE 1
+		END
+		LABEL
+			SIZE 32 MINSIZE 20 MAXSIZE 64 # 8 5 16
+			TYPE TRUETYPE FONT "arial"
+			POSITION ur # linksbündig/Basis
+			COLOR 0 0 0
+			FORCE true
+		END
+	END
+	#CLASS
+	#	EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
+	#	LABEL
+	#		SIZE 32 MINSIZE 20 MAXSIZE 64 # 8 5 16
+	#		TYPE TRUETYPE FONT "arial"
+	#		POSITION cc # zentrisch/Mitte
+	#		COLOR 0 0 0
+	#		FORCE true
+	#	END
+	#END
+	CLASS
+		EXPRESSION ('[art]' eq 'Weg')
+		NAME 'Weg'
+		STYLE
+			SYMBOL "point" SIZE 1
+		END
+		LABEL
+			SIZE 32 MINSIZE 20 MAXSIZE 64 # 8 5 16
+			TYPE TRUETYPE FONT "arial"
+			POSITION uc # zentrisch/Basis
+			COLOR 0 0 0
+			FORCE true
+		END
+	END
+
+	# Platz 
+#	CLASS
+#		EXPRESSION ('[art]' eq 'Platz' AND '[ver]' eq 'Mitte')
+#		STYLE
+#			SYMBOL "point" SIZE 1
+#		END
+#		LABEL
+#			SIZE 40 MINSIZE 28 MAXSIZE 88 # 10 7 22
+#			TYPE TRUETYPE FONT "arialbold"
+#			POSITION cc # zentrisch/Mitte
+#			COLOR 0 0 90
+#			FORCE true
+#		END
+#	END
+#	CLASS
+#		EXPRESSION ('[art]' eq 'Platz')
+#		NAME 'Platz'
+#		STYLE
+#			SYMBOL "point" SIZE 1
+#		END
+#		LABEL
+#			SIZE 40 MINSIZE 28 MAXSIZE 88 # 10 7 22
+#			TYPE TRUETYPE FONT "arialbold"
+#			POSITION uc # zentrisch/Basis
+#			COLOR 0 0 90
+#			FORCE true
+#		END
+#	END
+
+	# Klassifikation
+	CLASS
+		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse' AND '[hor]' eq 'linksbündig')
+		STYLE
+			SYMBOL "point" SIZE 1
+		END
+		LABEL
+			SIZE 44 MINSIZE 32 MAXSIZE 88 # 11 8 22
+			TYPE TRUETYPE FONT "arialbold"
+			POSITION ur # linksbündig/Basis
+			COLOR 0 90 0
+			FORCE true
+		END
+	END
+	CLASS
+		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse')
+		NAME 'Klassifizierung'
+		STYLE
+			SYMBOL "point" SIZE 1 MINSIZE 1
+		END
+		LABEL
+			SIZE 44 MINSIZE 32 MAXSIZE 88 # 11 8 22
+			TYPE TRUETYPE FONT "arialbold"
+			POSITION uc # zentrisch/Basis
+			COLOR 0 90 0
+			FORCE true
+		END
+	END
+END
+
+LAYER
 	NAME "ap_pto" # Rest
 	GROUP "praesentation"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM ap_pto_rest) as foo using unique ogc_fid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Beschriftung"
-		#wms_abstract "Textförmiges Präsentationsobjekt mit punktförmiger Textgeometrie PTO"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3442,30 +3463,6 @@ LAYER
 		END
 	END
 END
-#LAYER
-#	NAME "ap_lpo"
-#	GROUP "praesentation"
-#	TYPE LINE
-#	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
-#	PROCESSING "CLOSE_CONNECTION=DEFER"
-#	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,art FROM ap_lpo) as foo using unique ogc_fid using SRID=25832"
-#	METADATA
-#		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-#		wms_title "Zuordnungspfeile"
-#		#wms_abstract "Linienförmiges Präsentationsobjekt LPO"
-#	END
-#	MINSCALEDENOM 12 # 50
-#	MAXSCALEDENOM 1250 #5000
-#	CLASSITEM "art"
-#	CLASS
-#		NAME "Zuordnungspfeile"
-#		EXPRESSION /Pfeil/
-#		STYLE
-#			COLOR 0 0 0
-#		END
-#	END
-#END
 
 # ap_ppo fehlt noch
 
@@ -3477,17 +3474,15 @@ LAYER
 	STATUS ON
 	METADATA
 		wms_group_title "Grenzen"
-		#wms_group_abstract "Grenzen von Katasterbezirken und politische Grenzen"
 		wms_title "Politische Grenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		#wms_abstract "Grenzen von Bundesland, Regierungsbezirk, Kreis und Stadt oder Gemeinde"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 62 # 250
 	MAXSCALEDENOM 3000 #12000
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk201x_politische_grenze) as foo using unique ogc_fid using SRID=25832'
 	CLASSITEM 'art' # Art der besonderen Grundstuecksgrenze  IST EIN ARRAY! z.B. {3000,7106}
@@ -3564,7 +3559,6 @@ LAYER
 	METADATA
 		wms_title "Gemarkungsrenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		#wms_abstract "Grenze der Gemarkung (Ortsteil)"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3572,7 +3566,7 @@ LAYER
 	MAXSCALEDENOM 2500 # 10000
 	SYMBOLSCALEDENOM 250 # 1000
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk2014_gemarkungsgrenze) as foo using unique ogc_fid using SRID=25832'
 	CLASS
@@ -3598,7 +3592,6 @@ LAYER
 	METADATA
 		wms_title "Flurgrenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		#wms_abstract "Grenze der Flur (Katasterbezirk)"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3606,7 +3599,7 @@ LAYER
 	MAXSCALEDENOM 1250 #5000
 	SYMBOLSCALEDENOM 250 #1000
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz* user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk2012_flurgrenze) as foo using unique ogc_fid using SRID=25832'
 	CLASS
