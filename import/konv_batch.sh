@@ -26,9 +26,9 @@
 ##   2012-06-04 SQL-Skripte in deren Verzeichnis ausfuehren (Voraussetzung fuer \i Includes)
 ##   2012-10-30 Umgebungsvariable setzen, delete-Tabelle am Ende fuer Analyse gefuellt lassen.
 ##              Test als 0.7a mit gepatchter gdal-Version (noch 2.0dev)
-##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" f¸r Reparatur der 
-##              Pr‰sentationsobjekte Straﬂenname im Post-Processing
-##   2013-10-24 F.J. krz: Zwischenlˆsung "praesentation_action.sql" wieder deaktiviert.
+##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" f√ºr Reparatur der 
+##              Pr√§sentationsobjekte Stra√üenname im Post-Processing
+##   2013-10-24 F.J. krz: Zwischenl√∂sung "praesentation_action.sql" wieder deaktiviert.
 ##   2014-01-31 F.J. krz: Import Eintrag erzeugen (nach Vorschlag Marvin Brandt, Unna)
 ##   2014-02-13 A.Emde WhereGroup: Einf√ºhrung DBUSER, damit im Skript der Datenbankbenutzer angegeben werden kann
 ##
@@ -124,7 +124,7 @@ fi
 #
 # Import Eintrag erzeugen
 #
-# Die dadurch erzeugte Import-ID dient zur Steuerung des Lˆschens alter Relationen im Trigger. 
+# Die dadurch erzeugte Import-ID dient zur Steuerung des L√∂schens alter Relationen im Trigger. 
 # Wird die Datenbank MIT Historie geladen, muss die folgende Zeile auskommentiert werden.
 echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-%d %H:%M:%S')"','"${ORDNER}"','"${verarb}"');" | psql $con
 
@@ -184,7 +184,7 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
     (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
 
 
-    # echo "** - Pr‰sentationsobjekte generieren:"
+    # echo "** - Pr√§sentationsobjekte generieren:"
     # (cd $POSTNAS_HOME; psql $con -f pp_praesentation_action.sql)
 
   fi

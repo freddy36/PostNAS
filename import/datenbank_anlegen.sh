@@ -6,11 +6,11 @@
 ##
 ## Stand:
 ##  2012-02-10 PostNAS 07, Umbenennung
-##  2013-01-15 Zwischenstopp um Meldungen lesen zu können bevor, sie aus dem Scrollbereich verschwinden
+##  2013-01-15 Zwischenstopp um Meldungen lesen zu kÃ¶nnen bevor, sie aus dem Scrollbereich verschwinden
 ##  2013-04-16 Vers.-Nr. "0.7" aus dem Dateinamen von Schema und Keytable entfernt, sichten_wms.sql
-##  2013-10-16 F.J. krz: Neues Sript "pp_praesentation_sichten.sql" für Reparatur Präsentationsobjekte Straßennamen
+##  2013-10-16 F.J. krz: Neues Sript "pp_praesentation_sichten.sql" fÃ¼r Reparatur PrÃ¤sentationsobjekte StraÃŸennamen
 ##  2013-12-03 F.J. krz: Script "sichten.sql" einbeziehen. Darin View "doppelverbindung" fuer WMS FS-Kommunal.
-##  2014-01-31 F.J. krz: Unterschiede der Datenbank-Struktur für die Varianten MIT/OHNE Historie.
+##  2014-01-31 F.J. krz: Unterschiede der Datenbank-Struktur fÃ¼r die Varianten MIT/OHNE Historie.
 
 POSTNAS_HOME=$(dirname $0)
 MANDANT_HOME=$PWD
@@ -103,7 +103,7 @@ psql $con -U ${DBUSER} -c "COMMENT ON DATABASE ${DBNAME} IS 'ALKIS - Konverter P
 ##   if [ -e alkis-trigger.sql ]; then
 echo " "
 echo "** Besonderheiten der Datenbank OHNE Historie"
-## auskommentieren, wenn die Datenbank MIT Historie geführt wird
+## auskommentieren, wenn die Datenbank MIT Historie gefÃ¼hrt wird
 ## Import-ID: Tabelle und Spalte in "alkis_beziehungen" anlegen
 psql $con -U ${DBUSER} -f alkis_PostNAS_schema_ohneHist.sql >$MANDANT_HOME/log/schema.log
 ## Spalte "identifier" aus allen Tabellen entfernen (die wird nur vom Trigger MIT Historie benoetigt)
