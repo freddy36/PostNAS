@@ -341,8 +341,7 @@ COMMENT ON VIEW ap_pto_stra
 -- Der View übernimmt die Auswahl des passenden advstandardmodell und rechnet den Winkel passend um,
 -- In der Tabelle werden dann die leer gebliebenen Label aus dem Katalog noch ergänzt.
 
-DROP VIEW ap_lto_stra;
-
+-- DROP VIEW ap_lto_stra;
 CREATE OR REPLACE VIEW ap_lto_stra 
 AS 
   SELECT p.ogc_fid,

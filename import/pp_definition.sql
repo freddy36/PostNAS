@@ -15,6 +15,7 @@
 --  2013-04-18 Kommentare.
 --  2012-10-24 Neue Tabelle für die Präsentation von Straßennamen und -Klassifikationen
 --  2014-08-25 Straßennamen aufteilen in _P und L
+--  2014-09-08 Korrektur
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -406,7 +407,7 @@ CREATE TABLE pp_strassenname_l
 
 -- :alkis_epsg = 25832
 SELECT AddGeometryColumn('pp_strassenname_l','the_geom',25832,'LINESTRING',2); -- Hier liegt der Unterschied
-CREATE INDEX pp_snaml_gidx ON pp_strassenname USING gist(the_geom); 
+CREATE INDEX pp_snaml_gidx ON pp_strassenname_l USING gist(the_geom); 
 
   COMMENT ON TABLE  pp_strassenname_l                IS 'Post-Processing: Label der Straßennamen in der Karte, Liniengeometrie. Auszug aus ap_lto.';
 

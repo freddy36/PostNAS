@@ -75,7 +75,6 @@ COMMENT ON VIEW public.doppelverbindung
 --   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;
 
 
-
 -- Ein View, der die Verbindung von Flurstück zur Straßentabelle für zwei verschiedene Fälle herstellt.
 -- Einmal über die Lagebezeichnung MIT Hausnummer und einmal OHNE.
 -- Dies kann als "Mittelstück" in den anderen Views eingefügt werden.
@@ -251,7 +250,7 @@ AS
 COMMENT ON VIEW exp_csv 
  IS 'View für einen CSV-Export aus der Buchauskunft mit alkisexport.php. Generelle Struktur. Für eine bestimmte gml_id noch den Filter setzen.';
 
---GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
+  GRANT SELECT ON TABLE exp_csv TO mb27;       -- User für Auskunfts-Programme
 --GRANT SELECT ON TABLE exp_csv TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
 
 
@@ -372,7 +371,7 @@ AS
 COMMENT ON VIEW exp_csv_str 
  IS 'View für einen CSV-Export aus der Buchauskunft mit alkisexport.php. Liefert nur Flurstücke, die eine Lagebezeichnung MIT/OHNE Hausnummer haben. Dazu noch den Filter auf GML-ID der Straßentabelle setzen.';
 
---GRANT SELECT ON TABLE exp_csv_str TO mb27;       -- User für Auskunfts-Programme
+  GRANT SELECT ON TABLE exp_csv_str TO mb27;       -- User für Auskunfts-Programme
 --GRANT SELECT ON TABLE exp_csv_str TO alkisbuch;  -- User für Auskunfts-Programme RLP-Demo
 
 

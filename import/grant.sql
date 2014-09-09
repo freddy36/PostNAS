@@ -10,14 +10,14 @@
 
 --  2012-02-17  PostNAS 0.7, pp_Tabellen, ms5 -> ms6
 --  2012-04-25  Tabelle pp_flurstueck_nr
---  2013-01-15  mehr Schl√ºsseltabellen rein
+--  2013-01-15  mehr Schl¸sseltabellen rein
 --  2013-03-05  View "s_beschriftung" wird durch "ap_pto_stra" und "ap_pto_rest" ersetzt.
 --              View "s_nummer_nebengebaeude" wird durch "lfdnr_nebengebaeude" ersetzt.
 --  2013-03-25  View "grenzpunkt" und "gebaeude_txt"
---  2013-04-19  Neues zum Thema "Bodensch√§tzung", Views entfallen
+--  2013-04-19  Neues zum Thema "Bodensch‰tzung", Views entfallen
 --  2013-10-24  Table "pp_strassenname" ersetzt View "ap_pto_stra" im WMS (ms6)
---  2014-01-22  Neue Views f√ºr CSV-Export, neue Schl√ºsseltabelle "ax_namensnummer_eigentuemerart"
---  2014-08-25  Stra√üennamen aufteilen in _P und L
+--  2014-01-22  Neue Views f¸r CSV-Export, neue Schl¸sseltabelle "ax_namensnummer_eigentuemerart"
+--  2014-08-25  Straﬂennamen aufteilen in _P und L
 
 
 -- Tabellen
@@ -32,7 +32,7 @@
 
 -- ALKIS / PostNAS
 -- ---------------
--- Berechtigung f√ºr Kartendarstellung
+-- Berechtigung f¸r Kartendarstellung
   GRANT SELECT ON TABLE alkis_beziehungen TO ms6;
   GRANT SELECT ON TABLE ap_darstellung TO ms6;
   GRANT SELECT ON TABLE ap_lpo TO ms6;
@@ -279,7 +279,7 @@
 -- Schluesseltabellen
 -- ------------------
 
--- Geb√§ude
+-- Geb‰ude
 GRANT SELECT ON TABLE ax_gebaeude_bauweise                 TO ms6;
 GRANT SELECT ON TABLE ax_gebaeude_bauweise                 TO mb27;
 GRANT SELECT ON TABLE ax_gebaeude_funktion                 TO ms6;
@@ -293,7 +293,7 @@ GRANT SELECT ON TABLE ax_gebaeude_zustand                  TO mb27;
 GRANT SELECT ON TABLE ax_bauteil_bauart                    TO ms6;
 GRANT SELECT ON TABLE ax_bauteil_bauart                    TO mb27;
 
--- Bodensch√§tzung
+-- Bodensch‰tzung
 GRANT SELECT ON TABLE ax_bodenschaetzung_bodenart          TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_bodenart          TO mb27;
 GRANT SELECT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe  TO ms6;
@@ -311,7 +311,7 @@ GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO mb27;
 GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO ms6;
 GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO mb27;
 
--- Bodensch√§tzung Views
+-- Bodensch‰tzung Views
 GRANT SELECT ON TABLE s_bodensch_wms                       TO ms6;
 GRANT SELECT ON TABLE s_bodensch_ent                       TO ms6;
 GRANT SELECT ON TABLE s_bodensch_po                        TO ms6;
@@ -339,7 +339,7 @@ GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf    TO mb27;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO ms6;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO mb27;
 
--- Sonstige Schl√ºsseltabellen
+-- Sonstige Schl¸sseltabellen
 GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart        TO ms6;
 GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart        TO mb27;
 GRANT SELECT ON TABLE ax_namensnummer_eigentuemerart       TO ms6;
