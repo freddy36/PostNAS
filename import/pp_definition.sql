@@ -1,10 +1,12 @@
 
--- ALKIS PostNAS 0.7
+-- ALKIS PostNAS 0.8
 
 -- Post Processing (pp_) Teil 1: Anlegen der Tabellen und Views
 
--- Stand 
+-- Koordinatensystem übergeben mit "psql  .. -v alkis_epsg=25832"
+-- :alkis_epsg=25832
 
+-- Stand 
 --  2012-02-13 PostNAS 07, Umbenennung
 --  2012-02-17 Optimierung
 --  2012-02-28 gkz aus View nehmen
@@ -14,8 +16,11 @@
 --  2012-04-25 simple_geom fuer pp_flur
 --  2013-04-18 Kommentare.
 --  2012-10-24 Neue Tabelle für die Präsentation von Straßennamen und -Klassifikationen
---  2014-08-25 Straßennamen aufteilen in _P und L
---  2014-09-08 Korrektur
+--  2014-08-26 Aus "pp_strassenname" werden die Varianten *_p und *_l
+--             Erweiterte gml_id wie bei den primären Tabellen, bisher (16).
+--  2014-09-02 Entfernen der JOINs über "alkis_beziehungen". 
+--             Wie im Schema: Schlüssel von integer nach varchar für land, regierungsbezirk usw.
+
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -31,45 +36,52 @@
 -- Die per PostProcessing gefüllten Tabellen bekommen den Prefix "pp_".
 
 -- ToDo:
-
 -- Muss *multi*-Polygon sein? Gibt es "zerrissene" Fluren/Gemarkungen?
 -- Der View "gemeinde_gemarkung" kann entfallen, wenn Navigation umgestellt wurde.
 
 SET client_encoding = 'UTF-8';
 
--- Alles auf Anfang!
+-- Alles auf Anfang
+/*
+ DROP VIEW IF EXISTS gemeinde_person_typ1;
+ DROP VIEW IF EXISTS gemeinde_person_typ2;
+ DROP VIEW IF EXISTS gemeinde_person_statistik;
+ DROP VIEW IF EXISTS gemeinde_gemarkung;
+ DROP VIEW IF EXISTS pp_gemeinde_analyse;
+ DROP VIEW IF EXISTS pp_gemarkung_analyse;
 
--- DROP VIEW gemeinde_person_typ1;
--- DROP VIEW gemeinde_person_typ2;
--- DROP VIEW gemeinde_gemarkung;
--- DROP TABLE pp_gemeinde;
--- DROP TABLE pp_gemarkung;
--- DROP TABLE pp_flur;
-
+ DROP TABLE gemeinde_person;
+ DROP TABLE pp_gemeinde;
+ DROP TABLE pp_gemarkung;
+ DROP TABLE pp_flur;
+ DROP TABLE pp_flurstueck_nr;
+ DROP TABLE pp_strassenname_p;
+ DROP TABLE pp_strassenname_l;
+*/
 
 -- Tabelle fuer Gemeinden
 -- ========================
 
   CREATE TABLE pp_gemeinde (
-    gid			serial,
-    land		integer NOT NULL,
-    regierungsbezirk	integer,
-    kreis		integer,
-    gemeinde		integer NOT NULL,
-    gemeindename	character varying(80),
- -- gkz			character varying(03),	-- wird (noch) nicht benutzt
-    anz_gemarkg		integer,		-- Anzahl Gemarkungen
+    gid                serial,
+    land               character varying NOT NULL,
+    regierungsbezirk   character varying,
+    kreis              character varying,
+    gemeinde           character varying NOT NULL,
+    gemeindename       character varying(80),
+ -- gkz                character varying(03),    -- wird (noch) nicht benutzt
+    anz_gemarkg        integer,                  -- Anzahl Gemarkungen
     CONSTRAINT pp_gemeinde_pk PRIMARY KEY (land, gemeinde)
   );
 
 CREATE UNIQUE INDEX pp_gemeinde_gid_ix ON pp_gemeinde (gid);
 
--- Gesamtflaeche
-SELECT AddGeometryColumn('pp_gemeinde','the_geom','25832','MULTIPOLYGON',2);
+-- Gesamtfläche
+SELECT AddGeometryColumn('pp_gemeinde','the_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemeinde_gidx ON pp_gemeinde USING gist(the_geom);
 
--- vereinfachte Gesamtflaeche
-SELECT AddGeometryColumn('pp_gemeinde','simple_geom','25832','MULTIPOLYGON',2);
+-- vereinfachte Gesamtfläche
+SELECT AddGeometryColumn('pp_gemeinde','simple_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 
 
@@ -91,25 +103,25 @@ CREATE INDEX pp_gemeinde_sgidx ON pp_gemeinde USING gist(simple_geom);
 -- muss diese Information als (redundante) Tabelle nach dem Laden zwischengespeichert werden. 
 
   CREATE TABLE pp_gemarkung (
-    gid			serial,
-    land		integer NOT NULL,
-    regierungsbezirk	integer,
-    kreis		integer,
-    gemeinde		integer NOT NULL,	-- fast ein Foreign-Key Constraint
-    gemarkung		integer NOT NULL,
-    gemarkungsname	character varying(80),
-    anz_flur		integer,		-- Anzahl Fluren
+    gid                serial,
+    land               character varying NOT NULL,
+    regierungsbezirk   character varying,
+    kreis              character varying,
+    gemeinde           character varying NOT NULL, -- fast ein Foreign-Key Constraint
+    gemarkung          character varying NOT NULL,
+    gemarkungsname     character varying(80),
+    anz_flur           integer,                -- Anzahl Fluren
     CONSTRAINT pp_gemarkung_pk PRIMARY KEY (land, gemarkung)
   );
 
 CREATE UNIQUE INDEX pp_gemarkung_gid_ix ON pp_gemarkung (gid);
 
 -- Gesamtfläche
-SELECT AddGeometryColumn('pp_gemarkung','the_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_gemarkung','the_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemarkung_gidx ON pp_gemarkung USING gist(the_geom);
 
 -- vereinfachte Gesamtfläche
-SELECT AddGeometryColumn('pp_gemarkung','simple_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_gemarkung','simple_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_gemarkung_sgidx ON pp_gemarkung USING gist(simple_geom);
 
 
@@ -124,13 +136,13 @@ COMMENT ON COLUMN pp_gemarkung.simple_geom   IS 'vereinfachte Geometrie für die
 -- ===================
 
   CREATE TABLE pp_flur (
-    gid			serial,
-    land		integer NOT NULL,
-    regierungsbezirk	integer,
-    kreis		integer,
-    gemarkung		integer NOT NULL,
-    flurnummer		integer NOT NULL,
-    anz_fs		integer,		-- Anzahl Flurstücke
+    gid                serial,
+    land               character varying NOT NULL,
+    regierungsbezirk   character varying,
+    kreis              character varying,
+    gemarkung          character varying NOT NULL,
+    flurnummer         integer NOT NULL,
+    anz_fs             integer,              -- Anzahl Flurstücke
     CONSTRAINT pp_flur_pk PRIMARY KEY (land, gemarkung, flurnummer)
   );
 
@@ -138,11 +150,11 @@ COMMENT ON COLUMN pp_gemarkung.simple_geom   IS 'vereinfachte Geometrie für die
 CREATE UNIQUE INDEX pp_flur_gid_ix ON pp_flur (gid);
 
 -- Gesamtfläche
-SELECT AddGeometryColumn('pp_flur','the_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_flur','the_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_flur_gidx ON pp_flur USING gist(the_geom);
 
 -- vereinfachte Gesamtflaeche
-SELECT AddGeometryColumn('pp_flur','simple_geom','25832','MULTIPOLYGON',2);
+SELECT AddGeometryColumn('pp_flur','simple_geom',:alkis_epsg,'MULTIPOLYGON',2);
 CREATE INDEX pp_flur_sgidx ON pp_flur USING gist(simple_geom);
 
 
@@ -168,12 +180,12 @@ COMMENT ON COLUMN pp_flur.simple_geom    IS 'vereinfachte Geometrie für die Suc
 --DROP TABLE gemeinde_person;
 
   CREATE TABLE gemeinde_person (
-    land 		integer,
-    regierungsbezirk	integer,
-    kreis		integer,
-    gemeinde		integer,
-    person		character varying(16),
-    buchtyp		integer,
+    land                character varying,
+    regierungsbezirk    character varying,
+    kreis               character varying,
+    gemeinde            character varying,
+    person              character varying,
+    buchtyp             integer,
     CONSTRAINT gemeinde_person_pk PRIMARY KEY (gemeinde, person)
   );
 
@@ -193,8 +205,8 @@ CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
 --DROP TABLE pp_flurstueck_nr;
   CREATE TABLE pp_flurstueck_nr (
     gid		serial,
-    fsgml	character(16),
-    fsnum	character varying(10),  -- zzzzz/nnnn
+    fsgml	     character varying,
+    fsnum	     character varying(10),  -- zzzzz/nnnn
     CONSTRAINT pp_flurstueck_nr_pk  PRIMARY KEY (gid)  --,
 -- Foreign Key
 -- ALT:
@@ -205,16 +217,14 @@ CREATE INDEX person_gemeinde  ON gemeinde_person (person, gemeinde);
 -- Ersatzweise einen ForeignKey über 2 Felder?
   );
 
-SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom','25832','POINT',2);
+SELECT AddGeometryColumn('pp_flurstueck_nr','the_geom',:alkis_epsg,'POINT',2);
 
 -- Geometrischer Index
-CREATE INDEX pp_flurstueck_nr_gidx ON pp_flurstueck_nr USING gist(the_geom);
-
--- Foreig-Key Index
-CREATE INDEX fki_pp_flurstueck_nr_gml ON pp_flurstueck_nr(fsgml);
+CREATE INDEX pp_flurstueck_nr_gidx    ON pp_flurstueck_nr USING gist  (the_geom);
+CREATE INDEX fki_pp_flurstueck_nr_gml ON pp_flurstueck_nr USING btree (fsgml);
 
 COMMENT ON TABLE  pp_flurstueck_nr           IS 'Post-Processing: Position der Flurstücksnummer in der Karte';
-COMMENT ON COLUMN pp_flurstueck_nr.fsgml     IS 'gml_id des zugehörigen Flurstücks-Objektes';
+COMMENT ON COLUMN pp_flurstueck_nr.fsgml     IS 'gml_id des zugehörigen Flurstücks-Objektes ( <- ap_pto.dientZurDarstellungVon)';
 COMMENT ON COLUMN pp_flurstueck_nr.fsnum     IS 'Label, Darzustellende FS-Nummer als Bruch';
 COMMENT ON COLUMN pp_flurstueck_nr.the_geom  IS 'Position der Flurstücksnummer in der Karte';
 
@@ -227,13 +237,12 @@ COMMENT ON COLUMN pp_flurstueck_nr.the_geom  IS 'Position der Flurstücksnummer 
 -- Wird in der Navigation verwendet, bis alle Datenbanken auf die Struktur 0.7 umgestellt 
 -- sind *UND* die Navigation an die neuen Tabellen angepasst ist.
 
-CREATE VIEW gemeinde_gemarkung
+CREATE OR REPLACE VIEW gemeinde_gemarkung
 AS
   SELECT g.land, g.regierungsbezirk, g.kreis, g.gemeinde, k.gemarkung, g.gemeindename, k.gemarkungsname
   FROM pp_gemarkung k
   JOIN pp_gemeinde  g 
-    ON k.land = g.land 
-   AND k.gemeinde = g.gemeinde;
+    ON k.land = g.land AND k.gemeinde = g.gemeinde;
 
 COMMENT ON VIEW gemeinde_gemarkung 
   IS 'Die Sicht "gemeinde_gemarkung" enthaelt nur gefüllte Gemarkungen (mit FS) aber Gemeinde mehrfach. Diese Sicht wird derzeit noch in der Navigation benutzt (alkisnav_fls.php, _grd.php, _eig.php). Definiert in pp_definition.sql. Soll künftig entfallen.';
@@ -243,88 +252,41 @@ COMMENT ON VIEW gemeinde_gemarkung
 -- ------------------------------------------------------
 
 -- "Normale" Buchungen
-
-CREATE VIEW gemeinde_person_typ1
+-- ToDo: +++++  View "gemeinde_gemarkung" nicht verwenden, auflösen
+CREATE OR REPLACE VIEW gemeinde_person_typ1
 AS
-  SELECT DISTINCT
-    p.gml_id          AS person, 
-    g.land, g.regierungsbezirk, g.kreis, g.gemeinde
+  SELECT DISTINCT p.gml_id AS person, g.land, g.regierungsbezirk, g.kreis, g.gemeinde
+  FROM ax_person          p
+  JOIN ax_namensnummer    n  ON n.benennt = p.gml_id           -- Person <benennt< Namensnummer
+  JOIN ax_buchungsblatt   b  ON n.istbestandteilvon = b.gml_id -- Namensnummer >istBestandteilVon> Blatt
+  JOIN ax_buchungsstelle  s  ON s.istbestandteilvon = b.gml_id -- Blatt <istBestandteilVon< buchungsStelle
+  JOIN ax_flurstueck      f  ON f.istgebucht = s.gml_id        -- buchungsStelle <istGebucht< flurstück
+  JOIN ax_gemarkung       k  ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
+  JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer = g.gemarkung;
 
-  FROM ax_person               p
-
--- Person < benennt < Namensnummer
-  JOIN alkis_beziehungen      bpn  ON bpn.beziehung_zu   = p.gml_id  -- Bez. Person - Nummer
-  JOIN ax_namensnummer         n   ON bpn.beziehung_von  = n.gml_id
-
--- Namensnummer > istBestandteilVon > Blatt
-  JOIN alkis_beziehungen      bnb  ON bnb.beziehung_von  = n.gml_id  -- Bez. Nummer - Blatt
-  JOIN ax_buchungsblatt        b   ON bnb.beziehung_zu   = b.gml_id
-
--- Blatt < istBestandteilVon < buchungsStelle
-  JOIN alkis_beziehungen      bbg  ON bbg.beziehung_zu   = b.gml_id  -- Bez. Blatt  - Stelle
-  JOIN ax_buchungsstelle       s   ON bbg.beziehung_von  = s.gml_id 
-
--- buchungsStelle < istGebucht < flurstück
-  JOIN alkis_beziehungen      bsf  ON bsf.beziehung_zu   = s.gml_id  -- Bez. Stelle - Flurstück
-  JOIN ax_flurstueck           f   ON bsf.beziehung_von  = f.gml_id 
-
-  JOIN ax_gemarkung            k   ON f.land             = k.land 
-                                  AND f.gemarkungsnummer = k.gemarkungsnummer 
-  JOIN gemeinde_gemarkung      g   ON k.gemarkungsnummer = g.gemarkung
-
-  WHERE bpn.beziehungsart = 'benennt' 
-    AND bnb.beziehungsart = 'istBestandteilVon'
-    AND bbg.beziehungsart = 'istBestandteilVon'
-    AND bsf.beziehungsart = 'istGebucht';
-
-COMMENT ON VIEW gemeinde_person_typ1 IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ1 = nomale Buchungen mit direkter Beziehung.';
+COMMENT ON VIEW gemeinde_person_typ1 
+  IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ1 = nomale Buchungen mit direkter Beziehung.';
 
 
 -- "Komplexe" Buchungen mit Rechten von Buchungen an Buchungen
-
-CREATE VIEW gemeinde_person_typ2
+-- ToDo: +++++  View "gemeinde_gemarkung" nicht verwenden, auflösen
+CREATE OR REPLACE VIEW gemeinde_person_typ2
 AS
-  SELECT DISTINCT
-    p.gml_id          AS person, 
-    g.land, g.regierungsbezirk, g.kreis, g.gemeinde
-  FROM ax_person               p
+  SELECT DISTINCT p.gml_id AS person, g.land, g.regierungsbezirk, g.kreis, g.gemeinde
+  FROM ax_person          p
+  JOIN ax_namensnummer    n  ON n.benennt = p.gml_id            -- Person <benennt< Namensnummer
+  JOIN ax_buchungsblatt   b  ON n.istBestandteilVon = b.gml_id  -- Namensnummer >istBestandteilVon> Blatt
+  JOIN ax_buchungsstelle  s1 ON s1.istbestandteilvon = b.gml_id -- Blatt <istBestandteilVon< buchungsStelle1
+  JOIN ax_buchungsstelle  s2 ON s2.gml_id = ANY(s1.an)          -- buchungsStelle2 <(recht)an< buchungsStelle1
+  JOIN ax_flurstueck      f  ON f.istgebucht = s2.gml_id        -- buchungsStelle2 < istGebucht < flurstück
+  JOIN ax_gemarkung       k  ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
+  JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer = g.gemarkung;
 
--- Person < benennt < Namensnummer
-  JOIN alkis_beziehungen      bpn  ON bpn.beziehung_zu   = p.gml_id  -- Bez. Person - Nummer
-  JOIN ax_namensnummer         n   ON bpn.beziehung_von  = n.gml_id
-
--- Namensnummer > istBestandteilVon > Blatt
-  JOIN alkis_beziehungen      bnb  ON bnb.beziehung_von  = n.gml_id  -- Bez. Nummer - Blatt
-  JOIN ax_buchungsblatt        b   ON bnb.beziehung_zu   = b.gml_id
-
--- Blatt < istBestandteilVon < buchungsStelle1
-  JOIN alkis_beziehungen      bbg  ON bbg.beziehung_zu   = b.gml_id  -- Bez. Blatt  - Stelle
-  JOIN ax_buchungsstelle       s1  ON bbg.beziehung_von  = s1.gml_id 
-
--- buchungsStelle2 < an < buchungsStelle1
-  JOIN alkis_beziehungen      bss  ON bss.beziehung_von  = s1.gml_id  -- Bez. Stelle  - Stelle
-  JOIN ax_buchungsstelle       s2  ON bss.beziehung_zu   = s2.gml_id 
-
--- buchungsStelle2 < istGebucht < flurstück
-  JOIN alkis_beziehungen      bsf  ON bsf.beziehung_zu   = s2.gml_id  -- Bez. Stelle - Flurstück
-  JOIN ax_flurstueck           f   ON bsf.beziehung_von  = f.gml_id 
-
-  JOIN ax_gemarkung            k   ON f.land             = k.land 
-                                  AND f.gemarkungsnummer = k.gemarkungsnummer 
-  JOIN gemeinde_gemarkung      g   ON k.gemarkungsnummer = g.gemarkung
-
-  WHERE bpn.beziehungsart = 'benennt' 
-    AND bnb.beziehungsart = 'istBestandteilVon'
-    AND bbg.beziehungsart = 'istBestandteilVon'
-    AND bss.beziehungsart = 'an'
-    AND bsf.beziehungsart = 'istGebucht'
- -- LIMIT 100  -- Test-Option
-;
-
-COMMENT ON VIEW gemeinde_person_typ2 IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ2 = Buchungen mit Rechten einer Buchungssstelle an einer anderen.';
-
+COMMENT ON VIEW gemeinde_person_typ2 
+  IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ2 = Buchungen mit Rechten einer Buchungssstelle an einer anderen.';
 
 -- Statistik über die Buchungs-Typen je Gemeinde
+-- ToDo: +++++  View "gemeinde_gemarkung" nicht verwenden, auflösen
 CREATE VIEW gemeinde_person_statistik
 AS
   SELECT p.land, p.regierungsbezirk, p.kreis, p.gemeinde, g.gemeindename, p.buchtyp, count(p.person) as personen
@@ -359,12 +321,12 @@ CREATE VIEW pp_gemarkung_analyse AS
          st_npoints(simple_geom) AS umring_einfache_punkte
   FROM pp_gemarkung;
 
+-- 2014-08-26 Aus Version "pp_strassenname" werden die Varianten *_p und *_l
 
 -- Variante für Punkt-Geometrie
--- Tabelle "pp_strassenname_p" speichert den VIEW "ap_pto_stra".
 CREATE TABLE pp_strassenname_p 
 (   gid                    serial NOT NULL,
-    gml_id                 character(16),
+    gml_id                 character varying,
  -- advstandardmodell      character varying[],
     schriftinhalt          character varying,      -- Label: anzuzeigender Text
     hor                    character varying,
@@ -377,13 +339,12 @@ CREATE TABLE pp_strassenname_p
 ) WITH (OIDS=FALSE);
 
 -- :alkis_epsg = 25832
-SELECT AddGeometryColumn('pp_strassenname_p','the_geom',25832,'POINT',2);
+SELECT AddGeometryColumn('pp_strassenname_p','the_geom',:alkis_epsg,'POINT',2);
 CREATE INDEX pp_snamp_gidx ON pp_strassenname_p USING gist(the_geom); 
 
   COMMENT ON TABLE  pp_strassenname_p                IS 'Post-Processing: Label der Straßennamen in der Karte, Punktgeometrie. Auszug aus ap_pto.';
 
   COMMENT ON COLUMN pp_strassenname_p.gid            IS 'Editierschlüssel der Tabelle';
---COMMENT ON COLUMN pp_strassenname_p.gml_id         IS 'Objektschlüssel des Präsentationsobjektes aus ap_pto. Zur Verbindung mit Katalog.';
   COMMENT ON COLUMN pp_strassenname_p.gml_id         IS 'Objektschlüssel des Präsentationsobjektes aus "ax_lagebezeichnungohnehausnummer". Zur Verbindung mit Katalog beim Nachladen leerer Felder.';
   COMMENT ON COLUMN pp_strassenname_p.schriftinhalt  IS 'Label, darzustellender Name der Straße oder Klassifikation';
   COMMENT ON COLUMN pp_strassenname_p.hor            IS 'Horizontale Ausrichtung des Textes zur Punkt-Koordinate: linksbündig, zentrisch, ...';
@@ -393,10 +354,9 @@ CREATE INDEX pp_snamp_gidx ON pp_strassenname_p USING gist(the_geom);
   COMMENT ON COLUMN pp_strassenname_p.the_geom       IS 'Position (Punkt) der Labels in der Karte';
 
 -- Variante für Linien-Geometrie
--- Tabelle "pp_strassenname_l" speichert den VIEW "ap_lto_stra".
 CREATE TABLE pp_strassenname_l 
 (   gid                    serial NOT NULL,
-    gml_id                 character(16),
+    gml_id                 character varying,
     schriftinhalt          character varying,      -- Label: anzuzeigender Text
     hor                    character varying,
     ver                    character varying,
@@ -406,7 +366,7 @@ CREATE TABLE pp_strassenname_l
 ) WITH (OIDS=FALSE);
 
 -- :alkis_epsg = 25832
-SELECT AddGeometryColumn('pp_strassenname_l','the_geom',25832,'LINESTRING',2); -- Hier liegt der Unterschied
+SELECT AddGeometryColumn('pp_strassenname_l','the_geom',:alkis_epsg,'LINESTRING',2); -- Hier liegt der Unterschied
 CREATE INDEX pp_snaml_gidx ON pp_strassenname_l USING gist(the_geom); 
 
   COMMENT ON TABLE  pp_strassenname_l                IS 'Post-Processing: Label der Straßennamen in der Karte, Liniengeometrie. Auszug aus ap_lto.';
@@ -418,5 +378,6 @@ CREATE INDEX pp_snaml_gidx ON pp_strassenname_l USING gist(the_geom);
   COMMENT ON COLUMN pp_strassenname_l.ver            IS 'Vertikale   Ausrichtung des Textes: Basis, ..';
   COMMENT ON COLUMN pp_strassenname_l.art            IS 'Klasse der Straße: Straße, Weg, .. , BezKlassifizierungStrasse';
   COMMENT ON COLUMN pp_strassenname_l.the_geom       IS 'Position (Punkt) der Labels in der Karte';
+
 
 -- ENDE --

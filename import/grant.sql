@@ -10,14 +10,14 @@
 
 --  2012-02-17  PostNAS 0.7, pp_Tabellen, ms5 -> ms6
 --  2012-04-25  Tabelle pp_flurstueck_nr
---  2013-01-15  mehr Schlüsseltabellen rein
+--  2013-01-15  mehr SchlÃ¼sseltabellen rein
 --  2013-03-05  View "s_beschriftung" wird durch "ap_pto_stra" und "ap_pto_rest" ersetzt.
 --              View "s_nummer_nebengebaeude" wird durch "lfdnr_nebengebaeude" ersetzt.
 --  2013-03-25  View "grenzpunkt" und "gebaeude_txt"
---  2013-04-19  Neues zum Thema "Bodenschätzung", Views entfallen
+--  2013-04-19  Neues zum Thema "BodenschÃ¤tzung", Views entfallen
 --  2013-10-24  Table "pp_strassenname" ersetzt View "ap_pto_stra" im WMS (ms6)
---  2014-01-22  Neue Views für CSV-Export, neue Schlüsseltabelle "ax_namensnummer_eigentuemerart"
---  2014-08-25  Straßennamen aufteilen in _P und L
+--  2014-01-22  Neue Views fÃ¼r CSV-Export, neue SchlÃ¼sseltabelle "ax_namensnummer_eigentuemerart"
+--  2014-09-08  PostNAS 0.8 ohne "alkis_beziehungen"
 
 
 -- Tabellen
@@ -32,8 +32,8 @@
 
 -- ALKIS / PostNAS
 -- ---------------
--- Berechtigung für Kartendarstellung
-  GRANT SELECT ON TABLE alkis_beziehungen TO ms6;
+-- Berechtigung fÃ¼r Kartendarstellung
+--GRANT SELECT ON TABLE alkis_beziehungen TO ms6;
   GRANT SELECT ON TABLE ap_darstellung TO ms6;
   GRANT SELECT ON TABLE ap_lpo TO ms6;
   GRANT SELECT ON TABLE ap_lto TO ms6;
@@ -141,7 +141,7 @@
   GRANT SELECT ON TABLE ax_wohnplatz TO ms6;
 
 -- Berechtigung fuer Buchauskunft
-  GRANT SELECT ON TABLE alkis_beziehungen TO mb27;
+--GRANT SELECT ON TABLE alkis_beziehungen TO mb27;
   GRANT SELECT ON TABLE ap_darstellung TO mb27;
   GRANT SELECT ON TABLE ap_lpo TO mb27;
   GRANT SELECT ON TABLE ap_lto TO mb27;
@@ -270,8 +270,10 @@
   GRANT SELECT ON TABLE  pp_flur                           TO ms6;
   GRANT SELECT ON TABLE  pp_flur                           TO mb27;
   GRANT SELECT ON TABLE  pp_flurstueck_nr                  TO ms6;
+
   GRANT SELECT ON TABLE  pp_strassenname_p                 TO ms6;
   GRANT SELECT ON TABLE  pp_strassenname_l                 TO ms6;
+
   GRANT SELECT ON TABLE  gemeinde_person                   TO ms6;
   GRANT SELECT ON TABLE  gemeinde_person                   TO mb27;
 
@@ -279,7 +281,7 @@
 -- Schluesseltabellen
 -- ------------------
 
--- Gebäude
+-- GebÃ¤ude
 GRANT SELECT ON TABLE ax_gebaeude_bauweise                 TO ms6;
 GRANT SELECT ON TABLE ax_gebaeude_bauweise                 TO mb27;
 GRANT SELECT ON TABLE ax_gebaeude_funktion                 TO ms6;
@@ -293,7 +295,7 @@ GRANT SELECT ON TABLE ax_gebaeude_zustand                  TO mb27;
 GRANT SELECT ON TABLE ax_bauteil_bauart                    TO ms6;
 GRANT SELECT ON TABLE ax_bauteil_bauart                    TO mb27;
 
--- Bodenschätzung
+-- BodenschÃ¤tzung
 GRANT SELECT ON TABLE ax_bodenschaetzung_bodenart          TO ms6;
 GRANT SELECT ON TABLE ax_bodenschaetzung_bodenart          TO mb27;
 GRANT SELECT ON TABLE ax_bodenschaetzung_entstehungsartoderklimastufe  TO ms6;
@@ -311,7 +313,7 @@ GRANT SELECT ON TABLE ax_musterlandesmusterundvergleichsstueck_merkmal TO mb27;
 GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO ms6;
 GRANT SELECT ON TABLE ax_bewertung_klassifizierung         TO mb27;
 
--- Bodenschätzung Views
+-- BodenschÃ¤tzung Views
 GRANT SELECT ON TABLE s_bodensch_wms                       TO ms6;
 GRANT SELECT ON TABLE s_bodensch_ent                       TO ms6;
 GRANT SELECT ON TABLE s_bodensch_po                        TO ms6;
@@ -339,7 +341,7 @@ GRANT SELECT ON TABLE ax_naturumweltoderbodenschutzrecht_artdf    TO mb27;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO ms6;
 GRANT SELECT ON TABLE ax_sonstigesrecht_artdf              TO mb27;
 
--- Sonstige Schlüsseltabellen
+-- Sonstige SchlÃ¼sseltabellen
 GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart        TO ms6;
 GRANT SELECT ON TABLE ax_buchungsstelle_buchungsart        TO mb27;
 GRANT SELECT ON TABLE ax_namensnummer_eigentuemerart       TO ms6;
@@ -375,5 +377,6 @@ GRANT SELECT ON TABLE ax_datenerhebung                     TO mb27;
 
   GRANT SELECT ON TABLE doppelverbindung                   TO mb27;
   GRANT SELECT ON TABLE exp_csv                            TO mb27;
+  GRANT SELECT ON TABLE exp_csv_str                        TO mb27;
 
 -- END --

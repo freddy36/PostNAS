@@ -17,6 +17,8 @@
 	2013-05-06 Fehlende Leerstelle
 	2014-01-28 Link zu alkisstrasse.php
 	2014-02-06 pg_free_result
+	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 */
 session_start();
 $cntget = extract($_GET);
@@ -50,7 +52,7 @@ if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
 // *** F L U R S T U E C K ***
 $sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, g.gemarkungsnummer, g.bezeichnung ";
-$sql.="FROM ax_flurstueck f LEFT JOIN ax_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
+$sql.="FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
 $sql.="WHERE f.gml_id= $1 ;";
 // Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
 $v = array($gmlid);
@@ -108,12 +110,12 @@ echo "\n\t</p>\n</td>";
 pg_free_result($res);
 
 // Lage MIT HausNr (Adresse)
-$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.hausnummer ";
-$sql.="FROM alkis_beziehungen v JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='weistAuf' "; // id FS";
-$sql.="ORDER BY s.bezeichnung, l.hausnummer;";
-$v=array($gmlid);
+$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.hausnummer 
+FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
+JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
+WHERE f.gml_id= $1 ORDER BY s.bezeichnung, l.hausnummer;";
+
+$v=array($gmlid); // id FS
 $res=pg_prepare("", $sql);
 $res=pg_execute("", $v);
 if (!$res) {
@@ -142,10 +144,11 @@ while($row = pg_fetch_array($res)) {
 pg_free_result($res);
 if ($j == 0) { // keine HsNr gefunden
 	// Lage OHNE HausNr
-	$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.unverschluesselt ";
-	$sql.="FROM alkis_beziehungen v JOIN ax_lagebezeichnungohnehausnummer l ON v.beziehung_zu=l.gml_id ";
-	$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-	$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='zeigtAuf' ORDER BY s.bezeichnung ;";
+	$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.unverschluesselt 
+	FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON substring(l.gml_id,1,16)=ANY(f.zeigtauf)
+	LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
+	WHERE f.gml_id= $1 ORDER BY s.bezeichnung;";
+
 	$v=array($gmlid);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -186,16 +189,15 @@ echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
 
 // *** G R U N D B U C H ***
 echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundbuch</h2>";
-// ALKIS: FS --> bfs --> GS --> bsb --> GB.
-$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
-$sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart ";
-$sql.="FROM alkis_beziehungen bfs JOIN ax_buchungsstelle s ON bfs.beziehung_zu=s.gml_id ";
-$sql.="JOIN alkis_beziehungen bsb ON s.gml_id=bsb.beziehung_von "; // Bez.Stelle-Blatt
-$sql.="JOIN ax_buchungsblatt b ON bsb.beziehung_zu=b.gml_id ";
-$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-$sql.="WHERE bfs.beziehung_von= $1 AND bfs.beziehungsart='istGebucht' AND bsb.beziehungsart='istBestandteilVon' ";
-$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
+// FS >istgebucht> GS >istbestandteilvon> GB.
+$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, 
+s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart 
+FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
+JOIN ax_buchungsblatt b ON s.istbestandteilvon=substring(b.gml_id,1,16)
+LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
+LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart=a.wert 
+WHERE f.gml_id= $1 ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
+
 $v=array($gmlid);
 $resg=pg_prepare("", $sql);
 $resg=pg_execute("", $v);
@@ -254,7 +256,7 @@ while($rowg = pg_fetch_array($resg)) {
 		if ($n == 0) { // keine NamensNr, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
 			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
-			linkgml($gkz, $gmlid, "Buchungsblatt");
+			linkgml($gkz, $gmlid, "Buchungsblatt", "");
 		}
 	}
 }

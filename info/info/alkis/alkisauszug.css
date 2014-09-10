@@ -29,7 +29,8 @@ p.strasse	{background-color: limegreen; color: slategray;}	/* Strasse */
 p.recht		{background-color: #F0F8FF; color: gray;}	/* Baurecht, Bodenneuordnung */
 
 /* Format nach Inhalt */
-p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */p.fsd		{margin-left: 170px;}	/* Flst-Flaeche */
+p.bezieh	{text-align: right; background: olive;	color: silver;} /* Beziehungen */
+p.fsd		{margin-left: 170px;}	/* Flst-Flaeche */
 p.gbl		{position: relative; left: 60px;}	/* Nam: Buchungsstelle*/
 p.zus		{margin: 2pt; padding: 2pt; border:1px dotted maroon; background: white;} /* Zusatz zum Eigent., gerahmt */
 p.avh		{font-style: italic; color: navy;}	/* Anteilsverhaeltnis */
@@ -55,7 +56,8 @@ span.gmlid	{font-style: italic; font-size: 7pt; text-align: right;}
 /* komplette Adresse im Rahmen */
 div.adr {border-left-width: 0px; border-right-width: 0px; border-bottom-width: 2px; border-top-width: 2px; 
 	width: 60%; font-size: 12pt; border-color: #a2d545; border-style: solid; 
-	margin-bottom: 8px; margin-top: 8px; margin-left: 0.7in;	overflow: auto; padding: 6px; background: #e4f7dd;}
+	margin-bottom: 8px; margin-top: 8px; margin-left: 0.7in;
+	overflow: auto; padding: 6px; background: #e4f7dd;}
 
 span.key 	{color: gray; font-style: italic;} /* Schluesselwert vor Text, Wert zurueck nehmen */
 span.wichtig{color: #BB0000; font-weight: bold;} /* Wert hervorheben */

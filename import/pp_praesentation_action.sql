@@ -1,11 +1,11 @@
 
--- ALKIS PostNAS 0.7
+-- ALKIS PostNAS 0.8
 
 -- Post Processing (pp_) Teil 3: Präsentationsobjekte ergänzen / reparieren
 
 -- Dies Script "pp_praesentation_action.sql" dient der Reparatur von fehlenden Texten in Präsentationsobjekten.
 -- Dies Script muss im Rahmen des Post-Processing nach jeder Konvertierung laufen.
--- Kommantare und Erläuterungen siehe in "pp_praesentation_sichten.sql".
+-- Kommentare und Erläuterungen siehe in "pp_praesentation_sichten.sql".
 
 -- Stand 
 --  2013-10-16  F.J. krz: Straßennamen fehlen in den Präsentationsobjekten, Tabelle "ap_pto"

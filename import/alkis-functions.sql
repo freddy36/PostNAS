@@ -11,6 +11,12 @@
 -- 2014-01-31: Deaktivieren von "update_fields_beziehungen", 
 --             statt dessen verwenden der "import_id" um alte Relationen zu identifizieren und zu löschen.
 
+-- 2014-08-27: Angleichung des Datenbank-Schema an die NorBIT-Version.
+--             Die Trigger-Function "delete_feature_kill()" arbeitet falsch, wenn "gml_id" als "character varying" angelegt ist.
+--             Das Format war bisher charachter(16).
+--             Zugriff auf die Spalte gml_id umgestellt von "=" auf "like" um den individuellen Timestamp zu ignorieren.
+
+-- 2014-09-04  Trigger-Funktion "delete_feature_kill()" angepasst: keine Tabelle "alkis_beziehungen" mehr.
 
 -- Table/View/Sequence löschen, wenn vorhanden
 CREATE OR REPLACE FUNCTION alkis_dropobject(t TEXT) RETURNS varchar AS $$
@@ -175,20 +181,11 @@ BEGIN
 
 	EXECUTE sql;
 
---	CREATE UNIQUE INDEX vobjekte_gmlid ON vobjekte(gml_id,beginnt);
---	CREATE INDEX vobjekte_table ON vobjekte(table_name);
-
 	CREATE VIEW vbeziehungen AS
 		SELECT	beziehung_von,(SELECT table_name FROM vobjekte WHERE gml_id=beziehung_von) AS typ_von
 			,beziehungsart
 			,beziehung_zu,(SELECT table_name FROM vobjekte WHERE gml_id=beziehung_zu) AS typ_zu
 		FROM alkis_beziehungen;
-
---	CREATE INDEX vbeziehungen_von    ON vbeziehungen(beziehung_von);
---	CREATE INDEX vbeziehungen_vontyp ON vbeziehungen(typ_von);
---	CREATE INDEX vbeziehungen_art    ON vbeziehungen(beziehungsart);
---	CREATE INDEX vbeziehungen_zu     ON vbeziehungen(beziehung_zu);
---	CREATE INDEX vbeziehungen_zutyp  ON vbeziehungen(typ_zu);
 
 	RETURN 'ALKIS-Views erzeugt.';
 END;
@@ -375,40 +372,83 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 -- "delete" und "replace" verarbeiten (OHNE Historie). Historische Objekte werden sofort gelöscht.
 -- Geaendert 2014-02-03 auf Vorschlag M.B. Krs. Unna
-CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
+
+-- 2014-08-27: Anpassung an vereinheitlichtes Datenbank-Schema.
+-- Wenn die Spalte gml_id im Format "character varying" (ohne Längenbegrenzung) angelegt wird,
+-- muss gezielt der ID-Teil vor dem Timestamp angesprochen werden.
+-- Zugriff auf die Spalte gml_id umgestellt von "=" auf "like".
+CREATE OR REPLACE FUNCTION delete_feature_kill_vers07() RETURNS TRIGGER AS $$
 DECLARE
-	query TEXT;
 	begsql TEXT;
 	aktbeg TEXT;
 	gml_id TEXT;
-	query_bez TEXT;
 BEGIN
-	NEW.typename := lower(NEW.typename);
-	NEW.context := lower(NEW.context);
-	gml_id      := substr(NEW.featureid, 1, 16);
+	NEW.typename := lower(NEW.typename); -- Objektart = Tabellen-Name
+	NEW.context := lower(NEW.context);   -- Operation 'delete', 'replace' oder 'update'
+	gml_id      := substr(NEW.featureid, 1, 16); -- ID-Teil der gml_id, ggf. anhängender Timestamp abgeschnitten
 
 	IF NEW.context IS NULL THEN
-		NEW.context := 'delete';
+		NEW.context := 'delete'; -- default
 	END IF;
 
-	IF NEW.context='delete' THEN -- Ersatzloses Loeschen des Objektes
+	IF NEW.context='delete' THEN -- ersatzloses Löschen des Objektes
+
           -- In der Objekt-Tabelle
-		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id = ''' || gml_id || '''';
-          -- Beziehungen von und zu dem Objekt sind hinfaellig
+		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%''';
+ 
+         -- Beziehungen von und zu dem Objekt sind hinfaellig (zukünftig entfallend)
 		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id || ''' OR beziehung_zu = ''' || gml_id || '''';
+
 		--RAISE NOTICE 'Lösche gml_id % in % und Beziehungen', gml_id, NEW.typename;
 
 	ELSE -- Ersetzen eines Objektes (Replace). In der Objekt-Tabelle sind jetzt bereits 2 Objekte vorhanden (alt und neu).
+
 		-- beginnt-Wert des aktuellen Objektes ermitteln
-		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id = ''' || substr(NEW.replacedBy, 1, 16) || ''' AND endet IS NULL';
+		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id like ''' || substr(NEW.replacedBy, 1, 16) || '%'' AND endet IS NULL';
 		EXECUTE begsql INTO aktbeg;
+
 		-- Alte Objekte entfernen
-		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id = ''' || gml_id || ''' AND beginnt < ''' || aktbeg || '''';
-		-- Beziehungen vom alten Objekt entfernen, die aus frueheren Importen stammen
-		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id || ''' AND import_id < (SELECT max(id) FROM import)';
+		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%'' AND beginnt < ''' || aktbeg || '''';
+
+		-- Beziehungen des alten Objektes entfernen, die aus früheren Importen stammen
+		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von like ''' || gml_id || '%'' AND import_id < (SELECT max(id) FROM import)';
+
+	END IF;
+
+	NEW.ignored := false;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2014-09-04: Version 0.8 ohne "alkis_beziehungen"-Tabelle
+CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
+DECLARE
+	begsql TEXT;
+	aktbeg TEXT;
+	gml_id TEXT;
+BEGIN
+	NEW.typename := lower(NEW.typename); -- Objektart=Tabellen-Name
+	NEW.context := lower(NEW.context);   -- Operation 'delete'/'replace'/'update'
+	gml_id      := substr(NEW.featureid, 1, 16); -- ID-Teil der gml_id, ohne Timestamp
+
+	IF NEW.context IS NULL THEN
+		NEW.context := 'delete'; -- default
+	END IF;
+	IF NEW.context='delete' THEN -- Löschen des Objektes
+          -- In der Objekt-Tabelle
+		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%''';
+		--RAISE NOTICE 'Lösche gml_id % in %', gml_id, NEW.typename;
+	ELSE -- Ersetzen des Objektes (Replace). In der Objekt-Tabelle sind jetzt bereits 2 Objekte vorhanden (alt und neu).
+
+		-- beginnt-Wert des aktuellen Objektes ermitteln
+		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id like ''' || substr(NEW.replacedBy, 1, 16) || '%'' AND endet IS NULL';
+		EXECUTE begsql INTO aktbeg;
+
+		-- Alte Objekte entfernen
+		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%'' AND beginnt < ''' || aktbeg || '''';
+
 	END IF;
 
 	NEW.ignored := false;
@@ -434,8 +474,9 @@ BEGIN
 	-- In allen Tabellen die Objekte löschen, die ein Ende-Datum haben
 	FOR c IN
 		SELECT table_name
-		FROM information_schema.columns a
+		 FROM information_schema.columns a
 		WHERE a.column_name='endet'
+            AND a.is_updatable='YES' -- keine Views, die endet-Spalte haben
 		ORDER BY table_name
 	LOOP
 		EXECUTE 'DELETE FROM ' || c.table_name || ' WHERE NOT endet IS NULL';

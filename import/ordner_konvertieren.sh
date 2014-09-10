@@ -55,7 +55,7 @@ function get_db_config(){
 	# Bestaetigung holen
 	#
 	echo " "
-	echo "Abschlieﬂende Best‰tigung:"
+	echo "Abschlie√üende Best√§tigung:"
 	until [ "$JEIN" = "j" -o "$JEIN" = "n" ]
 	do
 		echo " "

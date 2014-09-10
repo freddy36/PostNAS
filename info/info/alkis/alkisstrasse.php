@@ -8,7 +8,9 @@
 	Version:
 	2014-01-23 Neu
 	2014-01-24 CSV-Export
-    2014-01-30 pg_free_result
+	2014-01-30 pg_free_result
+	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 */
 session_start();
 $cntget = extract($_GET);
@@ -30,7 +32,7 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>ALKIS Stra&szlig;e</title>
 	<link rel="stylesheet" type="text/css" href="alkisauszug.css">
-	<link rel="shortcut icon" type="image/x-icon" href="ico/Lage_an_Strasse.ico">
+	<link rel="shortcut icon" type="image/x-icon" href="ico/Strassen.ico">
 	<script type="text/javascript">
 		function ALKISexport() {
 			window.open(<?php echo "'alkisexport.php?gkz=".$gkz."&tabtyp=strasse&gmlid=".$gmlid."'"; ?>);
@@ -45,14 +47,14 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
-$sql ="SELECT s.land, s.regierungsbezirk, s.kreis, s.gemeinde, s.lage, s.bezeichnung AS snam, ";
-$sql.="b.bezeichnung AS bnam, r.bezeichnung AS rnam, k.bezeichnung AS knam, g.bezeichnung AS gnam, o.gml_id AS ogml ";
-$sql.="FROM ax_lagebezeichnungkatalogeintrag s JOIN ax_bundesland b ON s.land=b.land ";
-$sql.="JOIN ax_regierungsbezirk r ON s.land=r.land AND s.regierungsbezirk=r.regierungsbezirk ";
-$sql.="JOIN ax_kreisregion k ON s.land=k.land AND s.regierungsbezirk=k.regierungsbezirk AND s.kreis=k.kreis ";
-$sql.="JOIN ax_gemeinde g ON s.land=g.land AND s.regierungsbezirk=g.regierungsbezirk AND s.kreis=g.kreis AND s.gemeinde=g.gemeinde ";
-$sql.="LEFT JOIN ax_lagebezeichnungohnehausnummer o ON s.land=o.land AND s.regierungsbezirk=o.regierungsbezirk AND s.kreis=o.kreis AND s.gemeinde=o.gemeinde AND s.lage=o.lage ";
-$sql.="WHERE s.gml_id= $1 ;"; 
+$sql ="SELECT s.land, s.regierungsbezirk, s.kreis, s.gemeinde, s.lage, s.bezeichnung AS snam, 
+b.bezeichnung AS bnam, r.bezeichnung AS rnam, k.bezeichnung AS knam, g.bezeichnung AS gnam, o.gml_id AS ogml 
+FROM ax_lagebezeichnungkatalogeintrag s JOIN ax_bundesland b ON s.land=b.land 
+JOIN ax_regierungsbezirk r ON s.land=r.land AND s.regierungsbezirk=r.regierungsbezirk 
+JOIN ax_kreisregion k ON s.land=k.land AND s.regierungsbezirk=k.regierungsbezirk AND s.kreis=k.kreis 
+JOIN ax_gemeinde g ON s.land=g.land AND s.regierungsbezirk=g.regierungsbezirk AND s.kreis=g.kreis AND s.gemeinde=g.gemeinde 
+LEFT JOIN ax_lagebezeichnungohnehausnummer o ON s.land=o.land AND s.regierungsbezirk=o.regierungsbezirk AND s.kreis=o.kreis AND s.gemeinde=o.gemeinde AND s.lage=o.lage 
+WHERE s.gml_id= $1 ;"; 
 
 $v=array($gmlid);
 $res=pg_prepare("", $sql);
@@ -130,17 +132,21 @@ pg_free_result($res);
 // F L U R S T U E C K E
 echo "\n\n<a name='fs'></a><h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;cke</h3>\n";
 echo "\n<p>Zusammenfassung von 'Lage mit Hausnummer' und 'Lage ohne Hausnummer' an dieser Straße</p>";
+
 // ax_Flurstueck >weistAuf> ax_LagebezeichnungMitHausnummer  > = Hauptgebaeude 
 // ax_Flurstueck >zeigtAuf> ax_LagebezeichnungOhneHausnummer > = Strasse
-$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, duett.lgml, duett.hausnummer FROM ax_flurstueck f ";
-$sql.="JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="JOIN (SELECT v1.beziehung_von AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk, lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer ";
-$sql.="FROM alkis_beziehungen v1 JOIN ax_lagebezeichnungmithausnummer lm ON lm.gml_id=v1.beziehung_zu AND v1.beziehungsart= 'weistAuf' ";
-$sql.="UNION SELECT v2.beziehung_von AS fsgml, '' AS lgml, lo.land, lo.regierungsbezirk, lo.kreis, lo.gemeinde, lo.lage, '' AS hausnummer ";
-$sql.="FROM alkis_beziehungen v2 JOIN ax_lagebezeichnungohnehausnummer lo ON lo.gml_id=v2.beziehung_zu AND v2.beziehungsart= 'zeigtAuf' ";
-$sql.=") AS duett ON f.gml_id=duett.fsgml "; 
-$sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON duett.land=s.land AND duett.regierungsbezirk=s.regierungsbezirk AND duett.kreis=s.kreis AND duett.gemeinde=s.gemeinde AND duett.lage=s.lage "; 
-$sql.="WHERE s.gml_id = $1 ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+// Suchkriterium: gml_id aus Katalog
+$subquery = "SELECT f1.gml_id AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk, lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer 
+ FROM ax_flurstueck f1 JOIN ax_lagebezeichnungmithausnummer lm ON substring(lm.gml_id,1,16)=ANY(f1.weistAuf) 
+UNION SELECT f2.gml_id AS fsgml, '' AS lgml, lo.land, lo.regierungsbezirk, lo.kreis, lo.gemeinde, lo.lage, '' AS hausnummer 
+ FROM ax_flurstueck f2 JOIN ax_lagebezeichnungohnehausnummer lo ON substring(lo.gml_id,1,16)=ANY(f2.zeigtauf) ";
+
+$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, duett.lgml, duett.hausnummer 
+ FROM ax_flurstueck f JOIN ( ".$subquery." ) AS duett ON substring(f.gml_id,1,16)=duett.fsgml 
+ JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+ JOIN ax_lagebezeichnungkatalogeintrag s ON duett.land=s.land AND duett.regierungsbezirk=s.regierungsbezirk AND duett.kreis=s.kreis AND duett.gemeinde=s.gemeinde AND duett.lage=s.lage 
+WHERE s.gml_id = $1 ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+
 $v=array($gmlid);
 $resf=pg_prepare("", $sql);
 $resf=pg_execute("", $v);
@@ -172,7 +178,7 @@ while($rowf = pg_fetch_array($resf)) {
 		echo $rowf["bezeichnung"]."</td>";
 		echo "\n\t<td>".$flur."</td>";
 		echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
-		if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck");}
+		if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck", "ax_flurstueck");}
 		echo "</td>";
 		echo "\n\t<td class='fla'>".$flae."</td>";
 		echo "\n\t<td class='hsnr'>".$rowf["hausnummer"]."</td>";

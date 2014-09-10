@@ -3,16 +3,12 @@
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 	2013-05-15  Function verlegt
-    2014-02-06  Korrektur zeile_person
+	2014-02-06  Korrektur zeile_person
+	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 */
 
-// function Typ "zeile_**"  = Ausgabe eines Knotens
-// - Icon,  ggf. mit Link zur Buchauskunft
-// - Zeile, ggf. mit Link zur weiteren Auflösung untergeordneter Knoten
-// Hierin die Encodierung für url und HTML.
-
 function is_ne_zahl($wert) {
-	// Prueft, ob ein Wert ausschließlich aus den Zahlen 0 bis 9 besteht
+	// Prüft, ob ein Wert ausschließlich aus den Zahlen 0 bis 9 besteht
 	if (trim($wert, "0..9") == "") {return true;} else {return false;}
 }
 
@@ -20,7 +16,8 @@ function ZerlegungGBKennz($gbkennz) {
 	// Das eingegebene Grundbuch-Kennzeichen auseinander nehmen (gggg-999999z-BVNR)
 	// Return: 9=Fehler, 0=Listen alle Bezirke 1=Such Bezirk-Name
 	//  2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
-	global $zgbbez, $zblatt, $zblattn, $zblattz, $zbvnr;	$arr=explode("-", $gbkennz, 3);
+	global $zgbbez, $zblatt, $zblattn, $zblattz, $zbvnr;
+	$arr=explode("-", $gbkennz, 3);
 	$zgbbez=trim($arr[0]);
 	$zblatt=trim($arr[1]);
 	$zbvnr=trim($arr[2]);
@@ -71,6 +68,11 @@ function suchfeld($suchstring) {	// Suchstring Ausgeben UND das Eingabeformular 
 	$out="<a title='Dies als Suchbegriff setzen' href='javascript:formular_belegung(\"".$suchstring."-\")'>".$suchstring."</a>";
 	return $out;
 }
+
+// function Typ "zeile_**"  = Ausgabe eines Knotens
+// - Icon,  ggf. mit Link zur Buchauskunft
+// - Zeile, ggf. mit Link zur weiteren Auflösung untergeordneter Knoten
+// Hierin die Encodierung für url und HTML.
 
 function zeile_ag ($ag, $anr, $aktuell) {	// Zeile  A m t s g e r i c h t
 	global $gkz, $gemeinde, $epsg, $auskpath;
@@ -233,7 +235,7 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	global $gemeinde, $blattgml, $epsg, $gfilter, $debug;
 
 	// SQL-Bausteine vorbereiten
-	// SQL vorne gleich
+	// vorne gleich
 	$sql1 ="SELECT s1.laufendenummer AS lfd, s1.gml_id AS bsgml, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql1.="st_x(st_centroid(f.wkb_geometry)) AS x, ";
@@ -242,26 +244,24 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 		$sql1.="st_x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql1.="st_y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y, ";			
 	}
-	$sql1.="g.gemarkung, g.gemarkungsname ";
-	$sql1.="FROM alkis_beziehungen vbg ";
-	$sql1.="JOIN ax_buchungsstelle s1 ON vbg.beziehung_von = s1.gml_id "; 
+	$sql1.="g.gemarkung, g.gemarkungsname FROM ax_buchungsstelle s1 "; 
 
-	// Zwischen-JOIN verschieden
-	$sqlz1 ="JOIN alkis_beziehungen vfb ON s1.gml_id = vfb.beziehung_zu ";
+	// 2 Varianten zwischen
+    $sqlz1="JOIN ax_flurstueck f ON f.istgebucht = s1.gml_id ";
 	
-	$sqlz2 ="JOIN alkis_beziehungen vss ON vss.beziehung_von = s1.gml_id ";
-	$sqlz2.="JOIN ax_buchungsstelle s2 ON vss.beziehung_zu = s2.gml_id ";
-	$sqlz2.="JOIN alkis_beziehungen vfb ON s2.gml_id = vfb.beziehung_zu ";
+	$sqlz2 ="JOIN ax_buchungsstelle s2 ON s2.gml_id = ANY(s1.an) "; // nur an oder "an" und "zu" ?
+// Test: SELECT * FROM ax_buchungsstelle WHERE NOT zu IS NULL;  // keine Treffer für "zu"
+//	$sqlz2 ="JOIN ax_buchungsstelle s2 ON (s2.gml_id = ANY(s1.an) OR s2.gml_id = ANY(s1.zu)) "; 
+    $sqlz2.="JOIN ax_flurstueck f ON f.istgebucht = s2.gml_id ";
 
-	// SQL hinten gleich
-	$sql2 ="JOIN ax_flurstueck f ON vfb.beziehung_von = f.gml_id ";
+	// hinten gleich
 	$sql2.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
-	$sql2.="WHERE vbg.beziehung_zu= $1 AND vbg.beziehungsart='istBestandteilVon' AND vfb.beziehungsart='istGebucht' ";
+	$sql2.="WHERE s1.istbestandteilvon = $1 ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql2.="AND g.gemeinde=".$gemeinde." "; break;
+			$sql2.="AND g.gemeinde='".$gemeinde."' "; break;
 		case 2: // Liste
-			$sql2.="AND g.gemeinde in (".$gemeinde.") "; break;
+			$sql2.="AND g.gemeinde in ('".str_replace(",", "','", $gemeinde)."') "; break;
 	}
 	$sql2.="ORDER BY cast(s1.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner LIMIT $2 ;";
 
@@ -274,7 +274,7 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	$res=pg_execute("", $v);
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Buchung und Flurst&uuml;ck.</p>";
-		#if ($debug >= 3) {echo "\n<p class='err'>".$sql1.$sqlz1.$sql2."</p>";}
+		if ($debug >= 3) {echo "\n<p class='err'>".$sql1.$sqlz1.$sql2."</p>";}
 		return;
 	}
 	$zfs1=0;

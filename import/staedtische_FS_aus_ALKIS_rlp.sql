@@ -6,8 +6,9 @@
 -- Individuelle Auswertung "Kommunales Eigentum" für eine Stadt oder Gemeinde.
 -- Ggf. müssen verschiedene Schreibweisen des Eigentümers oder Zusätze zum Namen berücksichtigt werden.
 
--- Stand: 2013-11-26 - hier die Version für die ALKIS-Musterdaten RLP Mustermonzel
-
+-- Stand:
+--  2013-11-26 Version für die ALKIS-Musterdaten RLP Mustermonzel
+--  2014-08-29 Umstellung auf Datenstruktur PostNAS 0.8 (ohne Tabelle "alkis_beziehungen")
 
 -- Voraussetzung = View "doppelverbindung" aus ALKIS PostNAS-Projekt Datei "sichten.sql"
 
@@ -15,82 +16,56 @@
 -- View für Shape-Export
 -- ---------------------
 
---           DROP VIEW st_flurst_exp;
-CREATE OR REPLACE VIEW st_flurst_exp
+--           DROP VIEW staedtische_flurstuecke;
+CREATE OR REPLACE VIEW staedtische_flurstuecke
 AS
-  SELECT   -- DISTINCT
+  SELECT
      f.gml_id,
      f.land, f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner,
      f.amtlicheflaeche,
-  -- f.flurstueckskennzeichen,
-  -- p.nachnameoderfirma                -- Familienname
      f.wkb_geometry
-  FROM ax_flurstueck    f               -- Flurstück
-  JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
-    ON d.fsgml = f.gml_id 
-  JOIN ax_buchungsstelle s              -- Buchungs-Stelle
-    ON d.bsgml = s.gml_id 
-  JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
-    ON s.buchungsart = b.wert 
-  JOIN alkis_beziehungen v3             -- Grundbuch (zur Buchungs-Stelle)
-    ON s.gml_id = v3.beziehung_von  
-  JOIN ax_buchungsblatt  gb 
-    ON v3.beziehung_zu = gb.gml_id 
-  JOIN alkis_beziehungen v4             -- Namensnummer (zum GB-Blatt)
-    ON v4.beziehung_zu = gb.gml_id
-  JOIN ax_namensnummer nn 
-    ON v4.beziehung_von = nn.gml_id 
-  JOIN alkis_beziehungen v5             -- Person (zur Namensnummer)
-    ON v5.beziehung_von = nn.gml_id
-  JOIN ax_person p
-    ON v5.beziehung_zu = p.gml_id 
- WHERE v3.beziehungsart = 'istBestandteilVon'  -- Buchung  --> Blatt
-   AND v4.beziehungsart = 'istBestandteilVon'  -- Blatt    --> NamNum
-   AND v5.beziehungsart = 'benennt'            -- NamNum   --> Person
-   AND f.endet IS NULL
+  FROM ax_flurstueck    f                                        -- Flurstück
+  JOIN doppelverbindung d    ON d.fsgml = f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+  JOIN ax_buchungsstelle s   ON d.bsgml = s.gml_id               -- Buchungs-Stelle
+--JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert -- Enstschlüsselung Buchungsart
+  JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+  JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+  JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
+ WHERE f.endet  IS NULL
+   AND s.endet  IS NULL
+   AND gb.endet IS NULL
+   AND nn.endet IS NULL
+   AND p.endet  IS NULL
    AND p.nachnameoderfirma = 'Ortsgemeinde Osann-Monzel'; -- ** EIGENTÜMER / ERBBAUBERECHTIGTER **
 
 -- Bei Schreib-Varianten wie "Stadt XXX - Wasserwerke -" oder  "Stadt XXX - Kanalbetriebe -"
--- muss hier ggf. der LOKE-Operator verwendet werden: LIKE "Stadt XXX%"
+-- muss hier ggf. der LIKE-Operator verwendet werden: LIKE "Stadt XXX%"
 
-COMMENT ON VIEW st_flurst_exp  IS 'Flurstücke der Ortsgemeinde Osann-Monzel. Für Shape-Export: Mit Kennzeichen und Fläche';
+COMMENT ON VIEW staedtische_flurstuecke  IS 'Flurstücke der Ortsgemeinde Osann-Monzel. Für Shape-Export: Mit Kennzeichen und Fläche';
 
 
--- View für Shape-Export
+-- View für WMS
+-- ---------------------
+
 --        DROP    VIEW st_flurst;
 CREATE OR REPLACE VIEW st_flurst
 AS
-  SELECT   -- DISTINCT
+  SELECT
      f.gml_id,
-     d.ba_dien,                         -- Buchungsart der dienenden Buchung
-  -- f.land, f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner,
-  -- f.amtlicheflaeche,
-  -- f.flurstueckskennzeichen,
-  -- p.nachnameoderfirma                -- Familienname
+     d.ba_dien, -- Buchungsart der dienenden Buchung --> CLASSITEM im WMS
      f.wkb_geometry
-  FROM ax_flurstueck    f               -- Flurstück
-  JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
-    ON d.fsgml = f.gml_id 
-  JOIN ax_buchungsstelle s              -- Buchungs-Stelle
-    ON d.bsgml = s.gml_id 
-  JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
-    ON s.buchungsart = b.wert 
-  JOIN alkis_beziehungen v3             -- Grundbuch (zur Buchungs-Stelle)
-    ON s.gml_id = v3.beziehung_von  
-  JOIN ax_buchungsblatt  gb 
-    ON v3.beziehung_zu = gb.gml_id 
-  JOIN alkis_beziehungen v4             -- Namensnummer (zum GB-Blatt)
-    ON v4.beziehung_zu = gb.gml_id
-  JOIN ax_namensnummer nn 
-    ON v4.beziehung_von = nn.gml_id 
-  JOIN alkis_beziehungen v5             -- Person (zur Namensnummer)
-    ON v5.beziehung_von = nn.gml_id
-  JOIN ax_person p
-    ON v5.beziehung_zu = p.gml_id 
- WHERE v3.beziehungsart = 'istBestandteilVon'  -- Buchung  --> Blatt
-   AND v4.beziehungsart = 'istBestandteilVon'  -- Blatt    --> NamNum
-   AND v5.beziehungsart = 'benennt'            -- NamNum   --> Person
-   AND f.endet IS NULL
+  FROM ax_flurstueck    f                                        -- Flurstück
+  JOIN doppelverbindung d    ON d.fsgml = f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+  JOIN ax_buchungsstelle s   ON d.bsgml = s.gml_id               -- Buchungs-Stelle
+  JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert -- Enstschlüsselung Buchungsart
+  JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+  JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+  JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
+ WHERE f.endet  IS NULL
+   AND s.endet  IS NULL
+   AND gb.endet IS NULL
+   AND nn.endet IS NULL
+   AND p.endet  IS NULL
    AND p.nachnameoderfirma = 'Ortsgemeinde Osann-Monzel'; -- ** EIGENTÜMER / ERBBAUBERECHTIGTER **
 
 COMMENT ON VIEW st_flurst  IS 'Flurstücke der Ortsgemeinde Osann-Monzel. Für WMS: nur ID und Geometrie.';
@@ -99,7 +74,13 @@ COMMENT ON VIEW st_flurst  IS 'Flurstücke der Ortsgemeinde Osann-Monzel. Für W
 
 
 -- Buchungsarten darin?
---    SELECT DISTINCT ba_dien, count(gml_id) AS anzahl FROM st_flurst GROUP BY ba_dien ORDER BY ba_dien;
-
+/*
+ SELECT DISTINCT 
+     ba_dien, 
+     count(gml_id) AS anzahl 
+  FROM st_flurst 
+  GROUP BY ba_dien
+  ORDER BY ba_dien;
+*/
 
 -- the HAPPY end --

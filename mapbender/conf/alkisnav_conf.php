@@ -1,15 +1,15 @@
 <?php
-/* Einstellungen fuer Mapbender-Navigation mit ALKIS-Daten
-	ALKIS-PostGIS-Datenbank aus Konverter PostNAS 0.7
+/*	Einstellungen fuer Mapbender-Navigation mit ALKIS-Daten
+	ALKIS-PostGIS-Datenbank aus Konverter PostNAS 0.8
 	krz Mi.-Ra./Li.
-	2013-04-26 ALKIS 07
+	2014-09-10 PostNAS 0.8: ohne "alkis_beziehungen"
 */
 
 #	DB-Connection
 	$host="localhost";
 	$port="5432";
 	$dbname="alkis";	// .$dbvers.$gkz - Mandant
-	$dbvers="07";		// 05 oder 06 (steuert Format von .lage)
+	$dbvers="08";		// 05 oder 06 (steuert Format von .lage)
 	$user="***";
 	$password="***";
 
@@ -23,7 +23,7 @@
 	$scalehs=500;
 
 #	default-Koordinatensystem der GUI
-	$gui_epsg=31467;
+	$gui_epsg=25832;
 
 #	Landes-Kennung
 	$land="05"; // NRW

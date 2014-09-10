@@ -8,7 +8,9 @@
 	2011-12-14  function imFenster
 	2013-04-08  deprecated "import_request_variables" ersetzt
 	2013-06-27	hiervon neue Variante alkisbaurecht (ohne "inlay"), 
-					dafür hier die Schlüssel ganz raus und Flurstücks-Verschneidung raus.
+			dafür hier die Schlüssel ganz raus und Flurstücks-Verschneidung raus.
+	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 */
 session_start();
 $cntget = extract($_GET);
@@ -41,13 +43,10 @@ $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // wie View "baurecht"
-$sql ="SELECT r.ogc_fid, r.name, r.stelle, r.bezeichnung AS rechtbez, ";
-$sql.="a.bezeichner  AS adfbez, d.bezeichnung AS stellbez, ";
-$sql.="round(st_area(r.wkb_geometry)::numeric,0) AS flae ";
-$sql.="FROM ax_bauraumoderbodenordnungsrecht r ";
-$sql.="LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung = a.wert ";
-$sql.="LEFT JOIN ax_dienststelle d ON r.land = d.land AND r.stelle = d.stelle ";
-$sql.="WHERE r.gml_id= $1 ;";
+$sql ="SELECT r.ogc_fid, r.name, r.stelle, r.bezeichnung AS rechtbez, a.bezeichner  AS adfbez, d.bezeichnung AS stellbez, round(st_area(r.wkb_geometry)::numeric,0) AS flae 
+FROM ax_bauraumoderbodenordnungsrecht r 
+LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung=a.wert 
+LEFT JOIN ax_dienststelle d ON r.land=d.land AND r.stelle=d.stelle WHERE r.gml_id= $1 ;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);

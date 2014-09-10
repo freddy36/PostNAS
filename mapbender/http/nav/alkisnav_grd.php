@@ -9,6 +9,7 @@
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Hervorhebung aktuelles Objekt. Title "Nachweis" auch auf Icon.
 	2013-12-12	Limit in EinBlatt von 200 weit hoch gesetzt (bis Blättern möglich wird)
+	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -51,14 +52,15 @@ function ListAG($liste_ag, $aktuell) {
 	// Amtsgerichte (Grundbuch) auflisten, dazu als Filter eine AG-Liste
 	global $debug;
 	$linelimit=40;
-	$sql ="SELECT a.stelle, a.bezeichnung AS ag FROM ax_dienststelle a ";
-	$sql.="WHERE a.stelle IN (".$liste_ag.") AND a.stellenart = 1000 "; // Amtsgerichte aus Liste
-	$sql.="ORDER BY a.bezeichnung LIMIT $1 ;";
+
+	$sql ="SELECT stelle, bezeichnung AS ag FROM ax_dienststelle ";
+	$sql.="WHERE stelle IN (".$liste_ag.") AND stellenart = 1000 AND endet IS NULL "; // AG aus Liste
+	$sql.="ORDER BY bezeichnung LIMIT $1 ;";
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", array($linelimit));
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Amtsgerichte</p>";
-		#if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
+		if ($debug >= 3) {echo "\n<p class='err'>".$sql."</p>";}
 		return 0;
 	}
 	$cnt = 0;
@@ -92,9 +94,9 @@ function ListGBBez($agkey) {
 	// Body
 	$sql ="SELECT g.bezirk, g.bezeichnung FROM ax_buchungsblattbezirk g ";
 	$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle ";
-	$sql.="WHERE a.stelle = $1 AND a.stellenart = 1000 ";
+	$sql.="WHERE a.stelle = $1 AND a.stellenart = 1000 AND a.endet IS NULL AND g.endet IS NULL ";
 	// Diese Subquery stellt sicher, dass nur Bezirke aufgelistet werden, die auch Blätter enthalten:
-	$sql.="AND NOT (SELECT gml_id FROM ax_buchungsblatt b WHERE b.land=g.land and b.bezirk=g.bezirk LIMIT 1) IS NULL ";
+	$sql.="AND NOT (SELECT gml_id FROM ax_buchungsblatt b WHERE b.land=g.land AND b.bezirk=g.bezirk AND b.endet IS NULL LIMIT 1) IS NULL ";
 	$sql.="ORDER BY g.bezeichnung LIMIT $2 ;";
 	$v = array($agkey, $linelimit);
 	$res = pg_prepare("", $sql);
@@ -127,7 +129,7 @@ function ag_bez_head($gbbez, $bezaktuell) {
 	// Parameter = Schlüssel des Bezirks
 	#global $debug;
 	$sql ="SELECT a.stelle, a.bezeichnung AS ag, g.bezeichnung FROM ax_buchungsblattbezirk g ";
-	$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle WHERE g.bezirk= $1 LIMIT 1;";
+	$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle WHERE g.bezirk= $1 AND g.endet IS NULL AND a.endet IS NULL LIMIT 1;";
 	$v=array($gbbez);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -158,7 +160,7 @@ function SuchGBBezName() {
 	$linelimit=80;
 	$sql ="SELECT a.stelle, a.bezeichnung AS ag, g.bezirk, g.bezeichnung FROM ax_buchungsblattbezirk g ";
 	$sql.="JOIN ax_dienststelle a ON g.stelle=a.stelle ";
-	$sql.="WHERE g.bezeichnung ILIKE $1 "; //	"AND a.stellenart=1000 " // Amtsgericht
+	$sql.="WHERE g.bezeichnung ILIKE $1 AND g.endet IS NULL AND a.endet IS NULL "; // "AND a.stellenart=1000 " Amtsgericht
 	$sql.="ORDER BY a.bezeichnung, g.bezeichnung LIMIT $2 ;";
 	if ( $gbkennz == "") {
 		$match = "%";
@@ -218,7 +220,7 @@ function EinBezirk($showParent) {
 	}
 	// Body
 	$sql ="SELECT b.gml_id, b.buchungsblattnummermitbuchstabenerweiterung AS blatt FROM ax_buchungsblatt b ";
-	$sql.="WHERE b.bezirk= $1 ORDER BY b.buchungsblattnummermitbuchstabenerweiterung LIMIT $2 ;";
+	$sql.="WHERE b.bezirk= $1 AND b.endet IS NULL ORDER BY b.buchungsblattnummermitbuchstabenerweiterung LIMIT $2 ;";
 	$v=array($zgbbez, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -252,7 +254,7 @@ function gml_blatt() {
 	// Kennzeichen "Bezirk + Blatt" eingegeben. Dazu die gml_id des Blattes ermitteln.
 	global $debug, $zgbbez, $zblatt, $zblattn, $zblattz;
 	$sql ="SELECT b.gml_id, b.buchungsblattnummermitbuchstabenerweiterung AS blatt FROM ax_buchungsblatt b "; 
-	$sql.="WHERE b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung ";
+	$sql.="WHERE b.bezirk= $1 AND b.endet IS NULL AND b.buchungsblattnummermitbuchstabenerweiterung ";
 
 	if ($zblattz == "") { // Ohne Buchstabenerweiterung: Formate '123','000123 ','0000123'
 		$sql.="IN ('".$zblattn."','".str_pad($zblattn, 6, "0", STR_PAD_LEFT)." ','".str_pad($zblattn, 7, "0", STR_PAD_LEFT)."');";
@@ -289,9 +291,8 @@ function EinBlatt($showParent) {
 		zeile_blatt ($zgbbez, $gbbeznam, $blattgml, $zblatt, false, "", true);
 	}
 	// Body
-	// 2013-12-12 Limit von ursprünglich 200 weit hoch gesetzt
 	GB_Buchung_FS(1000, $zgbbez."-".$zblatt); // Blatt -> Buchung -> Flurstueck (Limitiert)
-	// ++ besser Limit wieder runter und "Blättern"-Funktion einführen
+	// ++ besser Limit runter und "Blättern"-Funktion einführen
 	return; 
 }
 
@@ -299,12 +300,12 @@ function gml_buchungsstelle() {
 	// Kennzeichen "Bezirk + Blatt + BVNR" wurde eingegeben.
 	// Dazu die gml_id der Buchungsstelle ermitteln, um "function EinGrundstueck" benutzen zu können.
 	global $debug, $zgbbez, $zblatt, $zblattn, $zblattz, $zbvnr;
+
 	// Blatt ->  B u c h u n g s s t e l l e
 	$sql ="SELECT s.gml_id FROM ax_buchungsstelle s ";
-	$sql.="JOIN alkis_beziehungen v ON s.gml_id=v.beziehung_von "; 
-	$sql.="JOIN ax_buchungsblatt b ON b.gml_id=v.beziehung_zu "; 
-	$sql.="WHERE v.beziehungsart='istBestandteilVon' ";
-	$sql.="AND b.bezirk= $1 AND b.buchungsblattnummermitbuchstabenerweiterung ";
+	$sql.="JOIN ax_buchungsblatt b ON s.istbestandteilvon = b.gml_id "; 
+	$sql.="WHERE b.bezirk= $1 AND s.endet IS NULL AND b.endet IS NULL AND b.buchungsblattnummermitbuchstabenerweiterung ";
+
 	if ($zblattz == "") { // Ohne Buchstabenerweiterung
 		//Formate '123','000123 ','0000123'
 		$sql.="IN ('".$zblattn."','".str_pad($zblattn, 6, "0", STR_PAD_LEFT)." ','".str_pad($zblattn, 7, "0", STR_PAD_LEFT)."')";
@@ -350,15 +351,17 @@ function EinGrundstueck($showParent) {
 		} // ++ suchen!
 		zeile_buchung($buchunggml, $zbvnr, $zgbbez."-".$zblattn.$zblattz, false, true);
 	}
-// SQL-Bausteine
+
 // dienend $1 gml_id von
-//         Buchungsstelle  <vs/an<  Buchungsstelle sh
+//         Buchungsstelle  <an<  Buchungsstelle sh
 //         (dienend)                (herrschend)
+
 // direkt  $1 gml_id von 
-//         Buchungsstelle                              <vs/istGebucht< Flurstück > Gemarkung
+//         Buchungsstelle                           <istGebucht< Flurstück >> Gemarkung
+
 // Recht   $1 gml_id von 
-//         Buchungsstelle  >vs/an>  Buchungsstelle sd  <vf/istGebucht< Flurstück > Gemarkung
-//         (herrschend)             (dienend)      sd  >vd/istBestandteilVon> bd > gd
+//         Buchungsstelle  >an>  Buchungsstelle sd  <istGebucht< Flurstück >> Gemarkung
+//         (herrschend)             (dienend)   sd  >istBestandteilVon> bd >> gd
 
 	// Body
 	// Anfang (Select-Liste) gleich 
@@ -372,17 +375,15 @@ function EinGrundstueck($showParent) {
 	}
 	// Filter gleich
 	switch ($gfilter) { // Filter Gemeinde
-		case 1: // Einzelwert
-			$sqlfitler="AND g.gemeinde=".$gemeinde." "; break;
+		case 1: // Einzel
+			$sqlfitler="AND g.gemeinde='".$gemeinde."' "; break;
 		case 2: // Liste
-			$sqlfilter="AND g.gemeinde in (".$gemeinde.") "; break;
+			$sqlfilter="AND g.gemeinde in ('".str_replace(",", "','", $gemeinde)."') "; break;
 	}
 
-	// Abfrage: Direkte Buchungen (Flurstücke)
-	$sql =$sqlanf."FROM alkis_beziehungen vs JOIN ax_flurstueck f ON vs.beziehung_von = f.gml_id ";
-	$sql.="JOIN pp_gemarkung  g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
-	$sql.="WHERE vs.beziehung_zu= $1 AND vs.beziehungsart='istGebucht' ";
-	$sql.=$sqlfilter."ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+	// Direkte Buchungen (Flurst.)
+	$sql =$sqlanf."FROM ax_flurstueck f JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
+	$sql.="WHERE f.istgebucht = $1 AND f.endet IS NULL ".$sqlfilter."ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 	$v=array($buchunggml);
 	$res=pg_prepare("", $sql);
@@ -414,21 +415,17 @@ function EinGrundstueck($showParent) {
 		echo "<hr>"; // Trennen
 	}
 
-	// Abfrage: Rechte an (dienende Buchungen und ihre Flurstücke)
-	$sql =$sqlanf.", sd.gml_id AS diengml, sd.laufendenummer AS dienlfd, ";		// Stelle dienend
+	// Recht "an" (dienende Buchungen und ihre Flurst.)
+	$sql =$sqlanf.", sd.gml_id AS diengml, sd.laufendenummer AS dienlfd, "; // Stelle dienend
 	$sql.="bd.gml_id AS dienbltgml, bd.buchungsblattnummermitbuchstabenerweiterung AS dienblatt, "; // Blatt dienend
-	$sql.="gd.stelle, gd.gml_id AS dienbezgml, gd.bezirk, gd.bezeichnung AS diengbbez ";	// AG und Bezirk dazu
-	$sql.="FROM alkis_beziehungen vs ";
-	$sql.="JOIN ax_buchungsstelle sd ON vs.beziehung_zu=sd.gml_id ";
-	$sql.="JOIN alkis_beziehungen vf ON vf.beziehung_zu=sd.gml_id "; // sd=Stelle dienend
-	$sql.="JOIN ax_flurstueck f ON vf.beziehung_von = f.gml_id ";
+	$sql.="gd.stelle, gd.gml_id AS dienbezgml, gd.bezirk, gd.bezeichnung AS diengbbez "; // AG und Bezirk dazu
+	$sql.="FROM ax_buchungsstelle sh "; // herrschend
+	$sql.="JOIN ax_buchungsstelle sd ON sd.gml_id = ANY(sh.an) "; // dienend
+	$sql.="JOIN ax_flurstueck f ON f.istgebucht = sd.gml_ID ";
 	$sql.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
-
-	// Blatt und Bezirk (dienend)
-	$sql.="JOIN alkis_beziehungen vd ON vd.beziehung_von=sd.gml_id ";
-	$sql.="JOIN ax_buchungsblatt bd ON vd.beziehung_zu=bd.gml_id ";	// Blatt dienend
+	$sql.="JOIN ax_buchungsblatt bd ON sd.istbestandteilvon = bd.gml_id ";	// Blatt dienend
 	$sql.="JOIN ax_buchungsblattbezirk gd ON bd.land=gd.land AND bd.bezirk=gd.bezirk "; // GB-Bez. dienend
-	$sql.="WHERE vs.beziehung_von = $1 AND vs.beziehungsart='an' AND vf.beziehungsart='istGebucht' AND vd.beziehungsart='istBestandteilVon' ";
+	$sql.="WHERE sh.gml_id = $1 AND sh.endet IS NULL AND sd.endet IS NULL AND f.endet IS NULL AND bd.endet IS NULL ";
 	$sql.=$sqlfilter."ORDER BY gd.bezeichnung, bd.buchungsblattnummermitbuchstabenerweiterung, cast(sd.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 	$v=array($buchunggml);
@@ -443,14 +440,14 @@ function EinGrundstueck($showParent) {
 	$zfs2=0;
 	$gwblatt="";
 	while($row = pg_fetch_array($res)) {
-		$dienstelle=$row["stelle"];		// Stelle (AG) des dienenden Grundstücks
+		$dienstelle=$row["stelle"];	// Stelle (AG) des dienenden Grundstücks
 		$dienbezgml=$row["dienbezgml"];	// Bezirks des dien. GS: gml, Nr. und Bezeichnung
 		$diengbbez=$row["diengbbez"];	// Bezeichnung
 		$dienbezirk=$row["bezirk"];	// Key
 		$dienbltgml=$row["dienbltgml"];	// dienendes Blatt, gml und Nr
 		$dienblatt=$row["dienblatt"];
-		$diengml=$row["diengml"];		// gml_id des dienenden Grundstücks
-		$dienlfd=$row["dienlfd"];		// BVNR (laufendNr) des dien. GS
+		$diengml=$row["diengml"];	// gml_id des dienenden Grundstücks
+		$dienlfd=$row["dienlfd"];	// BVNR (laufendNr) des dien. GS
 		if ($gwblatt != $dienblatt) { // Gruppierung Blatt - dienend
 			$gwblatt = $dienblatt; // Steuerg GW Blatt
 			zeile_blatt($dienbezirk, $diengbbez, $dienbltgml, $dienblatt, true, "");
@@ -470,9 +467,8 @@ function EinGrundstueck($showParent) {
 		$zfs2++;
 	}
 
-// Teil 3
-// ++  Wenn nur 1 Grundstück untersucht wird, dann dazu auch die 
-//     berechtigten (herrschenden) Grundbücher anzeigen und verlinken (ohne FS))
+// Teil 3 - noch nicht umgesetzt
+// ToDo: Wenn nur 1 Grundstück untersucht wird, dann dazu auch die berechtigten (herrschenden) Grundbücher anzeigen und verlinken (ohne FS)
 
 	// Foot
 	if($zfs2 == 0 AND $zfs1 == 0) {
@@ -498,6 +494,7 @@ if ($gemeinde == "") {
 	$gfilter = 1; // Einzelwert
 } else {
 	$gfilter = 2; // Liste
+//	$gemeinde = "'".str_replace(",", "','", $gemeinde)."'"; // Jedes Element in ''
 }
 
 // Auch wenn redundant: Das Kennzeichen für Anzeige und weitere Links zerlegen
@@ -568,7 +565,8 @@ echo "
 <script type='text/javascript'>
 	transtitle('".$trans."'); 
 </script>";
-?>
+
+?>
 
 </body>
 </html>

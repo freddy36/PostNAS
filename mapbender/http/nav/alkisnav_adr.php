@@ -7,6 +7,8 @@
 	2013-05-14  Feinkorrekturen
 	2013-05-15  Gruppierung nach Gemeinde, mehrfache HsNr (ap_pto.advstandardmodell) unterdrücken, Icon f. Straße
 	2014-01-23	Link zum Auskunft-Modul für Straße
+	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+
 	ToDo:
 	-	Gruppierung (mit Zeile) der Straßenliste nach Gemeinde
 	-	Eingabe aus "Balken" von Buchauskunft "Lage" zulassen: Numerisch: Gem-Str-Haus-lfd
@@ -61,15 +63,15 @@ function suchStrName() { // Strassen nach Name(-nsanfang)
 		$match=trim($matches[1])."%";
 	}
 	$sql ="SELECT g.gemeinde, g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage ";
-	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
+	$sql.="FROM ax_lagebezeichnungkatalogeintrag k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
-	$sql.="WHERE k.bezeichnung ILIKE $1 ";
+	$sql.="WHERE k.bezeichnung ILIKE $1 AND k.endet IS NULL AND g.endet IS NULL ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="AND k.gemeinde=".$gemeinde." ";
+			$sql.="AND k.gemeinde='".$gemeinde."' ";
 			break;
 		case 2: // Liste
-			$sql.="AND k.gemeinde in (".$gemeinde.") ";
+			$sql.="AND k.gemeinde in (".str_replace(",", "','", $gemeinde).") ";
 			break;
 		default: // kein Filter
 			break;
@@ -78,7 +80,13 @@ function suchStrName() { // Strassen nach Name(-nsanfang)
  	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
-	if (!$res) {return "\n<p class='err'>Fehler bei Name</p>";}
+
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei Name</p>";
+		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."'<p>";}
+		return;
+	}
+
 	$cnt = 0;
 	$gwgem="";
 	while($row = pg_fetch_array($res)) {
@@ -133,17 +141,21 @@ function suchStrKey() { // Strassen nach num. Schluessel
 	$sql.="WHERE k.lage LIKE $1 ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="AND k.gemeinde=".$gemeinde." ";
+			$sql.="AND k.gemeinde='".$gemeinde."' ";
 			break;
 		case 2: // Liste
-			$sql.="AND k.gemeinde in (".$gemeinde.") ";
+			$sql.="AND k.gemeinde in ('".str_replace(",", "','", $gemeinde)."') ";
 			break;
 	}
 	$sql.="ORDER BY k.lage, k.bezeichnung LIMIT $2 ;";
+
  	$v=array($match,$linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
-	if (!$res) {return "\n<p class='err'>Fehler bei Schl&uuml;ssel</p>";}
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei Schl&uuml;ssel</p>";
+		return;
+	}
 	$cnt = 0;
 	while($row = pg_fetch_array($res)) {
 		$sname=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");		
@@ -172,6 +184,7 @@ function suchStrKey() { // Strassen nach num. Schluessel
 			}
 		echo "</div>";
 // function ende
+
 		$cnt++;
 	}
 	if($cnt == 0) {
@@ -195,9 +208,16 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
 	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
 	$sql.="WHERE k.schluesselgesamt = $1 LIMIT 1"; 
+
   	$v=array($str_schl);	// Schluessel-Gesamt ..
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei Name zum Stra&szlig;enschl&uuml;ssel</p>";
+		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."'<p>";}
+		return;
+	}
+
 	if($row = pg_fetch_array($res)) { // .. gefunden
 		$kgml=$row["kgml"]; // ID aus Katalog
 		$sname=$row["bezeichnung"];
@@ -219,10 +239,9 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 				$sqlko.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";
 			}
 			$sqlko.="FROM ax_lagebezeichnungohnehausnummer o ";
-			$sqlko.="JOIN alkis_beziehungen v ON o.gml_id=v.beziehung_zu "; 
-			$sqlko.="JOIN ax_flurstueck f ON v.beziehung_von=f.gml_id ";
+			$sqlko.="JOIN ax_flurstueck f ON o.gml_id = ANY(f.zeigtauf) ";
 			$sqlko.="WHERE o.land= $1 AND o.regierungsbezirk= $2 AND o.kreis= $3 AND o.gemeinde= $4 AND o.lage= $5 ";	
-			$sqlko.="AND v.beziehungsart='zeigtAuf' LIMIT 1;"; // die erstbeste Koordinate
+			$sqlko.="LIMIT 1;"; // die erstbeste Koordinate
 			$v=array($land,$regb,$kreis,$gemnd,$nr);
 			$resko=pg_prepare("", $sqlko);
 			$resko=pg_execute("", $v);
@@ -276,10 +295,8 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 			$sql.="avg (st_x(st_transform(p.wkb_geometry,".$epsg."))) AS x, ";
 			$sql.="avg (st_y(st_transform(p.wkb_geometry,".$epsg."))) AS y ";		
 		}
-		$sql.="FROM ap_pto p JOIN alkis_beziehungen v ON p.gml_id = v.beziehung_von ";
-		$sql.="JOIN ax_lagebezeichnungmithausnummer h ON v.beziehung_zu = h.gml_id ";
-		$sql.="WHERE v.beziehungsart='dientZurDarstellungVon' AND p.art = 'HNR' ";
-		$sql.="AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
+		$sql.="FROM ap_pto p JOIN ax_lagebezeichnungmithausnummer h ON h.gml_id = ANY(p.dientzurdarstellungvon) ";
+		$sql.="WHERE p.art = 'HNR' AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
 		$sql.="GROUP BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2) ";
 		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
 		// Problem: mehrere Koordinaten für verschiedene Maßstäbe der Kartendarstellung
@@ -292,7 +309,11 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
  		$v=array($land,$regb,$kreis,$gemnd,$nr);
 		$resh=pg_prepare("", $sql);
 		$resh=pg_execute("", $v);
-		#echo "<p class='dbg'>SQL='".$sql."'<br>Array=".$v[]."</p>"; // TEST
+		if (!$resh) {
+			echo "\n<p class='err'>Fehler bei H&auml;user zum Stra&szlig;enschl&uuml;ssel</p>";
+			if ($debug > 2) {echo "<p class='dbg'>SQL='".$sql."'<br>Array=".$v."</p>";}
+			return;
+		}
 
 		$cnt=0;
 		$count=0;
@@ -346,7 +367,7 @@ if ($gemeinde == "") {
 }
 
 // +++	Zerlegung Eingabe aus "Balken" von Buchauskunft "Lage":
-//			Numerisch: Gem-Str-Haus-lfd
+//		Numerisch: Gem-Str-Haus-lfd
 
 if ($str_schl != "") { // aus Link
 	$trans="Hausnummern zur Stra&szlig;e";

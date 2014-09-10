@@ -14,6 +14,10 @@
 	2011-11-30 import_request_variables
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-01-28 Link zu alkisstrasse.php
+	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+
++++ NOCH UMSTELLEN:  alkis_beziehungen
+
 */
 session_start();
 $cntget = extract($_GET);
@@ -96,7 +100,7 @@ echo "\n<table class='outer'>\n<tr>\n<td>";
 	echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>\n\t</tr>";
 	echo "\n\t</table>";
 echo "\n</td>\n<td>";
-if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck", "ax_flurstueck"); }
 echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 
 // Flurstuecksnachweis (o. Eigent.)
@@ -136,7 +140,7 @@ echo "\n\t</p>\n</td>";
 // Lagebezeichnung MIT Hausnummer (Adresse)
 $sql ="SELECT DISTINCT l.gml_id, s.gml_id AS kgml, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
 $sql.="FROM alkis_beziehungen v ";
-$sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
+$sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=substring(l.gml_id,1,16) "; // Strassennamen JOIN
 $sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 $sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='weistAuf' ";// id FS";
 $sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
@@ -233,7 +237,7 @@ while($rowg = pg_fetch_array($resg)) {
 			echo "\n<p class='ant'>".$rowg["zahler"]."/".$rowg["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
 		}
 		echo "\n</td>\n<td>";
-		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt");}
+		if ($idanzeige) {linkgml($gkz, $rowg[0], "Buchungsblatt", "");}
 		echo "\n\t<p class='nwlink'>weitere Auskunft:<br>";
 			echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowg[0];
 				if ($idanzeige) {echo "&amp;id=j";}
@@ -260,7 +264,7 @@ while($rowg = pg_fetch_array($resg)) {
 		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
 			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
-			linkgml($gkz, $gmlid, "Buchungsblatt");
+			linkgml($gkz, $gmlid, "Buchungsblatt", "");
 		}
 	}
 	$j++;

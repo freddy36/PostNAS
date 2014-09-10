@@ -7,6 +7,8 @@
 	2011-11-30 Fehlerkorrektur Gebaeude mit mehreren Adressen nicht mehrfach
 	2013-04-08 deprecated "import_request_variables" ersetzt
     2014-01-30 pg_free_result
+	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 */
 session_start();
 $cntget = extract($_GET);
@@ -38,9 +40,9 @@ $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // Flurstueck
-$sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.zeitpunktderentstehung, g.gemarkungsnummer, g.bezeichnung ";
-$sqlf.="FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sqlf.="WHERE f.gml_id= $1;";
+$sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.zeitpunktderentstehung, g.gemarkungsnummer, g.bezeichnung 
+FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+WHERE f.gml_id= $1;";
 $v=array($gmlid);
 $resf=pg_prepare("", $sqlf);
 $resf=pg_execute("", $v);
@@ -92,7 +94,7 @@ echo "\n\t<p class='nwlink noprint'>";
 	if ($showkey)   {echo "&amp;showkey=j";}
 	echo "&amp;eig=n' title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck <img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''></a>";
 echo "\n\t</p>";
-if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck", "ax_flurstueck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 // Ende Seitenkopf
 
@@ -106,7 +108,7 @@ echo "\n<p>.. auf oder an dem Flurst&uuml;ck. Ermittelt durch Verschneidung der 
 $sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, ";
 $sqlg.="h.bauweise_beschreibung, u.bezeichner, g.zustand, z.bezeichner AS bzustand, ";
 
-// Gebaeudeflaeche komplett auch ausserhalb des FS
+// GEB-Flaeche komplett auch die Fl. ausserhalb des FS
 $sqlg.="round(area(g.wkb_geometry)::numeric,2) AS gebflae, ";
 
 // wie viel vom GEB liegt im FS?
@@ -119,16 +121,16 @@ $sqlg.="st_within(g.wkb_geometry,f.wkb_geometry) as drin ";
 $sqlg.="FROM ax_flurstueck f, ax_gebaeude g ";
 
 // Entschluesseln
-$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise = h.bauweise_id ";
-$sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion = u.wert ";
-$sqlg.="LEFT JOIN ax_gebaeude_zustand z ON g.zustand = z.wert ";
+$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id ";
+$sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert ";
+$sqlg.="LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert ";
 $sqlg.="WHERE f.gml_id= $1 "; // ID des akt. FS
 
-// "within" liefert nur Gebaeude, die komplett im Flurstueck liegen
-// "intersects" liefert ueberlappende Flaechen
+// "within" -> nur Geb., die komplett im FS liegen
+// "intersects" -> ueberlappende Fl.
 $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
 
-// RLP: keine Relationen zu Nebengebaeuden:
+// RLP: keine Relationen zu Nebengebäuden:
 // auf Qualifizierung verzichten, sonst werden Nebengebäude nicht angezeigt
 	//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
 $sqlg.="ORDER BY schnittflae DESC;";
@@ -194,24 +196,22 @@ echo "\n<hr>\n<table class='geb'>";
 			echo $gzustand."&nbsp;</td>";
 
 			echo "\n\t<td class='nwlink noprint'>";
-
 			// 0 bis N Lagebezeichnungen mit Haus- oder Pseudo-Nummer, alle in ein TD zu EINEM Gebäude
-			// HAUPTgebäude
-			$sqll ="SELECT 'm' AS ltyp, v.beziehung_zu, s.lage, s.bezeichnung, l.hausnummer, '' AS laufendenummer ";
-			$sqll.="FROM alkis_beziehungen v "; 
-			$sqll.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id ";
+
+			// HAUPTgebäude  Geb >zeigtAuf> lage (mehrere)
+			$sqll ="SELECT 'm' AS ltyp, l.gml_id AS lgml, s.lage, s.bezeichnung, l.hausnummer, '' AS laufendenummer ";
+			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(g.zeigtauf) ";
 			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-			$sqll.="WHERE v.beziehungsart = 'zeigtAuf' AND v.beziehung_von = $1 ";
-			$sqll.="UNION ";
-			// oder NEBENgebäude
-			$sqll.="SELECT 'p' AS ltyp, v.beziehung_zu, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
-			$sqll.="FROM alkis_beziehungen v "; 
-			$sqll.="JOIN ax_lagebezeichnungmitpseudonummer l ON v.beziehung_zu=l.gml_id ";
+			$sqll.="WHERE g.gml_id= $1 ";
+
+			// oder NEBENgebäude  Geb >hat> Pseudo
+			$sqll.="UNION SELECT 'p' AS ltyp, l.gml_id AS lgml, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
+			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmitpseudonummer l ON substring(l.gml_id,1,16)=g.hat ";
 			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-			$sqll.="WHERE v.beziehungsart = 'hat' AND v.beziehung_von = $1 "; // ID des Hauses"
+			$sqll.="WHERE g.gml_id= $1 "; // ID des Hauses"
 		
-			$sqll.="ORDER BY bezeichnung, hausnummer ";
-		
+			$sqll.="ORDER BY bezeichnung, hausnummer;";
+
 			$v = array($ggml);
 			$resl = pg_prepare("", $sqll);
 			$resl = pg_execute("", $v);
@@ -222,15 +222,15 @@ echo "\n<hr>\n<table class='geb'>";
 			while($rowl = pg_fetch_array($resl)) { // LOOP: Lagezeilen
 				$ltyp=$rowl["ltyp"]; // Lagezeilen-Typ
 				$skey=$rowl["lage"]; // Str.-Schluessel
-				$snam=htmlentities($rowl["bezeichnung"], ENT_QUOTES, "UTF-8"); // -Name
+				$snam=htmlentities($rowl["bezeichnung"], ENT_QUOTES, "UTF-8"); //-Name
 				$hsnr=$rowl["hausnummer"];
 				$hlfd=$rowl["laufendenummer"];
-				$gmllag=$rowl["beziehung_zu"];
+				$gmllag=$rowl["lgml"];
 				if ($ltyp == "p") {
 					$lagetitl="Nebengebäude - Pseudonummer";
 					$lagetxt="Nebengeb&auml;ude Nr. ".$hlfd;
 				} else {
-					$lagetitl="Hauptgabäude - Hausnummer";
+					$lagetitl="Hauptgebäude - Hausnummer";
 					$lagetxt=$snam."&nbsp;".$hsnr;
 				}
 				echo "\n\t\t<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''>&nbsp;";
@@ -239,9 +239,9 @@ echo "\n<hr>\n<table class='geb'>";
 					if ($idanzeige) {echo "&amp;id=j";}
 					if ($showkey)   {echo "&amp;showkey=j";}
 				echo "'>".$lagetxt."</a>";
-				if ($idanzeige) {linkgml($gkz, $gmllag, "Lage"); }
+				if ($idanzeige) {linkgml($gkz, $gmllag, "Lage", ""); }
 				echo "<br>";
-			} // Ende Loop Lagezeilen m.H.
+			} // Ende Loop Lage m.H.
             pg_free_result($resl);
 			echo "\n\t</td>";
 
@@ -254,7 +254,7 @@ echo "\n<hr>\n<table class='geb'>";
 
 		echo "\n</tr>";
 	}
-// Footer
+	// Footer
 	if ($gebnr == 0) {
 		echo "\n</table>";
 		echo "<p class='err'><br>Keine Geb&auml;ude auf diesem Flurst&uuml;ck.<br>&nbsp;</p>";

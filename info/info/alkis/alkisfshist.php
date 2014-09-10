@@ -3,11 +3,13 @@
 
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 	Flurstuecks-Historie fuer ein Flurstueckskennzeichen aus ALKIS PostNAS
-	Version:	2011-11-16  Zum aktuellen FS die VorgÃ¤nger suchen
+	Version:
+	2011-11-16  Zum aktuellen FS die VorgÃ¤nger suchen
 	2011-11-17  Parameter der Functions geÃ¤ndert
 	2011-11-30  import_request_variables
 	2012-11-27  Function split deprecated: explode
 	2013-04-08  deprecated "import_request_variables" ersetzt
+	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 */
 
 function fzerleg($fs) {
@@ -108,7 +110,8 @@ function such_vor_arr($fsk) {
 
 session_start();
 //import_request_variables("G"); // php 5.3 deprecated, php 5.4 entfernt
-$cntget = extract($_GET);require_once("alkis_conf_location.php");
+$cntget = extract($_GET);
+require_once("alkis_conf_location.php");
 if ($auth == "mapbender") {require_once($mapbender);}
 include("alkisfkt.php");
 if ($id == "j") {$idanzeige=true;} else {$idanzeige=false;}
@@ -172,7 +175,8 @@ if ($parmtyp != "") { // einer der beiden erlaubten Fälle
 	$resu = pg_execute("", $v);
 	if ($rowu = pg_fetch_array($resu)) {
 		$ftyp=$rowu["ftyp"];
-		$gmkgnr=$rowu["gemarkungsnummer"];		$flurnummer=$rowu["flurnummer"];
+		$gmkgnr=$rowu["gemarkungsnummer"];
+		$flurnummer=$rowu["flurnummer"];
 		$zaehler=$rowu["zaehler"];
 		$nenner=$rowu["nenner"];
 		$flstnummer=$zaehler;
@@ -215,12 +219,14 @@ switch ($ftyp) { // Unterschiede Historisch/Aktuell
 		$cls= "kennzfsh";
 	break;
 }
-// Balken
+
+// Balken
 echo "<p class='fshis'>ALKIS Flurst&uuml;ck ".$gmkgnr."-".$flurnummer."-".$flstnummer."&nbsp;</p>\n";
 echo "\n<h2><img src='ico/".$ico."' width='16' height='16' alt=''> Flurst&uuml;ck Historie</h2>\n";
 
 echo "\n<table class='outer'>\n<tr>\n\t<td>"; // linke Seite
-	// darin Tabelle Kennzeichen	echo "\n\t<table class='".$cls."' title='Flurst&uuml;ckskennzeichen'>\n\t<tr>";
+	// darin Tabelle Kennzeichen
+	echo "\n\t<table class='".$cls."' title='Flurst&uuml;ckskennzeichen'>\n\t<tr>";
 		echo "\n\t\t<td class='head'>Gmkg</td>\n\t\t<td class='head'>Flur</td>\n\t\t<td class='head'>Flurst-Nr.</td>\n\t</tr>";
 		echo "\n\t<tr>\n\t\t<td title='Gemarkung'>";
 		if ($showkey) {echo "<span class='key'>".$gmkgnr."</span><br>";}
@@ -228,7 +234,8 @@ echo "\n<table class='outer'>\n<tr>\n\t<td>"; // linke Seite
 		echo "\n\t\t<td title='Flurnummer'>".$flurnummer."</td>";
 		echo "\n\t\t<td title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>".$flstnummer."</span></td>\n\t</tr>";
 	echo "\n\t</table>";
-echo "\n\t</td>\n\t<td>"; // rechte Seite	// FS-Daten 2 Spalten
+echo "\n\t</td>\n\t<td>"; // rechte Seite
+	// FS-Daten 2 Spalten
 	echo "\n\t<table class='fsd'>";
 		echo "\n\t<tr>\n\t\t<td>Entstehung</td>";
 			echo "\n\t\t<td>".$entsteh."</td>";
@@ -242,7 +249,7 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite	// FS-Daten 2 Spalten
 			echo "</td>";
 		echo "\n\t</tr>";
 	echo "\n\t</table>";
-	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck", "ax_flurstueck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 
 if ($ftyp == "a") { // Aktuell -> Historie
@@ -263,13 +270,13 @@ echo "<table class='outer'>";
 		<td class='head'>Nachfolger</td>
 	</tr>"; // Head
 	
-	// Spalte 1: F l u r s t Ã¼ c k
+	// Spalte 1: F l u r s t ü c k
 	echo "\n<tr>\n\t<td>";
 		echo "<img src='ico/".$ico."' width='16' height='16' alt=''> ".$wert;
 		echo "<br>Fl&auml;che <span class='flae'>".$flae."</span>";
 	echo "</td>";
 
-	// Spalte 2: V o r g Ã¤ n g e r
+	// Spalte 2: V o r g ä n g e r
 	echo "\n\t<td>";
 	switch ($ftyp) { // Unterschiede Historisch/Aktuell
 		case 'a':

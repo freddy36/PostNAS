@@ -26,24 +26,22 @@
 ##   2012-06-04 SQL-Skripte in deren Verzeichnis ausfuehren (Voraussetzung fuer \i Includes)
 ##   2012-10-30 Umgebungsvariable setzen, delete-Tabelle am Ende fuer Analyse gefuellt lassen.
 ##              Test als 0.7a mit gepatchter gdal-Version (noch 2.0dev)
-##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" f�r Reparatur der 
-##              Pr�sentationsobjekte Stra�enname im Post-Processing
-##   2013-10-24 F.J. krz: Zwischenl�sung "praesentation_action.sql" wieder deaktiviert.
+##   2013-10-16 F.J. krz: Neues Script "pp_praesentation_action.sql" für Reparatur der 
+##              Präsentationsobjekte Straßenname im Post-Processing
+##   2013-10-24 F.J. krz: Zwischenlösung "praesentation_action.sql" wieder deaktiviert.
 ##   2014-01-31 F.J. krz: Import Eintrag erzeugen (nach Vorschlag Marvin Brandt, Unna)
-##   2014-02-13 A.Emde WhereGroup: Einf�hrung DBUSER, damit im Skript der Datenbankbenutzer angegeben werden kann
+##   2014-02-13 A.Emde WhereGroup: Einführung DBUSER, damit im Skript der Datenbankbenutzer angegeben werden kann
 ##   2014-05-12 F.J. krz: Unterschiedliche Pfade in Test (TRUNK) und Produktion (Rel. 1.11.0)
 ##   2014-06-18 F.J. DB-User nicht "postgres" (in $con). 
 ##                   Konverter ind Nacharbeiten sonst mit unterschiedlichem User.
-##                   Abgleich Test/Prod-Version
+##                   Abgleich Test/Prod-Version.
 ##                   Entfernen der historischen Objekte nach Konvertierung.
-##   2014-09-03 F.J. Auch f�r 0.7-Datenstruktur die aktuelle Programmversion, PG_USE_COPY
-
-## Koordinaten: EPSG:25832  UTM, Zone 32
-##              -a_srs EPSG:25832   - bleibt im UTM-System (korrigierte Werte)
+##   2014-09-09 F.J. krz: Parameter "--config PG_USE_COPY YES" zur Beschleunigung. Ausgabe import-Tabelle.
 
 POSTNAS_HOME=$(dirname $0)
- PATH=/opt/gdal-2.0/bin:$PATH   # TRUNK-Version (immer letzter Stand der Entwicklung)
-#PATH=/opt/gdal-1.11/bin:$PATH  # Release GDAL 1.11.0 vom April 2014
+
+# Konverterpfad. TRUNK-Version (immer letzter Stand der Entwicklung)
+PATH=/opt/gdal-2.0/bin:$PATH
 EPSG=25832
 DBUSER=b600352
 
@@ -64,13 +62,13 @@ fi
 echo " 
 **********************************************
 **   K o n v e r t i e r u n g     PostNAS  **
-********************************************** 
- "
+**********************************************"
 ## Parameter:
 ORDNER=$1
 DBNAME=$2
 UPD=$3
 PP=$4
+
 if [ $ORDNER == "" ]
 then
 	echo "Parameter 1 'Ordner' ist leer"
@@ -81,6 +79,7 @@ then
 	echo "Parameter 2 'Datenbank' ist leer"
 	exit 2
 fi
+
 if [ $UPD == "a" ]
 then
 	verarb="NBA-Aktualisierung"
@@ -95,6 +94,7 @@ else
 		exit 3
 	fi
 fi
+
 if [ $PP == "nopp" ]
 then
 	echo "KEIN Post-Processing nach dieser Konvertierung."
@@ -109,28 +109,31 @@ else
 fi
 
 # Fehlerprotokoll:
-errprot=${POSTNAS_HOME}'/log/postnas_err_'$DBNAME'.prot'
+  errprot=${POSTNAS_HOME}'/log/postnas_err_'$DBNAME'.prot'
+
+  echo "GDAL/PostNAS Konverter-Version:" >> $errprot
+  ogr2ogr --version >> $errprot
 
 # DB-Connection
-con="${PGUSER} -p 5432 -d ${DBNAME} "
+  con="${PGUSER} -p 5432 -d ${DBNAME} "
+  echo "Datenbank-Name . . = ${DBNAME}"
+  echo "DBUSER ${DBUSER}"
+  echo "PGUSER ${PGUSER}"
+  echo "OGRPGUSER ${OGRPGUSER}"
+  echo "Ordner NAS-Daten . = ${ORDNER}"
+  echo "Verarbeitungs-Modus= ${verarb}"
+  echo "POSTNAS_HOME ${POSTNAS_HOME}"
 
-echo "Datenbank-Name . . = ${DBNAME}"
-echo "DBUSER ${DBUSER}"
-echo "PGUSER ${PGUSER}"
-echo "OGRPGUSER ${OGRPGUSER}"
-echo "Ordner NAS-Daten . = ${ORDNER}"
-echo "Verarbeitungs-Modus= ${verarb}"
-echo "POSTNAS_HOME ${POSTNAS_HOME}"
+  # noch alte delete-Eintraege?
+  echo "Leeren der delete-Tabelle"
+  psql $con -c 'TRUNCATE table "delete";'
 
-# noch alte delete-Eintraege in DB?
-echo "Leeren der delete-Tabelle"
-echo 'TRUNCATE table "delete";' | psql $con 
+  echo "Bisherige Konvertierungen (Import-Tabelle):"
+  psql $con -c "SELECT * FROM import;"
 
 # Import Eintrag erzeugen
-#
-# Die dadurch erzeugte Import-ID dient zur Steuerung des L�schens alter Relationen im Trigger. 
-# Wird die Datenbank MIT Historie geladen, muss die folgende Zeile auskommentiert werden.
-echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-%d %H:%M:%S')"','"${ORDNER}"','"${verarb}"');" | psql $con
+# Ursprünglich für Trigger-Steierung benötigt. Nun als Metadaten nützlich.
+  psql $con -c "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-%d %H:%M:%S')"','"${ORDNER}"','"${verarb}"');"
 
 # Ordner abarbeiten
 
@@ -154,9 +157,9 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
         export GML_FIELDTYPES=ALWAYS_STRINGS    # PostNAS behandelt Zahlen wie Strings, PostgreSQL-Treiber macht daraus Zahlen
         export OGR_SETFIELD_NUMERIC_WARNING=YES # Meldung abgeschnittene Zahlen?
        #export CPL_DEBUG=ON                     # Meldung, wenn Attribute ueberschrieben werden
-
+ 
       # PostNAS Konverter-Aufruf
-      ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures  --config PG_USE_COPY YES  \
+      ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures --config PG_USE_COPY YES \
          PG:"dbname=${DBNAME} host=localhost port=5432 ${OGRPGUSER}" -a_srs EPSG:$EPSG ${nasdatei} 2>> $errprot
       nasresult=$?
       echo "* Resultat: " $nasresult " fuer " ${nasdatei} | tee -a $errprot
@@ -164,17 +167,16 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
   done # Ende Ordner
   rm ../temp/*.xml
   echo " "
-  echo "** Ende Konvertierung Ordner ${ORDNER}
-  "
+  echo "** Ende Konvertierung Ordner ${ORDNER}"
 
+#
 # Post-Processing / Nacharbeiten
-
+#
   if [ $PP == "nopp" ]
   then
-
     echo "** KEIN Post-Processing - Dies spaeter nachholen."
     # Dies kann sinnvoll sein, wenn mehrere kleine Aktualisierungen hintereinander auf einem grossen Bestand laufen
-    # Der Aufwand fuer das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
+    # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
 
   else
 
@@ -183,14 +185,16 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
     echo "** - Optimierte Nutzungsarten neu Laden:"
     (cd $POSTNAS_HOME; psql $con -f nutzungsart_laden.sql)
  
-    echo "** - Fluren / Gemarkungen / Gemeinden neu Laden:"
+    echo "-----------" 
+ 
+    echo "** - Fluren, Gemarkungen, Gemeinden und Straßen-Namen neu Laden:"
     (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
 
   fi
 
   if [ "$(readlink $POSTNAS_HOME/alkis-trigger.sql)" = "alkis-trigger-kill.sql" ]; then
 
-     # Durch Einfuegen in Tabelle 'delete' werden Loeschungen anderer Tabellen getriggert
+     # Durch Einfügen in Tabelle 'delete' werden Löschungen und Aktualisierungen anderer Tabellen getriggert
      echo "** delete-Tabelle enthaelt:"
      psql $con -c 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";'
 
@@ -198,13 +202,12 @@ echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-
      psql $con -c 'TRUNCATE table "delete";'
 
     # Wenn die Datenbank MIT Historie geladen wurde, man diese aber gar nicht braucht,
-    # dann hinterher aufraeumen der historischen Objekte 
+    # dann hinterher aufräumen der historischen Objekte 
     echo "** geendete Objekte entfernen:"
-
-    # Function:
     psql $con -c "SELECT alkis_delete_all_endet();"
 
   fi
 
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
+  echo "** ENDE PostNAS 0.8-Konvertierung  DB='$DBNAME'  Ordner='$ORDNER' "
  

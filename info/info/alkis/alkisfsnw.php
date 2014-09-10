@@ -19,6 +19,8 @@
 	2013-06-27 Bodenneuordnung u. stritt.Gr. in Tabellen-Struktur, Link zur Bodenerneuerung (neues Modul)
 	2014-01-30 Korrektur Nutzungsart (z.B. Friedhof mit class=funktion=0 hatte Anzeige "unbekannt")
 	2014-02-06 Korrektur
+	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -106,15 +108,14 @@ if ($gmlid == '' and $fskennz != '') {
 }
 
 // F L U R S T U E C K
-$sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, st_area(f.wkb_geometry) AS fsgeomflae, f.zeitpunktderentstehung, ";
-$sql.="g.gemarkungsnummer, g.bezeichnung ";
-$sql.="FROM ax_flurstueck f ";
-$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="WHERE f.gml_id= $1";
+$sql ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche, st_area(f.wkb_geometry) AS fsgeomflae, f.zeitpunktderentstehung, g.gemarkungsnummer, g.bezeichnung 
+FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+WHERE f.gml_id= $1 AND f.endet IS NULL;";
 
 $v = array($gmlid); // mit gml_id suchen
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
+
 if (!$res) {
 	echo "\n<p class='err'>Fehler bei Flurstuecksdaten</p>\n";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
@@ -137,8 +138,10 @@ if ($row = pg_fetch_array($res)) {
 	$name=$row["name"]; // Fortfuehrungsnummer(n)
 	$arrn = explode(",", trim($name, "{}") ); // PHP-Array
 } else {
-	echo "<p class='err'>Fehler! Kein Treffer f&uuml;r gml_id=".$gmlid."</p>";
+	echo "<p class='err'>Fehler! Kein Treffer f&uuml;r Flurst&uuml;ck mit gml_id=".$gmlid."</p>";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	echo "</body></html>";
+	return;
 }
 pg_free_result($res);
 // Balken
@@ -176,7 +179,7 @@ echo "\n\t</td>\n\t<td>"; // rechte Seite
 		echo "\n\t</tr>";
 
 	echo "\n\t</table>";
-	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck"); }
+	if ($idanzeige) {linkgml($gkz, $gmlid, "Flurst&uuml;ck", "ax_flurstueck"); }
 echo "\n\t</td>\n</tr>\n</table>";
 //	echo "\n<tr>\n\t<td>Finanzamt</td>\n\t<td>".$finanzamt." ".$finame  . "</td>\n</tr>";
 // Ende Seitenkopf
@@ -246,8 +249,8 @@ if (!$res) {
 	echo "<p class='err'>Fehler bei Regierungsbezirk</p>";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."</p>";}
 }
-$row = pg_fetch_array($res);
-$bnam = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
+$row=pg_fetch_array($res);
+$bnam=htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8");
 echo "<tr><td>&nbsp;</td><td>Regierungsbezirk</td><td>";
 if ($showkey) {
 	echo "<span class='key'>(".$bezirk.")</span> ";
@@ -258,70 +261,69 @@ pg_free_result($res);
 
 // ** L a g e b e z e i c h n u n g **
 
-// Lagebezeichnung Mit Hausnummer
+// Lagebezeichnung MIT Hausnummer
 // ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
-$sql ="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
-$sql.="FROM alkis_beziehungen v ";
-$sql.="JOIN ax_lagebezeichnungmithausnummer  l ON v.beziehung_zu=l.gml_id "; // Strassennamen JOIN
-$sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND l.lage = s.lage ";
-$sql.="WHERE v.beziehung_von= $1 "; // id FS";
-$sql.="AND v.beziehungsart='weistAuf' ";
-$sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
-// Theoretisch JOIN notwendig über den kompletten Schlüssel bestehend aus land+regierungsbezirk+kreis+gemeinde+lage
-// bei einem Sekundärbestand für eine Gemeinde oder einen Kreis reicht dies hier:
+$sql="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung 
+FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16) = ANY(f.weistauf)  
+JOIN ax_lagebezeichnungkatalogeintrag s ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
+WHERE f.gml_id= $1 ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
+
 if (!$res) {
 	echo "<p class='err'>Fehler bei Lagebezeichnung mit Hausnummer</p>";
-	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."</p>";}
+	if ($debug > 1) {
+		//echo "<p class='dbg'>Fehler:".pg_result_error($res)."</p>";
+		echo "<p class='dbg'>Fehler:".pg_last_error()."</p>";
+	}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+} else {
+	$j=0;
+	while($row = pg_fetch_array($res)) {
+		$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
+		echo "\n<tr>\n\t";
+			if ($j == 0) {
+				echo "<td class='ll'><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Adresse:</td>";
+			} else {
+				echo "<td>&nbsp;</td>";
+			}
+			echo "\n\t<td>&nbsp;</td>";
+			echo "\n\t<td class='lr'>";
+			if ($showkey) {
+				echo "<span class='key' title='Straßenschl&uuml;ssel'>(".$row["lage"].")</span>&nbsp;";
+			}
+			echo $sname."&nbsp;".$row["hausnummer"];
+			if ($idanzeige) {linkgml($gkz, $row["gml_id"], "Lagebezeichnung mit Hausnummer", "ax_lagebezeichnungmithausnummer");}
+			echo "</td>";
+			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
+				echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"];
+				if ($showkey) {echo "&amp;showkey=j";}
+				echo "'>Lage ";
+				echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
+			echo "\n\t\t</p>\n\t</td>";
+		echo "\n</tr>";
+		$j++;
+	}
+	pg_free_result($res);
 }
-$j=0;
-while($row = pg_fetch_array($res)) {
-	$sname = htmlentities($row["bezeichnung"], ENT_QUOTES, "UTF-8"); // Str.-Name
-	echo "\n<tr>\n\t";
-		if ($j == 0) {
-			echo "<td class='ll'><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''> Adresse:</td>";
-		} else {
-			echo "<td>&nbsp;</td>";
-		}
-		echo "\n\t<td>&nbsp;</td>";
-		echo "\n\t<td class='lr'>";
-		if ($showkey) {
-			echo "<span class='key' title='Straßenschl&uuml;ssel'>(".$row["lage"].")</span>&nbsp;";
-		}
-		echo $sname."&nbsp;".$row["hausnummer"];
-		if ($idanzeige) {linkgml($gkz, $row["gml_id"], "Lagebezeichnung mit Hausnummer");}
-		echo "</td>";
-		echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-			echo "\n\t\t\t<a title='Lagebezeichnung mit Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=m&amp;gmlid=".$row["gml_id"];
-			if ($showkey) {echo "&amp;showkey=j";}
-			echo "'>Lage ";
-			echo "<img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>";
-		echo "\n\t\t</p>\n\t</td>";
-	echo "\n</tr>";
-	$j++;
-}
-pg_free_result($res);
 // Verbesserung: mehrere HsNr zur gleichen Straße als Liste?
 
-// L a g e b e z e i c h n u n g   O h n e   H a u s n u m m e r  (Gewanne oder nur Strasse)
+// Lagebezeichnung OHNE Hausnummer  (Gewanne oder nur Strasse)
 // ax_flurstueck  >zeigtAuf>  AX_LagebezeichnungOhneHausnummer
-$sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung ";
-$sql.="FROM alkis_beziehungen v ";
-$sql.="JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=v.beziehung_zu ";
-$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde ";
-$sql.="AND l.lage = s.lage ";
-$sql.="WHERE v.beziehung_von= $1 "; // id FS
-$sql.="AND   v.beziehungsart='zeigtAuf';"; //ORDER?
+$sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung 
+FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON substring(l.gml_id,1,16)=ANY(f.zeigtauf) 
+LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
+WHERE f.gml_id = $1 ;";
+
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
 if (!$res) {
 	echo "<p class='err'>Fehler bei Lagebezeichnung ohne Hausnummer</p>";
-	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."</p>";}
+	//if ($debug > 1) {echo "<p class='dbg'>Fehler:".pg_result_error($res)."</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $j=0;
 // Es wird auch eine Zeile ausgegeben, wenn kein Eintrag gefunden!
@@ -351,7 +353,7 @@ while($row = pg_fetch_array($res)) {
 				echo "<span class='key'>(".$skey.")</span>&nbsp;";
 			}
 			echo $row["bezeichnung"];
-			if ($idanzeige) {linkgml($gkz, $lgml, "Lagebezeichnung o. HsNr.");}
+			if ($idanzeige) {linkgml($gkz, $lgml, "Lagebezeichnung o. HsNr.", "ax_lagebezeichnungohnehausnummer");}
 			echo "</td>";
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
 				echo "\n\t\t\t<a title='Lagebezeichnung Ohne Hausnummer' href='alkislage.php?gkz=".$gkz."&amp;ltyp=o&amp;gmlid=".$lgml;
@@ -457,16 +459,16 @@ while($row = pg_fetch_array($res)) {
 			}
 			if ($nam != "") {echo "<br>Name: ".$nam;}
 			if ($bez != "") {echo "<br>Bezeichnung: ".$bez;}
-			if ($idanzeige) {linkgml($gkz, $gml, "Nutzungs-Abschnitt");}
+			if ($idanzeige) {linkgml($gkz, $gml, "Nutzungs-Abschnitt", "");}
 
 		echo "</td>";
 		echo "\n\t<td>";
 			switch ($grupp) { // Icon nach 4 Objektartengruppen
-				case "Siedlung":		$ico = "Abschnitt.ico";	break;
-				case "Verkehr":		$ico = "Strassen_Klassifikation.ico";	break;
-				case "Vegetation":	$ico = "Wald.ico";	break;
-				case "Gewässer":		$ico = "Wasser.ico";	break;
-				default:					$ico = "Abschnitt.ico";	break;
+				case "Siedlung":   $ico = "Abschnitt.ico"; break;
+				case "Verkehr":	   $ico = "Strassen_Klassifikation.ico"; break;
+				case "Vegetation": $ico = "Wald.ico"; break;
+				case "Gewässer":   $ico = "Wasser.ico";	break;
+				default:	$ico = "Abschnitt.ico";	break;
 			}
 			// Icon ist auch im Druck sichtbar, class='noprint' ?		
 			echo "<p class='nwlink'><img title='".$title."' src='ico/".$ico."' width='16' height='16' alt='NUA'></p>";
@@ -498,8 +500,8 @@ echo "\n</tr>";
 
 $sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, ";
 $sql_boden.="b.name AS verf_name, d.bezeichnung AS stelle_bez, d.stelle AS stelle_key ";
-$sql_boden.="FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert = b.artderfestlegung ";
-$sql_boden.="LEFT JOIN ax_dienststelle d ON b.stelle = d.stelle ";
+$sql_boden.="FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert=b.artderfestlegung ";
+$sql_boden.="LEFT JOIN ax_dienststelle d ON b.stelle=d.stelle ";
 $sql_boden.="WHERE ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry) ";
 $sql_boden.="OR ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry)";
 pg_prepare($con, "bodeneuordnung", $sql_boden);
@@ -609,17 +611,17 @@ echo "\n<table class='outer'>";
 echo "\n</table>\n";
 
 // B U C H U N G S S T E L L E N  zum FS (istGebucht)
-$sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer as lfd, s.zaehler, s.nenner, ";
-$sql.="s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, b.bezeichner AS bart ";
-$sql.="FROM alkis_beziehungen v JOIN ax_buchungsstelle s ON v.beziehung_zu=s.gml_id ";
-$sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert ";
-$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart= $2 ORDER BY s.laufendenummer;";
+$sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer as lfd, s.zaehler, s.nenner, s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, b.bezeichner AS bart 
+FROM ax_flurstueck f JOIN ax_buchungsstelle s ON substring(s.gml_id,1,16)=f.istgebucht 
+LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart=b.wert 
+WHERE f.gml_id= $1 ORDER BY s.laufendenummer;";
 
-$v = array($gmlid,'istGebucht');
+$v = array($gmlid);
 $ress = pg_prepare("", $sql);
 $ress = pg_execute("", $v);
 if (!$ress) {
 	echo "\n<p class='err'>Keine Buchungsstelle.</p>\n";
+	//if ($debug > 1) {echo "<p class='dbg'>Fehler:".pg_result_error($ress)."</p>";}
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $bs=0; // Z.Buchungsstelle
@@ -628,16 +630,12 @@ while($rows = pg_fetch_array($ress)) {
 	$lfd=$rows["lfd"]; // BVNR
 
 	// B U C H U N G S B L A T T  zur Buchungsstelle (istBestandteilVon)
-	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
-	$sql.="z.bezeichnung ";  // stelle -> amtsgericht
-	$sql.="FROM alkis_beziehungen v "; // Bez. Stelle - Blatt
-	$sql.="JOIN ax_buchungsblatt b ON v.beziehung_zu=b.gml_id ";
+	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung ";
+	$sql.="FROM ax_buchungsstelle s JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=s.istbestandteilvon ";
 	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-	$sql.="WHERE v.beziehung_von= $1 "; // id Buchungsstelle
-	$sql.="AND v.beziehungsart= $2 ";
-	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
+	$sql.="WHERE s.gml_id = $1 ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
 
-	$v = array($gmls,'istBestandteilVon');
+	$v = array($gmls);
 	$resg = pg_prepare("", $sql);
 	$resg = pg_execute("", $v);
 	if (!$resg) {
@@ -694,9 +692,9 @@ while($rows = pg_fetch_array($ress)) {
 
 			echo "\n<td>"; // Outer rechte Spalte: NW-Links
 				if ($idanzeige) {
-					linkgml($gkz, $gmls, "Buchungsstelle");
+					linkgml($gkz, $gmls, "Buchungsstelle", "ax_buchungsstelle");
 					echo "<br>";
-					linkgml($gkz, $gmlg, "Buchungsblatt");
+					linkgml($gkz, $gmlg, "Buchungsblatt", ""); // ax_buchungsblatt keine Relationen
 				}
 				echo "\n\t<p class='nwlink noprint'>weitere Auskunft:<br>";
 					echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlg."#bvnr".$lfd;
@@ -729,7 +727,7 @@ while($rows = pg_fetch_array($ress)) {
  			if ($n == 0) {
 				if ($blattkeyg == 1000) {
 					echo "\n<p class='err'>Keine Namensnummer gefunden.</p>";
-					linkgml($gkz, $gmlg, "Buchungsblatt");
+					linkgml($gkz, $gmlg, "Buchungsblatt", "");
 				} else {
 					echo "\n<p>ohne Eigent&uuml;mer.</p>";
 				}
@@ -740,23 +738,19 @@ while($rows = pg_fetch_array($ress)) {
 	if ($bl == 0) {
 		echo "\n<p class='err'>Kein Buchungsblatt gefunden.</p>";
 		echo "\n<p class='err'>Parameter: gml_id= ".$gmls.", Beziehung='istBestandteilVon'</p>";
-		linkgml($gkz, $gmls, "Buchungstelle");
+		linkgml($gkz, $gmls, "Buchungstelle", "ax_buchungsstelle");
 	}
 
 	// Buchungstelle  >an>  Buchungstelle  >istBestandteilVon>  BLATT  ->  Bezirk
-	$sql ="SELECT s.gml_id AS s_gml, s.buchungsart, s.laufendenummer as lfd, ";
-	$sql.="s.zaehler, s.nenner, s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, ";
-	$sql.="b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
-	$sql.="z.bezeichnung, a.bezeichner AS bart "; // stelle -> amtsgericht
-	$sql.="FROM alkis_beziehungen an "; // Bez. Stelle - Stelle
-	$sql.="JOIN ax_buchungsstelle s ON an.beziehung_von = s.gml_id ";
-	$sql.="JOIN alkis_beziehungen v ON s.gml_id = v.beziehung_von "; // Bez. Stelle - Blatt
-	$sql.="JOIN ax_buchungsblatt  b ON v.beziehung_zu = b.gml_id ";
-	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land = b.land AND z.bezirk = b.bezirk ";
-	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-	$sql.="WHERE an.beziehung_zu = $1 "; // id herrschende Buchungsstelle
-	$sql.="AND an.beziehungsart = 'an' AND v.beziehungsart = 'istBestandteilVon' ";
+	$sql ="SELECT sd.gml_id AS s_gml, sd.buchungsart, sd.laufendenummer as lfd, sd.zaehler, sd.nenner, sd.nummerimaufteilungsplan as nrpl, sd.beschreibungdessondereigentums as sond, ";
+	$sql.="b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung, a.bezeichner AS bart ";
+	$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) "; // Stelle >an> Stelle
+	$sql.="JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=sd.istbestandteilvon  ";// Stelle >istbestandteilvon> Blatt
+	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
+	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON sd.buchungsart=a.wert ";
+	$sql.="WHERE sh.gml_id= $1 "; // id herrschende Buchungsstelle
 	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
+
 	$v = array($gmls);
 	$resan = pg_prepare("", $sql);
 	$resan = pg_execute("", $v);
@@ -805,9 +799,9 @@ while($rows = pg_fetch_array($ress)) {
 			echo "\n</td>";
 			echo "\n<td>"; // outer rechte Spalte
 				if ($idanzeige) {
-					linkgml($gkz, $rowan["s_gml"], "Buchungsstelle");
+					linkgml($gkz, $rowan["s_gml"], "Buchungsstelle", "ax_buchungsstelle");
 					echo "<br>";
-					linkgml($gkz, $rowan["g_gml"], "Buchungsblatt");
+					linkgml($gkz, $rowan["g_gml"], "Buchungsblatt", "");
 				}
 				echo "\n<br>";
 				echo "\n\t<p class='nwlink'>";
@@ -844,7 +838,7 @@ while($rows = pg_fetch_array($ress)) {
 pg_free_result($resg);
 if ($bs == 0) {
 	echo "\n<p class='err'>Keine Buchungstelle gefunden.</p>";
-	linkgml($gkz, $gmlid, "Flurst&uuml;ck");
+	linkgml($gkz, $gmlid, "Flurst&uuml;ck", "ax_flurstueck");
 }
 pg_close($con);
 echo <<<END

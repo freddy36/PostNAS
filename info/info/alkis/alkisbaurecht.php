@@ -3,7 +3,10 @@
 	ALKIS-Buchauskunft, Kommunales Rechenzentrum Minden-Ravensberg/Lippe (Lemgo).
 
 	Version:
-	2013-06-27	Neu als Variante von alkis*inlay*baurecht.ph (mit Footer, Balken und Umschaltung Key)
+	2013-06-27Neu als Variante von alkis*inlay*baurecht.ph (mit Footer, Balken und Umschaltung Key)
+	2014-09-10 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+
+	ToDo: id-Anzeige hinzufügen für Baurecht und Flurstück
 */
 session_start();
 $cntget = extract($_GET);
@@ -34,13 +37,10 @@ $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // wie View "baurecht"
-$sql ="SELECT r.ogc_fid, r.artderfestlegung as adfkey, r.name, r.stelle, r.bezeichnung AS rechtbez, ";
-$sql.="a.bezeichner AS adfbez, d.bezeichnung AS stellbez, d.stellenart, ";
-$sql.="round(st_area(r.wkb_geometry)::numeric,0) AS flae ";
-$sql.="FROM ax_bauraumoderbodenordnungsrecht r ";
-$sql.="LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung = a.wert ";
-$sql.="LEFT JOIN ax_dienststelle d ON r.land = d.land AND r.stelle = d.stelle ";
-$sql.="WHERE r.gml_id= $1 ;";
+$sql ="SELECT r.ogc_fid, r.artderfestlegung as adfkey, r.name, r.stelle, r.bezeichnung AS rechtbez, a.bezeichner AS adfbez, d.bezeichnung AS stellbez, d.stellenart, round(st_area(r.wkb_geometry)::numeric,0) AS flae 
+FROM ax_bauraumoderbodenordnungsrecht r 
+LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung=a.wert 
+LEFT JOIN ax_dienststelle d ON r.land=d.land AND r.stelle=d.stelle WHERE r.gml_id= $1 ;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -84,7 +84,7 @@ if ($row = pg_fetch_array($res)) {
 			echo "\n<tr>";
 				echo "\n\t<td class='li'>Verfahrensnummer:</td>";
 				echo "\n\t<td>".$verfnr."</td>";
-				// if ($idanzeige) {linkgml($gkz, $gmlid, "Verfahren"); } // KEINE Bez.!
+				// if ($idanzeige) {linkgml($gkz, $gmlid, "Verfahren", ""); } // KEINE Bez.!
 			echo "\n</tr>";
 		}
 
@@ -122,14 +122,13 @@ if ($row = pg_fetch_array($res)) {
 echo "\n<h2><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> betroffene Flurst&uuml;cke</h2>\n";
 echo "\n<p>Ermittelt durch geometrische Verschneidung. Nach Gr&ouml;&szlig;e absteigend.</p>";
 
-$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, ";
-$sql.="round(st_area(ST_Intersection(r.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae ";
-$sql.="FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r  ";
-$sql.="WHERE r.gml_id= $1 "; 
-$sql.="AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true ";
-$sql.="AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 ";  // > 0.0 ist gemeint, Ungenauigkeit durch st_simplify
-$sql.="ORDER BY schnittflae DESC ";
-$sql.="LIMIT 40;"; // Limit: Flurbereinig. kann gross werden!
+$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, round(st_area(ST_Intersection(r.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae 
+FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r
+WHERE r.gml_id= $1 AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true 
+AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 
+ORDER BY schnittflae DESC LIMIT 40;"; 
+// > 0.0 ist gemeint, Ungenauigkeit durch st_simplify
+// Limit: Flurbereinig. kann gross werden!
 // Trotz Limit lange Antwortzeit, wegen OrderBy -> intersection
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -161,7 +160,8 @@ echo "\n<table class='fs'>";
 			echo "\n\t<td class='fla'>".$row["schnittflae"]." m&#178;</td>"; 
 			echo "\n\t<td class='fla'>".$row["amtlicheflaeche"]." m&#178;</td>";
 			echo "\n\t<td class='nwlink noprint'>";
-				echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$row["gml_id"]."&amp;eig=n' " ;					echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck ";
+				echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$row["gml_id"]."&amp;eig=n' " ;
+					echo "title='Flurst&uuml;cksnachweis'>Flurst&uuml;ck ";
 					echo "\n\t\t\t<img src='ico/Flurstueck_Link.ico' width='16' height='16' alt=''>";
 				echo "\n\t\t</a>";
 			echo "\n\t</td>";

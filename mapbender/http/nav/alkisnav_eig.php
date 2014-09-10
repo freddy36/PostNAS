@@ -11,6 +11,7 @@
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
 				Title auch auf Icon, IE zeigt sonst alt= als Title dar.
+	2014-09-09  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -59,10 +60,13 @@ function familiensuche() {
 
 function personendaten() { // Adresse und Geburtsdatum der aktuellen Person ausgeben
 	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $auskpath; // $debug
+
 	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.geburtsdatum, p.namensbestandteil, ";
 	$sql.="a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer ";
-	$sql.="FROM ax_person p LEFT JOIN alkis_beziehungen b ON p.gml_id=b.beziehung_von ";
-	$sql.="LEFT JOIN ax_anschrift a ON a.gml_id=b.beziehung_zu WHERE p.gml_id= $1 ;";	
+	$sql.="FROM ax_person p LEFT JOIN ax_anschrift a ON a.gml_id = ANY(p.hat) ";
+	$sql.="WHERE p.gml_id= $1 AND p.endet IS NULL AND a.endet IS NULL LIMIT 1;";	
+	// Es wird nur eine Zeile ausgewertet
+
 	$v=array($person);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -125,10 +129,10 @@ function getEigByName() {
 	if ($gfilter > 0) {
 		$sql.="JOIN gemeinde_person g ON p.gml_id = g.person WHERE ";
 		switch ($gfilter) {
-			case 1: // Einzelwert
-				$sql.="g.gemeinde=".$gemeinde." AND "; break;
+			case 1: // Einzel
+				$sql.="g.gemeinde='".$gemeinde."' AND "; break;
 			case 2: // Liste
-				$sql.="g.gemeinde in (".$gemeinde.") AND "; break;
+				$sql.="g.gemeinde in ('".str_replace(",", "','", $gemeinde)."') AND "; break;
 		}
 	} else {
 		$sql.="WHERE ";
@@ -188,17 +192,14 @@ function getGBbyPerson() {
 	// Body
 	// Suche nach Grundbüchern der Person
 	$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam ";
-	$sql.="FROM alkis_beziehungen bpn ";
-	$sql.="JOIN ax_namensnummer n ON bpn.beziehung_von=n.gml_id ";
-	$sql.="JOIN alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
-	$sql.="JOIN ax_buchungsblatt gb ON bng.beziehung_zu=gb.gml_id ";
+	$sql.="FROM ax_namensnummer n JOIN ax_buchungsblatt gb ON n.istbestandteilvon = gb.gml_id ";
 	$sql.="JOIN ax_buchungsblattbezirk b ON gb.land = b.land AND gb.bezirk = b.bezirk ";
-	$sql.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
+	$sql.="WHERE n.bennennt = $1 AND n.endet IS NULL AND gb.endet IS NULL AND b.endet IS NULL ";
 
 	// Parameter $gbkennz, z.B. nach Klick auf Zeile "Bezirk"
 	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
 		#if ($debug > 0) {echo "<p class='dbg'>Filter Bezirk '".$zgbbez."'<p>";}
-		$sql.="AND b.bezirk = ".$zgbbez." ";
+		$sql.="AND b.bezirk='".$zgbbez."' ";
 		$bezirkaktuell = true;
 	} else {
 		$bezirkaktuell = false;
@@ -307,24 +308,25 @@ function getGBuFSbyPerson() {
 // Für Fälle in denen nicht nach Gemeinde gefiltert wird (z.B. ganzer Kreis) kann weiter 
 // Stufe 2 und 3 nacheinander verwendet werden. Dies ist wahrscheinlich übersichtlicher, 
 // weil "ungefiltert" in "2+3" zu lange Listen entstehen würden, die durchblättert werden müssen. 
+
 	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $gfilter, $debug, $bltbez, $bltblatt, $bltbvnr, $bltseite, $bltrecht, $kennztyp, $zgbbez;
 	$linelimit=80; // als Limit "Anzahl Flurstücke" in den beiden folgenden Abfragen
 	// darf nun etwas knapper sein, weil man jetzt blättern kann
 	familiensuche();
 	personendaten();
 
-	// Wenn das Limit überschritten wurde: zusätzliche Parameter "blt"=Blättern
-	// $bltbez   = Bezirk-Name  
-	// $bltblatt = BlattMitBuchstabe
-	// $bltbvnr  = lfd.Nr der Buchungsstelle
-	// $bltseite = fortlaufende Seiten-Nr
-	// $bltrecht = "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung 
+	// Wenn das Limit überschritten wurde: zusätzliche Parameter "blt"=Blättern:
+	// - $bltbez   = Bezirk-Name  
+	// - $bltblatt = BlattMitBuchstabe
+	// - $bltbvnr  = lfd.Nr der Buchungsstelle
+	// - $bltseite = fortlaufende Seiten-Nr
+	// - $bltrecht = "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung 
 
 	// SQL-Bausteine vorbereiten
-	//  Direkte Buchungen suchen mit:  $sql1 +         $sqla1 + $sql2
-	//  Sonderfälle suchen mit:        $sql1 + $sqlz + $sqla2 + $sql2
+	//  Direkte Buchungen suchen mit:  $sql1 + $sqla1 + $sql2
+	//  Sonderfälle suchen mit:        $sql1 + $sqla2 + $sql2
 
-	// Baustein: SQL-Anfang fuer beide Varianten
+	// Baustein 1: SQL-Anfang fuer beide Varianten
 	$sql1 ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam, ";
 	$sql1.="s1.gml_id as bsgml, s1.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ot.gemarkung, ot.gemarkungsname, ";
 	if($epsg == "25832") { // Transform nicht notwendig
@@ -334,27 +336,25 @@ function getGBuFSbyPerson() {
 		$sql1.="st_x(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql1.="st_y(st_transform(st_centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
-	$sql1.="FROM alkis_beziehungen bpn ";
-	$sql1.="JOIN ax_namensnummer nn ON bpn.beziehung_von=nn.gml_id ";
-	$sql1.="JOIN alkis_beziehungen bng ON nn.gml_id=bng.beziehung_von ";
-	$sql1.="JOIN ax_buchungsblatt gb ON bng.beziehung_zu=gb.gml_id ";
-   $sql1.="JOIN alkis_beziehungen vbg ON gb.gml_id=vbg.beziehung_zu ";
-	$sql1.="JOIN ax_buchungsstelle s1 ON vbg.beziehung_von=s1.gml_id ";
-	$sql1.="JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk "; // quer-ab
 
-	// Baustein: Zwischen-JOIN (nur bei zweiter Abfrage)
-	$sqlz ="JOIN alkis_beziehungen vss ON vss.beziehung_von=s1.gml_id ";
-	$sqlz.="JOIN ax_buchungsstelle s2 ON vss.beziehung_zu=s2.gml_id ";
+	// NamenNummer >istbestandteilvon> buchungsblatt <istbestandteilvon< buchungsstelle-1
+	$sql1.="FROM ax_namensnummer nn ";
+	$sql1.="JOIN ax_buchungsblatt gb ON gb.gml_id = nn.istbestandteilvon ";
+	$sql1.="JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk ";
+	$sql1.="JOIN ax_buchungsstelle s1 ON gb.gml_id = s1.istbestandteilvon ";
 
-	// Baustein: Auswahl 1 oder 2
-	$sqla1 ="JOIN alkis_beziehungen vfb ON s1.gml_id=vfb.beziehung_zu ";
-	$sqla2 ="JOIN alkis_beziehungen vfb ON s2.gml_id=vfb.beziehung_zu ";
+	// Baustein A: Auswahl 1 oder 2
+	// buchungsstelle-1 <istGebucht< FS
+	$sqla1 ="JOIN ax_flurstueck f ON s1.gml_id = f.istgebucht ";
 
-	// Baustein: SQL-Ende fuer beide Varianten
-	$sql2.="JOIN ax_flurstueck f ON vfb.beziehung_von=f.gml_id ";
-   $sql2.="JOIN pp_gemarkung ot ON f.land=ot.land AND f.gemarkungsnummer=ot.gemarkung "; // Ortsteil
-	$sql2.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
-	$sql2.="AND vbg.beziehungsart='istBestandteilVon' AND vfb.beziehungsart='istGebucht' ";
+	// buchungsStelle1 (herr.) >an> buchungsStelle2 (dien.) <istGebucht< FS
+	$sqla2 ="JOIN ax_buchungsstelle s2 ON s2.gml_id = ANY(s1.an) ";
+	$sqla2.="JOIN ax_flurstueck f ON s2.gml_id = f.istgebucht ";
+
+	// Baustein 2: SQL-Ende fuer beide Varianten
+	$sql2 ="JOIN pp_gemarkung ot ON f.land=ot.land AND f.gemarkungsnummer=ot.gemarkung "; // Ortsteil
+	$sql2.="WHERE nn.benennt = $1 AND nn.endet IS NULL AND gb.endet IS NULL AND s1.endet IS NULL AND f.endet IS NULL ";
+	// AND s2.endet IS NULL
 
 	// Parameter $gbkennz nach Klick auf Zeile "Bezirk"
 	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
@@ -367,9 +367,9 @@ function getGBuFSbyPerson() {
 
 	switch ($gfilter) { // Gemeinde-Filter
 		case 1: // Einzelwert
-			$sql2.="AND ot.gemeinde=".$gemeinde." "; break;
+			$sql2.="AND ot.gemeinde='".$gemeinde."' "; break;
 		case 2: // Liste
-			$sql2.="AND ot.gemeinde in (".$gemeinde.") "; break;
+			$sql2.="AND ot.gemeinde in ('".str_replace(",", "','", $gemeinde)."') "; break;
 	}
 	$sql3 ="ORDER BY b.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, cast(s1.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner LIMIT $2 ;";
 	// Sortier-Problem: laufendenummer in varchar linksbündig
@@ -399,15 +399,17 @@ function getGBuFSbyPerson() {
 
 	// Fälle ohne "Rechte an"
 	if ($bltrecht != "nur") { // "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung
-		// Blatt <vbg/istBestandteilVon<  Buchungsstelle <vfb/istGebucht< Flurstck.
+		// Blatt <istBestandteilVon<  Buchungsstelle <istGebucht< Flurstck.
 		$sql=$sql1.$sqla1.$sql2.$bltwhere.$sql3; // Direkte Buchungen
 		$v=array($person, $linelimit);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
 		if (!$res) {
 			echo "\n<p class='err'>Fehler bei Buchung und Flurst&uuml;ck.</p>";
+			if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."'<p>";}
 			return;
 		}
+
 		$zfs1=0;
 		$gwbez="";
 		while($row = pg_fetch_array($res)) {
@@ -445,6 +447,7 @@ function getGBuFSbyPerson() {
 			echo "\n<p class='blt'>";
 			if ($bltseite > 1) {echo "weitere ";}
 			echo $zfs1." Flurst&uuml;cke";
+
 			// B l ä t t e r n  (eine Folgeseite anbieten)
 			$nxtbltbez=urlencode($beznam);
 			$nxtbltblatt=urlencode($blatt);
@@ -472,8 +475,8 @@ function getGBuFSbyPerson() {
 	// Fälle mit "Rechte an"
 	if ($bltrecht != "ohne") { // "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung 
 		// Zweite Abfrage (Variante) aus den Bausteinen zusammen bauen
-		// buchungsStelle2 < an < buchungsStelle1
-		$sql=$sql1.$sqlz.$sqla2.$sql2.$bltwhere.$sql3; // Rechte an
+		// buchungsStelle2 <an< buchungsStelle1
+		$sql=$sql1.$sqla2.$sql2.$bltwhere."AND s2.endet IS NULL ".$sql3; // Rechte an
 		$v=array($person, $linelimit);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -483,7 +486,6 @@ function getGBuFSbyPerson() {
 		}
 		$zfs2=0;
 		$gwbez="";
-		#gwgb="";
 		while($row = pg_fetch_array($res)) {	
 			$bezirk=$row["bezirk"];
 			if ($gwbez != $bezirk) { // Gruppierung Bezirk
@@ -504,7 +506,7 @@ function getGBuFSbyPerson() {
 			if ($gwbv != $bvnr) { // Gruppierung Buchungs (BVNR)
 				$gwbv = $bvnr;
 				$bsgml=$row["bsgml"];
-				zeile_buchung($bsgml, $bvnr, "", true, false); // Recht an ...  // ohne Link!
+				zeile_buchung($bsgml, $bvnr, "", true, false); // Recht an ... // ohne Link!
 			#	zeile_buchung($bsgml, $bvnr, $bezirk."-".$blatt, true, false); // Recht an ...
 			}
 			$fs_gml=$row["gml_id"];
@@ -576,7 +578,7 @@ if($blattgml != "") { // Flurstücke zum Grundbuch
 
 } elseif($person != "") { // Grundbücher zur Person
 	// Das Programm hat sich selbst verlinkt aus einer Liste der Personen zu einer Suchmaske.
-	if ($debug >= 2) {echo "\n<p class='dbg'>Gemeinde-Filter-Steuerung = '".$gfilter."'</p>";}
+	//if ($debug >= 2) {echo "\n<p class='dbg'>Gemeinde-Filter-Steuerung = '".$gfilter."'</p>";}
 
 	// Die Filtereinstellung beeinflusst die Such-Strategie:
 	if ($gfilter == 0) { // Keine Filterung auf "Gemeinde": große Datenmenge

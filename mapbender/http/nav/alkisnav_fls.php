@@ -1,17 +1,19 @@
 <?php
 /* Version vom
 	2013-04-16	"import_request_variables" entfällt in PHP 5.4, 
-					Fehlerkorrektur Komma in SQL bei FS-Suche.
+				Fehlerkorrektur Komma in SQL bei FS-Suche.
 	2013-04-26	Ersetzen View "gemeinde_gemarkung" durch Tabelle "pp_gemarkung"
-					Zurück-Link, Titel der Transaktion anzeigen
+				Zurück-Link, Titel der Transaktion anzeigen
 	2013-04-29	Test mit IE
 	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
 	2013-05-14  Variablen-Namen geordnet, Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 	2013-10-15  missing Parameter
+	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
-include("alkisnav_fkt.php"); // Funktionen$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
+include("alkisnav_fkt.php"); // Funktionen
+$con_string = "host=".$host." port=".$port." dbname=".$dbname.$dbvers.$gkz." user=".$user." password=".$password;
 $con = pg_connect ($con_string) or die ("Fehler bei der Verbindung zur Datenbank ".$dbname.$dbvers.$gkz);
 echo <<<END
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -63,7 +65,8 @@ function h_hinten($zahl) {
 function ZerlegungFsKennz($fskennz) {
 	// Das eingegebene Flurstücks-Kennzeichen auseinander nehmen. Erwartet wird gggg-fff-zzzz/nnn
 	// Teile der Zerlegung in global-Vars "$z..."
-	global $debug, $zgemkg, $zflur, $zzaehler, $znenner;		$arr = explode("-", $fskennz, 4);
+	global $debug, $zgemkg, $zflur, $zzaehler, $znenner;	
+	$arr = explode("-", $fskennz, 4);
 	$zgemkg=trim($arr[0]);
 	$zflur=h_hinten($arr[1]);
 	$zfsnr=trim($arr[2]);
@@ -111,7 +114,7 @@ function flurstueckskoordinaten($gml) {
 		$sqlk.="x(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS x, ";
 		$sqlk.="y(st_transform(st_Centroid(wkb_geometry), ".$epsg.")) AS y ";			
 	}
-   $sqlk.="FROM ax_flurstueck WHERE gml_id= $1 ";
+	$sqlk.="FROM ax_flurstueck WHERE gml_id= $1 AND endet IS NULL;";
 	$v=array($gml);
 	$resk=pg_prepare("", $sqlk);
 	$resk=pg_execute("", $v);
@@ -122,10 +125,10 @@ function flurstueckskoordinaten($gml) {
 }
 
 function zeile_gemarkung($gkgnr, $gkgname, $aktuell) {
-	// Eine Zeile zu Gemarkung ausgeben
+// Eine Zeile zu Gemarkung ausgeben
 	global $con, $gkz, $gemeinde, $epsg, $gfilter;
 	if ($gkgname == "") { // Falls Gem.-Name fehlt, in DB nachschlagen
-		$sql ="SELECT g.gemarkungsname FROM pp_gemarkung g WHERE g.gemarkung = $1 LIMIT 1;";
+		$sql ="SELECT g.gemarkungsname FROM pp_gemarkung g WHERE g.gemarkung = $1 AND endet IS NULL LIMIT 1;";
 		$v=array($gnr);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -222,12 +225,13 @@ function ListGemeinden() {
 	// Bei Leereingabe im Formular die Gemeinden auflisten
 	global $con, $gkz, $gemeinde, $epsg, $debug, $gfilter;
 	$linelimit=60;
+
 	$sql ="SELECT gemeinde, gemeindename FROM pp_gemeinde ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="WHERE gemeinde=".$gemeinde." "; break;
+			$sql.="WHERE gemeinde='".$gemeinde."' "; break;
 		case 2: // Liste
-			$sql.="WHERE gemeinde in (".$gemeinde.") "; break;
+			$sql.="WHERE gemeinde in ('".str_replace(",", "','", $gemeinde)."') "; break;
 		default: break;
 	}
 	$sql.=" ORDER BY gemeindename LIMIT $1 ;";
@@ -241,7 +245,8 @@ function ListGemeinden() {
 	$cnt = 0;
 	while($row = pg_fetch_array($res)) {
 		$gnr=$row["gemeinde"];
-		$gemeindename=$row["gemeindename"];		zeile_gemeinde($gnr, $gemeindename);
+		$gemeindename=$row["gemeindename"];
+		zeile_gemeinde($gnr, $gemeindename);
 		$cnt++;
 	}
 	// Foot
@@ -307,9 +312,9 @@ function SuchGmkgName() {
 	$sql.="WHERE g.gemarkungsname ILIKE $1 ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="AND g.gemeinde = ".$gemeinde." "; break;
+			$sql.="AND g.gemeinde='".$gemeinde."' "; break;
 		case 2: // Liste
-			$sql.="AND g.gemeinde in (".$gemeinde.") "; break;
+			$sql.="AND g.gemeinde in ("."'".str_replace(",", "','", $gemeinde)."'".") "; break;
 	}
 	$sql.=" ORDER BY s.gemeindename, g.gemarkungsname LIMIT $2 ;";
 	$v=array($match, $linelimit);
@@ -375,7 +380,7 @@ function EineGemarkung($AuchGemkZeile) {
 	if ($AuchGemkZeile) {gg_head($zgemkg, true);}
 	// Body
 	$sql ="SELECT gemarkungsteilflur AS flur FROM ax_gemarkungsteilflur f ";
-	$sql.="WHERE gemarkung= $1 ORDER BY gemarkungsteilflur LIMIT $2 ;"; //WHERE f.land=?
+	$sql.="WHERE gemarkung= $1 AND endet IS NULL ORDER BY gemarkungsteilflur LIMIT $2 ;"; //WHERE f.land=?
 	$v=array($zgemkg, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -415,7 +420,7 @@ function EineFlur() {
 		$sql.="st_x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
-   $sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 ";
+   $sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND endet IS NULL ";
 	$sql.="ORDER BY f.zaehler, f.nenner LIMIT $3 ;"; // WHERE f.land=?
 	$v=array($zgemkg, $zflur, $linelimit);
 	$res=pg_prepare("", $sql);
@@ -453,12 +458,12 @@ function HistFlur() {
 	zeile_flur($zgemkg, $zflur, true, true);
 
 	// Body
-	$whcl.="WHERE flurstueckskennzeichen like $1 ";
+	$whcl.="WHERE flurstueckskennzeichen like $1 AND endet IS NULL ";
 	$sql ="SELECT 'h' AS ftyp, gml_id, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
 	$sql.="UNION SELECT 'o' AS ftyp, gml_id, zaehler, nenner, nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
 	$sql.="ORDER BY zaehler, nenner LIMIT $2 ;"; 
 	$fskzwhere =$land.$zgemkg.str_pad($zflur, 3, "0", $STR_PAD_LEFT)."%";
-	$v=array($fskzwhere,   $linelimit);
+	$v=array($fskzwhere, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {echo "\n<p class='err'>Fehler bei Historie Flur.</p>";}
@@ -502,10 +507,10 @@ function EinFlurstueck() {
 		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
-   $sql.="FROM ax_flurstueck f ";
+	$sql.="FROM ax_flurstueck f ";
 	$sql.="WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND f.zaehler= $3 ";
 	If ($znenner != "") {$sql.="AND f.nenner=".$znenner." ";} // wie prepared?
-	$sql.="ORDER BY f.zaehler, f.nenner;";
+	$sql.="AND endet IS NULL ORDER BY f.zaehler, f.nenner;";
 	$v=array($zgemkg, $zflur, $zzaehler);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -549,30 +554,33 @@ function HistFlurstueck() {
 	$fskzwhere.=str_pad($zzaehler, 5, "0", $STR_PAD_LEFT);
 	if ($znenner == "") {	// Wenn kein Nenner angegeben wurde, 
 		//wird mit Wildcard und like nach allen Nennern gesucht.
-		$fskzwhere.="____\_\_";	// für like 
-		// Das Wildcard-Zeichen "_" ist dummerweise mit Füllzeichen im Feldinhalt identisch
+		$fskzwhere.="____\_\_";	// für like
 		$whereop=" like ";
+		// Das Wildcard-Zeichen "_" ist mit Zeichen im Feldinhalt identisch
+		// "___" = hier kann auch ein Nenner stehen, "\_\_" hier müssen tatsächlich __ stehen.
+		// WARNUNG:  nicht standardkonforme Verwendung von Escape in Zeichenkettenkonstante
+		// z.B.: like '05265600400145____\_\_'
 	} else { // Ein Nenner wurde angegeben
 		$fskzwhere.=str_pad($znenner, 4, "0", $STR_PAD_LEFT)."__";
 		$whereop=" = ";
 	}
-	$whcl.="WHERE flurstueckskennzeichen ".$whereop." $1 ";
-	
+	$whcl.="WHERE flurstueckskennzeichen ".$whereop." $1 AND endet IS NULL ";
 	$fldlist=" AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner, ";
 
 	// NICHT in aktuell suchen wenn explizit historisch gesucht wird
-	#$sql ="SELECT 'a'".$fldlist."null as nachf FROM ax_flurstueck ".$whcl." UNION ";
 	$sql ="SELECT 'h'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueck ".$whcl;
 	$sql.="UNION SELECT 'o'".$fldlist."nachfolgerflurstueckskennzeichen as nachf FROM ax_historischesflurstueckohneraumbezug ".$whcl;
 
 	$v=array($fskzwhere);
-	#echo "<p class='dbg'>SQL=".$sql."<br>WHERE=".$fskzwhere."</p>";  // ++++ TEST
-
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
-	if (!$res) {echo "\n<p class='err'>Fehler bei hist. Flurst&uuml;ck.</p>";}
-	$zfs=0;
+	if (!$res) {
+		echo "\n<p class='err'>Fehler bei historischem Flurst&uuml;ck.</p>";
+		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."'<br>Parameter: ".$fskzwhere."<p>";}
+		return;
+	}
 
+	$zfs=0;
 	while($row = pg_fetch_array($res)) { // Schleife Hist-FS
 		$ftyp=$row["ftyp"];
 		$fs_gml=$row["gml_id"];
@@ -581,12 +589,6 @@ function HistFlurstueck() {
 		$fskenn=$row["zaehler"];
 		$nachf=$row["nachf"];
 		if ($row["nenner"] != "") {$fskenn.="/".$row["nenner"];}
-
-		#if ($ftyp == "a") { // als aktuelles FS gefunden, das "h" war also unnötig!
-		#	$koor=flurstueckskoordinaten($fs_gml);
-		#	echo "\n<p>Flurst&uuml;ck ".$fskenn." ist aktuell, nicht historisch</p>";	
-		#	zeile_flurstueck ($fs_gml, $fskenn, $koor["x"], $koor["y"], $gknr, $flur, true);
-		#} else { // Historisches FS gefunden (h oder o)
 
 		zeile_hist_fs($fs_gml, $fskenn, $ftyp, $gknr, $flur, true);
 		if ($nachf == "") {
@@ -600,7 +602,7 @@ function HistFlurstueck() {
 			$stri=trim($nachf, "{}");
 			$stri="'".str_replace(",", "','", $stri)."'";
 
-			$nawhcl="WHERE flurstueckskennzeichen IN ( ".$stri." ) ";
+			$nawhcl="WHERE flurstueckskennzeichen IN ( ".$stri." ) AND endet IS NULL ";
 
 			$nasql ="SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_flurstueck ".$nawhcl;
 			$nasql.="UNION SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner FROM ax_historischesflurstueck ".$nawhcl;
@@ -609,7 +611,33 @@ function HistFlurstueck() {
 			$v=array();
 			$nares=pg_prepare("", $nasql);
 			$nares=pg_execute("", $v);
-			if (!$nares) {echo "\n<p class='err'>Fehler bei Nachfolger.</p>";}
+			if (!$nares) {
+				echo "\n<p class='err'>Fehler bei Nachfolger.</p>";
+				if ($debug > 2) {echo "<p class='dbg'>SQL = '".$nasql."'<p>";}
+				return;
+			}
+
+/*
+
+ SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner 
+ FROM ax_flurstueck 
+ WHERE flurstueckskennzeichen IN ( '05265600400296______' ) 
+   AND endet IS NULL 
+UNION 
+ SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner 
+ FROM ax_historischesflurstueck 
+ WHERE flurstueckskennzeichen IN ( '05265600400296______' ) 
+    AND endet IS NULL 
+UNION 
+ SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner 
+ FROM ax_historischesflurstueckohneraumbezug 
+ WHERE flurstueckskennzeichen IN ( '05265600400296______' ) 
+   AND endet IS NULL '
+
+==> UNION-Typen character varying und integer passen nicht zusammen  gemarkungsnummer
+
+*/
+
 			$zfsn=0;
 			// inner Body
 			while($narow = pg_fetch_array($nares)) {

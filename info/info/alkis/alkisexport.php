@@ -1,33 +1,35 @@
 <?php
 /*	Modul alkisexport.php
-	CSV-Export von ALKIS-Daten zu einem Flurstueck, Grundbuch oder Eigentümer.
-	Es wird eine GML-ID übergeben.
+	CSV-Export von ALKIS-Daten zu einem Flurstueck, Grundbuch oder EigentÃ¼mer.
+	Es wird eine GML-ID Ã¼bergeben.
 	Es wird ein gespeicherter View verwendet, der nach der gml_id gefiltert wird. 
 	Der View verkettet Flurstueck - Buchungsstelle - Grundbuch - Eigentuemer
-	Die Lagebezeichnung des Flurstücks wird in ein Feld komprimiert.
+	Die Lagebezeichnung des FlurstÃ¼cks wird in ein Feld komprimiert.
 	Parameter: gkz=mandant&gmlid=DE...&tabtyp=flurstueck/grundbuch/person
 
 	2014-01-17 krz f.j.
 	2014-01-20 weitere Spalten und verbesserte Formatierung
-	2014-01-21 Der View liefert "Rechtsgemeinschaft" nun als Feld in allen Personen-Sätzen 
+	2014-01-21 Der View liefert "Rechtsgemeinschaft" nun als Feld in allen Personen-SÃ¤tzen 
 			eines GB-Blattes statt als eigenen "Satz ohne Person".
 	2014-01-27 Erweiterung auf Filter "strasse" ("gml_id" aus "ax_lagebezeichnungkatalogeintrag")
+	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 */
 
 function lage_zum_fs($gmlid) {
-	// Zu einem Flurstück die Lagebezeichnungen (mit Hausnummer) so aufbereiten, 
+	// Zu einem FlurstÃ¼ck die Lagebezeichnungen (mit Hausnummer) so aufbereiten, 
 	// dass ggf. mehrere Lagebezeichnungen in eine Zelle der Tabelle passen.
-	$sql ="SELECT DISTINCT s.bezeichnung, l.hausnummer FROM alkis_beziehungen v ";
-	$sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=l.gml_id ";
-	$sql.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage = s.lage ";
-	$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='weistAuf' ";
-	$sql.="ORDER BY s.bezeichnung, l.hausnummer;";
+	// FS >westAuf> Lage >> Katalog
+	$sql ="SELECT DISTINCT s.bezeichnung, l.hausnummer 
+	FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
+	JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
+	WHERE f.gml_id= $1 ORDER BY s.bezeichnung, l.hausnummer;";
+
 	$v=array($gmlid);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
-		echo "Fehler bei Lagebezeichnung \n";
-		//echo $sql."\n";
+		return "** Fehler bei Lagebezeichnung **"; //.$sql;
 	}
 	$j=0;
 	$lagehsnr="";
@@ -46,6 +48,8 @@ function lage_zum_fs($gmlid) {
 	return($lagehsnr);
 }
 
+// HIER START //
+
 $cntget = extract($_GET); // Parameter aus URL lesen
 header('Content-type: application/octet-stream');
 header('Content-Disposition: attachment; filename="alkis_'.$tabtyp.'_'.$gmlid.'.csv"');
@@ -60,14 +64,14 @@ $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".
 if (!$con) {
 	exit("Fehler beim Verbinden der DB");
 }
-pg_set_client_encoding($con, LATIN1); // Für Excel kein UTF8 ausgeben
+pg_set_client_encoding($con, LATIN1); // FÃ¼r Excel kein UTF8 ausgeben
 
 // Der Parameter "Tabellentyp" bestimmt den Namen des Filter-Feldes aus dem View "exp_csv".
 switch ($tabtyp) { // zulaessige Werte fuer &tabtyp=
 	case 'flurstueck': $filter = "fsgml"; break; // ax_flurstueck.gml_id
 	case 'grundbuch':  $filter = "gbgml"; break; // ax_buchungsblatt.gml_id
 	case 'person':     $filter = "psgml"; break; // ax_person.gml_id
-	case 'strasse':    $filter = "stgml"; break; // ax_lagebezeichnungkatalogeintrag.gml_id = Straße-GML-ID
+	case 'strasse':    $filter = "stgml"; break; // ax_lagebezeichnungkatalogeintrag.gml_id = StraÃŸe-GML-ID
 	default: exit("Falscher Parameter '".$tabtyp."'"); break;
 }
 
@@ -82,7 +86,7 @@ $v=array($gmlid);
 $res=pg_prepare("", $sql);
 $res=pg_execute("", $v);
 if (!$res) {exit("Fehler bei Datenbankabfrage");}
-$i=1; // Kopfzeile zählt mit
+$i=1; // Kopfzeile zÃ¤hlt mit
 $fsalt='';
 
 // Datenfelder auslesen
@@ -109,8 +113,8 @@ while($row = pg_fetch_array($res)) {
 	// Buchungsstelle (Grundstueck)
 	$bu_lfd=$row["bu_lfd"]; // BVNR
 	$bu_ant=$row["bu_ant"]; // '=zaehler/nenner' oder NULL
-	$bu_key=$row["buchungsart"]; // Schlüssel
-	$bu_art=$row["bu_art"]; // entschlüsselt (Umlaute in ANSI!)
+	$bu_key=$row["buchungsart"]; // SchlÃ¼ssel
+	$bu_art=$row["bu_art"]; // entschlÃ¼sselt (Umlaute in ANSI!)
 	if($bu_ant == '') { // Keine Bruch-Zahl
 		$bu_ant = '1'; // "voller Anteil" (Faktor 1)
 	} else {
@@ -120,7 +124,7 @@ while($row = pg_fetch_array($res)) {
 	// Namensnummer
 	$nam_lfd="'".kurz_namnr($row["nam_lfd"])."'"; // In Hochkomma, wird sonst wie Datum dargestellt.
 	$nam_ant=$row["nam_ant"];
-	$nam_adr=$row["nam_adr"]; // Art der Rechtsgemeischaft (Schlüssel)
+	$nam_adr=$row["nam_adr"]; // Art der Rechtsgemeischaft (SchlÃ¼ssel)
 
 	if ($nam_adr == '') {     // keine Rechtsgemeinschaft
 		$rechtsg='';
@@ -132,7 +136,7 @@ while($row = pg_fetch_array($res)) {
 		if ($nam_adr == 9999) { // sonstiges
 			$rechtsg=$row["nam_bes"]; // Beschrieb der Rechtsgemeinschaft
 		} else {
-			$rechtsg=rechtsgemeinschaft($nam_adr); // Entschlüsseln
+			$rechtsg=rechtsgemeinschaft($nam_adr); // EntschlÃ¼sseln
 		}
 	}
 
@@ -153,19 +157,19 @@ while($row = pg_fetch_array($res)) {
 		$adresse="";
 	} else { 
 		$adresse=$row["strasse"]." ".$row["hausnummer"].", ".$row["plz"]." ".$ort;
-		$land=$row["land"]; // nur andere Länder anzeigen
+		$land=$row["land"]; // nur andere LÃ¤nder anzeigen
 		if (($land != "DEUTSCHLAND") and ($land != "")) {
 			$adresse.=" (".$land.")";
 		}
 	}
 
 	// Adressen (Lage) zum FS
-	if($fsgml != $fsalt) { // nur bei geändertem Kennz.
+	if($fsgml != $fsalt) { // nur bei geÃ¤ndertem Kennz.
 		$lage=lage_zum_fs($fsgml); // die Lage neu ermitteln
 		$fsalt=$fsgml;
 	}
 
-	// Den Ausgabe-Satz montieren aus Flurstücks-, Grundbuch- und Namens-Teil
+	// Den Ausgabe-Satz montieren aus FlurstÃ¼cks-, Grundbuch- und Namens-Teil
 	//      A             B           C             D               E               F            G
 	$fsteil=$fs_kennz.";".$gmkgnr.";".$gemkname.";".$flurnummer.";".$flstnummer.";".$fs_flae.";".$lage.";";
 	//      H              I              J             K           L           M
@@ -180,7 +184,7 @@ while($row = pg_fetch_array($res)) {
 		$formelteil=';';
 	}
 
-	// Ausgabe in CSV-Datei
+	// Ausgabe in die CSV-Datei -> Download -> Tabellenkalkulation
 	echo "\n".$fsteil.$gbteil.$namteil.$formelteil;
 }
 pg_free_result($res);

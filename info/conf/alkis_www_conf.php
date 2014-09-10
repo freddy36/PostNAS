@@ -4,6 +4,7 @@
 	Zentrale Einstellungen - Internet-Version
 	2011-07-25  PostNAS 0.5/0.6 Versionen unterscheiden
 	2011-07-26  debug-Parameter zur Fehlersuche
+	2014-09-10  PostNAS 0.8
 */
 
 // Datenbank-Zugangsdaten
@@ -12,7 +13,7 @@ $dbport = '5432';
 $dbuser = '***';
 $dbpass = '***';
 $dbpre  = 'alkis';
-$dbvers = '06';
+$dbvers = '08';
 
 // Entwicklung / Produktion
 $idumschalter = false;

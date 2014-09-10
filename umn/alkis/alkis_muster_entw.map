@@ -22,6 +22,7 @@
 #                      Die Tabelle wird im PostProcessing redundant befüllt um schneller darstellen zu können.
 # 2014-01-08 F.J. krz  alle Arten von "sonstige Bauwerke" anzeigen (z.B. Carports), auch Linien (neuer Layer)
 # 2014-08-25 F.J. krz  Straßennamen als P- und L-Variante, hinter "ap_pto_stra" neuer Layer "ap_lto_stra"
+# 2014-08-29 F.J. krz: Umstellung auf Version 0.8 - Datenbankname, Titel
 
 ###
 # Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
@@ -78,10 +79,10 @@ MAP
 	WEB
 		METADATA
 			wms_title "ALKIS_" # TEST-Kennung im Title
-			ows_abstract "ALKIS - Konverter PostNAS Version 0.7, Mapfile Entwicklungs-Version vom August 2014"
+			ows_abstract "ALKIS - Konverter PostNAS Version 0.8, Mapfile Entwicklungs-Version vom August 2014"
 			ows_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 			ows_encoding "UTF-8"
-			ows_onlineresource "http://ows.krz.de/cgi-bin/mapserv6?map=/opt/gdi/alkis07/alkis07*gkz*a.map"
+			ows_onlineresource "http://ows.krz.de/cgi-bin/mapserv6?map=/opt/gdi/alkis08/alkis08*gkz*a.map"
 			wms_feature_info_mime_type "text/html"
 			wfs_accessconstraints "none"
 			wfs_title "ALKIS"
@@ -153,7 +154,7 @@ LAYER
 	NAME "nutzung_alle"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT gml_id, nutz_id, class, wkb_geometry FROM nutzung) as foo using unique gml_id using SRID=25832"
 	METADATA
@@ -442,7 +443,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]" # nicht doppelt
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wohnbauflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -470,7 +471,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_industrieundgewerbeflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -498,7 +499,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_halde) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -524,7 +525,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_bergbaubetrieb) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -549,7 +550,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_tagebaugrubesteinbruch) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -575,7 +576,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechegemischternutzung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -603,7 +604,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flaechebesondererfunktionalerpraegung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -629,7 +630,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_sportfreizeitunderholungsflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -656,7 +657,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_friedhof) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -684,7 +685,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_strassenverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -743,7 +744,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_weg) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -769,7 +770,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_platz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -803,7 +804,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_bahnverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -830,7 +831,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_flugverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -857,7 +858,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_schiffsverkehr) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -884,7 +885,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, vegetationsmerkmal, wkb_geometry FROM ax_landwirtschaft) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -930,7 +931,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_wald) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -956,7 +957,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_gehoelz) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -982,7 +983,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_heide) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1009,7 +1010,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_moor) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1035,7 +1036,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_sumpf) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1061,7 +1062,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_unlandvegetationsloseflaeche) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1087,7 +1088,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_vegetationsmerkmal) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1113,7 +1114,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_fliessgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1139,7 +1140,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_hafenbecken) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1165,7 +1166,7 @@ LAYER
 	TYPE POLYGON
 	REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_stehendesgewaesser) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1196,7 +1197,7 @@ LAYER
 	#DUMP TRUE
 	# REQUIRES "![nutzung_alle]"
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser WHERE st_geometrytype(wkb_geometry) = 'ST_Polygon') as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1257,7 +1258,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, funktion, wkb_geometry FROM ax_untergeordnetesgewaesser WHERE st_geometrytype(wkb_geometry) = 'ST_LineString') as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1311,7 +1312,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
 	METADATA
@@ -1353,7 +1354,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemarkungsname, simple_geom FROM pp_gemarkung) as foo using unique gid using SRID=25832"
 	METADATA
@@ -1394,7 +1395,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
 	METADATA
@@ -1445,7 +1446,7 @@ LAYER
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1796,7 +1797,7 @@ LAYER # Wie Flächen-Layer zuvor, aber Flächenfarbe entfernt UND CLASSes entfer
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, gebaeudefunktion, lagezurerdoberflaeche, hochhaus, zustand, ax_datenerhebung, wkb_geometry FROM ax_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -1958,7 +1959,7 @@ LAYER
 	GROUP "gebaeude"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM gebaeude_txt) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2009,7 +2010,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauart, lagezurerdoberflaeche, wkb_geometry FROM ax_bauteil) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2070,7 +2071,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, beschaffenheit, wkb_geometry FROM ax_besonderegebaeudelinie) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2100,7 +2101,7 @@ LAYER # Hausnummer
 	TYPE POINT
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry,drehwinkel,hausnummer FROM s_hausnummer_gebaeude) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2144,7 +2145,7 @@ END
 #	TYPE POINT
 #	#DUMP TRUE
 #	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+#	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 #	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel, laufendenummer FROM s_nummer_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
 #	# "s_nummer_nebengebaeude" = View
@@ -2188,7 +2189,7 @@ LAYER # Lagebezeichnung mit Pseudonummer, Anzeige der lfd-Nr.
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM lfdnr_nebengebaeude) as foo using unique ogc_fid using SRID=25832" # View
 	METADATA
@@ -2224,7 +2225,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_gebaeude) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
@@ -2250,7 +2251,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2279,7 +2280,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimverkehrsbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2309,7 +2310,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkimgewaesserbereich) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2336,7 +2337,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuerindustrieundgewerbe) as foo using unique ogc_fid using SRID=25832"
 	FILTER "st_geometrytype(wkb_geometry) = 'ST_Polygon'" # sonst Absturz Mapserver
@@ -2375,7 +2376,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_bauwerkoderanlagefuersportfreizeitunderholung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2403,7 +2404,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_vorratsbehaelterspeicherbauwerk) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2432,7 +2433,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 
 # Analyse (440):
@@ -2511,7 +2512,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_sonstigesbauwerkodersonstigeeinrichtung WHERE st_geometrytype(wkb_geometry) = 'ST_LineString') as foo using unique ogc_fid using SRID=25832"
 	#FILTER "st_geometrytype(wkb_geometry) = 'ST_LineString'" # sonst Absturz Mapserver
@@ -2540,7 +2541,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, spannungsebene, wkb_geometry FROM ax_leitung) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2578,7 +2579,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, lagezurerdoberflaeche, wkb_geometry  FROM ax_transportanlage) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2623,7 +2624,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, bauwerksfunktion, wkb_geometry FROM ax_turm) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2654,7 +2655,7 @@ END
 #	TYPE POLYGON
 #	#DUMP TRUE
 #	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+#	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 #	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	DATA "wkb_geometry from s_bodensch_wms using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -2676,7 +2677,7 @@ END
 #	JOIN # VIEW s_bodensch_ent: Felder einzeln und langschriftlich entschlüsselt.
 #		NAME "BOD"
 #		CONNECTIONTYPE ogr
-#		CONNECTION 'host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432'
+#		CONNECTION 'host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432'
 #		TABLE "s_bodensch_ent" FROM "ogc_fid" TO "ogc_fid" TYPE ONE-TO-ONE
 #  	END
 #	CLASSITEM kult # Kulturart, SELECT DISTINCT kult FROM s_bodensch_wms; A, AGR, Gr, GrA
@@ -2722,7 +2723,7 @@ LAYER
 	GROUP "bodenschaetzung"
 	TYPE POLYGON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from s_bodensch_po using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2743,7 +2744,7 @@ LAYER
 	JOIN # VIEW s_bodensch_ent: Felder einzeln und langschriftlich entschlüsselt.
 		NAME "BOD"
 		CONNECTIONTYPE ogr
-		CONNECTION 'host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432'
+		CONNECTION 'host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432'
 		TABLE "s_bodensch_ent" FROM "ogc_fid" TO "ogc_fid" TYPE ONE-TO-ONE
   	END
 	CLASS
@@ -2761,7 +2762,7 @@ LAYER
 	REQUIRES "[bodensch_po]" # Grenzen aufzeigen?
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from s_bodensch_tx using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2828,7 +2829,7 @@ LAYER
 	REQUIRES "[bodensch_tx]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'bodensch_tx' automatisch an
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM s_zuordungspfeil_bodensch) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -2854,7 +2855,7 @@ LAYER
 	REQUIRES "[ag_l_bodsch]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'bodensch_tx' automatisch an
 	TYPE Annotation
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_bodensch) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
 	METADATA
@@ -2886,7 +2887,7 @@ END
 #	TYPE POINT
 #	#DUMP TRUE
 #	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+#	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 #	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_grablochderbodenschaetzung) as foo using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -2914,7 +2915,7 @@ END
 #	TYPE POLYGON
 #	#DUMP TRUE
 #	CONNECTIONTYPE POSTGIS
-#	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+#	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 #	PROCESSING "CLOSE_CONNECTION=DEFER"
 #	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_musterlandesmusterundvergleichsstueck) as foo using unique ogc_fid using SRID=25832"
 #	METADATA
@@ -2942,7 +2943,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	# mit Feldern fuer klassisches Template:
 	#  DATA "wkb_geometry from (SELECT ogc_fid, gml_id, flurstueckskennzeichen, amtlicheflaeche, wkb_geometry FROM ax_flurstueck) as foo using unique ogc_fid using SRID=25832"
@@ -2984,7 +2985,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderflurstuecksgrenze, wkb_geometry FROM ax_besondereflurstuecksgrenze) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3229,7 +3230,7 @@ LAYER
 	REQUIRES "[ag_t_flurstueck]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'ag_t_flurstueck' automatisch an
 	TYPE LINE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid,wkb_geometry FROM s_zuordungspfeil_flurstueck) as foo using unique ogc_fid using SRID=25832" # View gespeichert
 	METADATA
@@ -3257,7 +3258,7 @@ LAYER
 	TYPE Annotation
 	STATUS ON
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM s_zuordungspfeilspitze_flurstueck) as foo using unique ogc_fid using SRID=25832" # View berechnet Winkel
 	METADATA
@@ -3295,7 +3296,7 @@ LAYER
 	TYPE POINT
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT * FROM pp_flurstueck_nr) as foo using unique gid using SRID=25832" # Tabelle aus PostProcessing
 	METADATA
@@ -3334,7 +3335,7 @@ LAYER
 	REQUIRES "[ax_flurstueck]" # WMS-Einstellung im Mapbender: Sel = aus (versteckt) aber sel_default = an. Ebene geht dann mit 'ax_flurstueck' automatisch an
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry, drehwinkel FROM s_zugehoerigkeitshaken_flurstueck) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3372,7 +3373,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_klassifizierungnachstrassenrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3414,7 +3415,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_naturumweltoderbodenschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3442,7 +3443,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry  FROM ax_anderefestlegungnachwasserrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3476,7 +3477,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 
 	# Tabelle (Standard-Template)
@@ -3672,7 +3673,7 @@ LAYER
 	TYPE POLYGON
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_denkmalschutzrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3698,7 +3699,7 @@ LAYER
 	TYPE LINE
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, artderfestlegung, wkb_geometry FROM ax_sonstigesrecht) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3729,7 +3730,7 @@ LAYER
 	TYPE POINT
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM grenzpunkt) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3774,7 +3775,7 @@ LAYER
 	TYPE POINT
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortag) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3803,7 +3804,7 @@ LAYER
 	TYPE POINT
 	#DUMP TRUE
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT ogc_fid, wkb_geometry FROM ax_punktortau) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -3834,7 +3835,7 @@ LAYER
 	GROUP "praesentation"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT * FROM pp_strassenname_p) as foo using unique gid using SRID=25832"
 	METADATA
@@ -4013,7 +4014,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	REQUIRES "[ap_pto_stra]" # P- und L gemeinsam
 	STATUS DEFAULT # automatisch mit
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "the_geom from (SELECT * FROM pp_strassenname_l) as foo using unique gid using SRID=25832"
 	METADATA
@@ -4182,7 +4183,7 @@ LAYER
 	GROUP "praesentation"
 	TYPE POINT
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA "wkb_geometry from (SELECT * FROM ap_pto_rest) as foo using unique ogc_fid using SRID=25832"
 	METADATA
@@ -4272,7 +4273,7 @@ LAYER
 	MAXSCALEDENOM 12000
 	#SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk201x_politische_grenze) as foo using unique ogc_fid using SRID=25832'
 	CLASSITEM 'art' # Art der besonderen Grundstuecksgrenze  IST EIN ARRAY! z.B. {3000,7106}
@@ -4357,7 +4358,7 @@ LAYER
 	MAXSCALEDENOM 10000
 	SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk2014_gemarkungsgrenze) as foo using unique ogc_fid using SRID=25832'
 	CLASS
@@ -4390,7 +4391,7 @@ LAYER
 	MAXSCALEDENOM 5000
 	SYMBOLSCALEDENOM 1000
 	CONNECTIONTYPE POSTGIS
-	CONNECTION "host=10.0.100.73 dbname=alkis07*gkz*_neu user=ms6 port=5432"
+	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
 	DATA 'wkb_geometry from (SELECT * FROM sk2012_flurgrenze) as foo using unique ogc_fid using SRID=25832'
 	CLASS

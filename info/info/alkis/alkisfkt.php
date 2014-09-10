@@ -10,6 +10,8 @@
 	2011-11-17 Variable ($debug, $idanzeige, $showkey) von Parameter nach global. Die heißen in allen Programmteilen gleich.
 	2014-01-22 Eigentuemerart: Mehr Werte und Zugriff auf DB-Schlüssel-Tabelle
 	2014-02-06 Korrektur Eigentümerart
+	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 */
 
 function footer($gmlid, $link, $append) {
@@ -62,17 +64,19 @@ function footer($gmlid, $link, $append) {
 	return 0;
 }
 
-function linkgml($gkz, $gml, $typ)  {
+function linkgml($gkz, $gml, $typ, $tabelle)  {
 	// Einen Link zur Verfolgung der Beziehungen mit dem Modul alkisrelationen.php
-	$kurzid=substr($gml, 12); // ID in Anzeige kuerzen (4 Zeichen), der Anfang ist immer gleich
+	// tabelle = nur angeben für Tabellen, die Relationen-Spalten besitzen, sonst leer
+	$kurzid=substr($gml, 12, 4); // ID in Anzeige kuerzen (4 Zeichen), der Anfang ist immer gleich
+	// PostNAS 0.8: Timestamp abschneiden
 	echo "\n\t\t<a target='_blank' title='ID ".$typ."' class='gmlid noprint' ";
-	echo "href='alkisrelationen.php?gkz=".$gkz."&amp;gmlid=".$gml."&amp;otyp=".$typ."'>";
+	echo "href='alkisrelationen.php?gkz=".$gkz."&amp;gmlid=".$gml."&amp;otyp=".$typ."&amp;tabelle=".$tabelle."'>";
 	echo "<img src='ico/Beziehung_link.ico' width='16' height='16' alt=''>".$kurzid."</a>";
 	return 0;
 }
 
 function kurz_namnr($lang) {
-	// Namensnummer kuerzen. Nicht benoetigte Stufen der Dezimalklassifikation abschneiden
+	// Namensnummer kürzen. Nicht benötigte Stufen der Dezimalklassifikation abschneiden
 	$kurz=str_replace(".00","",$lang); // leere Stufen (nur am Ende)
 	$kurz=str_replace("0000","",$kurz); // ganz leer (am Anfang)
 	$kurz=ltrim($kurz, "0"); // fuehrende Nullen am Anfang
@@ -88,15 +92,12 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 	Table-Tag und Kopfzeile im aufrufenden Programm. 
 */
 	global $gkz, $idanzeige, $showkey;
+
 	// F L U R S T U E C K
-	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, ";
-	$sql.="f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
-	$sql.="FROM ax_flurstueck f ";
-	$sql.="JOIN alkis_beziehungen v ON f.gml_id=v.beziehung_von "; 
+	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
+	$sql.="FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) "; 
 	$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-	$sql.="WHERE v.beziehung_zu= $1 "; // id buchungsstelle
-	$sql.="AND v.beziehungsart='istGebucht' ";
-	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+	$sql.="WHERE s.gml_id= $1 ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 	$v = array($gml_bs);
 	$resf = pg_prepare("", $sql);
@@ -115,8 +116,8 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 /*		$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
 		if ($rowf["nenner"] != "") { // Bruchnummer
 			$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);
-		} */
-
+		}
+*/
 		// ohne fuehrende Nullen?
 		$fskenn=$rowf["zaehler"];
 		if ($rowf["nenner"] != "") { // Bruchnummer
@@ -135,7 +136,7 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 				echo "\n\t<td>";
 					echo "<a name='bvnr".$lfdnr."'></a>"; // Sprungmarke
 					echo "<span class='wichtig'>".$bvnr."</span>";  // BVNR
-					if ($idanzeige) {linkgml($gkz, $gml_bs, "Buchungsstelle");}
+					if ($idanzeige) {linkgml($gkz, $gml_bs, "Buchungsstelle", "ax_buchungsstelle");}
 				echo "</td>";
 
 				echo "\n\t<td>"; // Buchungsart 
@@ -153,7 +154,7 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 			echo $rowf["bezeichnung"]."</td>";
 			echo "\n\t<td>".$flur."</td>";
 			echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
-				if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck");}
+				if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck", "ax_flurstueck");}
 			echo "</td>";
 			echo "\n\t<td class='fla'>".$flae."</td>";
 
@@ -177,12 +178,12 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	// Tabelle mit Eigentuemerdaten zu einem Grundbuchblatt ausgeben
 	// Sp.1 = Namennummer, Sp. 2 = Name / Adresse, Sp. 3 = Link
 	// Parameter:
-	//	$gmlid = ID des GB-Blattes
-	//	$mitadresse = Option (true/false) ob auch die Adresszeile ausgegeben werden soll
+	//	$gmlid = ID GB-Blattes
+	//	$mitadresse = Option (true/false) ob die Adresszeile ausgegeben werden soll
 	// Return = Anzahl Namensnummern
 
 	// Schleife 1: N a m e n s n u m m e r
-	// Beziehung: ax_namensnummer  >istBestandteilVon>  ax_buchungsblatt
+	// Beziehung: ax_namensnummer >istBestandteilVon> ax_buchungsblatt
 	global $debug, $gkz, $idanzeige, $showkey;
 
 	// Link über Java-Class? (Ja in alkisinlayausk.php, sonst normal)
@@ -194,10 +195,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 		$lnknach = "\")";
 	} // Beispiel-Link href='javascript:imFenster(\"alkislage.php?gkz= ... ."\")'>xxx ";
 
-	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, ";
-	$sqln.="n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
-	$sqln.="FROM ax_namensnummer n JOIN alkis_beziehungen b ON b.beziehung_von=n.gml_id ";
-	$sqln.="WHERE b.beziehung_zu= $1 AND b.beziehungsart='istBestandteilVon' ORDER BY laufendenummernachdin1421;";
+	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
+	$sqln.="FROM ax_namensnummer n WHERE n.istbestandteilvon= $1 ORDER BY n.laufendenummernachdin1421;";
 
 	$v = array($gmlid);
 	$resn = pg_prepare("", $sqln);
@@ -218,7 +217,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				// VOR die Tabelle: "Eigentümer"
 				$namnum=kurz_namnr($rown["lfd"]);
 				echo $namnum."&nbsp;";
-				if ($idanzeige) {linkgml($gkz, $rown["gml_id"], "Namensnummer");}
+				if ($idanzeige) {linkgml($gkz, $rown["gml_id"], "Namensnummer", "ax_namensnummer");}
 			echo "</p>\n\t</td>";
 
 			echo "\n\t<td>"; // Sp. 2
@@ -246,8 +245,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 		// Schleife 2: P e r s o n
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
 		$sqlp ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
-		$sqlp.="FROM ax_person p JOIN alkis_beziehungen v ON v.beziehung_zu=p.gml_id ";
-		$sqlp.="WHERE v.beziehung_von= $1 AND v.beziehungsart='benennt';";
+		$sqlp.="FROM ax_person p JOIN ax_namensnummer nn ON nn.benennt=substring(p.gml_id,1,16) WHERE nn.gml_id= $1 AND p.endet IS NULL AND nn.endet IS NULL;";
+		// Timestamp an ID abschneiden!
 
 		$v = array($gmlnn);
 		$resp = pg_prepare("", $sqlp);
@@ -259,7 +258,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 		}
 
 		$i=0; // cnt Person
-		while($rowp = pg_fetch_array($resp)) {
+		while($rowp = pg_fetch_array($resp)) {  // ++ Schleife? nn >benennt> Person ist kein Array!
 			$diePerson="";
 			if ($rowp["akademischergrad"] <> "") {$diePerson=$rowp["akademischergrad"]." ";}
 			$diePerson.=$rowp["nachnameoderfirma"];
@@ -280,8 +279,10 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 
 			// Spalte 3 = Link
 			echo "\n\t<td>\n\t\t<p class='nwlink noprint'>";
-				if ($idanzeige) {linkgml($gkz, $rowp["gml_id"], "Person"); echo "&nbsp";}
-				if ($showkey) {echo "<span class='key'>(".$eiartkey.")</span> ";}
+				if ($idanzeige) {linkgml($gkz, $rowp["gml_id"], "Person", "ax_person"); echo "&nbsp";}
+				if ($showkey AND $eiartkey != '') { // oft leer
+						echo "<span class='key'>(".$eiartkey.")</span> ";
+				}
 				echo "\n\t\t<a href='".$lnkvor."alkisnamstruk.php?gkz=".$gkz."&amp;gmlid=".$rowp[0];
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
@@ -292,8 +293,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			if ($mitadresse) {
 				// Schleife 3:  A d r e s s e  (OPTIONAL)
 				$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-				$sqla.="FROM ax_anschrift a JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-				$sqla.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat';"; // ORDER?
+				$sqla.="FROM ax_anschrift a JOIN ax_person p ON substring(a.gml_id,1,16) = ANY(p.hat) WHERE p.gml_id= $1 ;"; // ORDER?
 				$gmlp=$rowp["gml_id"]; // Person
 				$v = array($gmlp);
 				$resa = pg_prepare("", $sqla);
@@ -331,7 +331,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 					echo "\n\t<td>"; // Spalte 3
 					if ($idanzeige) {
 						echo "<p class='nwlink noprint'>";
-						linkgml($gkz, $gmla, "Adresse");
+						linkgml($gkz, $gmla, "Adresse", "ax_adresse");
 						echo "</p>";
 					} else { 
 						echo "&nbsp;";
@@ -341,8 +341,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				}
 				pg_free_result($resa);
 			} // End if
-
 			// 'keine Adresse' kann vorkommen, z.B. "Deutsche Telekom AG"
+
 			$i++; // cnt Person
 			// als eigene Tab-Zeile?
 			// 'Anteil' ist der Anteil der Berechtigten in Bruchteilen (Par. 47 GBO) an einem gemeinschaftlichen Eigentum (Grundstück oder Recht).
@@ -352,13 +352,13 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
 		} // End Loop Person
-		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, dann kein Fehler
+		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, ist dann kein Fehler
 			if ($debug > 0) {
 				echo "\n<p class='dbg'>Rechtsgemeinschaft = '".$rechtsg."'</p>";
 				if ($rechtsg != 9999) {
-					echo "\n<p class='dbg'>Keine Person zur Namensnummer ".$namnum."</p>";
+					echo "\n<p class='dbg'>Fehler: Keine Person zur Namensnummer ".$namnum."</p>";
 				}
-				//if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1=gml(NamNum)= '".$gmlnn."'</p>";}
+				if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1 = gml(NamNum) = '".$gmlnn."'</p>";}
 			}
 			echo "</td>\n\t<td>&nbsp;</td>\n<tr>";
 		}
@@ -366,7 +366,9 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	} // End Loop NamNum
 	echo "\n</table>\n";
 	if ($n == 0) {
+		// kommt vor bei "Fiktives Blatt", kein Fehler 
 		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
+
 		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
 	}
 	pg_free_result($resn);

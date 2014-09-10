@@ -6,9 +6,19 @@
 	Link durch "&id=j;" in den anderen Modulen zuschaltbar.
 	Dies ist fuer die Entwicklung der Auskunft gedacht (Sonderfaelle) nicht fuer den Anwender.
 
-	Version:	2011-11-10  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
+	Version:
+	2011-11-10  Relationen-Zähler ausgeben, ab 5 Zeilen nicht mehr 'auf einen Blick' erkennbar.
 	2011-11-30  import_request_variables
 	2013-04-08  deprecated "import_request_variables" ersetzt
+	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+
+V o r l ä u f i g   u n b e n u t z b a r 
+
+Dies Modul nutzte die gml_ids in der zentralen Tabelle 'alkis_beziehungen' um dort ALLE Relationen zu finden.
+Mit Umstellung auf Relationen-Spalten in den Objekt-Tabellen ist das nicht mehr möglich.
+
+Neuentwicklung wahrscheimlich nicht sinnvoll.
+
 */
 session_start();
 $cntget = extract($_GET);
@@ -38,10 +48,20 @@ if (!$con) {
 	echo "\n<p class='err'>Fehler beim Verbinden der DB.</p>";
 } else {
 	echo "\n\n<h3 title='Die gml_is ist global eindeutig'>ALKIS-".$otyp." mit gml_id = '".$gmlid."'</h3>";
-	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von= $1;";
-	$v = array($gmlid);
-	$res = pg_prepare("", $sql);
-	$res = pg_execute("", $v);
+
+	// Zerlegen
+	echo "<h4>Zerlegung des Kennzeichens</h4>";
+	echo "<p>Land = '".substr($gmlid, 0, 2)."'</p>";
+	echo "<p>Bundesland = '".substr($gmlid, 2, 2)."'</p>";
+	echo "<p>Kreis = '".substr($gmlid, 4, 2)."'</p>";
+	echo "<p>Konstante = '".substr($gmlid, 6, 6)."'</p>";
+	echo "<p>Objekt-Nr = '".substr($gmlid, 12, 4)."'</p>";
+	echo "<p>Zeitstempel = '".substr($gmlid, 16)."'</p>";
+
+//	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von= $1;";
+//	$v = array($gmlid);
+//	$res = pg_prepare("", $sql);
+//	$res = pg_execute("", $v);
 
 	echo "\n<table>";
 	if (!$res) {
@@ -62,7 +82,10 @@ if (!$con) {
 			echo "\n<tr>\n\t<td colspan=3>".$i." Relationen</td>\n</tr>";
 		}
 	}
-	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";	$v = array($gmlid);
+
+/*
+	$sql="SELECT beziehungsart, beziehung_von FROM alkis_beziehungen WHERE beziehung_zu= $1;";
+	$v = array($gmlid);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
 
@@ -85,6 +108,7 @@ if (!$con) {
 			echo "\n<tr>\n\t<td colspan=3>".$i." Relationen</td>\n</tr>";
 		}
 	}
+*/
 	echo "\n</table>";
 }
 echo "\n<hr>\n<p class='nwlink'>\n\t<a target='_blank' href='".$hilfeurl."' title='Dokumentation'>Hilfe zur ALKIS-Auskunft</a>\n</p>\n";

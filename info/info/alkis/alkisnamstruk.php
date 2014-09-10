@@ -8,6 +8,8 @@
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2013-11-22 Namensbestandteil ("von") in Kompakt-Adresse vor den Namen setzen
 	2014-02-06 Redundante Adressen kommen vor. Nur eine davon anzeigen.
+	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10 Bei Relationen den Timestamp abschneiden
 
 	ToDo: Sortierung der Grundbücher zum Namen
 */
@@ -59,7 +61,7 @@ $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
 
 if (!$res) {echo "\n<p class='err'>Fehler bei Zugriff auf Namensnummer</p>\n";}
-if ($idanzeige) { linkgml($gkz, $gmlid, "Person"); }
+if ($idanzeige) { linkgml($gkz, $gmlid, "Person", "ax_person"); }
 if ($row = pg_fetch_array($res)) {
 	$vor=htmlentities($row["vorname"], ENT_QUOTES, "UTF-8");
 	$nam=htmlentities($row["nachnameoderfirma"], ENT_QUOTES, "UTF-8");
@@ -83,11 +85,10 @@ if ($row = pg_fetch_array($res)) {
 
 	// A d r e s s e
 	echo "\n<h3><img src='ico/Strasse_mit_Haus.ico' width='16' height='16' alt=''> Adresse</h3>\n";
-	$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-	$sqla.="FROM ax_anschrift a JOIN alkis_beziehungen b ON a.gml_id=b.beziehung_zu ";
-	$sqla.="WHERE b.beziehung_von= $1 AND b.beziehungsart='hat' ";
 	// Es können redundante Adressen vorhanden sein, z.B. aus Migration, temporär aus LBESAS. Die letzte davon anzeigen.
-	$sqla.="ORDER BY a.gml_id DESC ;";
+
+	$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland 
+	FROM ax_anschrift a JOIN ax_person p ON substring(a.gml_id,1,16)=ANY(p.hat) WHERE p.gml_id= $1 ORDER BY a.gml_id DESC ;";
 
 	$v = array($gmlid);
 	$resa = pg_prepare("", $sqla);
@@ -110,7 +111,7 @@ if ($row = pg_fetch_array($res)) {
 			$str=htmlentities($rowa["strasse"], ENT_QUOTES, "UTF-8");
 			$hsnr=$rowa["hausnummer"];
 			$land=htmlentities($rowa["bestimmungsland"], ENT_QUOTES, "UTF-8");
-			if ($idanzeige) { linkgml($gkz, $gmla, "Adresse"); }
+			if ($idanzeige) { linkgml($gkz, $gmla, "Adresse", "ax_adresse"); }
 
 			echo "<table>\n";
 				echo "\t<tr><td class='nhd'>PLZ:</td><td class='nam'>".$plz."</td></tr>\n";
@@ -149,14 +150,10 @@ if ($row = pg_fetch_array($res)) {
 	// person <benennt< namensnummer >istBestandteilVon>                Buchungsblatt
 	//                               >bestehtAusRechtsverhaeltnissenZu> namensnummer   (Nebenzweig/Sonderfälle?)
 
-	$sqlg ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, g.gml_id AS gml_g, ";
-	$sqlg.="g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, b.bezeichnung AS beznam ";
-	$sqlg.="FROM alkis_beziehungen bpn JOIN ax_namensnummer n ON bpn.beziehung_von=n.gml_id ";
-	$sqlg.="JOIN alkis_beziehungen bng ON n.gml_id=bng.beziehung_von ";
-	$sqlg.="JOIN ax_buchungsblatt g ON bng.beziehung_zu=g.gml_id ";
-	$sqlg.="LEFT JOIN ax_buchungsblattbezirk b ON g.land = b.land AND g.bezirk = b.bezirk ";
-	$sqlg.="WHERE bpn.beziehung_zu= $1 AND bpn.beziehungsart='benennt' AND bng.beziehungsart='istBestandteilVon' ";
-	$sqlg.="ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung;";
+	$sqlg ="SELECT n.gml_id AS gml_n, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, g.gml_id AS gml_g, g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung as nr, g.blattart, b.bezeichnung AS beznam 
+	FROM ax_person p JOIN ax_namensnummer n ON substring(p.gml_id,1,16)=n.benennt JOIN ax_buchungsblatt g ON substring(g.gml_id,1,16)=n.istbestandteilvon 
+	LEFT JOIN ax_buchungsblattbezirk b ON g.land=b.land AND g.bezirk=b.bezirk 
+	WHERE p.gml_id= $1 ORDER BY g.bezirk, g.buchungsblattnummermitbuchstabenerweiterung;";
 	// buchungsblatt... mal mit und mal ohne fuehrende Nullen, bringt die Sortierung durcheinander
 
 	$v = array($gmlid);
@@ -207,7 +204,7 @@ if ($row = pg_fetch_array($res)) {
 			echo "\n\t<td class='gbl'>"; // Blatt
 				echo "<span class='wichtig'>".$rowg["nr"]."</span>";
 				if ($idanzeige) {
-					linkgml($gkz, $gmlg, "Grundbuchblatt");
+					linkgml($gkz, $gmlg, "Grundbuchblatt", "");
 				}
 			echo "</td>";
 
@@ -218,7 +215,7 @@ if ($row = pg_fetch_array($res)) {
 					echo $namnum;
 				}
 				if ($idanzeige) {
-					linkgml($gkz, $gmln, "Namensnummer"); 
+					linkgml($gkz, $gmln, "Namensnummer", "ax_namensnummer"); 
 				}
 			echo "</td>";
 
