@@ -129,9 +129,8 @@ COMMENT ON COLUMN delete.ignored      IS 'Löschsatz wurde ignoriert';
 
 -- B e z i e h u n g e n
 -- ----------------------------------------------
--- Zentrale Tabelle fuer alle Relationen im Buchwerk. Zukünftig  e n t f a l l e n d.
+-- Zentrale Tabelle fuer alle Relationen im Buchwerk. Seit PostNAS 0.8 entfallen.
 -- Die Fremdschlüssel 'beziehung_von' und 'beziehung_zu' verweisen auf die ID des Objekte (gml_id).
--- Das Feld 'gml_id' sollte daher in allen Tabellen indiziert werden.
 -- Zusätzlich enthält 'beziehungsart' noch ein Verb für die Art der Beziehung.
 /*
 CREATE TABLE alkis_beziehungen (
@@ -4566,7 +4565,7 @@ CREATE TABLE ax_gemarkung (
 
 SELECT AddGeometryColumn('ax_gemarkung','dummy',:alkis_epsg,'POINT',2);
 
-CREATE UNIQUE INDEX ax_gemarkung_gml ON ax_gemarkung USING btree (gml_id, beginnt);         -- Index für alkis_beziehungen
+CREATE UNIQUE INDEX ax_gemarkung_gml ON ax_gemarkung USING btree (gml_id, beginnt);
 CREATE INDEX ax_gemarkung_nr         ON ax_gemarkung USING btree (land, gemarkungsnummer); -- Such-Index, Verweis aus ax_Flurstueck
 
 COMMENT ON TABLE  ax_gemarkung        IS 'Kataloge: (NREO) "Gemarkung" ist ein Katasterbezirk, der eine zusammenhängende Gruppe von Flurstücken umfasst. Er kann von Gemarkungsteilen/Fluren unterteilt werden.';

@@ -29,8 +29,12 @@
 --  2014-01-29 Neuer View "strasse_als_gewanne" zur Fehlersuche.
 --  2014-01-31 Kommentar
 --  2014-02-06 nachmigration_aehnliche_anschriften
---  2014-09-02 Die Tabelle "alkis_beziehungen" überflüssig machen.
---             Relationen nun direkt über neue Spalten in den Objekttabellen. 
+--  2014-09-02 Tabelle "alkis_beziehungen" überflüssig machen. Relationen nun über Spalten in den Objekttabellen. 
+--  2014-09-11 Neu: View "fehlersuche_namensanteile_je_blatt", substring(gml_id) bei Relation-Join, mehr "endet IS NULL"
+
+-- ToDo: Einige Views sind sehr langsam geworden. Z.B. exp_csv welcher doppelverbindung verwendet.
+--       Dadurch Export aus Bauchauskunft sehr langsam!
+--       Derzeit provisorische Version von "doppelverbindung" (schnell aber nicht ganz korrrekt).
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -49,38 +53,82 @@
 
 --           DROP VIEW public.doppelverbindung;
 
+/*  -- korrekte Version, leider unerträglich langsam, z.B. beim Export von CSV aus der Auskunft
+
 CREATE OR REPLACE VIEW public.doppelverbindung
 AS
   -- FS >istGebucht> Buchungstelle
-  SELECT f1.gml_id             AS fsgml,    -- gml_id Flurstück
-         b1.gml_id             AS bsgml,    -- gml_id Buchungs
-         0                     AS ba_dien
+  SELECT f1.gml_id              AS fsgml,    -- gml_id Flurstück
+         b1.gml_id              AS bsgml,    -- gml_id Buchungs
+         0                      AS ba_dien
     FROM ax_flurstueck f1
-    JOIN ax_buchungsstelle b1   ON f1.istgebucht = b1.gml_id
+    JOIN ax_buchungsstelle b1   ON f1.istgebucht = substring(b1.gml_id,1,16)
  UNION
   -- FS >istGebucht> Buchungstelle  <an<  Buchungstelle
-  SELECT f2.gml_id              AS fsgml,   -- gml_id Flurstück
-         b2.gml_id              AS bsgml,   -- gml_id Buchung - (herrschendes GB)
-         dien.buchungsart       AS ba_dien  -- Ein Feld aus der Zwischen-Buchung zur Fall-Unterscheidung
+  SELECT f2.gml_id              AS fsgml,    -- gml_id Flurstück
+         b2.gml_id              AS bsgml,    -- gml_id Buchung - (herrschendes GB)
+         dien.buchungsart       AS ba_dien   -- Ein Feld aus der Zwischen-Buchung zur Fall-Unterscheidung
     FROM ax_flurstueck f2
-    JOIN ax_buchungsstelle dien ON f2.istGebucht = dien.gml_id
-    JOIN ax_buchungsstelle b2   ON dien.gml_id = ANY (b2.an)
-    WHERE dien.endet IS NULL;  -- Für das zusätzliche Verbindungselement die Historie hier ausschließen, 
+    JOIN ax_buchungsstelle dien ON f2.istgebucht = substring(dien.gml_id,1,16)
+    JOIN ax_buchungsstelle b2   ON substring(dien.gml_id,1,16) = ANY (b2.an)  -- auch "zu" ?
+   WHERE dien.endet IS NULL;   -- Für das zusätzliche Verbindungselement die Historie HIER ausschließen, 
+                               -- Für andere Tabellen muss dies in dem View erfolgen, der dies verwendet.
+*/
+
+-- TEST: Schneller, wenn auf Subtring verzichtet wird?  Ja!
+-- Aber: Verbindungen über aktualisierte, also lange ID's werden nicht gefunden.  
+CREATE OR REPLACE VIEW public.doppelverbindung
+AS
+  -- FS >istGebucht> Buchungstelle
+  SELECT f1.gml_id              AS fsgml,    -- gml_id Flurstück
+         b1.gml_id              AS bsgml,    -- gml_id Buchungs
+         0                      AS ba_dien
+    FROM ax_flurstueck f1
+    JOIN ax_buchungsstelle b1   ON f1.istgebucht = substring(b1.gml_id,1,16)
+ UNION
+  -- FS >istGebucht> Buchungstelle  <an<  Buchungstelle
+  SELECT f2.gml_id              AS fsgml,    -- gml_id Flurstück
+         b2.gml_id              AS bsgml,    -- gml_id Buchung - (herrschendes GB)
+         dien.buchungsart       AS ba_dien   -- Ein Feld aus der Zwischen-Buchung zur Fall-Unterscheidung
+    FROM ax_flurstueck f2
+    JOIN ax_buchungsstelle dien ON f2.istgebucht = substring(dien.gml_id,1,16)
+  --JOIN ax_buchungsstelle b2   ON substring(dien.gml_id,1,16) = ANY (b2.an)    -- korrekt
+    JOIN ax_buchungsstelle b2   ON           dien.gml_id       = ANY (b2.an)    -- schnell
+   WHERE dien.endet IS NULL;   -- Nur für das zusätzliche Verbindungselement die Historie HIER ausschließen, 
                                -- Für andere Tabellen muss dies in dem View erfolgen, der dies verwendet.
 
 COMMENT ON VIEW public.doppelverbindung 
- IS 'ALKIS-Beziehung von Flurstück zu Buchung. UNION-Zusammenfassung des einfachen Falls mit direkter Buchung und des Falles mit Recht einer Buchungsstelle an einer anderen Buchungsstelle.';
+ IS 'ALKIS-Beziehung von Flurstück zu Buchung. UNION-Zusammenfassung des einfachen Falls mit direkter Buchung und des Falles mit Recht einer Buchungsstelle an einer anderen Buchungsstelle.
+Dies ist ausschließlich gedacht zur Verwendung in anderen Views um diese einfacher zu machen.';
+
+/* Test zur Zeitmessung
+
+SELECT dien.gml_id, herr.gml_id
+FROM ax_buchungsstelle dien 
+JOIN ax_buchungsstelle herr  ON dien.gml_id = ANY (herr.an)
+WHERE dien.endet IS NULL AND herr.endet IS NULL
+LIMIT 300;
+-- 78 ms
+
+SELECT dien.gml_id, herr.gml_id
+FROM ax_buchungsstelle dien 
+JOIN ax_buchungsstelle herr  ON substring(dien.gml_id,1,16) = ANY (herr.an)
+WHERE dien.endet IS NULL AND herr.endet IS NULL
+LIMIT 300;
+-- 19454 ms
+
+
+*/
 
 -- Test-Ausgabe: Ein paar Fälle mit "Recht an"
 --   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;
-
+-- Nach Umstellung auf PostNAS 0.8 - mit ANY() und Substring - sehr lange Antwortzeit in PG 8.4
 
 -- Ein View, der die Verbindung von Flurstück zur Straßentabelle für zwei verschiedene Fälle herstellt.
 -- Einmal über die Lagebezeichnung MIT Hausnummer und einmal OHNE.
 -- Dies kann als "Mittelstück" in den anderen Views eingefügt werden.
 
 --           DROP VIEW public.flst_an_strasse;
-
 CREATE OR REPLACE VIEW public.flst_an_strasse
 AS
   -- Flurstück >weistAuf> ax_lagebezeichnungMIThausnummer <JOIN> ax_lagebezeichnungkatalogeintrag
@@ -89,10 +137,10 @@ AS
          'm' AS fall                         -- Sätze unterschieden: Mit HsNr
     FROM ax_flurstueck fm                    -- Flurstück Mit
     JOIN ax_lagebezeichnungmithausnummer lm  -- Lage MIT
-      ON lm.gml_id = ANY (fm.weistauf)  
+      ON substring(lm.gml_id,1,16) = ANY (fm.weistauf)  
     JOIN ax_lagebezeichnungkatalogeintrag sm
-      ON lm.land=sm.land AND lm.regierungsbezirk=sm.regierungsbezirk AND lm.kreis=sm.kreis  AND lm.gemeinde=sm.gemeinde AND lm.lage=sm.lage 
-   WHERE lm.endet IS NULL                    -- Verbinder nicht Historisch
+      ON lm.land=sm.land AND lm.regierungsbezirk=sm.regierungsbezirk AND lm.kreis=sm.kreis AND lm.gemeinde=sm.gemeinde AND lm.lage=sm.lage 
+   WHERE lm.endet IS NULL AND fm.endet IS NULL -- nichts Historisches
  UNION
   -- Flurstück >zeigtAuf> ax_lagebezeichnungOHNEhausnummer <JOIN> ax_lagebezeichnungkatalogeintrag
   SELECT fo.gml_id AS fsgml,
@@ -100,10 +148,10 @@ AS
          'o' AS fall                         -- Sätze unterschieden: Ohne HsNr
     FROM ax_flurstueck fo                    -- Flurstück OHNE
     JOIN ax_lagebezeichnungohnehausnummer lo -- Lage OHNE
-      ON lo.gml_id = ANY (fo.zeigtauf)  
+      ON substring(lo.gml_id,1,16) = ANY (fo.zeigtauf)  
     JOIN ax_lagebezeichnungkatalogeintrag so -- Straße OHNE
       ON lo.land=so.land AND lo.regierungsbezirk=so.regierungsbezirk AND lo.kreis=so.kreis AND lo.gemeinde=so.gemeinde AND lo.lage=so.lage
-   WHERE lo.endet IS NULL;                   -- Verbinder nicht Historisch
+   WHERE lo.endet IS NULL AND fo.endet IS NULL; -- nichts Historisches
 
 COMMENT ON VIEW public.flst_an_strasse 
  IS 'ALKIS-Beziehung von Flurstück zu Straßentabelle. UNION-Zusammenfassung der Fälle MIT und OHNE Hausnummer.';
@@ -183,23 +231,23 @@ AS
 
   FROM ax_flurstueck    f               -- Flurstück
   JOIN doppelverbindung d               -- beide Fälle über Union-View: direkt und über Recht von Buchung an Buchung
-    ON d.fsgml = f.gml_id 
+    ON d.fsgml = f.gml_id
   JOIN ax_gemarkung g                   -- entschlüsseln
     ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
   JOIN ax_buchungsstelle s              -- Buchungs-Stelle
-    ON d.bsgml = s.gml_id 
+    ON d.bsgml = s.gml_id
   JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
     ON s.buchungsart = b.wert 
   JOIN ax_buchungsblatt  gb             -- Buchung >istBestandteilVon> Grundbuchblatt
-    ON gb.gml_id = s.istbestandteilvon
+    ON substring(gb.gml_id,1,16) = s.istbestandteilvon
   JOIN ax_buchungsblattbezirk z 
     ON gb.land=z.land AND gb.bezirk=z.bezirk 
   JOIN ax_namensnummer nn               -- Blatt <istBestandteilVon< NamNum
-    ON gb.gml_id = nn.istbestandteilvon
+    ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
   JOIN ax_person p                      -- NamNum >benennt> Person 
-    ON p.gml_id = nn.benennt
+    ON substring(p.gml_id,1,16) = nn.benennt
   LEFT JOIN ax_anschrift a 
-    ON a.gml_id = ANY (p.hat)
+    ON substring(a.gml_id,1,16) = ANY (p.hat)
 
   -- 2mal "LEFT JOIN" verdoppelt die Zeile in der Ausgabe. Darum als Subquery in Spalten packen:
   -- Noch mal "GB -> NamNum", aber dieses Mal für "Rechtsgemeinschaft".
@@ -208,7 +256,7 @@ AS
    ( SELECT gr.gml_id, r.artderrechtsgemeinschaft, r.beschriebderrechtsgemeinschaft 
        FROM ax_namensnummer r 
        JOIN ax_buchungsblatt gr
-         ON r.istbestandteilvon = gr.gml_id  -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
+         ON r.istbestandteilvon = substring(gr.gml_id,1,16) -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
       WHERE NOT r.artderrechtsgemeinschaft IS NULL ) AS rg -- Rechtsgemeinschaft
    ON rg.gml_id = gb.gml_id  -- zum GB
 
@@ -291,15 +339,15 @@ AS
   JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
     ON s.buchungsart = b.wert 
   JOIN ax_buchungsblatt  gb             -- Buchung >istBestandteilVon> Grundbuchblatt
-    ON gb.gml_id = s.istbestandteilvon
+    ON substring(gb.gml_id,1,16) = s.istbestandteilvon
   JOIN ax_buchungsblattbezirk z 
     ON gb.land=z.land AND gb.bezirk=z.bezirk 
   JOIN ax_namensnummer nn               -- Blatt <istBestandteilVon< NamNum
-    ON gb.gml_id = nn.istbestandteilvon
+    ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
   JOIN ax_person p                      -- NamNum >benennt> Person 
-    ON p.gml_id = nn.benennt
+    ON substring(p.gml_id,1,16) = nn.benennt
   LEFT JOIN ax_anschrift a 
-    ON a.gml_id = ANY (p.hat)
+    ON substring(a.gml_id,1,16) = ANY (p.hat)
 
   -- 2mal "LEFT JOIN" verdoppelt die Zeile in der Ausgabe. Darum als Subquery in Spalten packen:
   -- Noch mal "GB -> NamNum", aber dieses Mal für "Rechtsgemeinschaft".
@@ -308,8 +356,8 @@ AS
    ( SELECT gr.gml_id, r.artderrechtsgemeinschaft, r.beschriebderrechtsgemeinschaft 
        FROM ax_namensnummer r 
        JOIN ax_buchungsblatt gr
-         ON r.istbestandteilvon = gr.gml_id  -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
-      WHERE NOT r.artderrechtsgemeinschaft IS NULL ) AS rg -- Rechtsgemeinschaft
+         ON r.istbestandteilvon = substring(gr.gml_id,1,16) -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
+      WHERE NOT r.artderrechtsgemeinschaft IS NULL ) AS rg  -- Rechtsgemeinschaft
    ON rg.gml_id = gb.gml_id  -- zum GB
 
   WHERE f.endet IS NULL AND s.endet IS NULL and gb.endet IS NULL and nn.endet IS NULL AND p.endet IS NULL
@@ -344,7 +392,7 @@ AS
      nn.artderrechtsgemeinschaft AS adr,
      nn.beschriebderrechtsgemeinschaft
   FROM ax_buchungsblatt gb 
-  JOIN ax_namensnummer  nn  ON gb.gml_id = nn.istbestandteilvon
+  JOIN ax_namensnummer  nn  ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
   WHERE NOT nn.artderrechtsgemeinschaft IS NULL
     AND gb.endet IS NULL AND nn.endet IS NULL -- Historie weglassen
   ORDER BY gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, nn.laufendenummernachdin1421;
@@ -434,8 +482,8 @@ AS
  SELECT f.gml_id, 
         f.gemarkungsnummer || '-' || f.flurnummer || '-' || f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS such -- Suchstring für ALKIS-Navigation nach FS-Kennzeichen
    FROM ax_flurstueck f 
-   JOIN ap_pto p ON f.gml_id = ANY( p.dientzurdarstellungvon) 
-  WHERE f.endet IS NULL;
+   JOIN ap_pto p ON substring(f.gml_id,1,16) = ANY(p.dientzurdarstellungvon) 
+  WHERE f.endet IS NULL AND p.endet IS NULL;
 -- TIPP: mit zusätzlichem LIMIT auftrufen!
 
 COMMENT ON VIEW flstnr_mit_manueller_position 
@@ -446,10 +494,10 @@ AS
  SELECT f.gml_id, 
         f.gemarkungsnummer || '-' || f.flurnummer || '-' || f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS such -- Suchstring für ALKIS-Navigation nach FS-Kennzeichen
  FROM   ax_flurstueck f 
-   LEFT JOIN ap_pto p ON f.gml_id = ANY( p.dientzurdarstellungvon) 
-  WHERE p.gml_id IS NULL
-    AND f.endet IS NULL;
--- TIPP: mit zusätzlichem LIMIT auftrufen!
+ LEFT JOIN ap_pto p ON substring(f.gml_id,1,16) = ANY(p.dientzurdarstellungvon) 
+ WHERE p.gml_id IS NULL
+   AND f.endet IS NULL;
+-- TIPP: mit zusätzlichem LIMIT aufrufen!
 
 COMMENT ON VIEW flstnr_ohne_manuelle_position 
   IS 'Sicht für Datenanalyse: Flurstücke OHNE manuell gesetzte Position für die Präsentation der FS-Nr';
@@ -495,7 +543,7 @@ AS
     LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a
       ON r.artderfestlegung = a.wert
     LEFT JOIN ax_dienststelle d
-      ON r.land   = d.land  AND r.stelle = d.stelle 
+      ON r.land=d.land AND r.stelle=d.stelle 
   WHERE r.endet IS NULL AND d.endet IS NULL ;
 
 COMMENT ON VIEW baurecht 
@@ -560,7 +608,7 @@ AS
            l.lage        AS strassenschluessel, 
            l.hausnummer 
       FROM   ax_flurstueck f 
-      JOIN   ax_lagebezeichnungmithausnummer l   ON  l.gml_id = ANY (f.weistauf)
+      JOIN   ax_lagebezeichnungmithausnummer l   ON  substring(l.gml_id,1,16) = ANY (f.weistauf)
       JOIN   ax_gemeinde g   ON l.kreis=g.kreis  AND l.gemeinde=g.gemeinde 
       JOIN   ax_lagebezeichnungkatalogeintrag s  ON  l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage = s.lage
  --  WHERE l.gemeinde = '40'  -- ggf. Anpassen
@@ -622,16 +670,16 @@ AS
    -- p.vorname 
    FROM   ax_person              p
      JOIN ax_namensnummer        n   -- Namennummer >benennt> Person
-       ON p.gml_id = n.benennt
+       ON substring(p.gml_id,1,16) = n.benennt
      JOIN ax_buchungsblatt       g   -- Namensnummer >istBestandteilVon> Grundbuch
-       ON n.istbestandteilvon = g.gml_id
+       ON n.istbestandteilvon = substring(g.gml_id,1,16)
      JOIN ax_buchungsblattbezirk b    ON g.land = b.land AND g.bezirk = b.bezirk 
      JOIN ax_buchungsstelle      s   -- Buchungs-Stelle >istBestandteilVon> Grundbuch
-       ON s.istbestandteilvon = g.gml_id
+       ON s.istbestandteilvon = substring(g.gml_id,1,16)
      JOIN ax_buchungsstelle_buchungsart art 
        ON s.buchungsart = art.wert 
      JOIN ax_flurstueck          f  -- Flurstueck >istGebucht> Buchungs-Stelle
-       ON f.istgebucht = s.gml_id
+       ON f.istgebucht = substring(s.gml_id,1,16)
      JOIN ax_gemarkung           k    
        ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
    WHERE p.nachnameoderfirma LIKE 'Stadt %'   -- ** Bei Bedarf anpassen!
@@ -684,21 +732,21 @@ AS
    -- p.vorname 
    FROM   ax_person              p
      JOIN ax_namensnummer        n    -- Namennummer >benennt> Person
-       ON p.gml_id = n.benennt
+       ON substring(p.gml_id,1,16) = n.benennt
      JOIN ax_buchungsblatt       g    -- Namensnummer >istBestandteilVon> Grundbuch
-       ON n.istBestandteilVon = g.gml_id
+       ON n.istBestandteilVon = substring(g.gml_id,1,16)
      JOIN ax_buchungsblattbezirk b    
        ON g.land = b.land AND g.bezirk = b.bezirk 
      JOIN ax_buchungsstelle      sh  -- B-Stelle herr >istBestandteilVon> Grundbuch
-       ON sh.istbestandteilvon = g.gml_id  -- herrschende Buchung
+       ON sh.istbestandteilvon = substring(g.gml_id,1,16) -- herrschende Buchung
      JOIN ax_buchungsstelle_buchungsart arth 
        ON sh.buchungsart = arth.wert 
      JOIN ax_buchungsstelle      sd   -- B-Stelle herr.  >an/zu> B-Stelle dien.
-       ON (sd.gml_id =ANY(sh.an) OR sd.gml_id = ANY(sh.zu) )
+       ON (substring(sd.gml_id,1,16) = ANY(sh.an) OR substring(sd.gml_id,1,16) = ANY(sh.zu))
      JOIN ax_buchungsstelle_buchungsart artd 
        ON sd.buchungsart = artd.wert
      JOIN ax_flurstueck          f    -- Flurstueck  >istGebucht> B-Stelle dien     
-       ON f.istgebucht = sd.gml_id
+       ON f.istgebucht = substring(sd.gml_id,1,16)
      JOIN ax_gemarkung           k    
        ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
    WHERE p.nachnameoderfirma LIKE 'Stadt %'   -- ** Bei Bedarf anpassen!    
@@ -721,7 +769,8 @@ AS
  SELECT l.gml_id, l.gemeinde, l.lage, l.hausnummer 
    FROM ax_gebaeude g
    JOIN ax_lagebezeichnungmithausnummer l  
-     ON l.gml_id = ANY(g.zeigtauf) 
+     ON substring(l.gml_id,1,16) = ANY(g.zeigtauf)
+  WHERE g.endet IS NULL AND l.endet IS NULL
   GROUP BY l.gml_id, l.gemeinde, l.lage, l.hausnummer
   HAVING count(g.gml_id) > 1;
 
@@ -734,10 +783,12 @@ AS
  SELECT g1.gml_id, l1.gemeinde, l1.lage, l1.hausnummer -- Anzeige der Adressfelder
    FROM ax_gebaeude g1
    JOIN ax_lagebezeichnungmithausnummer l1 ON l1.gml_id = ANY(g1.zeigtauf)
-  WHERE g1.gml_id IN -- Subquery sucht Gebäude mit meherern Hausnummen
+  WHERE g1.endet IS NULL AND l1.endet IS NULL 
+    AND g1.gml_id IN -- Subquery sucht Gebäude mit meherern Hausnummen
    (SELECT g2.gml_id 
       FROM ax_gebaeude g2
-      JOIN ax_lagebezeichnungmithausnummer l2 ON l2.gml_id = ANY(g2.zeigtauf)
+      JOIN ax_lagebezeichnungmithausnummer l2 ON substring(l2.gml_id,1,16) = ANY(g2.zeigtauf)
+     WHERE g2.endet IS NULL AND l2.endet IS NULL
      GROUP BY g2.gml_id 
    HAVING count(l2.gml_id) > 1)
    ORDER BY l1.gemeinde, l1.lage, l1.hausnummer;
@@ -753,6 +804,7 @@ AS
          count(b.gml_id) AS anzahl_buchungen
     FROM ax_buchungsstelle_buchungsart a
     JOIN ax_buchungsstelle b  ON a.wert = b.buchungsart
+   WHERE b.endet IS NULL
 GROUP BY a.wert, a.bezeichner
 ORDER BY a.wert, a.bezeichner;
 
@@ -771,15 +823,9 @@ AS
    FROM ax_flurstueck    f 
    JOIN doppelverbindung d     -- beide Fälle über Union-View: direkt und über Recht von BS an BS
      ON d.fsgml = f.gml_id 
-
-
-
    JOIN ax_buchungsstelle s    -- Buchungs-Stelle
      ON d.bsgml = s.gml_id 
-   WHERE s.buchungsart = 2101;
-
-
-
+   WHERE s.buchungsart = 2101 AND f.endet IS NULL AND s.endet IS NULL;
 
 COMMENT ON VIEW erbbaurechte_suchen
  IS 'Suche nach Fällen mit Buchungsrt 2101=Erbbaurecht';
@@ -824,8 +870,9 @@ AS
   JOIN ax_lagebezeichnungohnehausnummer o   -- Gewanne
     ON k.bezeichnung = o.unverschluesselt   -- Gleiche Namen 
    JOIN ax_flurstueck fo                    --  Flurst. >zeigtAuf>  Lage
-    ON o.gml_id = ANY(fo.zeigtauf)  
+    ON substring(o.gml_id,1,16) = ANY(fo.zeigtauf)  
  WHERE fo.gemeinde = k.gemeinde  -- Gewanne wird für ein Flst. in gleicher Gemeinde verwendet, wie der Straßenschlüssel
+   AND k.endet IS NULL AND o.endet IS NULL AND fo.endet IS NULL 
   ORDER BY fo.gemarkungsnummer, fo.flurnummer, fo.zaehler, k.gemeinde, k.bezeichnung;
 
 COMMENT ON VIEW strasse_als_gewanne_flst
@@ -840,8 +887,8 @@ AS
   SELECT DISTINCT p.gml_id, p.nachnameoderfirma, p.vorname, 
          a1.ort_post, a1.strasse AS strasse1, a2.strasse AS strasse2, a1.hausnummer
     FROM ax_person    p
-    JOIN ax_anschrift a1 ON a1.gml_id = ANY(p.hat)
-    JOIN ax_anschrift a2 ON a2.gml_id = ANY(p.hat)
+    JOIN ax_anschrift a1 ON substring(a1.gml_id,1,16) = ANY(p.hat)
+    JOIN ax_anschrift a2 ON substring(a2.gml_id,1,16) = ANY(p.hat)
    WHERE a1.gml_id <> a2.gml_id
       AND a1.ort_post =  a2.ort_post
       AND a1.strasse like trim(a2.strasse, '.') || '%'
@@ -1010,5 +1057,37 @@ Funktioniert nur, solange diese nicht entfernt wurden.';
 	ALTER TABLE ax_gebaeude                      DROP COLUMN haengtzusammenmit;
 */
 
+-- Anteile der Namensnummern am Blatt aufsummieren.
+-- Blätter mit Rechtsverhältnis (Beschrieb) nicht beachten.
+-- Anzeigen, wenn die Summe nicht 1 ergibt.
+-- Keine Angabe in Zähler/Nenner wird als 1 gewertet.
+
+-- Anlass zu dieser Auswertung war:
+-- Wenn mit PostNAS 0.8 und Trigger "kill" (ohne Historie) eine NBA-Abgabe mit Abgabeart "3100 fallbezogen (mit Historie)"
+-- konvertiert wird, dann wird Update nicht richtig verarbeitet.
+-- Update setzt z.B. das endet-Datum an einen Namensnummer. Alte Namen verbleiben auf dem Grundbuch.
+
+CREATE OR REPLACE VIEW fehlersuche_namensanteile_je_blatt
+AS
+  SELECT g.gml_id, g.bezirk || '-' || g.buchungsblattnummermitbuchstabenerweiterung AS kennzeichen, 
+         sum(coalesce(n.zaehler/n.nenner, 1.0))::double precision AS summe_der_anteile
+  FROM ax_buchungsblatt g
+  JOIN ax_namensnummer n ON substring(g.gml_id,1,16) = n.istbestandteilvon
+  WHERE g.endet IS NULL AND n.endet IS NULL
+  GROUP BY g.gml_id, g.bezirk || '-' || g.buchungsblattnummermitbuchstabenerweiterung
+  HAVING sum(coalesce(n.zaehler/n.nenner, 1)) <> 1.0::double precision
+     AND (  -- die Fälle mit einer Rechtsgemeinschaft nicht verwenden
+        SELECT gml_id 
+        FROM ax_namensnummer nr 
+        WHERE substring(g.gml_id,1,16) = nr.istbestandteilvon
+          AND NOT nr.artderrechtsgemeinschaft IS NULL
+          AND nr.endet IS NULL
+        LIMIT 1
+     ) IS NULL
+  LIMIT 100;
+
+COMMENT ON VIEW fehlersuche_namensanteile_je_blatt
+ IS 'Suchen nach GB-Blättern bei denen die Summe der Anteile der Namensnummern nicht passt.
+Mit Ausnahme von Rechtsverhältnissen sollte sie Summe der Brüche immer 1/1 ergeben.';
 
 -- END --

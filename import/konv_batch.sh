@@ -37,6 +37,8 @@
 ##                   Abgleich Test/Prod-Version.
 ##                   Entfernen der historischen Objekte nach Konvertierung.
 ##   2014-09-09 F.J. krz: Parameter "--config PG_USE_COPY YES" zur Beschleunigung. Ausgabe import-Tabelle.
+##   2014-09-11 F.J. krz: Eintrag in import-Tabelle repariert.
+##                   Keine Abfrage des Symlinks auf kill/hist. Enstscheidend ist die aktuelle DB, nicht der Symlink
 
 POSTNAS_HOME=$(dirname $0)
 
@@ -132,8 +134,8 @@ fi
   psql $con -c "SELECT * FROM import;"
 
 # Import Eintrag erzeugen
-# Ursprünglich für Trigger-Steierung benötigt. Nun als Metadaten nützlich.
-  psql $con -c "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-%d %H:%M:%S')"','"${ORDNER}"','"${verarb}"');"
+# Ursprünglich für Trigger-Steuerung benötigt. Nun als Metadaten nützlich.
+  echo "INSERT INTO import (datum,verzeichnis,importart) VALUES ('"$(date '+%Y-%m-%d %H:%M:%S')"','"${ORDNER}"','"${verarb}"');" | psql $con
 
 # Ordner abarbeiten
 
@@ -192,21 +194,18 @@ fi
 
   fi
 
-  if [ "$(readlink $POSTNAS_HOME/alkis-trigger.sql)" = "alkis-trigger-kill.sql" ]; then
+  # Durch Einfügen in Tabelle 'delete' werden Löschungen und Aktualisierungen anderer Tabellen getriggert
+  echo "** delete-Tabelle enthaelt:"
+  psql $con -c 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";'
 
-     # Durch Einfügen in Tabelle 'delete' werden Löschungen und Aktualisierungen anderer Tabellen getriggert
-     echo "** delete-Tabelle enthaelt:"
-     psql $con -c 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";'
+  echo "   delete-Tabelle loeschen:"
+  psql $con -c 'TRUNCATE table "delete";'
 
-     echo "   delete-Tabelle loeschen:"
-     psql $con -c 'TRUNCATE table "delete";'
-
-    # Wenn die Datenbank MIT Historie geladen wurde, man diese aber gar nicht braucht,
-    # dann hinterher aufräumen der historischen Objekte 
-    echo "** geendete Objekte entfernen:"
-    psql $con -c "SELECT alkis_delete_all_endet();"
-
-  fi
+  #if [ "$(readlink $POSTNAS_HOME/alkis-trigger.sql)" = "alkis-trigger-kill.sql" ]; then
+    # Aufräumen der historischen Objekte 
+  #  echo "** geendete Objekte entfernen:"
+  #  psql $con -c "SELECT alkis_delete_all_endet();"
+  #fi
 
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
   echo "** ENDE PostNAS 0.8-Konvertierung  DB='$DBNAME'  Ordner='$ORDNER' "

@@ -18,6 +18,10 @@
 
 -- 2014-09-04  Trigger-Funktion "delete_feature_kill()" angepasst: keine Tabelle "alkis_beziehungen" mehr.
 
+-- 2014-09-11  Functions auskommentiert oder gelöscht, die "alkis_beziehungen" benötigen:
+--               "alkis_mviews()", delete_feature_kill_vers07(), alkis_beziehung_inserted()
+--             Trigger-Function "delete_feature_hist" durch aktuelle Version aus OSGeo4W ersetzt.
+
 -- Table/View/Sequence löschen, wenn vorhanden
 CREATE OR REPLACE FUNCTION alkis_dropobject(t TEXT) RETURNS varchar AS $$
 DECLARE
@@ -161,6 +165,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Übersicht erzeugen, die alle alkis_beziehungen mit den Typen der beteiligen ALKIS-Objekte versieht
+/*
 SELECT alkis_dropobject('alkis_mviews');
 CREATE FUNCTION alkis_mviews() RETURNS varchar AS $$
 DECLARE
@@ -190,6 +195,7 @@ BEGIN
 	RETURN 'ALKIS-Views erzeugt.';
 END;
 $$ LANGUAGE plpgsql;
+*/
 
 -- Indizes erzeugen
 SELECT alkis_dropobject('alkis_update_schema');
@@ -274,25 +280,69 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Die folgende Trigger-Version kopiert aus  OSGeo4W / apps / alkis-import, Datei:alkis-functions.sql
+
 -- Im Trigger 'delete_feature_trigger' muss eine dieser beiden Funktionen
 -- (delete_feature_hist oder delete_feature_kill) verlinkt werden, je nachdem ob nur
 -- aktuelle oder auch historische Objekte in der Datenbank geführt werden sollen.
 
 -- Löschsatz verarbeiten (MIT Historie)
+-- context='update'        => "endet" auf übergebene Zeit setzen und anlass festhalten
 -- context='delete'        => "endet" auf aktuelle Zeit setzen
 -- context='replace'       => "endet" des ersetzten auf "beginnt" des neuen Objekts setzen
 CREATE OR REPLACE FUNCTION delete_feature_hist() RETURNS TRIGGER AS $$
 DECLARE
-	sql TEXT;
-	gml_id TEXT;
+	s TEXT;
+	alt_id TEXT;
+	neu_id TEXT;
+	beginnt TEXT;
 	endete TEXT;
 	n INTEGER;
 BEGIN
 	NEW.context := lower(NEW.context);
-	gml_id      := substr(NEW.featureid, 1, 16);
-
 	IF NEW.context IS NULL THEN
 		NEW.context := 'delete';
+	END IF;
+
+	-- TIMESTAMP weder in gml_id noch identifier verläßlich.
+	-- also ggf. aus Datenbank holen
+
+	IF length(NEW.featureid)=32 THEN
+		alt_id  := substr(NEW.featureid, 1, 16);
+
+		IF NEW.featureid<>NEW.replacedBy THEN
+			-- Beginnt-Datum aus Timestamp
+			beginnt := substr(NEW.featureid, 17, 4) || '-'
+				|| substr(NEW.featureid, 21, 2) || '-'
+				|| substr(NEW.featureid, 23, 2) || 'T'
+				|| substr(NEW.featureid, 26, 2) || ':'
+				|| substr(NEW.featureid, 28, 2) || ':'
+				|| substr(NEW.featureid, 30, 2) || 'Z'
+				;
+		END IF;
+	ELSIF length(NEW.featureid)=16 THEN
+		alt_id  := NEW.featureid;
+	ELSE
+		RAISE EXCEPTION '%: Länge 16 oder 32 statt % erwartet.', NEW.featureid, length(NEW.featureid);
+	END IF;
+
+	IF beginnt IS NULL THEN
+		-- Beginnt-Datum des ältesten Eintrag, der nicht untergegangen ist
+		-- => der Satz dessen 'endet' gesetzt werden muß
+		EXECUTE 'SELECT min(beginnt) FROM ' || NEW.typename
+			|| ' WHERE gml_id=''' || alt_id || ''''
+			|| ' AND endet IS NULL'
+			INTO beginnt;
+	END IF;
+
+	IF beginnt IS NULL THEN
+		IF NEW.context = 'delete' OR NEW.safetoignore = 'true' THEN
+			RAISE NOTICE 'Kein Beginndatum für Objekt % gefunden - ignoriert.', alt_id;
+			NEW.ignored := true;
+			RETURN NEW;
+		ELSE
+			RAISE EXCEPTION 'Kein Beginndatum für Objekt % gefunden.', alt_id;
+		END IF;
 	END IF;
 
 	IF NEW.context='delete' THEN
@@ -307,63 +357,98 @@ BEGIN
 			RAISE EXCEPTION '%: safeToIgnore ''%'' ungültig (''true'' oder ''false'' erwartet).', NEW.featureid, NEW.safetoignore;
 		END IF;
 
-		IF NEW.replacedBy IS NULL OR length(NEW.replacedBy)<16 THEN
-			IF NEW.safetoignore = 'true' THEN
-				RAISE NOTICE '%: Nachfolger ''%'' nicht richtig gesetzt - ignoriert', NEW.featureid, NEW.replacedBy;
-				NEW.ignored := true;
-				RETURN NEW;
-			ELSE
-				RAISE EXCEPTION '%: Nachfolger ''%'' nicht richtig gesetzt - Abbruch', NEW.featureid, NEW.replacedBy;
+		IF length(NEW.replacedBy)=32 THEN
+			-- Beginnt-Datum aus Timestamp
+			IF NEW.featureid<>NEW.replacedBy THEN
+				endete  := substr(NEW.replacedBy, 17, 4) || '-'
+					|| substr(NEW.replacedBy, 21, 2) || '-'
+					|| substr(NEW.replacedBy, 23, 2) || 'T'
+					|| substr(NEW.replacedBy, 26, 2) || ':'
+					|| substr(NEW.replacedBy, 28, 2) || ':'
+					|| substr(NEW.replacedBy, 30, 2) || 'Z'
+					;
+			END IF;
+		ELSIF length(NEW.replacedBy)<>16 THEN
+			RAISE EXCEPTION '%: Länge 16 oder 32 statt % erwartet.', NEW.replacedBy, length(NEW.replacedBy);
+		END IF;
+
+		neu_id := NEW.replacedBy;
+		IF endete IS NULL THEN
+			-- Beginnt-Datum des neuesten Eintrag, der nicht untergegangen ist
+			-- => Enddatum für vorherigen Satz
+			EXECUTE 'SELECT max(beginnt) FROM ' || NEW.typename
+				|| ' WHERE gml_id=''' || NEW.replacedBy || ''''
+				|| ' AND beginnt>''' || beginnt || ''''
+				|| ' AND endet IS NULL'
+				INTO endete;
+			IF endete IS NULL AND length(NEW.replacedBy)=32 THEN
+				EXECUTE 'SELECT max(beginnt) FROM ' || NEW.typename
+					|| ' WHERE gml_id=''' || substr(NEW.replacedBy, 1, 16) || ''''
+					|| ' AND beginnt>''' || beginnt || ''''
+					|| ' AND endet IS NULL'
+				INTO endete;
+				neu_id := substr(NEW.replacedBy, 1, 16);
 			END IF;
 		END IF;
 
-		IF length(NEW.replacedBy)=16 THEN
-			EXECUTE 'SELECT beginnt FROM ' || NEW.typename ||
-			        ' WHERE gml_id=''' || NEW.replacedBy || ''' AND endet IS NULL' ||
-				' ORDER BY beginnt DESC LIMIT 1'
-                           INTO endete;
-		ELSE
-			-- replaceBy mit Timestamp
-			EXECUTE 'SELECT beginnt FROM ' || NEW.typename ||
-			        ' WHERE identifier=''urn:adv:oid:' || NEW.replacedBy || ''''
-			   INTO endete;
-			IF endete IS NULL THEN
-				EXECUTE 'SELECT beginnt FROM ' || NEW.typename ||
-					' WHERE gml_id=''' || substr(NEW.replacedBy,1,16) || ''' AND endet IS NULL' ||
-					' ORDER BY beginnt DESC LIMIT 1'
-				   INTO endete;
-			END IF;
+		IF alt_id<>substr(neu_id, 1, 16) THEN
+			RAISE NOTICE 'Objekt % wird durch Objekt % ersetzt.', alt_id, neu_id;
 		END IF;
 
 		IF endete IS NULL THEN
-			IF NEW.safetoignore = 'true' THEN
-				RAISE NOTICE '%: Nachfolger % nicht gefunden - ignoriert', NEW.featureid, NEW.replacedBy;
-				NEW.ignored := true;
-				RETURN NEW;
-			ELSE
-				RAISE EXCEPTION '%: Nachfolger % nicht gefunden', NEW.featureid, NEW.replacedBy;
-			END IF;
+			RAISE NOTICE 'Kein Beginndatum für Objekt % gefunden.', NEW.replacedBy;
 		END IF;
+
+		IF endete IS NULL OR beginnt=endete THEN
+			RAISE EXCEPTION 'Objekt % wird durch Objekt % ersetzt (leere Lebensdauer?).', alt_id, neu_id;
+		END IF;
+	ELSIF NEW.context='update' THEN
+		endete := NEW.endet;
 	ELSE
-		RAISE EXCEPTION '%: Ungültiger Kontext % (''delete'' oder ''replace'' erwartet).', NEW.featureid, NEW.context;
+		RAISE EXCEPTION '%: Ungültiger Kontext % (''delete'', ''replace'' oder ''update'' erwartet).', NEW.featureid, NEW.context;
 	END IF;
 
-	sql	:= 'UPDATE ' || NEW.typename
-		|| ' SET endet=''' || endete || ''''
-		|| ' WHERE gml_id=''' || gml_id || ''''
-		|| ' AND endet IS NULL'
-		|| ' AND beginnt<''' || endete || '''';
-	-- RAISE NOTICE 'SQL: %', sql;
-	EXECUTE sql;
+	s   := 'UPDATE ' || NEW.typename
+	    || ' SET endet=''' || endete || ''''
+	    || ',anlass=''' || coalesce(NEW.anlass,'000000') || ''''
+	    || ' WHERE gml_id=''' || NEW.featureid || ''''
+	    || ' AND beginnt=''' || beginnt || ''''
+	    || ' AND endet IS NULL';
+	EXECUTE s;
 	GET DIAGNOSTICS n = ROW_COUNT;
+	IF n=0 AND alt_id<>NEW.featureid THEN
+		s   := 'UPDATE ' || NEW.typename
+		    || ' SET endet=''' || endete || ''''
+	            || ',anlass=''' || coalesce(NEW.anlass,'000000') || ''''
+	            || ' WHERE gml_id=''' || alt_id || ''''
+	            || ' AND beginnt=''' || beginnt || ''''
+	            || ' AND endet IS NULL';
+		EXECUTE s;
+		GET DIAGNOSTICS n = ROW_COUNT;
+	END IF;
+
 	IF n<>1 THEN
-		RAISE NOTICE 'SQL: %', sql;
+		RAISE NOTICE 'SQL[%<>1]: %', n, s;
 		IF NEW.context = 'delete' OR NEW.safetoignore = 'true' THEN
-			RAISE NOTICE '%: Untergangsdatum von % Objekten statt nur einem auf % gesetzt - ignoriert', NEW.featureid, n, endete;
+			RAISE NOTICE '%: Untergangsdatum von % Objekten statt einem auf % gesetzt - ignoriert', NEW.featureid, n, endete;
+			NEW.ignored := true;
+			RETURN NEW;
+		ELSIF n=0 THEN
+			EXECUTE 'SELECT endet FROM ' || NEW.typename ||
+				' WHERE gml_id=''' || alt_id || '''' ||
+				' AND beginnt=''' || beginnt || ''''
+				INTO endete;
+
+			IF NOT endete IS NULL THEN
+				RAISE NOTICE '%: Objekt bereits % untergegangen - ignoriert', NEW.featureid, endete;
+			ELSE
+				RAISE NOTICE '%: Objekt nicht gefunden - ignoriert', NEW.featureid;
+			END IF;
+
 			NEW.ignored := true;
 			RETURN NEW;
 		ELSE
-			RAISE EXCEPTION '%: Untergangsdatum von % Objekten statt nur einem auf % gesetzt - Abbruch', NEW.featureid, n, endete;
+			RAISE EXCEPTION '%: Untergangsdatum von % Objekten statt einem auf % gesetzt - Abbruch', NEW.featureid, n, endete;
 		END IF;
 	END IF;
 
@@ -372,55 +457,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- "delete" und "replace" verarbeiten (OHNE Historie). Historische Objekte werden sofort gelöscht.
--- Geaendert 2014-02-03 auf Vorschlag M.B. Krs. Unna
-
--- 2014-08-27: Anpassung an vereinheitlichtes Datenbank-Schema.
--- Wenn die Spalte gml_id im Format "character varying" (ohne Längenbegrenzung) angelegt wird,
--- muss gezielt der ID-Teil vor dem Timestamp angesprochen werden.
--- Zugriff auf die Spalte gml_id umgestellt von "=" auf "like".
-CREATE OR REPLACE FUNCTION delete_feature_kill_vers07() RETURNS TRIGGER AS $$
-DECLARE
-	begsql TEXT;
-	aktbeg TEXT;
-	gml_id TEXT;
-BEGIN
-	NEW.typename := lower(NEW.typename); -- Objektart = Tabellen-Name
-	NEW.context := lower(NEW.context);   -- Operation 'delete', 'replace' oder 'update'
-	gml_id      := substr(NEW.featureid, 1, 16); -- ID-Teil der gml_id, ggf. anhängender Timestamp abgeschnitten
-
-	IF NEW.context IS NULL THEN
-		NEW.context := 'delete'; -- default
-	END IF;
-
-	IF NEW.context='delete' THEN -- ersatzloses Löschen des Objektes
-
-          -- In der Objekt-Tabelle
-		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%''';
- 
-         -- Beziehungen von und zu dem Objekt sind hinfaellig (zukünftig entfallend)
-		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von = ''' || gml_id || ''' OR beziehung_zu = ''' || gml_id || '''';
-
-		--RAISE NOTICE 'Lösche gml_id % in % und Beziehungen', gml_id, NEW.typename;
-
-	ELSE -- Ersetzen eines Objektes (Replace). In der Objekt-Tabelle sind jetzt bereits 2 Objekte vorhanden (alt und neu).
-
-		-- beginnt-Wert des aktuellen Objektes ermitteln
-		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id like ''' || substr(NEW.replacedBy, 1, 16) || '%'' AND endet IS NULL';
-		EXECUTE begsql INTO aktbeg;
-
-		-- Alte Objekte entfernen
-		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%'' AND beginnt < ''' || aktbeg || '''';
-
-		-- Beziehungen des alten Objektes entfernen, die aus früheren Importen stammen
-		EXECUTE 'DELETE FROM alkis_beziehungen WHERE beziehung_von like ''' || gml_id || '%'' AND import_id < (SELECT max(id) FROM import)';
-
-	END IF;
-
-	NEW.ignored := false;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 -- 2014-09-04: Version 0.8 ohne "alkis_beziehungen"-Tabelle
 CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
@@ -458,12 +494,14 @@ $$ LANGUAGE plpgsql;
 
 
 -- Beziehungssätze aufräumen
+/*
 CREATE OR REPLACE FUNCTION alkis_beziehung_inserted() RETURNS TRIGGER AS $$
 BEGIN
 	DELETE FROM alkis_beziehungen WHERE ogc_fid<NEW.ogc_fid AND beziehung_von=NEW.beziehung_von AND beziehungsart=NEW.beziehungsart AND beziehung_zu=NEW.beziehung_zu;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+*/
 
 
 -- Wenn die Datenbank MIT Historie angelegt wurde, kann nach dem Laden hiermit aufgeräumt werden.
