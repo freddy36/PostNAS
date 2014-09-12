@@ -21,6 +21,7 @@
 --  2014-09-02 Entfernen der JOINs über "alkis_beziehungen". 
 --             Wie im Schema: Schlüssel von integer nach varchar für land, regierungsbezirk usw.
 
+  --  IN ARBEIT +++++    substring(_.gml_id,1,16) 
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -257,12 +258,12 @@ CREATE OR REPLACE VIEW gemeinde_person_typ1
 AS
   SELECT DISTINCT p.gml_id AS person, g.land, g.regierungsbezirk, g.kreis, g.gemeinde
   FROM ax_person          p
-  JOIN ax_namensnummer    n  ON n.benennt = p.gml_id           -- Person <benennt< Namensnummer
-  JOIN ax_buchungsblatt   b  ON n.istbestandteilvon = b.gml_id -- Namensnummer >istBestandteilVon> Blatt
-  JOIN ax_buchungsstelle  s  ON s.istbestandteilvon = b.gml_id -- Blatt <istBestandteilVon< buchungsStelle
-  JOIN ax_flurstueck      f  ON f.istgebucht = s.gml_id        -- buchungsStelle <istGebucht< flurstück
-  JOIN ax_gemarkung       k  ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
-  JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer = g.gemarkung;
+  JOIN ax_namensnummer    n  ON n.benennt=substring(p.gml_id,1,16)            -- Person <benennt< Namensnummer
+  JOIN ax_buchungsblatt   b  ON n.istbestandteilvon=substring(b.gml_id,1,16)  -- Namensnummer >istBestandteilVon> Blatt
+  JOIN ax_buchungsstelle  s  ON s.istbestandteilvon=substring(b.gml_id,1,16)  -- Blatt <istBestandteilVon< buchungsStelle
+  JOIN ax_flurstueck      f  ON f.istgebucht=substring(s.gml_id,1,16)         -- buchungsStelle <istGebucht< flurstück
+  JOIN ax_gemarkung       k  ON f.land=k.land AND f.gemarkungsnummer=k.gemarkungsnummer 
+  JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer=g.gemarkung;
 
 COMMENT ON VIEW gemeinde_person_typ1 
   IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ1 = nomale Buchungen mit direkter Beziehung.';
@@ -274,20 +275,20 @@ CREATE OR REPLACE VIEW gemeinde_person_typ2
 AS
   SELECT DISTINCT p.gml_id AS person, g.land, g.regierungsbezirk, g.kreis, g.gemeinde
   FROM ax_person          p
-  JOIN ax_namensnummer    n  ON n.benennt = p.gml_id            -- Person <benennt< Namensnummer
-  JOIN ax_buchungsblatt   b  ON n.istBestandteilVon = b.gml_id  -- Namensnummer >istBestandteilVon> Blatt
-  JOIN ax_buchungsstelle  s1 ON s1.istbestandteilvon = b.gml_id -- Blatt <istBestandteilVon< buchungsStelle1
-  JOIN ax_buchungsstelle  s2 ON s2.gml_id = ANY(s1.an)          -- buchungsStelle2 <(recht)an< buchungsStelle1
-  JOIN ax_flurstueck      f  ON f.istgebucht = s2.gml_id        -- buchungsStelle2 < istGebucht < flurstück
-  JOIN ax_gemarkung       k  ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
-  JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer = g.gemarkung;
+  JOIN ax_namensnummer    n  ON n.benennt=substring(p.gml_id,1,16)             -- Person <benennt< Namensnummer
+  JOIN ax_buchungsblatt   b  ON n.istBestandteilVon=substring(b.gml_id,1,16)   -- Namensnummer >istBestandteilVon> Blatt
+  JOIN ax_buchungsstelle  s1 ON s1.istbestandteilvon=substring(b.gml_id,1,16)  -- Blatt <istBestandteilVon< buchungsStelle1
+  JOIN ax_buchungsstelle  s2 ON substring(s2.gml_id,1,16)= ANY(s1.an)          -- buchungsStelle2 <(recht)an< buchungsStelle1
+  JOIN ax_flurstueck      f  ON f.istgebucht=substring(s2.gml_id,1,16)         -- buchungsStelle2 < istGebucht < flurstück
+  JOIN ax_gemarkung       k  ON f.land=k.land AND f.gemarkungsnummer=k.gemarkungsnummer 
+  JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer=g.gemarkung;
 
 COMMENT ON VIEW gemeinde_person_typ2 
   IS 'Personen die Eigentümer vom Flurstücken in einer Gemeinde sind. Typ2 = Buchungen mit Rechten einer Buchungssstelle an einer anderen.';
 
 -- Statistik über die Buchungs-Typen je Gemeinde
 -- ToDo: +++++  View "gemeinde_gemarkung" nicht verwenden, auflösen
-CREATE VIEW gemeinde_person_statistik
+CREATE OR REPLACE VIEW gemeinde_person_statistik
 AS
   SELECT p.land, p.regierungsbezirk, p.kreis, p.gemeinde, g.gemeindename, p.buchtyp, count(p.person) as personen
   FROM   gemeinde_person    p
@@ -308,14 +309,14 @@ COMMENT ON VIEW gemeinde_person_statistik IS 'Zählen der Personen je Gemeinde u
 -- z.B. Gemeinden:  10 Meter
 --      Gemarkungen: 4 Meter
 
-CREATE VIEW pp_gemeinde_analyse AS
+CREATE OR REPLACE VIEW pp_gemeinde_analyse AS
   SELECT land, gemeinde, gemeindename,
          st_npoints(the_geom)    AS umring_alle_punkte,
          st_npoints(simple_geom) AS umring_einfache_punkte
   FROM pp_gemeinde;
 
 
-CREATE VIEW pp_gemarkung_analyse AS
+CREATE OR REPLACE VIEW pp_gemarkung_analyse AS
   SELECT land, gemeinde, gemarkung, gemarkungsname,
          st_npoints(the_geom)    AS umring_alle_punkte,
          st_npoints(simple_geom) AS umring_einfache_punkte

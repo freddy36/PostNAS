@@ -196,7 +196,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	} // Beispiel-Link href='javascript:imFenster(\"alkislage.php?gkz= ... ."\")'>xxx ";
 
 	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
-	$sqln.="FROM ax_namensnummer n WHERE n.istbestandteilvon= $1 ORDER BY n.laufendenummernachdin1421;";
+	$sqln.="FROM ax_namensnummer n WHERE n.istbestandteilvon= $1 AND n.endet IS NULL ORDER BY n.laufendenummernachdin1421;";
 
 	$v = array($gmlid);
 	$resn = pg_prepare("", $sqln);
@@ -246,7 +246,6 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
 		$sqlp ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
 		$sqlp.="FROM ax_person p JOIN ax_namensnummer nn ON nn.benennt=substring(p.gml_id,1,16) WHERE nn.gml_id= $1 AND p.endet IS NULL AND nn.endet IS NULL;";
-		// Timestamp an ID abschneiden!
 
 		$v = array($gmlnn);
 		$resp = pg_prepare("", $sqlp);
@@ -293,7 +292,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			if ($mitadresse) {
 				// Schleife 3:  A d r e s s e  (OPTIONAL)
 				$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-				$sqla.="FROM ax_anschrift a JOIN ax_person p ON substring(a.gml_id,1,16) = ANY(p.hat) WHERE p.gml_id= $1 ;"; // ORDER?
+				$sqla.="FROM ax_anschrift a JOIN ax_person p ON substring(a.gml_id,1,16)=ANY(p.hat) WHERE p.gml_id= $1 AND a.endet IS NULL AND p.endet IS NULL;"; // ORDER?
 				$gmlp=$rowp["gml_id"]; // Person
 				$v = array($gmlp);
 				$resa = pg_prepare("", $sqla);
@@ -344,11 +343,15 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			// 'keine Adresse' kann vorkommen, z.B. "Deutsche Telekom AG"
 
 			$i++; // cnt Person
-			// als eigene Tab-Zeile?
-			// 'Anteil' ist der Anteil der Berechtigten in Bruchteilen (Par. 47 GBO) an einem gemeinschaftlichen Eigentum (Grundstück oder Recht).
-			if ($rown["zaehler"] != "") {
+
+			// Anteil als eigene Tab-Zeile:
+			$zaehler=$rown["zaehler"];
+			if ($zaehler != "") {
+				$zaehler=str_replace(".", ",", $zaehler); // Dezimal-KOMMA wenn dem Notar der Bruch nicht reicht
+				$nenner=str_replace(".", ",", $rown["nenner"]);
+				$comnt="Anteil der Berechtigten in Bruchteilen (Par. 47 GBO) an einem gemeinschaftlichen Eigentum (Grundst&uuml;ck oder Recht).";
 				echo "\n<tr>\n\t<td>&nbsp;</td>"; // Sp. 1
-				echo "\n\t<td><p class='avh' title='Anteil'>".$rown["zaehler"]."/".$rown["nenner"]." Anteil</p></td>";
+				echo "\n\t<td><p class='avh' title='".$comnt."'>".$zaehler."/".$nenner." Anteil</p></td>";
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
 		} // End Loop Person
@@ -368,7 +371,6 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	if ($n == 0) {
 		// kommt vor bei "Fiktives Blatt", kein Fehler 
 		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
-
 		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
 	}
 	pg_free_result($resn);

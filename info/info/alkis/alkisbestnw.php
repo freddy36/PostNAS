@@ -118,7 +118,7 @@ if ($blattkey == 1000) { // GB-Blatt  <istBestandteilVon<  sh=herrschend  >an>  
 	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (substring(sd.gml_id,1,16)=ANY(sh.an) OR substring(sd.gml_id,1,16)=ANY(sh.zu)) 
 	WHERE sh.istbestandteilvon= $1 AND sd.endet IS NULL AND sh.endet IS NULL;";
 
-	$v=array($gmlid); // GB-Blatt
+	$v=array(substr($gmlid,1,16)); // GB-Blatt, in Relation immer nur 16 Zeichen
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) echo "<p class='err'>Fehler bei Suche nach Buchungen.</p>\n";

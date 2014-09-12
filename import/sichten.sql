@@ -31,10 +31,7 @@
 --  2014-02-06 nachmigration_aehnliche_anschriften
 --  2014-09-02 Tabelle "alkis_beziehungen" überflüssig machen. Relationen nun über Spalten in den Objekttabellen. 
 --  2014-09-11 Neu: View "fehlersuche_namensanteile_je_blatt", substring(gml_id) bei Relation-Join, mehr "endet IS NULL"
-
--- ToDo: Einige Views sind sehr langsam geworden. Z.B. exp_csv welcher doppelverbindung verwendet.
---       Dadurch Export aus Bauchauskunft sehr langsam!
---       Derzeit provisorische Version von "doppelverbindung" (schnell aber nicht ganz korrrekt).
+--  2014-09-12 Korrektur "doppelverbindung" (nach Patch der Indices für Relation auf Substring(gml_id,1,16))
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -52,9 +49,6 @@
 --                               (dienend)              (herrschend) 
 
 --           DROP VIEW public.doppelverbindung;
-
-/*  -- korrekte Version, leider unerträglich langsam, z.B. beim Export von CSV aus der Auskunft
-
 CREATE OR REPLACE VIEW public.doppelverbindung
 AS
   -- FS >istGebucht> Buchungstelle
@@ -73,52 +67,11 @@ AS
     JOIN ax_buchungsstelle b2   ON substring(dien.gml_id,1,16) = ANY (b2.an)  -- auch "zu" ?
    WHERE dien.endet IS NULL;   -- Für das zusätzliche Verbindungselement die Historie HIER ausschließen, 
                                -- Für andere Tabellen muss dies in dem View erfolgen, der dies verwendet.
-*/
-
--- TEST: Schneller, wenn auf Subtring verzichtet wird?  Ja!
--- Aber: Verbindungen über aktualisierte, also lange ID's werden nicht gefunden.  
-CREATE OR REPLACE VIEW public.doppelverbindung
-AS
-  -- FS >istGebucht> Buchungstelle
-  SELECT f1.gml_id              AS fsgml,    -- gml_id Flurstück
-         b1.gml_id              AS bsgml,    -- gml_id Buchungs
-         0                      AS ba_dien
-    FROM ax_flurstueck f1
-    JOIN ax_buchungsstelle b1   ON f1.istgebucht = substring(b1.gml_id,1,16)
- UNION
-  -- FS >istGebucht> Buchungstelle  <an<  Buchungstelle
-  SELECT f2.gml_id              AS fsgml,    -- gml_id Flurstück
-         b2.gml_id              AS bsgml,    -- gml_id Buchung - (herrschendes GB)
-         dien.buchungsart       AS ba_dien   -- Ein Feld aus der Zwischen-Buchung zur Fall-Unterscheidung
-    FROM ax_flurstueck f2
-    JOIN ax_buchungsstelle dien ON f2.istgebucht = substring(dien.gml_id,1,16)
-  --JOIN ax_buchungsstelle b2   ON substring(dien.gml_id,1,16) = ANY (b2.an)    -- korrekt
-    JOIN ax_buchungsstelle b2   ON           dien.gml_id       = ANY (b2.an)    -- schnell
-   WHERE dien.endet IS NULL;   -- Nur für das zusätzliche Verbindungselement die Historie HIER ausschließen, 
-                               -- Für andere Tabellen muss dies in dem View erfolgen, der dies verwendet.
 
 COMMENT ON VIEW public.doppelverbindung 
  IS 'ALKIS-Beziehung von Flurstück zu Buchung. UNION-Zusammenfassung des einfachen Falls mit direkter Buchung und des Falles mit Recht einer Buchungsstelle an einer anderen Buchungsstelle.
 Dies ist ausschließlich gedacht zur Verwendung in anderen Views um diese einfacher zu machen.';
 
-/* Test zur Zeitmessung
-
-SELECT dien.gml_id, herr.gml_id
-FROM ax_buchungsstelle dien 
-JOIN ax_buchungsstelle herr  ON dien.gml_id = ANY (herr.an)
-WHERE dien.endet IS NULL AND herr.endet IS NULL
-LIMIT 300;
--- 78 ms
-
-SELECT dien.gml_id, herr.gml_id
-FROM ax_buchungsstelle dien 
-JOIN ax_buchungsstelle herr  ON substring(dien.gml_id,1,16) = ANY (herr.an)
-WHERE dien.endet IS NULL AND herr.endet IS NULL
-LIMIT 300;
--- 19454 ms
-
-
-*/
 
 -- Test-Ausgabe: Ein paar Fälle mit "Recht an"
 --   SELECT * FROM doppelverbindung WHERE ba_dien > 0 LIMIT 20;

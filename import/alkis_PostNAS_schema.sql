@@ -49,6 +49,8 @@
 --                 Dies war in Vers. 0.7 begonnen aber noch nicht fertig gestellt worden.
 --               * Übernahme der Objektartengruppe in den Kommentar zur Tabelle.
 
+-- 2014-09-12 FJ Indizierung der ersten 16 Zeichen der gml_id, wenn diese Ziel einer ALKIS-Beziehung ist.
+--               "delete"-Tabelle aus Norbit-Version passend zum Hist-Trigger.
 
 --  Dies Schema kann NICHT mehr mit der gdal-Version 1.9 verwendet werden.
 
@@ -97,12 +99,17 @@ CREATE TABLE import (
 CREATE UNIQUE INDEX import_id ON import USING btree (id);
 
 COMMENT ON TABLE  import             IS 'PostNAS: Verwaltung der Import-Programmläufe. Wird nicht vom Konverter gefüllt sondern aus der Start-Prozedur (z.B. konv_batch.sh).';
-COMMENT ON COLUMN import.id          IS 'Laufende Nummer der Konverter-Datei-Verarbeitung. Der Max-Wert von "id" wird als "alkis_beziehungen.import_id" verwendet, um ein vollständiges Löschen alter Beziehungen zu ermöglichen.';
+COMMENT ON COLUMN import.id          IS 'Laufende Nummer der Konverter-Datei-Verarbeitung.';
 COMMENT ON COLUMN import.datum       IS 'Zeitpunkt des Beginns des Konverter-Laufes für einen Stapel von NAS-Dateien.';
 COMMENT ON COLUMN import.verzeichnis IS 'Ort von dem die NAS-Dateien verarbeitet wurden.';
 COMMENT ON COLUMN import.importart   IS 'Modus des Konverter-Laufes: e="Erstladen" oder a="NBA-Aktualisierung"';
 
--- Tabelle "delete" für Lösch- und Fortführungsdatensätze
+-- Tabelle "delete" für Lösch- und Fortführungsdatensätze.
+-- Über diese Tabelle werden Aktualisierungen des Bestandes gesteuert.
+-- Der Konverter ogr2ogr (PostNAS) trägt die NAS-Operatuonen "delete", "replace" und "update" hier ein.
+-- Die weitere ALKIS-spezifische Ausführung dieser Operationen muss durch Trigger auf dieser Tabelle erfolgen.
+-- Das betrifft z.B. das Löschen von Objekten, die über die NAS-Update-Funktion einen "endet"-Eintrag bekommen haben. 
+-- 2014-09-12: "anlass" und "endet" hinzugefügt. Aktueller Trigger (hist) für NAS-"update" benötigt diese Spalten.
 CREATE TABLE "delete" (
      ogc_fid             serial NOT NULL,
      typename            character varying,
@@ -110,6 +117,8 @@ CREATE TABLE "delete" (
      context             character varying,       -- delete/replace
      safetoignore        character varying,       -- replace.safetoignore 'true'/'false'
      replacedBy          character varying,       -- gmlid
+	anlass		     character varying,       -- update.anlass
+	endet		     character(20),           -- update.endet
      ignored             boolean DEFAULT false,   -- Satz wurde nicht verarbeitet
      CONSTRAINT delete_pk PRIMARY KEY (ogc_fid)
 );
@@ -124,12 +133,15 @@ COMMENT ON COLUMN delete.featureid    IS 'Zusammen gesetzt aus GML-ID (16) und Z
 COMMENT ON COLUMN delete.context      IS 'Operation ''delete'' oder ''replace''';
 COMMENT ON COLUMN delete.safetoignore IS 'Attribut safeToIgnore von wfsext:Replace';
 COMMENT ON COLUMN delete.replacedBy   IS 'gml_id des Objekts, das featureid ersetzt';
+COMMENT ON COLUMN delete.anlass       IS 'update.anlass';
+COMMENT ON COLUMN delete.endet        IS 'update.endet';
 COMMENT ON COLUMN delete.ignored      IS 'Löschsatz wurde ignoriert';
 
 
 -- B e z i e h u n g e n
 -- ----------------------------------------------
--- Zentrale Tabelle fuer alle Relationen im Buchwerk. Seit PostNAS 0.8 entfallen.
+-- Zentrale Tabelle fuer alle Relationen im Buchwerk. 
+-- Seit PostNAS 0.8 entfallen. Wird aber von PostNAS wieder angelegt, wenn sie fehlt.
 -- Die Fremdschlüssel 'beziehung_von' und 'beziehung_zu' verweisen auf die ID des Objekte (gml_id).
 -- Zusätzlich enthält 'beziehungsart' noch ein Verb für die Art der Beziehung.
 /*
@@ -273,6 +285,7 @@ SELECT AddGeometryColumn('ap_lpo','wkb_geometry',:alkis_epsg,'GEOMETRY',2); -- L
 
 CREATE INDEX ap_lpo_geom_idx   ON ap_lpo USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ap_lpo_gml ON ap_lpo USING btree (gml_id, beginnt);
+CREATE INDEX ap_lpo_gml16      ON ap_lpo USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 CREATE INDEX ap_lpo_endet      ON ap_lpo USING btree (endet);
 CREATE INDEX ap_lpo_dzdv       ON ap_lpo USING gin   (dientzurdarstellungvon);
 
@@ -505,6 +518,7 @@ SELECT AddGeometryColumn('ax_flurstueck','wkb_geometry',:alkis_epsg,'GEOMETRY',2
 
 CREATE INDEX ax_flurstueck_geom_idx   ON ax_flurstueck USING gist  (wkb_geometry);
 CREATE UNIQUE INDEX ax_flurstueck_gml ON ax_flurstueck USING btree (gml_id, beginnt);
+CREATE INDEX ax_flurstueck_gml16      ON ax_flurstueck USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 CREATE INDEX ax_flurstueck_lgfzn      ON ax_flurstueck USING btree (land, gemarkungsnummer, flurnummer, zaehler, nenner);
 CREATE INDEX ax_flurstueck_arz        ON ax_flurstueck USING btree (abweichenderrechtszustand);
 
@@ -610,8 +624,9 @@ CREATE TABLE ax_grenzpunkt (
 SELECT AddGeometryColumn('ax_grenzpunkt','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_grenzpunkt_gml ON ax_grenzpunkt USING btree (gml_id, beginnt);
-CREATE INDEX ax_grenzpunkt_abmm ON ax_grenzpunkt USING btree (abmarkung_marke);
-CREATE INDEX ax_grenzpunkt_za   ON ax_grenzpunkt USING btree (zeigtauf);
+CREATE INDEX ax_grenzpunkt_gml16 ON ax_grenzpunkt USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
+CREATE INDEX ax_grenzpunkt_abmm  ON ax_grenzpunkt USING btree (abmarkung_marke);
+CREATE INDEX ax_grenzpunkt_za    ON ax_grenzpunkt USING btree (zeigtauf);
 
 COMMENT ON TABLE  ax_grenzpunkt        IS 'Angaben zum Flurstück: (ZUSO) "Grenzpunkt" ist ein den Grenzverlauf bestimmender, meist durch Grenzzeichen gekennzeichneter Punkt.';
 COMMENT ON COLUMN ax_grenzpunkt.gml_id IS 'Identifikator, global eindeutig';
@@ -650,6 +665,7 @@ CREATE TABLE ax_lagebezeichnungohnehausnummer (
 SELECT AddGeometryColumn('ax_lagebezeichnungohnehausnummer','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_lagebezeichnungohnehausnummer_gml ON ax_lagebezeichnungohnehausnummer USING btree (gml_id, beginnt);
+CREATE INDEX ax_lagebezeichnungohnehausnummer_gml16      ON ax_lagebezeichnungohnehausnummer USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 CREATE INDEX ax_lagebezeichnungohnehausnummer_key        ON ax_lagebezeichnungohnehausnummer USING btree (land, regierungsbezirk, kreis, gemeinde,lage);
 --EATE INDEX ax_lagebezeichnungohnehausnummer_beschreibt ON ax_lagebezeichnungohnehausnummer USING gin (beschreibt);
 --EATE INDEX ax_lagebezeichnungohnehausnummer_gehoertzu  ON ax_lagebezeichnungohnehausnummer USING gin (gehoertzu);
@@ -700,6 +716,7 @@ CREATE TABLE ax_lagebezeichnungmithausnummer (
 SELECT AddGeometryColumn('ax_lagebezeichnungmithausnummer','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_lagebezeichnungmithausnummer_gml ON ax_lagebezeichnungmithausnummer USING btree (gml_id, beginnt);
+CREATE INDEX ax_lagebezeichnungmithausnummer_gml16      ON ax_lagebezeichnungmithausnummer USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 CREATE INDEX ax_lagebezeichnungmithausnummer_lage       ON ax_lagebezeichnungmithausnummer USING btree (gemeinde, lage);
 --EATE INDEX ax_lagebezeichnungmithausnummer_hat        ON ax_lagebezeichnungmithausnummer USING gin   (hat);
 --EATE INDEX ax_lagebezeichnungmithausnummer_bsa        ON ax_lagebezeichnungmithausnummer USING btree (beziehtsichauf);
@@ -759,7 +776,8 @@ CREATE TABLE ax_lagebezeichnungmitpseudonummer (
 SELECT AddGeometryColumn('ax_lagebezeichnungmitpseudonummer','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_lagebezeichnungmitpseudonummer_gml ON ax_lagebezeichnungmitpseudonummer USING btree (gml_id, beginnt);
---EATE INDEX ax_lagebezeichnungmitpseudonummer_gehoertzu ON ax_lagebezeichnungmitpseudonummer USING btree (gehoertzu);
+CREATE INDEX ax_lagebezeichnungmitpseudonummer_gml16      ON ax_lagebezeichnungmitpseudonummer USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
+--EATE INDEX ax_lagebezeichnungmitpseudonummer_gehoertzu  ON ax_lagebezeichnungmitpseudonummer USING btree (gehoertzu);
 
 COMMENT ON TABLE  ax_lagebezeichnungmitpseudonummer        IS 'Angaben zur Lage: (NREO) "Lagebezeichnung mit Pseudonummer" ist die von der Katasterbehörde für ein bestehendes oder geplantes Gebäude vergebene Lagebezeichnung und ggf. einem Adressierungszusatz, wenn von der Gemeinde für das Gebäude keine Lagebezeichnung mit Hausnummer vergeben wurde (z.B. Kirche, Nebengebäude).';
 -- Dies sind die Nebengebäude, die zu einen Hauptgebäude (mit Hausnummer) durchnummeriert sind.
@@ -1487,6 +1505,7 @@ CREATE TABLE ax_person (
 SELECT AddGeometryColumn('ax_person','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX id_ax_person_gml ON ax_person USING btree (gml_id, beginnt);
+CREATE INDEX        ax_person_gml16  ON ax_person USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 
 CREATE INDEX ax_person_hat  ON ax_person  USING gin  (hat);
 --EATE INDEX ax_person_wa   ON ax_person  USING gin  (weistauf);
@@ -1517,10 +1536,14 @@ COMMENT ON COLUMN ax_person.gehoertzu IS '-> Beziehung zu ax_personengruppe (0..
 --COMMENT ON COLUMN ax_person.benennt   IS '<- Beziehung zu ax_verwaltung (0..*): Die Relation ''Person'' benennt ''Verwaltung'' weist der Verwaltung eine Person zu.
 --Es handelt sich um die inverse Relationsrichtung.';
 
+
 --AX_Personengruppe
 -- Objektart: AX_Personengruppe Kennung: 21002
 -- 'Personengruppe' ist die Zusammenfassung von Personen unter einem Ordnungsbegriff.
 -- ** Tabelle bisher noch nicht generiert
+
+-- CREATE INDEX ax_personengruppe_gml16 ON ax_personengruppe USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
+
 
 -- A n s c h r i f t
 -- ----------------------------------------------
@@ -1555,6 +1578,7 @@ CREATE TABLE ax_anschrift (
 SELECT AddGeometryColumn('ax_anschrift','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_anschrift_gml  ON ax_anschrift  USING btree (gml_id, beginnt);
+CREATE INDEX       ax_anschrift_gml16 ON ax_anschrift  USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 --EATE        INDEX ax_anschrift_bsa  ON ax_anschrift  USING gin   (beziehtsichauf);
 --EATE        INDEX ax_anschrift_gz   ON ax_anschrift  USING gin   (gehoertzu);
 
@@ -1592,6 +1616,10 @@ COMMENT ON TABLE  ax_verwaltung  IS 'Personen- und Bestandsdaten: (NREO "Verwalt
 --Es handelt sich um die inverse Relationsrichtung.';
 COMMENT ON COLUMN ax_verwaltung.haengtan       IS '-> Beziehung zu ax_person (1): Durch die Relation ''Verwaltung'' hängt an ''Person'' wird die Verwaltung namentlich benannt.';
 
+CREATE UNIQUE INDEX ax_verwaltung_gml  ON ax_verwaltung USING btree (gml_id, beginnt);
+CREATE INDEX ax_verwaltung_gml16       ON ax_verwaltung USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
+CREATE INDEX ax_verwaltung_han         ON ax_verwaltung USING btree (haengtan);
+
 
 -- V e r t r e t u n g
 -- -------------------
@@ -1609,7 +1637,7 @@ CREATE TABLE ax_vertretung (
 --   vertritt            character varying[],  -- <- ax_person
      haengtan            character varying,    --> ax_person
      beziehtsichauf      character varying[],  --> ax_flurstueck
-      CONSTRAINT ax_vertretung_pk PRIMARY KEY (ogc_fid)
+     CONSTRAINT ax_vertretung_pk PRIMARY KEY (ogc_fid)
 );
 SELECT AddGeometryColumn('ax_vertretung','dummy',:alkis_epsg,'POINT',2);
 
@@ -1619,6 +1647,9 @@ COMMENT ON TABLE  ax_vertretung IS 'Personen- und Bestandsdaten: (NREO) "Vertret
 --Es handelt sich um die inverse Relationsrichtung.';
 COMMENT ON COLUMN ax_vertretung.haengtan       IS '-> Beziehung zu ax_person (1): Die Relation ''Vertretung'' hängt an ''Person'' sagt aus, welche Person die Vertretung wahrnimmt.';
 COMMENT ON COLUMN ax_vertretung.beziehtsichauf IS '-> Beziehung zu ax_flurstueck (0..*): Die Relation ''Vertretung'' bezieht sich auf ''Flurstück'' sagt aus, für welche Flurstücke die Vertretung wahrgenommen wird.';
+
+CREATE INDEX ax_vertretung_han         ON ax_vertretung USING btree (haengtan);
+CREATE INDEX ax_vertretung_bezauf      ON ax_vertretung USING gin   (beziehtsichauf);
 
 
 -- N a m e n s n u m m e r
@@ -1651,6 +1682,8 @@ CREATE TABLE ax_namensnummer (
 SELECT AddGeometryColumn('ax_namensnummer','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_namensnummer_gml   ON ax_namensnummer  USING btree (gml_id, beginnt);
+CREATE INDEX  ax_namensnummer_gml16       ON ax_namensnummer  USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
+
 CREATE        INDEX ax_namensnummer_barvz ON ax_namensnummer  USING btree (bestehtausrechtsverhaeltnissenzu);
 CREATE        INDEX ax_namensnummer_ben   ON ax_namensnummer  USING btree (benennt);
 CREATE        INDEX ax_namensnummer_hv    ON ax_namensnummer  USING gin   (hatvorgaenger);
@@ -1738,6 +1771,7 @@ CREATE TABLE ax_buchungsstelle (
 SELECT AddGeometryColumn('ax_buchungsstelle','dummy',:alkis_epsg,'POINT',2);
 
 CREATE UNIQUE INDEX ax_buchungsstelle_gml ON ax_buchungsstelle USING btree (gml_id, beginnt);
+CREATE INDEX ax_buchungsstelle_gml16  ON ax_buchungsstelle  USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 
 CREATE INDEX ax_buchungsstelle_an     ON ax_buchungsstelle  USING gin  (an);
 CREATE INDEX ax_buchungsstelle_bsa    ON ax_buchungsstelle  USING gin  (beziehtsichauf);
@@ -1819,6 +1853,7 @@ SELECT AddGeometryColumn('ax_gebaeude','wkb_geometry',:alkis_epsg,'GEOMETRY',2);
 
 CREATE INDEX ax_gebaeude_geom_idx   ON ax_gebaeude USING gist (wkb_geometry);
 CREATE UNIQUE INDEX ax_gebaeude_gml ON ax_gebaeude USING btree (gml_id, beginnt);
+CREATE INDEX ax_gebaeude_gml16      ON ax_gebaeude USING btree (substring(gml_id,1,16)); -- ALKIS-Relation
 
 CREATE INDEX ax_gebaeude_geh  ON ax_gebaeude USING gin   (gehoert);
 CREATE INDEX ax_gebaeude_gz   ON ax_gebaeude USING btree (gehoertzu);
