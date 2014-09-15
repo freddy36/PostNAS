@@ -10,6 +10,7 @@
 	2011-11-16	FS-Historie
 	2013-06-27	p.recht
 	2014-01-27	strasse, hsnr, Print-Balken
+	2014-09-15  PostNAS 0.8: p.cnt
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -40,6 +41,7 @@ p.gadr		{color: maroon; margin-top: 1pt;}	/* GB-Nachw. Eigentuemer Adresse */
 p.nwlink, td.nwlink {font-size: 7pt; text-align: right; margin-top: 0pt;}	/* Link zum Nachweis GB, FS, ..*/
 p.err		{font-size: 11px; color: red;}		/* Fehler -> Anwender */
 p.dbg		{font-size: 10px; color: gray;}		/* Debug -> Entwickler */
+p.cnt		{font-size: 10px; color: gray;}		/* Counter, Zaehler */
 p.warn		{color: gray; font-style: italic;}	/* Warnung, Hinweis */
 p.ph		{color: gray;}						/* Platzhalter */
 

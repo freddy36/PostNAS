@@ -50,18 +50,15 @@ $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
 // // G e b a e u d e 
-$sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, g.anzahlderunterirdischengeschosse AS aug, ";
-$sqlg.="g.lagezurerdoberflaeche, g.dachgeschossausbau, g.zustand, g.weiteregebaeudefunktion, g.dachform, g.hochhaus, g.objekthoehe, g.geschossflaeche, g.grundflaeche, g.umbauterraum, g.baujahr, g.dachart, g.qualitaetsangaben, ";
-$sqlg.="h.bauweise_beschreibung, u.bezeichner AS bfunk, z.bezeichner AS bzustand, ";
-// "w.bezeichner AS bweitfunk, ";
-$sqlg.="d.bezeichner AS bdach, round(area(g.wkb_geometry)::numeric,2) AS gebflae FROM ax_gebaeude g ";
-// Entschluesseln
-$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id ";
-$sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert ";
-$sqlg.="LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert ";
-$sqlg.="LEFT JOIN ax_gebaeude_dachform d ON g.dachform=d.wert ";
-
-$sqlg.="WHERE g.gml_id= $1 AND g.endet IS NULL ;";
+$sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, g.anzahlderoberirdischengeschosse AS aog, g.anzahlderunterirdischengeschosse AS aug, 
+g.lagezurerdoberflaeche, g.dachgeschossausbau, g.zustand, g.weiteregebaeudefunktion, g.dachform, g.hochhaus, g.objekthoehe, g.geschossflaeche, g.grundflaeche, g.umbauterraum, g.baujahr, g.dachart, g.qualitaetsangaben, 
+h.bauweise_beschreibung, u.bezeichner AS bfunk, z.bezeichner AS bzustand, "; // w.bezeichner AS bweitfunk,
+$sqlg.="d.bezeichner AS bdach, round(area(g.wkb_geometry)::numeric,2) AS gebflae FROM ax_gebaeude g 
+LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id 
+LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert 
+LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert 
+LEFT JOIN ax_gebaeude_dachform d ON g.dachform=d.wert
+WHERE g.gml_id= $1 AND g.endet IS NULL ;";
 
 $v = array($gmlid);
 $resg = pg_prepare("", $sqlg);

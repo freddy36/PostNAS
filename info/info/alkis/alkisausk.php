@@ -14,9 +14,7 @@
 	2011-11-30 import_request_variables
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-01-28 Link zu alkisstrasse.php
-	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-
-+++ NOCH UMSTELLEN:  alkis_beziehungen
+	2014-09-15 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 
 */
 session_start();
@@ -49,11 +47,9 @@ $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
 // *** F L U R S T U E C K ***
-$sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, g.gemarkungsnummer, g.bezeichnung ";
-$sql.="FROM ax_flurstueck f ";
-$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="WHERE f.gml_id= $1;";
-// Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
+$sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, g.gemarkungsnummer, g.bezeichnung 
+FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer
+WHERE f.gml_id= $1 AND f.endet IS NULL;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -138,12 +134,11 @@ echo "</a>";
 echo "\n\t</p>\n</td>";
 
 // Lagebezeichnung MIT Hausnummer (Adresse)
-$sql ="SELECT DISTINCT l.gml_id, s.gml_id AS kgml, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung ";
-$sql.="FROM alkis_beziehungen v ";
-$sql.="JOIN ax_lagebezeichnungmithausnummer l ON v.beziehung_zu=substring(l.gml_id,1,16) "; // Strassennamen JOIN
-$sql.="LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-$sql.="WHERE v.beziehung_von= $1 AND v.beziehungsart='weistAuf' ";// id FS";
-$sql.="ORDER BY l.gemeinde, l.lage, l.hausnummer;";
+$sql ="SELECT DISTINCT l.gml_id, s.gml_id AS kgml, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung 
+FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
+LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
+WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL ORDER BY l.gemeinde, l.lage, l.hausnummer;";
+
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
@@ -173,20 +168,15 @@ echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
 
 // *** G R U N D B U C H ***
 echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundbuch</h2>";
-// ALKIS: FS --> bfs --> GS --> bsb --> GB.
-$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, ";
-$sql.="s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, ";
-$sql.="z.bezeichnung, a.bezeichner AS bart ";  // stelle -> amtsgericht
-$sql.="FROM alkis_beziehungen bfs "; // Bez Flurst.- Stelle.
-$sql.="JOIN ax_buchungsstelle s ON bfs.beziehung_zu=s.gml_id ";
-$sql.="JOIN alkis_beziehungen bsb ON s.gml_id=bsb.beziehung_von "; // Bez. Stelle - Blatt
-$sql.="JOIN ax_buchungsblatt b ON bsb.beziehung_zu=b.gml_id ";
-$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert ";
-$sql.="WHERE bfs.beziehung_von= $1 ";
-$sql.="AND bfs.beziehungsart='istGebucht' ";
-$sql.="AND bsb.beziehungsart='istBestandteilVon' ";
-$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
+// ALKIS: FS >istgebucht> GS >istBestandteilVon> GB.
+$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, 
+s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart 
+FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=s.gml_id 
+JOIN ax_buchungsblatt b ON s.istbestandteilvon=b.gml_id 
+LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
+LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert 
+WHERE f.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND b.endet IS NULL 
+ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 
 $v = array($gmlid);
 $resg = pg_prepare("", $sql);
@@ -259,9 +249,9 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
-		$n = eigentuemer($con, $rowg["gml_id"], false); // ohne Adressen
+		$n = eigentuemer($con, $rowg["gml_id"], false); // ohne Adr.
 
-		if ($n == 0) { // keine Namensnummer, kein Eigentuemer
+		if ($n == 0) { // keine NamNum, kein Eigent.
 			echo "\n<p class='err'>Keine Eigent&uuml;mer gefunden.</p>";
 			echo "\n<p class='err'>Bezirk ".$rowg["bezirk"]." Blatt ".$rowg["blatt"]." Blattart ".$blattkey." (".$blattart.")</p>";
 			linkgml($gkz, $gmlid, "Buchungsblatt", "");

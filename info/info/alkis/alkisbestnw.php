@@ -11,7 +11,7 @@
 	2012-07-24 Export CSV
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-09-10 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-15 Bei Relationen den Timestamp abschneiden
 
 	ToDo: Zähler fuer Anzahl FS in der Liste
 */
@@ -118,7 +118,7 @@ if ($blattkey == 1000) { // GB-Blatt  <istBestandteilVon<  sh=herrschend  >an>  
 	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (substring(sd.gml_id,1,16)=ANY(sh.an) OR substring(sd.gml_id,1,16)=ANY(sh.zu)) 
 	WHERE sh.istbestandteilvon= $1 AND sd.endet IS NULL AND sh.endet IS NULL;";
 
-	$v=array(substr($gmlid,1,16)); // GB-Blatt, in Relation immer nur 16 Zeichen
+	$v=array(substr($gmlid,0,16)); // GB-Blatt, in Relation immer nur 16 Zeichen
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) echo "<p class='err'>Fehler bei Suche nach Buchungen.</p>\n";
@@ -163,21 +163,21 @@ $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungde
 FROM ax_buchungsstelle s LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart=b.wert 
 WHERE s.istbestandteilvon= $1 AND s.endet IS NULL ORDER BY cast(s.laufendenummer AS integer);";
 
-$v=array($gmlid);
+$v=array(substr($gmlid,0,16)); //  Rel. istbestandteilvon nur 16 Zeichen
 $res=pg_prepare("", $sql);
 $res=pg_execute("", $v);
 
 if (!$res) {
 	echo "<p class='err'>Fehler bei Buchung.</p>\n";
-	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}
 }
 $i=0;
 $fscnt=0;
 while($row = pg_fetch_array($res)) {
-	$lfdnr  = $row["lfd"];
-	$bvnr   = str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
-	$gml_bs = $row["gml_id"]; // id der buchungsstelle
-	$ba     = $row["bart"]; // Buchungsart aus Schluesseltabelle
+	$lfdnr=$row["lfd"];
+	$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
+	$gml_bs= $row["gml_id"]; // id der buchungsstelle
+	$ba=$row["bart"]; // Buchungsart aus Schluesseltabelle
 
 	if ($row["zaehler"] == "") {
 		$anteil = "";
@@ -230,11 +230,11 @@ while($row = pg_fetch_array($res)) {
 			}
 			$b=0;
 			while($fbrow = pg_fetch_array($fbres)) { // genau 1
-				$fbgml   = $fbrow["gml_id"];
-				$fbland  = $fbrow["land"];
-				$fbbez   = $fbrow["bezirk"];
+				$fbgml  = $fbrow["gml_id"];
+				$fbland = $fbrow["land"];
+				$fbbez  = $fbrow["bezirk"];
 				$fbblatt = $fbrow["blatt"];
-				$fbbart  = blattart($fbrow["blattart"]);
+				$fbbart = blattart($fbrow["blattart"]);
 				$beznam	= $fbrow["beznam"];
 				$b++;
 			}
@@ -322,7 +322,7 @@ while($row = pg_fetch_array($res)) {
 				}
 				echo "</td>";
 				echo "\n\t<td colspan=7>";
-					echo "<p class='warn'>Flurst&uuml;cke zu ".$bvnr." nicht im Datenbestand.</p>";
+					echo "<p class='warn'>Flurst&uuml;cke zu ".$bvnr." nicht gefunden.</p>";
 				echo "</td>";
 			echo "\n</tr>";
 		}
@@ -346,7 +346,7 @@ if ($i == 0) {
 	linkgml($gkz, $gmlid, "Buchungsblatt", "");
 } else {
 	if ($i > 5 and $fscnt > 5) { // nur wenn nicht auf einen Blick zu erkennen
-		echo "\n<p class='dbg'>".$i." Buchungen mit ".$fscnt." Flurst&uuml;cken</p>\n";
+		echo "\n<p class='cnt'>".$i." Buchungen mit ".$fscnt." Flurst&uuml;cken</p>\n";
 	}
 }
 
@@ -365,12 +365,12 @@ LEFT JOIN ax_dienststelle ag ON bz.land=ag.land AND bz.stelle=ag.stelle
 LEFT JOIN ax_buchungsstelle_buchungsart ba ON sb.buchungsart=ba.wert 
 WHERE sf.istbestandteilvon = $1 AND sf.endet IS NULL AND sb.endet IS NULL AND bb.endet IS NULL ORDER BY bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung;";
 
-$v = array($gmlid);
+$v = array(substr($gmlid,0,16)); // nur 16 Zeichen in Relation
 $resb = pg_prepare("", $sql);
 $resb = pg_execute("", $v);
 if (!$resb) {
 	echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter.</p>\n";
-	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}
 }
 $b=0; // count: Blaetter
 while($rowb = pg_fetch_array($resb)) {

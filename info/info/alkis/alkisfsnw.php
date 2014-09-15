@@ -20,7 +20,7 @@
 	2014-01-30 Korrektur Nutzungsart (z.B. Friedhof mit class=funktion=0 hatte Anzeige "unbekannt")
 	2014-02-06 Korrektur
 	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-15 Bei Relationen den Timestamp abschneiden
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -94,7 +94,7 @@ if ($gmlid == '' and $fskennz != '') {
 	}
 	// Feld flurstueckskennzeichen ist in DB indiziert
 	// Format z.B.'052647002001910013__' oder '05264700200012______'
-	$sql ="SELECT gml_id FROM ax_flurstueck WHERE flurstueckskennzeichen= $1 ;";
+	$sql ="SELECT gml_id FROM ax_flurstueck WHERE flurstueckskennzeichen= $1 AND endet IS NULL ;";
 
 	$v = array($fskzdb);
 	$res = pg_prepare("", $sql);
@@ -194,7 +194,7 @@ echo "\n<table class='fs'>";
 echo "\n<tr>\n\t<td class='ll'><img title='Im Gebiet von' src='ico/Gemeinde.ico' width='16' height='16' alt=''> Gebiet:</td>";
 
 // G e m e i n d e
-$sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk= $1 AND kreis= $2 AND gemeinde= $3"; 
+$sql="SELECT bezeichnung FROM ax_gemeinde WHERE regierungsbezirk= $1 AND kreis= $2 AND gemeinde= $3 AND endet IS NULL;"; 
 
 $v = array($bezirk,$kreis,$gemeinde);
 $res = pg_prepare("", $sql);
@@ -223,7 +223,7 @@ echo "</td></tr>";
 pg_free_result($res);
 
 // K r e i s
-$sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2"; 
+$sql="SELECT bezeichnung FROM ax_kreisregion WHERE regierungsbezirk= $1 AND kreis= $2 AND endet IS NULL;"; 
 $v = array($bezirk,$kreis);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
@@ -241,7 +241,7 @@ echo $knam."</td><td>&nbsp;</td></tr>";
 pg_free_result($res);
 
 // R e g - B e z
-$sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk= $1 ";
+$sql="SELECT bezeichnung FROM ax_regierungsbezirk WHERE regierungsbezirk= $1 AND endet IS NULL;";
 $v = array($bezirk);
 $res = pg_prepare("", $sql);
 $res = pg_execute("", $v);
@@ -266,7 +266,8 @@ pg_free_result($res);
 $sql="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung 
 FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16) = ANY(f.weistauf)  
 JOIN ax_lagebezeichnungkatalogeintrag s ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
-WHERE f.gml_id= $1 ORDER BY l.gemeinde, l.lage, l.hausnummer;";
+WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL    
+ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -315,7 +316,7 @@ if (!$res) {
 $sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung 
 FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON substring(l.gml_id,1,16)=ANY(f.zeigtauf) 
 LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
-WHERE f.gml_id = $1 ;";
+WHERE f.gml_id = $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -369,13 +370,13 @@ pg_free_result($res);
 
 // ** N U T Z U N G ** Gemeinsame Fläche von NUA und FS
 // Tabellenzeilen (3 Spalten) mit tats. Nutzung zu einem FS ausgeben
-$sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, n.nutz_id, n.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, ";
-$sql.="st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) AS schnittflae, c.label, c.blabla ";
-$sql.="FROM ax_flurstueck f, nutzung n JOIN nutzung_meta m ON m.nutz_id=n.nutz_id ";
-$sql.="LEFT JOIN nutzung_class c ON c.nutz_id=n.nutz_id AND c.class=n.class ";
-$sql.="WHERE f.gml_id= $1 AND st_intersects(n.wkb_geometry,f.wkb_geometry) = true "; // id FS, ueberlappende Flaechen
-$sql.="AND st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) > 0.05 "; // unter Rundung
-$sql.="ORDER BY schnittflae DESC;";
+$sql ="SELECT m.title, m.fldclass, m.fldinfo, n.gml_id, n.nutz_id, n.class, n.info, n.zustand, n.name, n.bezeichnung, m.gruppe, 
+st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) AS schnittflae, c.label, c.blabla 
+FROM ax_flurstueck f, nutzung n JOIN nutzung_meta m ON m.nutz_id=n.nutz_id 
+LEFT JOIN nutzung_class c ON c.nutz_id=n.nutz_id AND c.class=n.class 
+WHERE f.gml_id= $1 AND st_intersects(n.wkb_geometry,f.wkb_geometry) = true 
+AND st_area(st_intersection(n.wkb_geometry,f.wkb_geometry)) > 0.05 
+AND f.endet IS NULL ORDER BY schnittflae DESC;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -498,16 +499,18 @@ echo "\n</tr>";
 // Hinweis auf Bodenneuordnung oder eine strittige Grenze
 //  b.name, b.artderfestlegung, 
 
-$sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, ";
-$sql_boden.="b.name AS verf_name, d.bezeichnung AS stelle_bez, d.stelle AS stelle_key ";
-$sql_boden.="FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert=b.artderfestlegung ";
-$sql_boden.="LEFT JOIN ax_dienststelle d ON b.stelle=d.stelle ";
-$sql_boden.="WHERE ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry) ";
-$sql_boden.="OR ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry)";
+$sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, 
+b.name AS verf_name, d.bezeichnung AS stelle_bez, d.stelle AS stelle_key 
+FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert=b.artderfestlegung 
+LEFT JOIN ax_dienststelle d ON b.stelle=d.stelle 
+WHERE b.endet IS NULL AND d.endet IS NULL  
+AND ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 ), wkb_geometry) 
+OR ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 ), wkb_geometry)";
+
 pg_prepare($con, "bodeneuordnung", $sql_boden);
 $res_bodeneuordnung = pg_execute($con, "bodeneuordnung", array($gmlid));
 
-$sql_str = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE 1000 = ANY(artderflurstuecksgrenze) AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry);";
+$sql_str = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE endet IS NULL AND 1000 = ANY(artderflurstuecksgrenze) AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry);";
 pg_prepare($con, "strittigeGrenze", $sql_str);
 $res_strittigeGrenze = pg_execute($con, "strittigeGrenze", array($gmlid));
 
@@ -614,7 +617,7 @@ echo "\n</table>\n";
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer as lfd, s.zaehler, s.nenner, s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, b.bezeichner AS bart 
 FROM ax_flurstueck f JOIN ax_buchungsstelle s ON substring(s.gml_id,1,16)=f.istgebucht 
 LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart=b.wert 
-WHERE f.gml_id= $1 ORDER BY s.laufendenummer;";
+WHERE f.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL ORDER BY s.laufendenummer;";
 
 $v = array($gmlid);
 $ress = pg_prepare("", $sql);
@@ -630,10 +633,11 @@ while($rows = pg_fetch_array($ress)) {
 	$lfd=$rows["lfd"]; // BVNR
 
 	// B U C H U N G S B L A T T  zur Buchungsstelle (istBestandteilVon)
-	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung ";
-	$sql.="FROM ax_buchungsstelle s JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=s.istbestandteilvon ";
-	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-	$sql.="WHERE s.gml_id = $1 ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
+	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung 
+	FROM ax_buchungsstelle s JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=s.istbestandteilvon 
+	LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
+	WHERE s.gml_id = $1 AND s.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL
+	ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
 
 	$v = array($gmls);
 	$resg = pg_prepare("", $sql);
@@ -741,21 +745,21 @@ while($rows = pg_fetch_array($ress)) {
 		linkgml($gkz, $gmls, "Buchungstelle", "ax_buchungsstelle");
 	}
 
-	// Buchungstelle  >an>  Buchungstelle  >istBestandteilVon>  BLATT  ->  Bezirk
-	$sql ="SELECT sd.gml_id AS s_gml, sd.buchungsart, sd.laufendenummer as lfd, sd.zaehler, sd.nenner, sd.nummerimaufteilungsplan as nrpl, sd.beschreibungdessondereigentums as sond, ";
-	$sql.="b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung, a.bezeichner AS bart ";
-	$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) "; // Stelle >an> Stelle
-	$sql.="JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=sd.istbestandteilvon  ";// Stelle >istbestandteilvon> Blatt
-	$sql.="LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk ";
-	$sql.="LEFT JOIN ax_buchungsstelle_buchungsart a ON sd.buchungsart=a.wert ";
-	$sql.="WHERE sh.gml_id= $1 "; // id herrschende Buchungsstelle
-	$sql.="ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
+	// Buchungstelle >an> Buchungstelle >istBestandteilVon> BLATT -> Bezirk
+	$sql ="SELECT sd.gml_id AS s_gml, sd.buchungsart, sd.laufendenummer as lfd, sd.zaehler, sd.nenner, sd.nummerimaufteilungsplan as nrpl, sd.beschreibungdessondereigentums as sond, 
+	b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung, a.bezeichner AS bart 
+	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) 
+	JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=sd.istbestandteilvon  
+	LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
+	LEFT JOIN ax_buchungsstelle_buchungsart a ON sd.buchungsart=a.wert 
+	WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL
+	ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 
-	$v = array($gmls);
+	$v = array($gmls); // id herrschende Buchungsstelle
 	$resan = pg_prepare("", $sql);
 	$resan = pg_execute("", $v);
 	if (!$resan) {
-		echo "\n<p class='err'>Keine weiteren Buchungsstellen.</p>\n";
+		echo "\n<p class='err'>Fehler bei 'weitere Buchungsstellen'.</p>\n";
 		if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmls."'</p>";}
 	}
 	$an=0; // Stelle an Stelle

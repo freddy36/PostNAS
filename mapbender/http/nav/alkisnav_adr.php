@@ -8,6 +8,7 @@
 	2013-05-15  Gruppierung nach Gemeinde, mehrfache HsNr (ap_pto.advstandardmodell) unterdrücken, Icon f. Straße
 	2014-01-23	Link zum Auskunft-Modul für Straße
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10  Bei Relationen den Timestamp abschneiden
 
 	ToDo:
 	-	Gruppierung (mit Zeile) der Straßenliste nach Gemeinde
@@ -239,7 +240,7 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 				$sqlko.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";
 			}
 			$sqlko.="FROM ax_lagebezeichnungohnehausnummer o ";
-			$sqlko.="JOIN ax_flurstueck f ON o.gml_id = ANY(f.zeigtauf) ";
+			$sqlko.="JOIN ax_flurstueck f ON substring(o.gml_id,1,16)=ANY(f.zeigtauf) ";
 			$sqlko.="WHERE o.land= $1 AND o.regierungsbezirk= $2 AND o.kreis= $3 AND o.gemeinde= $4 AND o.lage= $5 ";	
 			$sqlko.="LIMIT 1;"; // die erstbeste Koordinate
 			$v=array($land,$regb,$kreis,$gemnd,$nr);
@@ -295,8 +296,8 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 			$sql.="avg (st_x(st_transform(p.wkb_geometry,".$epsg."))) AS x, ";
 			$sql.="avg (st_y(st_transform(p.wkb_geometry,".$epsg."))) AS y ";		
 		}
-		$sql.="FROM ap_pto p JOIN ax_lagebezeichnungmithausnummer h ON h.gml_id = ANY(p.dientzurdarstellungvon) ";
-		$sql.="WHERE p.art = 'HNR' AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
+		$sql.="FROM ap_pto p JOIN ax_lagebezeichnungmithausnummer h ON substring(h.gml_id,1,16)=ANY(p.dientzurdarstellungvon) ";
+		$sql.="WHERE p.art='HNR' AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
 		$sql.="GROUP BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2) ";
 		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
 		// Problem: mehrere Koordinaten für verschiedene Maßstäbe der Kartendarstellung

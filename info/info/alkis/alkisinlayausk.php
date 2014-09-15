@@ -18,7 +18,7 @@
 	2014-01-28 Link zu alkisstrasse.php
 	2014-02-06 pg_free_result
 	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-15 Bei Relationen den Timestamp abschneiden
 */
 session_start();
 $cntget = extract($_GET);
@@ -51,9 +51,9 @@ $con = pg_connect("host=".$dbhost." port=".$dbport." dbname=".$dbname." user=".$
 if (!$con) {echo "<br>Fehler beim Verbinden der DB.\n<br>";}
 
 // *** F L U R S T U E C K ***
-$sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, g.gemarkungsnummer, g.bezeichnung ";
-$sql.="FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-$sql.="WHERE f.gml_id= $1 ;";
+$sql ="SELECT f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, g.gemarkungsnummer, g.bezeichnung 
+FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+WHERE f.gml_id= $1 AND f.endet IS NULL ;";
 // Weiter joinen: g.stelle -> ax_dienststelle "Katasteramt"
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -113,7 +113,8 @@ pg_free_result($res);
 $sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.hausnummer 
 FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
 JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
-WHERE f.gml_id= $1 ORDER BY s.bezeichnung, l.hausnummer;";
+WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL 
+ORDER BY s.bezeichnung, l.hausnummer;";
 
 $v=array($gmlid); // id FS
 $res=pg_prepare("", $sql);
@@ -147,7 +148,8 @@ if ($j == 0) { // keine HsNr gefunden
 	$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.unverschluesselt 
 	FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON substring(l.gml_id,1,16)=ANY(f.zeigtauf)
 	LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
-	WHERE f.gml_id= $1 ORDER BY s.bezeichnung;";
+	WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL  
+	ORDER BY s.bezeichnung;";
 
 	$v=array($gmlid);
 	$res=pg_prepare("", $sql);
@@ -196,7 +198,8 @@ FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id
 JOIN ax_buchungsblatt b ON s.istbestandteilvon=substring(b.gml_id,1,16)
 LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
 LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart=a.wert 
-WHERE f.gml_id= $1 ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
+WHERE f.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL 
+ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 
 $v=array($gmlid);
 $resg=pg_prepare("", $sql);

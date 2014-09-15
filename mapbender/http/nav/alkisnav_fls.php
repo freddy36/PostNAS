@@ -9,6 +9,7 @@
 	2013-05-14  Variablen-Namen geordnet, Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 	2013-10-15  missing Parameter
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10  Bei Relationen den Timestamp abschneiden
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
@@ -307,12 +308,12 @@ function SuchGmkgName() {
 	} else {
 		$match = trim($fskennz)."%";
 	}	
-	$sql ="SELECT g.gemeinde, g.gemarkung, g.gemarkungsname, s.gemeindename ";
-	$sql.="FROM pp_gemarkung g JOIN pp_gemeinde s ON g.gemeinde = s.gemeinde ";
-	$sql.="WHERE g.gemarkungsname ILIKE $1 ";
+	$sql ="SELECT g.gemeinde, g.gemarkung, g.gemarkungsname, s.gemeindename 
+	FROM pp_gemarkung g JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde 
+	WHERE g.gemarkungsname ILIKE $1 ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
-			$sql.="AND g.gemeinde='".$gemeinde."' "; break;
+			$sql.="AND g.gemeinde='".$gemeinde."'"; break;
 		case 2: // Liste
 			$sql.="AND g.gemeinde in ("."'".str_replace(",", "','", $gemeinde)."'".") "; break;
 	}
@@ -616,27 +617,6 @@ function HistFlurstueck() {
 				if ($debug > 2) {echo "<p class='dbg'>SQL = '".$nasql."'<p>";}
 				return;
 			}
-
-/*
-
- SELECT 'a' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner 
- FROM ax_flurstueck 
- WHERE flurstueckskennzeichen IN ( '05265600400296______' ) 
-   AND endet IS NULL 
-UNION 
- SELECT 'h' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner 
- FROM ax_historischesflurstueck 
- WHERE flurstueckskennzeichen IN ( '05265600400296______' ) 
-    AND endet IS NULL 
-UNION 
- SELECT 'o' AS ftyp, gml_id, gemarkungsnummer, flurnummer, zaehler, nenner 
- FROM ax_historischesflurstueckohneraumbezug 
- WHERE flurstueckskennzeichen IN ( '05265600400296______' ) 
-   AND endet IS NULL '
-
-==> UNION-Typen character varying und integer passen nicht zusammen  gemarkungsnummer
-
-*/
 
 			$zfsn=0;
 			// inner Body

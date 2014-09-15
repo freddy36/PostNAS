@@ -11,7 +11,7 @@
 	2014-01-22 Eigentuemerart: Mehr Werte und Zugriff auf DB-Schlüssel-Tabelle
 	2014-02-06 Korrektur Eigentümerart
 	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-15 Bei Relationen den Timestamp abschneiden
 */
 
 function footer($gmlid, $link, $append) {
@@ -89,15 +89,28 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 	Die Tabellenzeilen mit den Flurstuecksdaten zu einer Buchungsstelle im Bestandsnachweis ausgeben.
 	Die Funktion wird je einmal aufgerufen für die Buchungen direkt auf dem GB (Normalfall).
 	Weiterere Aufrufe ggf. bei Erbbaurecht für die mit "an" verknuepften Buchungsstellen.
-	Table-Tag und Kopfzeile im aufrufenden Programm. 
-*/
-	global $gkz, $idanzeige, $showkey;
+	Table-Tag und Kopfzeile im aufrufenden Programm. */
+	global $debug, $gkz, $idanzeige, $showkey;
 
 	// F L U R S T U E C K
-	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche ";
-	$sql.="FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) "; 
-	$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-	$sql.="WHERE s.gml_id= $1 ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche 
+	FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
+	LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+	WHERE s.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND g.endet IS NULL ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+
+/*
+SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, 
+  f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche 
+FROM ax_flurstueck f 
+JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
+LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+WHERE s.gml_id= 'DENW18AL00001hHb' 
+  AND f.endet IS NULL 
+  AND s.endet IS NULL 
+  AND g.endet IS NULL 
+ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;
+
+$1 = 'DENW18AL00001hHb' */
 
 	$v = array($gml_bs);
 	$resf = pg_prepare("", $sql);
@@ -112,18 +125,11 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 	$j=0;
 	while($rowf = pg_fetch_array($resf)) {
 		$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
-
-/*		$fskenn=str_pad($rowf["zaehler"], 5, "0", STR_PAD_LEFT);
-		if ($rowf["nenner"] != "") { // Bruchnummer
-			$fskenn.="/".str_pad($rowf["nenner"], 3, "0", STR_PAD_LEFT);
-		}
-*/
 		// ohne fuehrende Nullen?
 		$fskenn=$rowf["zaehler"];
 		if ($rowf["nenner"] != "") { // Bruchnummer
 			$fskenn.="/".$rowf["nenner"];
 		}
-
 		$flae=number_format($rowf["amtlicheflaeche"],0,",",".") . " m&#178;";
 
 		echo "\n<tr>"; // eine Zeile je Flurstueck
@@ -170,6 +176,16 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 
 		$j++;
 	} // Ende Flurstueck
+
+	if ($j == 0 ) { // nur Entw.
+		if ($debug > 1) {
+			echo "<p class='dbg'>Keine FS gefunden</p>";
+		}
+		if ($debug > 2) {
+			echo "<p class='dbg'>SQL='".$sql."'<br>$1 = '".$gml_bs."'</p>";
+		}
+	}
+
 	pg_free_result($resf);
 	return $j;
 }
@@ -198,13 +214,13 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
 	$sqln.="FROM ax_namensnummer n WHERE n.istbestandteilvon= $1 AND n.endet IS NULL ORDER BY n.laufendenummernachdin1421;";
 
-	$v = array($gmlid);
+	$v = array(substr($gmlid,0,16)); // 16 Stellen bei Relationen
 	$resn = pg_prepare("", $sqln);
 	$resn = pg_execute("", $v);
 
 	if (!$resn) {
 		echo "<p class='err'>Fehler bei Eigent&uuml;mer</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".$gmlid."'</p>";}
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".substr($gmlid,0,16)."'</p>";}
 	}
 
 	echo "\n\n<table class='eig'>";
@@ -368,10 +384,9 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 		$n++; // cnt NamNum
 	} // End Loop NamNum
 	echo "\n</table>\n";
-	if ($n == 0) {
-		// kommt vor bei "Fiktives Blatt", kein Fehler 
+	if ($n == 0) { // bei "Fiktives Blatt" KEIN Fehler 
 		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
-		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
+		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".substr($gmlid,0,16)."'</p>";}
 	}
 	pg_free_result($resn);
 	return $n; 

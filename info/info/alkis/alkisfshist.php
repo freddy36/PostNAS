@@ -9,11 +9,11 @@
 	2011-11-30  import_request_variables
 	2012-11-27  Function split deprecated: explode
 	2013-04-08  deprecated "import_request_variables" ersetzt
-	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-15  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 */
 
 function fzerleg($fs) {
-/*	FlurstÃ¼ckskennzeichen (20) zerlegen als lesbares Format (wie im Balken):
+/*	Flurstueckskennzeichen (20) zerlegen als lesbares Format (wie im Balken):
 	Dies FS-Kennz-Format wird auch als Eingabe in der Navigation akzeptiert 
    ....*....1....*....2
    ll    fff     nnnn
@@ -81,10 +81,9 @@ function such_vor_arr($fsk) {
 //	$wherecl.="AND flurnummer=".ltrim(substr($fsk, 6, 3), "0")." ";
 	// Frage: kann das bei Historisierung wechseln? (Umflurung, Umgemarkung). Dann ggf. Fehler (nicht gefunden)
 
-	$sqlv.="SELECT 'h' AS ftyp, gml_id, flurstueckskennzeichen FROM ax_historischesflurstueck h ".$wherecl;
-	$sqlv.="UNION ";
-	$sqlv.="SELECT 'o' AS ftyp, gml_id, flurstueckskennzeichen FROM ax_historischesflurstueckohneraumbezug o ".$wherecl;
-	$sqlv.="ORDER BY flurstueckskennzeichen";
+	$sqlv.="SELECT 'h' AS ftyp, gml_id, flurstueckskennzeichen FROM ax_historischesflurstueck h ".$wherecl
+	."UNION SELECT 'o' AS ftyp, gml_id, flurstueckskennzeichen FROM ax_historischesflurstueckohneraumbezug o ".$wherecl
+	."ORDER BY flurstueckskennzeichen";
 
 	$v=array($fsk);
 	$resv = pg_prepare("", $sqlv);
@@ -145,7 +144,7 @@ if ($gmlid != "") { // Ja, die GML wurde uebergeben
 	$parmval=$gmlid;
 	$whereclause="WHERE gml_id= $1 ";
 	$v = array($gmlid);
-} else {	// Alternativ: das FlurstÃ¼cks-Kennzeichen wurde Ã¼bergeben
+} else {	// Alternativ: Flurst.-Kennz. uebergeben
 	if ($fskennz != "") {
 		$parmtyp="Flurst&uuml;ckskennzeichen";
 		$parmval=$fskennz;
@@ -162,15 +161,10 @@ if ($parmtyp != "") { // einer der beiden erlaubten Fälle
 
 	$felder="gml_id, flurnummer, zaehler, nenner, flurstueckskennzeichen, amtlicheflaeche, zeitpunktderentstehung, gemarkungsnummer, ";
 
-	$sqlu ="SELECT 'a' AS ftyp, ".$felder."null AS nach, null AS vor, null AS \"name\" ";
-	$sqlu.="FROM ax_flurstueck f ".$whereclause;
-	$sqlu.="UNION ";
-	$sqlu.="SELECT 'h' AS ftyp, ".$felder."nachfolgerflurstueckskennzeichen AS nach, vorgaengerflurstueckskennzeichen AS vor, name ";
-	$sqlu.="FROM ax_historischesflurstueck h ".$whereclause;
-	$sqlu.="UNION ";
-	$sqlu.="SELECT 'o' AS ftyp, ".$felder."nachfolgerflurstueckskennzeichen AS nach, vorgaengerflurstueckskennzeichen AS vor, name ";
-	$sqlu.="FROM ax_historischesflurstueckohneraumbezug o ".$whereclause;
-	
+	$sqlu ="SELECT 'a' AS ftyp, ".$felder."null AS nach, null AS vor, null AS \"name\" FROM ax_flurstueck f ".$whereclause." AND f.endet IS NULL "
+	."UNION SELECT 'h' AS ftyp, ".$felder."nachfolgerflurstueckskennzeichen AS nach, vorgaengerflurstueckskennzeichen AS vor, name FROM ax_historischesflurstueck h ".$whereclause." AND h.endet IS NULL "
+	."UNION SELECT 'o' AS ftyp, ".$felder."nachfolgerflurstueckskennzeichen AS nach, vorgaengerflurstueckskennzeichen AS vor, name FROM ax_historischesflurstueckohneraumbezug o ".$whereclause." AND o.endet IS NULL;";
+
 	$resu = pg_prepare("", $sqlu);
 	$resu = pg_execute("", $v);
 	if ($rowu = pg_fetch_array($resu)) {
@@ -184,20 +178,19 @@ if ($parmtyp != "") { // einer der beiden erlaubten Fälle
 		$fskenn=$rowu["flurstueckskennzeichen"];
 		$flae=number_format($rowu["amtlicheflaeche"],0,",",".") . " m&#178;";
 		$name=$rowu["name"]; // in DB ein Array
-	//	$arrn=split(",", trim($name, "{}") ); // split ist deprecated!
 		$arrn=explode(",", trim($name, "{}") ); // PHP-Array 
 		$gemkname= gemkg_name($gmkgnr);
 		$entsteh=$rowu["zeitpunktderentstehung"];
 		$vor=$rowu["vor"];
 		$nach=$rowu["nach"];
-		if ($gmlid == "") {$gmlid=$rowu["gml_id"];} // fÃ¼r selbst-link-Umschalter ueber footer
+		if ($gmlid == "") {$gmlid=$rowu["gml_id"];} // fuer selbst-link-Umschalter ueber footer
 	} else {
 		if ($debug > 1) {echo "<br><p class='err'>Fehler! Kein Treffer f&uuml;r ".$parmtyp." = '".$parmval."'</p><br>";}
 		if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sqlu."<br>$1=".$parmtyp." = '".$parmval."'</p>";}
 	}
 }
 
-switch ($ftyp) { // Unterschiede Historisch/Aktuell
+switch ($ftyp) { // Unterschiede Hist./Aktuell
 	case 'a': 
 		$wert = "aktuell";
 		$ico= "Flurstueck.ico";

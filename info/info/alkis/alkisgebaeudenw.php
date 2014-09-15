@@ -42,7 +42,7 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 // Flurstueck
 $sqlf ="SELECT f.name, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, f.zeitpunktderentstehung, g.gemarkungsnummer, g.bezeichnung 
 FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
-WHERE f.gml_id= $1;";
+WHERE f.gml_id= $1 AND f.endet IS NULL;";
 $v=array($gmlid);
 $resf=pg_prepare("", $sqlf);
 $resf=pg_execute("", $v);
@@ -105,8 +105,7 @@ echo "\n\n<h3><img src='ico/Haus.ico' width='16' height='16' alt=''> Geb&auml;ud
 echo "\n<p>.. auf oder an dem Flurst&uuml;ck. Ermittelt durch Verschneidung der Geometrie.</p>";
 
 // G e b a e u d e
-$sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, ";
-$sqlg.="h.bauweise_beschreibung, u.bezeichner, g.zustand, z.bezeichner AS bzustand, ";
+$sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, h.bauweise_beschreibung, u.bezeichner, g.zustand, z.bezeichner AS bzustand, ";
 
 // GEB-Flaeche komplett auch die Fl. ausserhalb des FS
 $sqlg.="round(area(g.wkb_geometry)::numeric,2) AS gebflae, ";
@@ -121,18 +120,16 @@ $sqlg.="st_within(g.wkb_geometry,f.wkb_geometry) as drin ";
 $sqlg.="FROM ax_flurstueck f, ax_gebaeude g ";
 
 // Entschluesseln
-$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id ";
-$sqlg.="LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert ";
-$sqlg.="LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert ";
-$sqlg.="WHERE f.gml_id= $1 "; // ID des akt. FS
+$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id 
+LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert 
+LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert 
+WHERE f.gml_id= $1 AND f.endet IS NULL and g.endet IS NULL "; // ID des akt. FS
 
 // "within" -> nur Geb., die komplett im FS liegen
-// "intersects" -> ueberlappende Fl.
+// "intersects" -> auch teil-ueberlappende Flst.
 $sqlg.="AND st_intersects(g.wkb_geometry,f.wkb_geometry) = true ";
-
-// RLP: keine Relationen zu Nebengebäuden:
-// auf Qualifizierung verzichten, sonst werden Nebengebäude nicht angezeigt
-	//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
+// RLP: keine Relationen zu Nebengebäuden. Auf Qualifizierung verzichten, sonst werden Nebengebäude nicht angezeigt
+//$sqlg.="AND (v.beziehungsart='zeigtAuf' OR v.beziehungsart='hat') ";
 $sqlg.="ORDER BY schnittflae DESC;";
 
 $v=array($gmlid);
@@ -202,13 +199,13 @@ echo "\n<hr>\n<table class='geb'>";
 			$sqll ="SELECT 'm' AS ltyp, l.gml_id AS lgml, s.lage, s.bezeichnung, l.hausnummer, '' AS laufendenummer ";
 			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(g.zeigtauf) ";
 			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-			$sqll.="WHERE g.gml_id= $1 ";
+			$sqll.="WHERE g.gml_id= $1 AND g.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL ";
 
 			// oder NEBENgebäude  Geb >hat> Pseudo
 			$sqll.="UNION SELECT 'p' AS ltyp, l.gml_id AS lgml, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
 			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmitpseudonummer l ON substring(l.gml_id,1,16)=g.hat ";
 			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
-			$sqll.="WHERE g.gml_id= $1 "; // ID des Hauses"
+			$sqll.="WHERE g.gml_id= $1 AND g.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL "; // ID des Hauses"
 		
 			$sqll.="ORDER BY bezeichnung, hausnummer;";
 

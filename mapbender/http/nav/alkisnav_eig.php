@@ -12,6 +12,7 @@
 	2013-05-14  Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
 				Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 	2014-09-09  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-15  Bei Relationen den Timestamp abschneiden
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -61,10 +62,10 @@ function familiensuche() {
 function personendaten() { // Adresse und Geburtsdatum der aktuellen Person ausgeben
 	global $gkz, $gemeinde, $epsg, $name, $person, $blattgml, $auskpath; // $debug
 
-	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.geburtsdatum, p.namensbestandteil, ";
-	$sql.="a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer ";
-	$sql.="FROM ax_person p LEFT JOIN ax_anschrift a ON a.gml_id = ANY(p.hat) ";
-	$sql.="WHERE p.gml_id= $1 AND p.endet IS NULL AND a.endet IS NULL LIMIT 1;";	
+	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.geburtsdatum, p.namensbestandteil, 
+	a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer 
+	FROM ax_person p LEFT JOIN ax_anschrift a ON substring(a.gml_id,1,16)=ANY(p.hat) 
+	WHERE p.gml_id= $1 AND p.endet IS NULL AND a.endet IS NULL LIMIT 1;";	
 	// Es wird nur eine Zeile ausgewertet
 
 	$v=array($person);
@@ -127,7 +128,8 @@ function getEigByName() {
 	}		
 	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.gml_id FROM ax_person p ";
 	if ($gfilter > 0) {
-		$sql.="JOIN gemeinde_person g ON p.gml_id = g.person WHERE ";
+	//	$sql.="JOIN gemeinde_person g ON substring(p.gml_id,1,16) = substring(g.person,1,16) WHERE ";
+		$sql.="JOIN gemeinde_person g ON p.gml_id=g.person WHERE ";
 		switch ($gfilter) {
 			case 1: // Einzel
 				$sql.="g.gemeinde='".$gemeinde."' AND "; break;
@@ -191,10 +193,10 @@ function getGBbyPerson() {
 
 	// Body
 	// Suche nach Grundbüchern der Person
-	$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam ";
-	$sql.="FROM ax_namensnummer n JOIN ax_buchungsblatt gb ON n.istbestandteilvon = gb.gml_id ";
-	$sql.="JOIN ax_buchungsblattbezirk b ON gb.land = b.land AND gb.bezirk = b.bezirk ";
-	$sql.="WHERE n.bennennt = $1 AND n.endet IS NULL AND gb.endet IS NULL AND b.endet IS NULL ";
+	$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam 
+	FROM ax_namensnummer n JOIN ax_buchungsblatt gb ON n.istbestandteilvon=substring(gb.gml_id,1,16) 
+	JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk 
+	WHERE n.bennennt = $1 AND n.endet IS NULL AND gb.endet IS NULL AND b.endet IS NULL;";
 
 	// Parameter $gbkennz, z.B. nach Klick auf Zeile "Bezirk"
 	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
@@ -217,7 +219,7 @@ function getGBbyPerson() {
 	} else { // Folgeseite
 		echo "\n<p class='ein'>Teil ".$bltseite;
 	}
-	$v=array($person, $linelimit);
+	$v=array(substr($person,0,16), $linelimit); // nur 16 Stellen in Relation "benennt"
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -238,7 +240,16 @@ function getGBbyPerson() {
 		zeile_blatt($zgbbez, $beznam, $gml, $blatt, false, $person, false);
 		$cnt++;
 	}
-
+/*
+	if ($cnt == 0) { // Nur Entwicklg.
+		if ($debug > 1) {
+			echo "\n<p class='err'>keine Buchung</p>";
+		}
+		if ($debug > 2) {
+			echo "<p class='dbg'>SQL = '".$sql."',<br>$1 = '".substr($person,0,16)."'<p>";
+		}
+	}
+*/
 	// Foot
 	if($cnt == 0) { 
 		echo "\n<p class='anz'>Kein Grundbuch zum Eigent&uuml;mer</p>";
@@ -327,8 +338,8 @@ function getGBuFSbyPerson() {
 	//  Sonderfälle suchen mit:        $sql1 + $sqla2 + $sql2
 
 	// Baustein 1: SQL-Anfang fuer beide Varianten
-	$sql1 ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam, ";
-	$sql1.="s1.gml_id as bsgml, s1.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ot.gemarkung, ot.gemarkungsname, ";
+	$sql1 ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam, 
+	s1.gml_id as bsgml, s1.laufendenummer AS lfd, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ot.gemarkung, ot.gemarkungsname, ";
 	if($epsg == "25832") { // Transform nicht notwendig
 		$sql1.="st_x(st_centroid(f.wkb_geometry)) AS x, ";
 		$sql1.="st_y(st_centroid(f.wkb_geometry)) AS y ";
@@ -338,18 +349,18 @@ function getGBuFSbyPerson() {
 	}
 
 	// NamenNummer >istbestandteilvon> buchungsblatt <istbestandteilvon< buchungsstelle-1
-	$sql1.="FROM ax_namensnummer nn ";
-	$sql1.="JOIN ax_buchungsblatt gb ON gb.gml_id = nn.istbestandteilvon ";
-	$sql1.="JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk ";
-	$sql1.="JOIN ax_buchungsstelle s1 ON gb.gml_id = s1.istbestandteilvon ";
+	$sql1.="FROM ax_namensnummer nn 
+	JOIN ax_buchungsblatt gb ON substring(gb.gml_id,1,16)=nn.istbestandteilvon 
+	JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk
+	JOIN ax_buchungsstelle s1 ON substring(gb.gml_id,1,16)=s1.istbestandteilvon ";
 
 	// Baustein A: Auswahl 1 oder 2
 	// buchungsstelle-1 <istGebucht< FS
-	$sqla1 ="JOIN ax_flurstueck f ON s1.gml_id = f.istgebucht ";
+	$sqla1 ="JOIN ax_flurstueck f ON substring(s1.gml_id,1,16)=f.istgebucht ";
 
 	// buchungsStelle1 (herr.) >an> buchungsStelle2 (dien.) <istGebucht< FS
-	$sqla2 ="JOIN ax_buchungsstelle s2 ON s2.gml_id = ANY(s1.an) ";
-	$sqla2.="JOIN ax_flurstueck f ON s2.gml_id = f.istgebucht ";
+	$sqla2 ="JOIN ax_buchungsstelle s2 ON substring(s2.gml_id,1,16)=ANY(s1.an) ";
+	$sqla2.="JOIN ax_flurstueck f ON substring(s2.gml_id,1,16)=f.istgebucht ";
 
 	// Baustein 2: SQL-Ende fuer beide Varianten
 	$sql2 ="JOIN pp_gemarkung ot ON f.land=ot.land AND f.gemarkungsnummer=ot.gemarkung "; // Ortsteil
@@ -359,7 +370,7 @@ function getGBuFSbyPerson() {
 	// Parameter $gbkennz nach Klick auf Zeile "Bezirk"
 	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
 		#if ($debug > 0) {echo "<p class='dbg'>Filter Bezirk '".$zgbbez."'<p>";}
-		$sql2.="AND b.bezirk = ".$zgbbez." ";
+		$sql2.="AND b.bezirk = '".$zgbbez."' ";
 		$bezirkaktuell = true;
 	} else {
 		$bezirkaktuell = false;
@@ -401,12 +412,13 @@ function getGBuFSbyPerson() {
 	if ($bltrecht != "nur") { // "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung
 		// Blatt <istBestandteilVon<  Buchungsstelle <istGebucht< Flurstck.
 		$sql=$sql1.$sqla1.$sql2.$bltwhere.$sql3; // Direkte Buchungen
-		$v=array($person, $linelimit);
+
+		$v=array(substr($person,0,16), $linelimit); // Rel. "benennt" nur 16 Zeichen
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
 		if (!$res) {
 			echo "\n<p class='err'>Fehler bei Buchung und Flurst&uuml;ck.</p>";
-			if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."'<p>";}
+			if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."', $1 = '".substr($person,0,16)."'<p>";}
 			return;
 		}
 
@@ -472,12 +484,21 @@ function getGBuFSbyPerson() {
 		echo "<hr>"; // dann Trenner
 	}
 
+/*	if ($zfs1 == 0) { // Nur Entw. - Start
+		if ($debug > 1) {
+			echo "\n<p class='dbg'>Keine Buchung</p>";
+		}
+		if ($debug > 2) {
+			echo "<p class='dbg'>SQL = '".$sql."'<p>";
+		}
+	} // Nur Entw. - Ende */
+
 	// Fälle mit "Rechte an"
 	if ($bltrecht != "ohne") { // "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung 
 		// Zweite Abfrage (Variante) aus den Bausteinen zusammen bauen
 		// buchungsStelle2 <an< buchungsStelle1
 		$sql=$sql1.$sqla2.$sql2.$bltwhere."AND s2.endet IS NULL ".$sql3; // Rechte an
-		$v=array($person, $linelimit);
+		$v=array(substr($person,0,16), $linelimit);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
 		if (!$res) {

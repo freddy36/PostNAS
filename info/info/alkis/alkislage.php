@@ -9,7 +9,7 @@
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-01-23 gml des Katalogs, Link auf Modul "strasse"
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-15 Bei Relationen den Timestamp abschneiden
 
 	ToDo:
 	- Das Balken-Kennzeichen noch kompatibel machen mit der Eingabe der Navigation für Adresse 
@@ -77,7 +77,7 @@ LEFT JOIN ax_regierungsbezirk r ON l.land=r.land AND l.regierungsbezirk=r.regier
 LEFT JOIN ax_bundesland b ON l.land=b.land 
 LEFT JOIN ax_lagebezeichnungkatalogeintrag s 
 ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
-WHERE l.gml_id= $1;";
+WHERE l.gml_id= $1 AND l.endet IS NULL AND s.endet IS NULL AND g.endet IS NULL;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -143,7 +143,7 @@ echo "\n<h2><img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt='HAUS'> 
 
 echo "<p>Typ: ".$untertitel."</p>";
 
-echo "\n<table class='outer'>\n<tr>\n\t<td>"; 	// Tabelle Kennzeichen
+echo "\n<table class='outer'>\n<tr>\n\t<td>"; 	// Tab. Kennz.
 	// ToDo: !! kleiner, wenn ltyp=0 und die Schluesselfelder leer sind
 	echo "\n\t<table class='kennzla' title='Lage'>";
 		echo "\n\t<tr>";
@@ -233,8 +233,8 @@ echo "\n\t</td>\n</tr>\n</table>";
 // Ende Seitenkopf
 
 // F L U R S T U E C K E
-	// ax_Flurstueck  >weistAuf>  ax_LagebezeichnungMitHausnummer
-	// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
+// ax_Flurstueck  >weistAuf>  ax_LagebezeichnungMitHausnummer
+// ax_Flurstueck  >zeigtAuf>  ax_LagebezeichnungOhneHausnummer
 if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	echo "\n\n<a name='fs'></a><h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;cke</h3>\n";
 	echo "\n<p>mit dieser Lagebezeichnung.</p>";
@@ -243,18 +243,17 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 		case "o": $bezart="zeigtauf"; break;
 	}
 
-	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche ";
-	$sql.="FROM ax_flurstueck f ";
-	$sql.="LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer ";
-	$sql.="WHERE $1 = ANY(f.".$bezart.")";
-	$sql.="ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche 
+	FROM ax_flurstueck f LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
+	WHERE $1 = ANY(f.".$bezart.") AND f.endet IS NULL AND g.endet IS NULL 
+	ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
-	$v = array($gmlid);
+	$v = array(substr($gmlid,0,16)); // Relation nur mit 16 Stellen 
 	$resf = pg_prepare("", $sql);
 	$resf = pg_execute("", $v);
 	if (!$resf) {
 		echo "<p class='err'>Fehler bei Flurst&uuml;ck.</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}	
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}	
 	}
 
 	echo "\n<table class='fs'>";
@@ -290,6 +289,9 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 		$j++;
 	}
 	echo "\n</table>";
+	if ($j > 6) {
+		echo "<p class='cnt'>".$j." Flurst&uuml;cke</p>";
+	}
 }
 
 // L A G E
@@ -309,8 +311,7 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 			// dazu alle Nebengebäude suchen
 			echo "\n<p>Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
-			$sql.=$whereclaus."AND lage= $6 AND pseudonummer= $7 ORDER BY laufendenummer;";
-		// pseudonummer character varying(5), laufendenummer character varying(2),
+			$sql.=$whereclaus."AND lage= $6 AND pseudonummer= $7 AND l.endet IS NULL ORDER BY laufendenummer;";
 
 			$v = array($land,$regbez,$kreis,$gem,$lage,$lage,$hsnr);
 			$res = pg_prepare("", $sql);
@@ -328,7 +329,7 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 		case "p": // aktuell Nebengebäude: Haupt- und Nebengebäude suchen
 			echo "\n<p>Hauptgeb&auml;ude: ";
 			$sql ="SELECT l.gml_id FROM ax_lagebezeichnungmithausnummer l ";
-			$sql.=$whereclaus."AND hausnummer= $6;";
+			$sql.=$whereclaus."AND hausnummer= $6 AND l.endet IS NULL ;";
 
 			$v = array($land,$regbez,$kreis,$gem,$lage,$pseu);
 			$res = pg_prepare("", $sql);
@@ -342,7 +343,7 @@ if ($ltyp <> "o") { // nicht bei Gewanne (Ohne HsNr)
 
 			echo "\n<p>weitere Nebengeb&auml;ude: ";
 			$sql ="SELECT l.gml_id, l.laufendenummer FROM ax_lagebezeichnungmitpseudonummer l ";
-			$sql.=$whereclaus."AND pseudonummer= $6 AND laufendenummer <> $7 ORDER BY laufendenummer;";
+			$sql.=$whereclaus."AND pseudonummer= $6 AND laufendenummer <> $7 AND l.endet IS NULL ORDER BY laufendenummer;";
 			$v = array($land,$regbez,$kreis,$gem,$lage,$pseu,$lfd);
 			$res = pg_prepare("", $sql);
 			$res = pg_execute("", $v);
@@ -368,16 +369,14 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 	}
 	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.name, g.bauweise, g.grundflaeche, g.zustand, round(area(g.wkb_geometry)::numeric,2) AS flaeche, h.bauweise_beschreibung, u.bezeichner 
 	FROM ax_gebaeude g LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id 
-	LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert ";
-	// +++ JOIN Zustand
-	$sql.="WHERE $1 = ".$bezart.";";
+	LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert WHERE $1 = ".$bezart." AND g.endet IS NULL;";
 
-	$v = array($gmlid);
+	$v = array(substr($gmlid,0,16)); // 16 St. in Rel.
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
 	if (!$res) {
 		echo "<p class='err'>Fehler bei Geb&auml;ude.</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}
 	}
 	echo "\n<table class='geb'>";
 	echo "\n<tr>"; // T-Header

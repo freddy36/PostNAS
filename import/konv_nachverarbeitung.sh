@@ -36,6 +36,10 @@ fi
 con="${PGUSER} -p 5432 -d ${DBNAME} "
 echo "Connection: " $con
 
+# zur Sicherheit (währen der Umstellung) auch die Definitionen erneuern
+echo "** - PP-Views aktualisieren:"
+(cd $POSTNAS_HOME; psql $con -f pp_definition.sql)
+
 # Post-Processing / Nacharbeiten
 
 echo "** - Optimierte Nutzungsarten neu Laden:"
@@ -43,7 +47,7 @@ echo "** - Optimierte Nutzungsarten neu Laden:"
 
 sleep 1
 
-echo "** - Fluren, Gemarkungen, Gemeinden und Stra�en-Namen neu Laden:"
+echo "** - Fluren, Gemarkungen, Gemeinden und Straßen-Namen neu Laden:"
 (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
 
 echo "** Nachverarbeitung beendet **"

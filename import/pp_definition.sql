@@ -43,7 +43,7 @@
 SET client_encoding = 'UTF-8';
 
 -- Alles auf Anfang
-/*
+
  DROP VIEW IF EXISTS gemeinde_person_typ1;
  DROP VIEW IF EXISTS gemeinde_person_typ2;
  DROP VIEW IF EXISTS gemeinde_person_statistik;
@@ -51,6 +51,7 @@ SET client_encoding = 'UTF-8';
  DROP VIEW IF EXISTS pp_gemeinde_analyse;
  DROP VIEW IF EXISTS pp_gemarkung_analyse;
 
+/*
  DROP TABLE gemeinde_person;
  DROP TABLE pp_gemeinde;
  DROP TABLE pp_gemarkung;
@@ -278,7 +279,7 @@ AS
   JOIN ax_namensnummer    n  ON n.benennt=substring(p.gml_id,1,16)             -- Person <benennt< Namensnummer
   JOIN ax_buchungsblatt   b  ON n.istBestandteilVon=substring(b.gml_id,1,16)   -- Namensnummer >istBestandteilVon> Blatt
   JOIN ax_buchungsstelle  s1 ON s1.istbestandteilvon=substring(b.gml_id,1,16)  -- Blatt <istBestandteilVon< buchungsStelle1
-  JOIN ax_buchungsstelle  s2 ON substring(s2.gml_id,1,16)= ANY(s1.an)          -- buchungsStelle2 <(recht)an< buchungsStelle1
+  JOIN ax_buchungsstelle  s2 ON substring(s2.gml_id,1,16)=ANY(s1.an)           -- buchungsStelle2 <(recht)an< buchungsStelle1
   JOIN ax_flurstueck      f  ON f.istgebucht=substring(s2.gml_id,1,16)         -- buchungsStelle2 < istGebucht < flurstück
   JOIN ax_gemarkung       k  ON f.land=k.land AND f.gemarkungsnummer=k.gemarkungsnummer 
   JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer=g.gemarkung;

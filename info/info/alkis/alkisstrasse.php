@@ -10,7 +10,7 @@
 	2014-01-24 CSV-Export
 	2014-01-30 pg_free_result
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-15 Bei Relationen den Timestamp abschneiden
 */
 session_start();
 $cntget = extract($_GET);
@@ -54,7 +54,7 @@ JOIN ax_regierungsbezirk r ON s.land=r.land AND s.regierungsbezirk=r.regierungsb
 JOIN ax_kreisregion k ON s.land=k.land AND s.regierungsbezirk=k.regierungsbezirk AND s.kreis=k.kreis 
 JOIN ax_gemeinde g ON s.land=g.land AND s.regierungsbezirk=g.regierungsbezirk AND s.kreis=g.kreis AND s.gemeinde=g.gemeinde 
 LEFT JOIN ax_lagebezeichnungohnehausnummer o ON s.land=o.land AND s.regierungsbezirk=o.regierungsbezirk AND s.kreis=o.kreis AND s.gemeinde=o.gemeinde AND s.lage=o.lage 
-WHERE s.gml_id= $1 ;"; 
+WHERE s.gml_id= $1 AND s.endet IS NULL AND o.endet IS NULL ;"; 
 
 $v=array($gmlid);
 $res=pg_prepare("", $sql);
@@ -138,14 +138,17 @@ echo "\n<p>Zusammenfassung von 'Lage mit Hausnummer' und 'Lage ohne Hausnummer' 
 // Suchkriterium: gml_id aus Katalog
 $subquery = "SELECT f1.gml_id AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk, lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer 
  FROM ax_flurstueck f1 JOIN ax_lagebezeichnungmithausnummer lm ON substring(lm.gml_id,1,16)=ANY(f1.weistAuf) 
+ WHERE f1.endet IS NULL AND lm.endet IS NULL
 UNION SELECT f2.gml_id AS fsgml, '' AS lgml, lo.land, lo.regierungsbezirk, lo.kreis, lo.gemeinde, lo.lage, '' AS hausnummer 
- FROM ax_flurstueck f2 JOIN ax_lagebezeichnungohnehausnummer lo ON substring(lo.gml_id,1,16)=ANY(f2.zeigtauf) ";
+ FROM ax_flurstueck f2 JOIN ax_lagebezeichnungohnehausnummer lo ON substring(lo.gml_id,1,16)=ANY(f2.zeigtauf) 
+ WHERE f2.endet IS NULL AND lo.endet IS NULL";
 
 $sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, duett.lgml, duett.hausnummer 
  FROM ax_flurstueck f JOIN ( ".$subquery." ) AS duett ON substring(f.gml_id,1,16)=duett.fsgml 
  JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
  JOIN ax_lagebezeichnungkatalogeintrag s ON duett.land=s.land AND duett.regierungsbezirk=s.regierungsbezirk AND duett.kreis=s.kreis AND duett.gemeinde=s.gemeinde AND duett.lage=s.lage 
-WHERE s.gml_id = $1 ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+WHERE s.gml_id = $1 AND f.endet IS NULL AND s.endet IS NULL 
+ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 $v=array($gmlid);
 $resf=pg_prepare("", $sql);
@@ -165,6 +168,7 @@ echo "\n<tr>"; // Kopfzeile der Tabelle
 	echo "\n\t<td class='head nwlink noprint' title='Link: weitere Auskunft'>weit. Auskunft</td>";
 echo "\n</tr>";
 $j=0;
+$cnths=0; // Count Haus
 while($rowf = pg_fetch_array($resf)) {
 	$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
 	$fskenn=$rowf["zaehler"]; // Bruchnummer
@@ -189,6 +193,7 @@ while($rowf = pg_fetch_array($resf)) {
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
 				echo "' title='Lage Mit Hausnummer'>Lage <img src='ico/Lage_mit_Haus.ico' width='16' height='16' alt=''></a>&nbsp;";
+				$cnths++;
 			}
 
 			echo "\n\t\t<a href='alkisfsnw.php?gkz=".$gkz."&amp;gmlid=".$rowf["gml_id"]."&amp;eig=n";
@@ -201,6 +206,13 @@ while($rowf = pg_fetch_array($resf)) {
 	$j++;
 }
 echo "\n</table>";
+if ($j > 6) {
+	echo "<p class='cnt'>".$j." Flurst&uuml;cke";
+	if ($cnths > 4) {
+		echo ", ".$cnths." H&auml;user";
+	}
+	echo "</p>";
+}
 pg_free_result($res);
 ?>
 

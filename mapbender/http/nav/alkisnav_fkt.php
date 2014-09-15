@@ -5,6 +5,7 @@
 	2013-05-15  Function verlegt
 	2014-02-06  Korrektur zeile_person
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-10  Bei Relationen den Timestamp abschneiden
 */
 
 function is_ne_zahl($wert) {
@@ -247,12 +248,12 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	$sql1.="g.gemarkung, g.gemarkungsname FROM ax_buchungsstelle s1 "; 
 
 	// 2 Varianten zwischen
-    $sqlz1="JOIN ax_flurstueck f ON f.istgebucht = s1.gml_id ";
+    $sqlz1="JOIN ax_flurstueck f ON f.istgebucht=substring(s1.gml_id,1,16) ";
 	
-	$sqlz2 ="JOIN ax_buchungsstelle s2 ON s2.gml_id = ANY(s1.an) "; // nur an oder "an" und "zu" ?
+	$sqlz2 ="JOIN ax_buchungsstelle s2 ON substring(s2.gml_id,1,16)=ANY(s1.an) "; // nur an oder "an" und "zu" ?
 // Test: SELECT * FROM ax_buchungsstelle WHERE NOT zu IS NULL;  // keine Treffer für "zu"
-//	$sqlz2 ="JOIN ax_buchungsstelle s2 ON (s2.gml_id = ANY(s1.an) OR s2.gml_id = ANY(s1.zu)) "; 
-    $sqlz2.="JOIN ax_flurstueck f ON f.istgebucht = s2.gml_id ";
+//	$sqlz2 ="JOIN ax_buchungsstelle s2 ON (substring(s2.gml_id,1,16)=ANY(s1.an) OR substring(s2.gml_id,1,16)=ANY(s1.zu)) "; 
+    $sqlz2.="JOIN ax_flurstueck f ON f.istgebucht=substring(s2.gml_id,1,16) ";
 
 	// hinten gleich
 	$sql2.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
