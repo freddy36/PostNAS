@@ -10,7 +10,7 @@
 	2013-05-14  Hervorhebung aktuelles Objekt. Title "Nachweis" auch auf Icon.
 	2013-12-12	Limit in EinBlatt von 200 weit hoch gesetzt (bis Blättern möglich wird)
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10  Bei Relationen den Timestamp abschneiden
+	2014-09-15  Bei Relationen den Timestamp abschneiden
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -419,17 +419,17 @@ function EinGrundstueck($showParent) {
 	}
 
 	// Recht "an" (dienende Buchungen und ihre Flurst.)
-	$sql =$sqlanf.", sd.gml_id AS diengml, sd.laufendenummer AS dienlfd, "; // Stelle dienend
-	$sql.="bd.gml_id AS dienbltgml, bd.buchungsblattnummermitbuchstabenerweiterung AS dienblatt, "; // Blatt dienend
-	$sql.="gd.stelle, gd.gml_id AS dienbezgml, gd.bezirk, gd.bezeichnung AS diengbbez "; // AG und Bezirk dazu
-	$sql.="FROM ax_buchungsstelle sh "; // herrschend
-	$sql.="JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) "; // dienend
-	$sql.="JOIN ax_flurstueck f ON f.istgebucht=substring(sd.gml_id,1,16) ";
-	$sql.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
-	$sql.="JOIN ax_buchungsblatt bd ON sd.istbestandteilvon=substring(bd.gml_id,1,16) ";	// Blatt dienend
-	$sql.="JOIN ax_buchungsblattbezirk gd ON bd.land=gd.land AND bd.bezirk=gd.bezirk "; // GB-Bez. dienend
-	$sql.="WHERE sh.gml_id = $1 AND sh.endet IS NULL AND sd.endet IS NULL AND f.endet IS NULL AND bd.endet IS NULL ";
-	$sql.=$sqlfilter."ORDER BY gd.bezeichnung, bd.buchungsblattnummermitbuchstabenerweiterung, cast(sd.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
+$sql =$sqlanf.", sd.gml_id AS diengml, sd.laufendenummer AS dienlfd, 
+bd.gml_id AS dienbltgml, bd.buchungsblattnummermitbuchstabenerweiterung AS dienblatt, 
+gd.stelle, gd.gml_id AS dienbezgml, gd.bezirk, gd.bezeichnung AS diengbbez 
+FROM ax_buchungsstelle sh 
+JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) 
+JOIN ax_flurstueck f ON f.istgebucht=substring(sd.gml_id,1,16) 
+JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung 
+JOIN ax_buchungsblatt bd ON sd.istbestandteilvon=substring(bd.gml_id,1,16) 
+JOIN ax_buchungsblattbezirk gd ON bd.land=gd.land AND bd.bezirk=gd.bezirk 
+WHERE sh.gml_id = $1 AND sh.endet IS NULL AND sd.endet IS NULL AND f.endet IS NULL AND bd.endet IS NULL AND gd.endet IS NULL "
+.$sqlfilter."ORDER BY gd.bezeichnung, bd.buchungsblattnummermitbuchstabenerweiterung, cast(sd.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 	$v=array($buchunggml);
 	$res=pg_prepare("", $sql);

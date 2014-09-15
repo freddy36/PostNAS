@@ -94,23 +94,10 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 
 	// F L U R S T U E C K
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche 
-	FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
+	FROM ax_flurstueck f 
+	JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
 	LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
 	WHERE s.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND g.endet IS NULL ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
-
-/*
-SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, 
-  f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche 
-FROM ax_flurstueck f 
-JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
-LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
-WHERE s.gml_id= 'DENW18AL00001hHb' 
-  AND f.endet IS NULL 
-  AND s.endet IS NULL 
-  AND g.endet IS NULL 
-ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;
-
-$1 = 'DENW18AL00001hHb' */
 
 	$v = array($gml_bs);
 	$resf = pg_prepare("", $sql);
@@ -177,14 +164,10 @@ $1 = 'DENW18AL00001hHb' */
 		$j++;
 	} // Ende Flurstueck
 
-	if ($j == 0 ) { // nur Entw.
-		if ($debug > 1) {
-			echo "<p class='dbg'>Keine FS gefunden</p>";
-		}
-		if ($debug > 2) {
-			echo "<p class='dbg'>SQL='".$sql."'<br>$1 = '".$gml_bs."'</p>";
-		}
-	}
+/*	if ($j == 0 ) { // nur Entw.
+		if ($debug > 1) {echo "<p class='dbg'>Keine FS gefunden</p>";}
+		if ($debug > 2) {echo "<p class='dbg'>SQL='".$sql."'<br>$1 = '".$gml_bs."'</p>";}
+	} */
 
 	pg_free_result($resf);
 	return $j;

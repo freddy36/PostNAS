@@ -9,7 +9,7 @@
 	2013-05-14  Variablen-Namen geordnet, Hervorhebung aktuelles Objekt, Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 	2013-10-15  missing Parameter
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10  Bei Relationen den Timestamp abschneiden
+	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
@@ -235,7 +235,7 @@ function ListGemeinden() {
 			$sql.="WHERE gemeinde in ('".str_replace(",", "','", $gemeinde)."') "; break;
 		default: break;
 	}
-	$sql.=" ORDER BY gemeindename LIMIT $1 ;";
+	$sql.=" AND endet IS NULL ORDER BY gemeindename LIMIT $1 ;";
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", array($linelimit));
 	if (!$res) {
@@ -309,8 +309,7 @@ function SuchGmkgName() {
 		$match = trim($fskennz)."%";
 	}	
 	$sql ="SELECT g.gemeinde, g.gemarkung, g.gemarkungsname, s.gemeindename 
-	FROM pp_gemarkung g JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde 
-	WHERE g.gemarkungsname ILIKE $1 ";
+	FROM pp_gemarkung g JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde WHERE g.gemarkungsname ILIKE $1 ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
 			$sql.="AND g.gemeinde='".$gemeinde."'"; break;
@@ -355,9 +354,8 @@ function SuchGmkgName() {
 function gg_head($gkgnr, $gkgaktuell) {
 	// Übergeordnete Zeilen (Head) für Gemeinde und Gemarkung ausgeben
 	// Parameter = Gemarkungsnummer
-	$sqlh ="SELECT g.gemarkungsname, s.gemeinde, s.gemeindename FROM pp_gemarkung g ";
-	$sqlh.="JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde AND g.land=s.land ";
-	$sqlh.="WHERE g.gemarkung = $1 ;";
+	$sqlh ="SELECT g.gemarkungsname, s.gemeinde, s.gemeindename FROM pp_gemarkung g 
+	JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde AND g.land=s.land WHERE g.gemarkung = $1 ;";
 	$v=array($gkgnr);
 	$resh=pg_prepare("", $sqlh);
 	$resh=pg_execute("", $v);
@@ -380,8 +378,8 @@ function EineGemarkung($AuchGemkZeile) {
 	// Head
 	if ($AuchGemkZeile) {gg_head($zgemkg, true);}
 	// Body
-	$sql ="SELECT gemarkungsteilflur AS flur FROM ax_gemarkungsteilflur f ";
-	$sql.="WHERE gemarkung= $1 AND endet IS NULL ORDER BY gemarkungsteilflur LIMIT $2 ;"; //WHERE f.land=?
+	$sql ="SELECT gemarkungsteilflur AS flur FROM ax_gemarkungsteilflur f 
+	WHERE gemarkung= $1 AND endet IS NULL ORDER BY gemarkungsteilflur LIMIT $2 ;";
 	$v=array($zgemkg, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
@@ -421,8 +419,8 @@ function EineFlur() {
 		$sql.="st_x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql.="st_y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
-   $sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND endet IS NULL ";
-	$sql.="ORDER BY f.zaehler, f.nenner LIMIT $3 ;"; // WHERE f.land=?
+	$sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND endet IS NULL 
+	ORDER BY f.zaehler, f.nenner LIMIT $3 ;";
 	$v=array($zgemkg, $zflur, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);

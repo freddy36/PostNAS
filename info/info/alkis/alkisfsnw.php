@@ -496,16 +496,16 @@ echo "\n<tr>"; // Summenzeile
 	echo "\n\t</td>";
 echo "\n</tr>";
 
-// Hinweis auf Bodenneuordnung oder eine strittige Grenze
-//  b.name, b.artderfestlegung, 
+// H i n w e i s  auf Bodenneuordnung oder eine strittige Grenze
+// b.name, b.artderfestlegung, 
 
 $sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, 
 b.name AS verf_name, d.bezeichnung AS stelle_bez, d.stelle AS stelle_key 
 FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert=b.artderfestlegung 
 LEFT JOIN ax_dienststelle d ON b.stelle=d.stelle 
 WHERE b.endet IS NULL AND d.endet IS NULL  
-AND ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 ), wkb_geometry) 
-OR ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 ), wkb_geometry)";
+AND (ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 AND endet IS NULL ), wkb_geometry) 
+ OR ST_Overlaps((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 AND endet IS NULL), wkb_geometry))";
 
 pg_prepare($con, "bodeneuordnung", $sql_boden);
 $res_bodeneuordnung = pg_execute($con, "bodeneuordnung", array($gmlid));
@@ -585,8 +585,6 @@ if (pg_num_rows($res_bodeneuordnung) > 0 OR pg_num_rows($res_strittigeGrenze) > 
 		echo "\n</tr>";
 	}
 }
-
-// Erweiterung Kreis Unna - Ende
 
 echo "\n</table>";
 

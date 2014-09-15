@@ -8,7 +8,7 @@
 	2013-05-15  Gruppierung nach Gemeinde, mehrfache HsNr (ap_pto.advstandardmodell) unterdrücken, Icon f. Straße
 	2014-01-23	Link zum Auskunft-Modul für Straße
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10  Bei Relationen den Timestamp abschneiden
+	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
 
 	ToDo:
 	-	Gruppierung (mit Zeile) der Straßenliste nach Gemeinde
@@ -63,10 +63,10 @@ function suchStrName() { // Strassen nach Name(-nsanfang)
 	} else {
 		$match=trim($matches[1])."%";
 	}
-	$sql ="SELECT g.gemeinde, g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage ";
-	$sql.="FROM ax_lagebezeichnungkatalogeintrag k ";
-	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
-	$sql.="WHERE k.bezeichnung ILIKE $1 AND k.endet IS NULL AND g.endet IS NULL ";
+	$sql ="SELECT g.gemeinde, g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage 
+	FROM ax_lagebezeichnungkatalogeintrag k 
+	JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde 
+	WHERE k.bezeichnung ILIKE $1 AND k.endet IS NULL AND g.endet IS NULL ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
 			$sql.="AND k.gemeinde='".$gemeinde."' ";
@@ -136,10 +136,10 @@ function suchStrKey() { // Strassen nach num. Schluessel
 	} else {
 		$match=str_pad($street, 5, "0", STR_PAD_LEFT); // "Wie eine Zahl" verarbeiten 
 	}
-	$sql ="SELECT g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage ";
-	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
-	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
-	$sql.="WHERE k.lage LIKE $1 ";
+	$sql ="SELECT g.bezeichnung AS gemname, k.gml_id, k.bezeichnung, k.schluesselgesamt, k.lage 
+	FROM ax_lagebezeichnungkatalogeintrag as k 
+	JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde 
+	WHERE k.lage LIKE $1 AND k.endet IS NULL AND g.endet IS NULL ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
 			$sql.="AND k.gemeinde='".$gemeinde."' ";
@@ -205,10 +205,10 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 
 	// Head
 	// Strasse zum Strassenschluessel
-	$sql ="SELECT g.bezeichnung AS gemname, k.gml_id AS kgml, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage ";
-	$sql.="FROM ax_lagebezeichnungkatalogeintrag as k ";
-	$sql.="JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde ";
-	$sql.="WHERE k.schluesselgesamt = $1 LIMIT 1"; 
+	$sql ="SELECT g.bezeichnung AS gemname, k.gml_id AS kgml, k.bezeichnung, k.land, k.regierungsbezirk, k.kreis, k.gemeinde, k.lage 
+	FROM ax_lagebezeichnungkatalogeintrag as k 
+	JOIN ax_gemeinde g ON k.land=g.land AND k.regierungsbezirk=g.regierungsbezirk AND k.kreis=g.kreis AND k.gemeinde=g.gemeinde 
+	WHERE k.schluesselgesamt = $1 AND k.endet IS NULL AND g.endet IS NULL LIMIT 1"; 
 
   	$v=array($str_schl);	// Schluessel-Gesamt ..
 	$res=pg_prepare("", $sql);
@@ -296,10 +296,11 @@ function suchHausZurStr($showParent) { // Haeuser zu einer Strasse
 			$sql.="avg (st_x(st_transform(p.wkb_geometry,".$epsg."))) AS x, ";
 			$sql.="avg (st_y(st_transform(p.wkb_geometry,".$epsg."))) AS y ";		
 		}
-		$sql.="FROM ap_pto p JOIN ax_lagebezeichnungmithausnummer h ON substring(h.gml_id,1,16)=ANY(p.dientzurdarstellungvon) ";
-		$sql.="WHERE p.art='HNR' AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 ";
-		$sql.="GROUP BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2) ";
-		$sql.="ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
+		$sql.="FROM ap_pto p JOIN ax_lagebezeichnungmithausnummer h ON substring(h.gml_id,1,16)=ANY(p.dientzurdarstellungvon) 
+		WHERE p.art='HNR' AND h.land= $1 AND h.regierungsbezirk= $2 AND h.kreis= $3 AND h.gemeinde= $4 AND h.lage= $5 
+		AND p.endet IS NULL AND h.endet IS NULL
+		GROUP BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2) 
+		ORDER BY lpad(split_part(hausnummer,' ',1), 4, '0'), split_part(hausnummer,' ',2);";
 		// Problem: mehrere Koordinaten für verschiedene Maßstäbe der Kartendarstellung
 		// Diese sollten nicht mehrfach gelistet werden. Für Positionierung "irgendeine" nehmen.
 		// Lösung: über GROUP BY in SQL. Alternative Lösungen wären: 

@@ -197,7 +197,7 @@ while($row = pg_fetch_array($res)) {
 		//  ax_buchungsstelle >an> ax_buchungsstelle (anderes Blatt, z.B Erbbaurecht an)
 		//  sh=herrschend          sd=dienend
 		$sql ="SELECT sd.gml_id, sd.buchungsart, sd.laufendenummer AS lfd, sd.beschreibungdesumfangsderbuchung AS udb, sd.nummerimaufteilungsplan AS nrap, sd.beschreibungdessondereigentums AS sond, b.bezeichner AS bart ";
-		$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (sd.gml_id=ANY(sh.an) OR sd.gml_id=ANY(sh.zu)) "; 
+		$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (substring(sd.gml_id,1,16)=ANY(sh.an) OR substring(sd.gml_id,1,16)=ANY(sh.zu)) "; 
 		$sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON sd.buchungsart=b.wert ";
 		$sql.="WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL ORDER BY sd.laufendenummer;";
 

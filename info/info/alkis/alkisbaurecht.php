@@ -4,7 +4,7 @@
 
 	Version:
 	2013-06-27Neu als Variante von alkis*inlay*baurecht.ph (mit Footer, Balken und Umschaltung Key)
-	2014-09-10 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-15 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 
 	ToDo: id-Anzeige hinzufügen für Baurecht und Flurstück
 */
@@ -40,7 +40,7 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 $sql ="SELECT r.ogc_fid, r.artderfestlegung as adfkey, r.name, r.stelle, r.bezeichnung AS rechtbez, a.bezeichner AS adfbez, d.bezeichnung AS stellbez, d.stellenart, round(st_area(r.wkb_geometry)::numeric,0) AS flae 
 FROM ax_bauraumoderbodenordnungsrecht r 
 LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung=a.wert 
-LEFT JOIN ax_dienststelle d ON r.land=d.land AND r.stelle=d.stelle WHERE r.gml_id= $1 ;";
+LEFT JOIN ax_dienststelle d ON r.land=d.land AND r.stelle=d.stelle WHERE r.gml_id= $1 AND r.endet IS NULL AND d.endet IS NULL;";
 
 $v = array($gmlid);
 $res = pg_prepare("", $sql);
@@ -124,7 +124,8 @@ echo "\n<p>Ermittelt durch geometrische Verschneidung. Nach Gr&ouml;&szlig;e abs
 
 $sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, round(st_area(ST_Intersection(r.wkb_geometry,f.wkb_geometry))::numeric,1) AS schnittflae 
 FROM ax_flurstueck f, ax_bauraumoderbodenordnungsrecht r
-WHERE r.gml_id= $1 AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true 
+WHERE r.gml_id= $1 AND f.endet IS NULL AND r.endet IS NULL
+AND st_intersects(r.wkb_geometry,f.wkb_geometry) = true 
 AND st_area(st_intersection(r.wkb_geometry,f.wkb_geometry)) > 0.05 
 ORDER BY schnittflae DESC LIMIT 40;"; 
 // > 0.0 ist gemeint, Ungenauigkeit durch st_simplify

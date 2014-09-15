@@ -12,7 +12,7 @@
 	2013-05-14  Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
 				Title auch auf Icon, IE zeigt sonst alt= als Title dar.
 	2014-09-09  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-15  Bei Relationen den Timestamp abschneiden
+	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -128,8 +128,7 @@ function getEigByName() {
 	}		
 	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.gml_id FROM ax_person p ";
 	if ($gfilter > 0) {
-	//	$sql.="JOIN gemeinde_person g ON substring(p.gml_id,1,16) = substring(g.person,1,16) WHERE ";
-		$sql.="JOIN gemeinde_person g ON p.gml_id=g.person WHERE ";
+		$sql.="JOIN gemeinde_person g ON p.gml_id=g.person WHERE p.endet IS NULL AND ";
 		switch ($gfilter) {
 			case 1: // Einzel
 				$sql.="g.gemeinde='".$gemeinde."' AND "; break;
@@ -137,7 +136,7 @@ function getEigByName() {
 				$sql.="g.gemeinde in ('".str_replace(",", "','", $gemeinde)."') AND "; break;
 		}
 	} else {
-		$sql.="WHERE ";
+		$sql.="WHERE p.endet IS NULL AND ";
 	}
 	if($match1 != '%'){
 		$sql.="nachnameoderfirma ILIKE $1 AND p.vorname ILIKE $2 ";		
@@ -240,16 +239,11 @@ function getGBbyPerson() {
 		zeile_blatt($zgbbez, $beznam, $gml, $blatt, false, $person, false);
 		$cnt++;
 	}
-/*
-	if ($cnt == 0) { // Nur Entwicklg.
-		if ($debug > 1) {
-			echo "\n<p class='err'>keine Buchung</p>";
-		}
-		if ($debug > 2) {
-			echo "<p class='dbg'>SQL = '".$sql."',<br>$1 = '".substr($person,0,16)."'<p>";
-		}
-	}
-*/
+/*	if ($cnt == 0) { // Nur Entwicklg.
+		if ($debug > 1) {echo "\n<p class='err'>keine Buchung</p>";}
+		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."',<br>$1 = '".substr($person,0,16)."'<p>";}
+	} */
+
 	// Foot
 	if($cnt == 0) { 
 		echo "\n<p class='anz'>Kein Grundbuch zum Eigent&uuml;mer</p>";
@@ -281,7 +275,7 @@ function getFSbyGB($backlink) {
 	if($backlink) { // Erneuter Ansatz bei Person oder GB möglich.
 
 		// Namen ermitteln
-		$sql ="SELECT nachnameoderfirma, vorname FROM ax_person WHERE gml_id = $1 ";
+		$sql ="SELECT nachnameoderfirma, vorname FROM ax_person WHERE gml_id = $1 AND endet IS NULL;";
 		$v=array($person);
 	 	$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -292,7 +286,7 @@ function getFSbyGB($backlink) {
 		// Grundbuch-Daten ermitteln
 		$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam ";
 		$sql.="FROM ax_buchungsblatt gb JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk ";
-		$sql.="WHERE gb.gml_id= $1 LIMIT 1 ;";
+		$sql.="WHERE gb.gml_id= $1 AND gb.endet IS NULL and b.endet IS NULL LIMIT 1 ;";
 		$v=array($blattgml);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -365,7 +359,8 @@ function getGBuFSbyPerson() {
 	// Baustein 2: SQL-Ende fuer beide Varianten
 	$sql2 ="JOIN pp_gemarkung ot ON f.land=ot.land AND f.gemarkungsnummer=ot.gemarkung "; // Ortsteil
 	$sql2.="WHERE nn.benennt = $1 AND nn.endet IS NULL AND gb.endet IS NULL AND s1.endet IS NULL AND f.endet IS NULL ";
-	// AND s2.endet IS NULL
+
+	$sqlw2="AND s2.endet IS NULL ";
 
 	// Parameter $gbkennz nach Klick auf Zeile "Bezirk"
 	if ($kennztyp > 1) { // 2=Such Bezirk-Nummer, 3=Such Blatt, 4=Such Buchung BVNR
@@ -497,7 +492,7 @@ function getGBuFSbyPerson() {
 	if ($bltrecht != "ohne") { // "nur"/"ohne" liefert nur den abgebrochene Teil der Auflistung 
 		// Zweite Abfrage (Variante) aus den Bausteinen zusammen bauen
 		// buchungsStelle2 <an< buchungsStelle1
-		$sql=$sql1.$sqla2.$sql2.$bltwhere."AND s2.endet IS NULL ".$sql3; // Rechte an
+		$sql=$sql1.$sqla2.$sql2.$bltwhere.$sqlw2.$sql3; // Rechte an
 		$v=array(substr($person,0,16), $linelimit);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);

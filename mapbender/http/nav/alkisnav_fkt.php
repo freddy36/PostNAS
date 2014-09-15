@@ -5,7 +5,7 @@
 	2013-05-15  Function verlegt
 	2014-02-06  Korrektur zeile_person
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-10  Bei Relationen den Timestamp abschneiden
+	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
 */
 
 function is_ne_zahl($wert) {
@@ -235,7 +235,7 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	// Buchungen (Gruppenwechsel) und Flurstücke (Links)
 	global $gemeinde, $blattgml, $epsg, $gfilter, $debug;
 
-	// SQL-Bausteine vorbereiten
+	// SQL-Bausteine
 	// vorne gleich
 	$sql1 ="SELECT s1.laufendenummer AS lfd, s1.gml_id AS bsgml, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
 	if($epsg == "25832") { // Transform nicht notwendig
@@ -247,35 +247,36 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	}
 	$sql1.="g.gemarkung, g.gemarkungsname FROM ax_buchungsstelle s1 "; 
 
-	// 2 Varianten zwischen
+	// zwischen, Variante 1.
     $sqlz1="JOIN ax_flurstueck f ON f.istgebucht=substring(s1.gml_id,1,16) ";
-	
-	$sqlz2 ="JOIN ax_buchungsstelle s2 ON substring(s2.gml_id,1,16)=ANY(s1.an) "; // nur an oder "an" und "zu" ?
-// Test: SELECT * FROM ax_buchungsstelle WHERE NOT zu IS NULL;  // keine Treffer für "zu"
-//	$sqlz2 ="JOIN ax_buchungsstelle s2 ON (substring(s2.gml_id,1,16)=ANY(s1.an) OR substring(s2.gml_id,1,16)=ANY(s1.zu)) "; 
-    $sqlz2.="JOIN ax_flurstueck f ON f.istgebucht=substring(s2.gml_id,1,16) ";
+
+	// zwischen, Variante 2. Nur an oder "an" und "zu"?
+	$sqlz2 ="JOIN ax_buchungsstelle s2 ON substring(s2.gml_id,1,16)=ANY(s1.an) 
+	JOIN ax_flurstueck f ON f.istgebucht=substring(s2.gml_id,1,16) ";
 
 	// hinten gleich
-	$sql2.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung ";
-	$sql2.="WHERE s1.istbestandteilvon = $1 ";
+	$sql2.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung 
+	WHERE s1.istbestandteilvon = $1 AND f.endet IS NULL AND s1.endet IS NULL ";
 	switch ($gfilter) {
 		case 1: // Einzelwert
 			$sql2.="AND g.gemeinde='".$gemeinde."' "; break;
 		case 2: // Liste
 			$sql2.="AND g.gemeinde in ('".str_replace(",", "','", $gemeinde)."') "; break;
 	}
-	$sql2.="ORDER BY cast(s1.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner LIMIT $2 ;";
 
-	// Abfrage:  d i r e k t e  B u c h u n g e n
-	// Blatt <vbg/istBestandteilVon<  Buchungsstelle <vfb/istGebucht< Flurstück
-	#$sql=$sql1.$sqlz1.$sql2; // Direkte Buchungen
+	// WHERE-Zusatz bei 2
+	$sqlw2=" AND s2.endet IS NULL ";
 
-	$v=array($blattgml, $linelimit);
-	$res=pg_prepare("", $sql1.$sqlz1.$sql2);
+	$sqlord="ORDER BY cast(s1.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner LIMIT $2 ;";
+
+	// d i r e k t e  B u c h u n g e n
+	// Blatt <istBestandteilVon<  Buchungsstelle <istGebucht< Flurstück
+	$v=array(substr($blattgml,0,16), $linelimit); // Rel. istBestandteilVon nur 16 Stellen
+	$res=pg_prepare("", $sql1.$sqlz1.$sql2.$sqlord);
 	$res=pg_execute("", $v);
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Buchung und Flurst&uuml;ck.</p>";
-		if ($debug >= 3) {echo "\n<p class='err'>".$sql1.$sqlz1.$sql2."</p>";}
+		if ($debug >= 3) {echo "\n<p class='err'>SQL='".$sql1.$sqlz1.$sql2.$sqlord."'<br>$1 = '".substr($blattgml,0,16)."'</p>";}
 		return;
 	}
 	$zfs1=0;
@@ -307,13 +308,13 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	}
 	if($zfs1 > 0) {echo "<hr>";} // Trennen
 
-	// Abfrage:  R e c h t e  a n   /   d i e n e n d e  B u c h u n g e n
+	// Rechte "an"  (dienende  Buchungen)
 	$v=array($blattgml, $linelimit);
-	$res=pg_prepare("", $sql1.$sqlz2.$sql2);
+	$res=pg_prepare("", $sql1.$sqlz2.$sql2.$sqlw2.$sqlord);
 	$res=pg_execute("", $v);
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Recht an Buchung.</p>";
-		#if ($debug >= 3) {echo "\n<p class='dbg'>".$sql1.$sqlz2.$sql2."</p>";}
+		#if ($debug >= 3) {echo "\n<p class='dbg'>".$sql1.$sqlz2.$sql2.$sqlw2.$sqlord."</p>";}
 		return;
 	}
 	$zfs2=0;
