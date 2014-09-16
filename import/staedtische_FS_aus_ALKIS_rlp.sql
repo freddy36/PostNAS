@@ -9,6 +9,7 @@
 -- Stand:
 --  2013-11-26 Version für die ALKIS-Musterdaten RLP Mustermonzel
 --  2014-08-29 Umstellung auf Datenstruktur PostNAS 0.8 (ohne Tabelle "alkis_beziehungen")
+--  2014-09-16 Substring fuer variabal lange gml_id
 
 -- Voraussetzung = View "doppelverbindung" aus ALKIS PostNAS-Projekt Datei "sichten.sql"
 
@@ -28,9 +29,17 @@ AS
   JOIN doppelverbindung d    ON d.fsgml = f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
   JOIN ax_buchungsstelle s   ON d.bsgml = s.gml_id               -- Buchungs-Stelle
 --JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert -- Enstschlüsselung Buchungsart
-  JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
-  JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
-  JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
+ 
+-- Bei gml_id character(16):
+--JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+--JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+--JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
+
+-- Bei gml_id character varying:
+  JOIN ax_buchungsblatt  gb  ON substring(gb.gml_id,1,16)=s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+  JOIN ax_namensnummer nn    ON substring(gb.gml_id,1,16)=nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+  JOIN ax_person p           ON substring(p.gml_id,1,16) =nn.benennt           -- NamNum  >benennt> Person
+ 
  WHERE f.endet  IS NULL
    AND s.endet  IS NULL
    AND gb.endet IS NULL
@@ -58,9 +67,17 @@ AS
   JOIN doppelverbindung d    ON d.fsgml = f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
   JOIN ax_buchungsstelle s   ON d.bsgml = s.gml_id               -- Buchungs-Stelle
   JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert -- Enstschlüsselung Buchungsart
-  JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
-  JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
-  JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
+ 
+-- Bei gml_id character(16):
+--JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+--JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+--JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
+
+-- Bei gml_id character varying:
+  JOIN ax_buchungsblatt  gb  ON substring(gb.gml_id,1,16)=s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+  JOIN ax_namensnummer nn    ON substring(gb.gml_id,1,16)=nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+  JOIN ax_person p           ON substring(p.gml_id,1,16) =nn.benennt           -- NamNum  >benennt> Person
+ 
  WHERE f.endet  IS NULL
    AND s.endet  IS NULL
    AND gb.endet IS NULL
@@ -70,7 +87,7 @@ AS
 
 COMMENT ON VIEW st_flurst  IS 'Flurstücke der Ortsgemeinde Osann-Monzel. Für WMS: nur ID und Geometrie.';
 
---GRANT SELECT ON TABLE st_flurst TO ms6;
+GRANT SELECT ON TABLE st_flurst TO ms6;
 
 
 -- Buchungsarten darin?
