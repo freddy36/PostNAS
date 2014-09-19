@@ -11,6 +11,7 @@
 	2014-01-30 pg_free_result
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-16 Wechsel Gem./Flur durch <b> hervorheben
 */
 session_start();
 $cntget = extract($_GET);
@@ -169,7 +170,11 @@ echo "\n<tr>"; // Kopfzeile der Tabelle
 echo "\n</tr>";
 $j=0;
 $cnths=0; // Count Haus
+$gwgmkg=""; // Gruppenwechsel
+$gwflur="";
+
 while($rowf = pg_fetch_array($resf)) {
+	$gmkg=$rowf["bezeichnung"];
 	$flur=str_pad($rowf["flurnummer"], 3, "0", STR_PAD_LEFT);
 	$fskenn=$rowf["zaehler"]; // Bruchnummer
 	if ($rowf["nenner"] != "") {$fskenn.="/".$rowf["nenner"];}
@@ -177,10 +182,24 @@ while($rowf = pg_fetch_array($resf)) {
 	$lgml=$rowf["lgml"]; // ID von "Lage Mit" oder leer
 
 	echo "\n<tr>";
+
 		echo "\n\t<td>";
 		if ($showkey) {echo "<span class='key'>".$rowf["gemarkungsnummer"]."</span> ";}
-		echo $rowf["bezeichnung"]."</td>";
-		echo "\n\t<td>".$flur."</td>";
+		if ($gwgmkg != $gmkg) {
+			echo "<b>".$gmkg."</b></td>";
+			$gwgmkg=$gmkg;
+			$gwflur="";
+		} else {
+			echo $gmkg."</td>";
+		}
+
+		if ($gwflur != $flur) {
+			echo "\n\t<td><b>".$flur."</b></td>";
+			$gwflur=$flur;
+		} else {
+			echo "\n\t<td>".$flur."</td>";
+		}
+
 		echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
 		if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck", "ax_flurstueck");}
 		echo "</td>";

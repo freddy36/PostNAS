@@ -20,6 +20,9 @@
 --  2014-09-08 PostNAS 0.8, Umbenennung. Ohne Tabelle "alkis_beziehungen".
 --             Beseitigung eines Fehlers beim Laden der Straßennamen-Label.
 --             Dabei Trennung in pp_strassenname_p und -_l (Punkt- und Liniengeometrie).
+--  2014-09-19 Substring auf gml_id, Korrektur "endet IS NULL"
+
+-- ToDo: substring(gml_id,1,16) wieder zurück bauen
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -50,9 +53,7 @@ TRUNCATE pp_flurstueck_nr;  -- effektiver als DELETE
 -- Alte Version über "alkis_beziehungen"
 -- Ausführung: mittlere Stadt: ca. 4 - 18 Sec.
 
-
 -- 1:1 umgestellt (UNION) unter Verwendeung der neuen Relationenspalten
--- Das läuft das viel zu lange (wegen ANY(array) ?)
 
 INSERT INTO pp_flurstueck_nr
           ( fsgml, fsnum, the_geom )
@@ -85,29 +86,22 @@ INSERT INTO pp_flurstueck_nr
 -- 2. Geometrie aus Präsentationsobjekt (manuelle Position), wenn vorhanden. Aus Subquery.
 UPDATE pp_flurstueck_nr n
   SET the_geom = (
-      SELECT p.wkb_geometry FROM ap_pto p
-       WHERE n.fsgml=ANY(p.dientzurdarstellungvon) AND p.endet IS NULL
+      SELECT p.wkb_geometry 
+        FROM ap_pto p
+       WHERE substring(n.fsgml,1,16)=ANY(p.dientzurdarstellungvon) 
+         AND p.endet IS NULL
        LIMIT 1 -- wegen vereinzelt FEHLER: als Ausdruck verwendete Unteranfrage ergab mehr als eine Zeile
     );
--- PG 8.4: Dies läuft sehr lange (> 10 Min.!). Optimierbar?
+-- Dies läuft sehr lange. Optimierbar?
 
--- 2a. Alternative mit Text Search statt any?
-/* UPDATE pp_flurstueck_nr n
-  SET the_geom = (
-      SELECT p.wkb_geometry FROM ap_pto p
-       WHERE n.fsgml <@ p.dientzurdarstellungvon AND p.endet IS NULL
-    ); */
--- Nein, Operator ist nicht auf Array anwendbar.
-
--- Menge? Verhältnis?  nach 2.
--- SELECT COUNT(fsgml) AS anz_leer FROM pp_flurstueck_nr WHERE     the_geom IS NULL; --  5440
--- SELECT COUNT(fsgml) AS anz_gef  FROM pp_flurstueck_nr WHERE NOT the_geom IS NULL; -- 17154 
 
 -- 3. Geometrie auf Flächenmitte (Standard), wenn jetzt noch leer
 UPDATE pp_flurstueck_nr n
   SET the_geom = (
-      SELECT ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry FROM ax_flurstueck  f 
-       WHERE f.gml_id = n.fsgml
+      SELECT ST_PointOnSurface(f.wkb_geometry) AS wkb_geometry 
+       FROM ax_flurstueck  f 
+       WHERE f.gml_id = n.fsgml 
+         AND f.endet IS NULL
       )
    WHERE n.the_geom IS NULL; --- nur die Fehlenden, nichts überschreiben
 

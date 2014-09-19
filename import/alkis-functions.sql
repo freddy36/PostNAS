@@ -22,6 +22,14 @@
 --               "alkis_mviews()", delete_feature_kill_vers07(), alkis_beziehung_inserted()
 --             Trigger-Function "delete_feature_hist" durch aktuelle Version aus OSGeo4W ersetzt.
 
+-- 2014-09-19  FJ: Korrektur "delete_feature_hist()":
+--             Ausgehend von Version: https://raw.githubusercontent.com/norBIT/alkisimport/master/alkis-functions.sql
+--             Bei der Erstabagabe mit Vollhistorie (ibR) werden mehrere Zwischenstände von Objekten eingelesen.
+--             Einige davon wurden bereits mit "endet" ausgeliefert (in replace-Sätzen).
+--             Wenn der Trigger ausgelöst wird (in einem zweiten Durchlauf von PostNAS) kann es jeweils
+--             mehrerer Vorgänger- und Nachfolger-Objekte mit und ohne "endet IS NULL" geben.
+
+
 -- Table/View/Sequence löschen, wenn vorhanden
 CREATE OR REPLACE FUNCTION alkis_dropobject(t TEXT) RETURNS varchar AS $$
 DECLARE
@@ -280,176 +288,212 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Die folgende Trigger-Version kopiert aus  OSGeo4W / apps / alkis-import, Datei:alkis-functions.sql
 
 -- Im Trigger 'delete_feature_trigger' muss eine dieser beiden Funktionen
 -- (delete_feature_hist oder delete_feature_kill) verlinkt werden, je nachdem ob nur
 -- aktuelle oder auch historische Objekte in der Datenbank geführt werden sollen.
 
+
+/*	Beschreibung und Umfeld des "delete_feature_trigger":
+	-----------------------------------------------------
+
+Der Konverter "ogr2ogr", in den PostNAS als Eingabe-Modul für das NAS-Format eingebettet ist, 
+ist vom Wesen her eigentlich ein 1:1-Konverter.
+Üblicherweise liest er ein Eingabe-GIS-Format, analysiert es und erzeugt dann die gleiche Struktur in 
+einem Ausgabe-GIS-Format.
+Das ALKIS-Format "NAS" als einmaliger Datenauszug (enthält nur Funktion "insert") könnte in diesem 
+Rahmen vielleicht auch ohne Trigger umgesetzt werden.
+
+Viel komplexer umzusetzen sind jedoch solche NAS-Daten, die im Rahmen des NBA-Verfahrens von ALKIS abgegeben werden.
+		NBA  =  Nutzerbezogene Bestandsdaten-Aktualisierung.
+In einem NBA-Verfahren wird eine primäre Datenquelle (ALKIS) mit einem Sekundärbestand (PostGIS) synchronisiert.
+Es erfolgt zunächst eine Erstabgabe für einen definierten Zeitpunkt.
+Später gibt es Aktualisierungen auf weitere Zeitpunkte. Die dazu übermittelten Differenzdaten enthalten
+nicht nur reine Daten (INSERT) sondern auch Anweisungen zur Änderung der zu früheren Zeitpunkten übermittelten Daten.
+Diese Änderungs-Anweisungen werden innerhalb des Konverters ogr2ogr nicht komplett verarbeitet.
+Er verarbeitet zunächst nur die enthaltenen Datenfelder zum Objekt, die er in neue Zeilen in die Objekt-Tabellen einstellt.
+
+Anschließend werden Informationen zum Objektschlüssel (gml_id) und zur Lebensdauer des Objektes (beginnt) zusammen 
+mit der Operation (Kontext = "delete", "update" oder "replace") in die Tabelle "delete" eingetragen.
+Dieser Eintrag in "delete" löst den Trigger aus, der sich dann darum kümmert, Löschungen oder 
+Änderungen an Vorgängerversionen vorzunehmen.
+
+Im NBA-Verfahren sind verschiedene "Abgabearten" möglich:
+Die Abgabeart 1000 hat zum Ziel, im Sekundärbestand jeweils den letzten aktuellen Stand bereit zu stellen.
+Die Abgabeart 3100 hat zum Ziel, im Sekundärbestand eine komplette Historie bereit zu stellen, die auch alle
+Zwischenstände enthält. Ein nicht mehr gültiges Objekt wird dann mit einem Eintrag in "endet" deaktiviert, 
+verbleibt aber in der Datenbank. Bei der Abgabeart 3100 sind bereits in der Erstabgabe Aktualisierungs-
+Funktionen (delete, update, replace) enthalten weil mehrere historische Versionen von Objekten geliefert werden.
+
+Eine NBA-Lieferung für ein Gebiet ist in mehrere Dateien aufgeteilt, die nacheinander abgearbeitet werden.
+Erst mit der Verarbeitung der letzten Datei einer Lieferung ist die Datenbank wieder konsistent und zeigt den
+Zustand zum neuen Abgabezeitpunkt.
+
+Jede dieser NAS-Dateien wird von PostNAS in mehreren Durchläufen vearbeitet.
+1. Im ersten Durchlauf wird die 1:1-Konvertierung der Daten vorgenommen. 
+   Die Feldinhalte der NAS-Datei werden in neue Zeilen in die Objekttabellen der Datenbank übertragen. 
+2. Dann werden in einem weiteren Durchlauf die Operationen "delete", "update" und "replace" verarbeitet.
+   Diese werden von PostNAS in die Tabelle "delete" eingetragen, dies löst den Trigger aus.
+	
+Für die Arbeitsweise des Triggers bedeutet das:
+
+An dem Zeitpunkt, an dem der Trigger ausgelöst wird, stehen bereits alle Daten zu den Objekten in den Objekt-Tabellen.
+Darin ist aber möglicherweise das Feld "endet" noch nicht gefüllt. 
+
+Während der Konvertierung der Erstabgabe einer NBA-Abgabe der Abgabeart 3100 können aber Objekte doch schon beendet sein.
+Bei einer Erstabgabe der Abgabeart 3100 können mehrere Generation des selben Objektes vorhanden sein, 
+die alle in der gleichen NAS-Datei geliefert wurden. 
+Das Feld "endet" ist dann nicht geeignet zu entscheiden, welches die letzte (aktuelle) Version ist.
+
+Es kann vorkommen, dass Zwischenversionen in der Objekt-Tabelle bereits beendet sind weil sie direkt mit ihrem 
+Endet-Datum geliefert wurden. Dieses wurde bereits beim ersten Durchlauf von ogr2ogr wie ein normales Datenfeld eingetragen.
+In Beispieldaten wurde analysiert, dass ein bereits beendetes Objekt in einem "insert" kein "endet" mitbringt. 
+Dies muss vom Trigger beendet werden, wenn dieser einen replace für den Nachfolger bekommt.
+
+Im gleichen Bestand wurden jedoch Nachfolger gefunden die mit einem "replace"-Satz gekommen sind 
+und bereits beendet waren, weil sie ihrerseits wieder Nachfolger hatten. 
+
+Das jeweils folgende "replace" kann also ein Vorgänger-Objekt mit oder ohne "endet"-Eintrag vorfinden.
+Es können auch sowohl Vorgänger- als auch bereits Nachfolger-Versionen eines Objektes vorhanden sein, wenn der Trigger
+ausgelöst wird.
+
+Aufgabe des Triggers ist es, zu einem veränderten Objekt jeweils den unmittelbaren Vorgänger zu ermitteln
+und - falls noch nicht geschehen - den passenden endet-Eintrag nachzutragen.
+Wenn in den Daten kein "endet" mitgeliefert wird, dann wird der Beginn der Folge-Version des Objektes verwendet
+um den Vorgänger zu beenden.
+
+Wenn ein Objekt bereits mit endet-Datum geliefert wurde, dann wird dies zwar in die Obkjekt-Tabelle eingetragen,
+der endet-Eintrag in dem replace-Satz in der delete-Tabelle, der den Trigger auslöst, ist trotzdem leer.
+Es ist überlegen, ob dies im PostNAS-Programm geändert werden sollte.
+
+Aufgrund der Komplexität dieser Mechanismen ist davon auszugehen, dass es Hersteller-spezifische Unterschiede
+gibt und auch Unterschiede zuwischen verschiedenen Versions-Ständen des selben Herstellers.
+Die Arbeitsweise des Triggers muss daher regelmäßig überprüft werden.
+
+*/
+
+-- Achtung: Für diese Trigger-Version müssen die Schlüsselfelder "gml_id" in allen Tabellen 
+--          wieder auf 16 Stellen fix gekürzt werden!
+
 -- Löschsatz verarbeiten (MIT Historie)
--- context='update'        => "endet" auf übergebene Zeit setzen und anlass festhalten
 -- context='delete'        => "endet" auf aktuelle Zeit setzen
 -- context='replace'       => "endet" des ersetzten auf "beginnt" des neuen Objekts setzen
+-- context='update'        => "endet" auf übergebene Zeit setzen und "anlass" festhalten
 CREATE OR REPLACE FUNCTION delete_feature_hist() RETURNS TRIGGER AS $$
 DECLARE
-	s TEXT;
-	alt_id TEXT;
-	neu_id TEXT;
-	beginnt TEXT;
-	endete TEXT;
 	n INTEGER;
+	vbeginnt TEXT;
+	replgml TEXT;
+	featgml TEXT;
+	s TEXT;
 BEGIN
-	NEW.context := lower(NEW.context);
-	IF NEW.context IS NULL THEN
-		NEW.context := 'delete';
-	END IF;
+	NEW.context := coalesce(lower(NEW.context),'delete');
 
-	-- TIMESTAMP weder in gml_id noch identifier verläßlich.
-	-- also ggf. aus Datenbank holen
+	IF NEW.anlass IS NULL THEN
+		NEW.anlass := '';
+	END IF;
+	featgml := substr(NEW.featureid, 1, 16); -- gml_id ohne Timestamp
 
 	IF length(NEW.featureid)=32 THEN
-		alt_id  := substr(NEW.featureid, 1, 16);
-
-		IF NEW.featureid<>NEW.replacedBy THEN
-			-- Beginnt-Datum aus Timestamp
-			beginnt := substr(NEW.featureid, 17, 4) || '-'
-				|| substr(NEW.featureid, 21, 2) || '-'
-				|| substr(NEW.featureid, 23, 2) || 'T'
-				|| substr(NEW.featureid, 26, 2) || ':'
-				|| substr(NEW.featureid, 28, 2) || ':'
-				|| substr(NEW.featureid, 30, 2) || 'Z'
-				;
-		END IF;
+		-- beginnt-Zeit der zu ersetzenden Vorgaenger-Version des Objektes
+		vbeginnt := substr(NEW.featureid, 17, 4) || '-'
+			|| substr(NEW.featureid, 21, 2) || '-'
+			|| substr(NEW.featureid, 23, 2) || 'T'
+			|| substr(NEW.featureid, 26, 2) || ':'
+			|| substr(NEW.featureid, 28, 2) || ':'
+			|| substr(NEW.featureid, 30, 2) || 'Z' ;
 	ELSIF length(NEW.featureid)=16 THEN
-		alt_id  := NEW.featureid;
-	ELSE
-		RAISE EXCEPTION '%: Länge 16 oder 32 statt % erwartet.', NEW.featureid, length(NEW.featureid);
-	END IF;
-
-	IF beginnt IS NULL THEN
-		-- Beginnt-Datum des ältesten Eintrag, der nicht untergegangen ist
-		-- => der Satz dessen 'endet' gesetzt werden muß
+		-- Ältestes nicht gelöschtes Objekt
 		EXECUTE 'SELECT min(beginnt) FROM ' || NEW.typename
-			|| ' WHERE gml_id=''' || alt_id || ''''
-			|| ' AND endet IS NULL'
-			INTO beginnt;
-	END IF;
+		        || ' WHERE gml_id=''' || featgml || ''''
+		        || ' AND endet IS NULL'
+			INTO vbeginnt;
 
-	IF beginnt IS NULL THEN
-		IF NEW.context = 'delete' OR NEW.safetoignore = 'true' THEN
-			RAISE NOTICE 'Kein Beginndatum für Objekt % gefunden - ignoriert.', alt_id;
-			NEW.ignored := true;
-			RETURN NEW;
-		ELSE
-			RAISE EXCEPTION 'Kein Beginndatum für Objekt % gefunden.', alt_id;
+		IF vbeginnt IS NULL THEN
+			RAISE EXCEPTION '%: Keinen Kandidaten zum Löschen gefunden.', NEW.featureid;
 		END IF;
+	ELSE
+		RAISE EXCEPTION '%: Identifikator gescheitert.', NEW.featureid;
 	END IF;
 
 	IF NEW.context='delete' THEN
-		endete := to_char(CURRENT_TIMESTAMP AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"');
+		NEW.endet := to_char(CURRENT_TIMESTAMP AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"');
+
+	ELSIF NEW.context='update' THEN
+		IF NEW.endet IS NULL THEN
+			RAISE EXCEPTION '%: Endedatum nicht gesetzt', NEW.featureid;
+		END IF;
 
 	ELSIF NEW.context='replace' THEN
 		NEW.safetoignore := lower(NEW.safetoignore);
-
+		replgml := substr(NEW.replacedby, 1, 16); -- ReplcedBy gml_id ohne Timestamp
 		IF NEW.safetoignore IS NULL THEN
 			RAISE EXCEPTION '%: safeToIgnore nicht gesetzt.', NEW.featureid;
 		ELSIF NEW.safetoignore<>'true' AND NEW.safetoignore<>'false' THEN
 			RAISE EXCEPTION '%: safeToIgnore ''%'' ungültig (''true'' oder ''false'' erwartet).', NEW.featureid, NEW.safetoignore;
 		END IF;
 
-		IF length(NEW.replacedBy)=32 THEN
-			-- Beginnt-Datum aus Timestamp
-			IF NEW.featureid<>NEW.replacedBy THEN
-				endete  := substr(NEW.replacedBy, 17, 4) || '-'
-					|| substr(NEW.replacedBy, 21, 2) || '-'
-					|| substr(NEW.replacedBy, 23, 2) || 'T'
-					|| substr(NEW.replacedBy, 26, 2) || ':'
-					|| substr(NEW.replacedBy, 28, 2) || ':'
-					|| substr(NEW.replacedBy, 30, 2) || 'Z'
-					;
+		IF length(NEW.replacedby)=32 AND NEW.replacedby<>NEW.featureid THEN
+			NEW.endet := substr(NEW.replacedby, 17, 4) || '-'
+				|| substr(NEW.replacedby, 21, 2) || '-'
+				|| substr(NEW.replacedby, 23, 2) || 'T'
+				|| substr(NEW.replacedby, 26, 2) || ':'
+				|| substr(NEW.replacedby, 28, 2) || ':'
+				|| substr(NEW.replacedby, 30, 2) || 'Z' ;
+		END IF;
+
+		-- Satz-Paarung Vorgänger-Nachfolger in der Objekttabelle suchen.
+		-- Der Vorgänger muss noch beendet werden. Der Nachfolger kann bereits beendet sein.
+		-- Das "beginn" des Nachfolgers anschließend als "endet" des Vorgaengers verwenden.
+		-- Normalfall bei NBA-Aktualisierungslaeufen. v=Vorgänger, n=Nachfolger.
+		IF NEW.endet IS NULL THEN
+			EXECUTE 'SELECT min(n.beginnt) FROM ' || NEW.typename || ' n'
+				|| ' JOIN ' || NEW.typename || ' v ON v.ogc_fid<n.ogc_fid'
+				|| ' WHERE v.gml_id=''' || featgml
+				|| ''' AND n.gml_id=''' || replgml
+				|| ''' AND v.endet IS NULL'
+				INTO NEW.endet;
+		--	RAISE NOTICE 'endet setzen fuer Vorgaenger % ', NEW.endet;
+		END IF;
+
+		-- Satz-Paarung Vorgänger-Nachfolger in der Objekttabelle suchen.
+		-- Der Vorgänger ist bereits beendet worden weil "endet" in den Daten gefüllt war.
+		-- Dieser Fall kommt bei der Erstabgabe mit Vollhistorie vor.
+		IF NEW.endet IS NULL THEN
+			EXECUTE 'SELECT min(n.beginnt) FROM ' || NEW.typename || ' n'
+				|| ' JOIN ' || NEW.typename || ' v ON v.endet=n.beginnt '
+				|| ' WHERE v.gml_id=''' || featgml
+				|| ''' AND n.gml_id=''' || replgml
+				|| ''' AND v.beginnt=''' || vbeginnt || ''''
+				INTO NEW.endet;
+
+			IF NOT NEW.endet IS NULL THEN
+			--	RAISE NOTICE '%: Vorgaenger ist schon endet', NEW.featureid;
+				NEW.ignored=false;
+				RETURN NEW;
 			END IF;
-		ELSIF length(NEW.replacedBy)<>16 THEN
-			RAISE EXCEPTION '%: Länge 16 oder 32 statt % erwartet.', NEW.replacedBy, length(NEW.replacedBy);
 		END IF;
 
-		neu_id := NEW.replacedBy;
-		IF endete IS NULL THEN
-			-- Beginnt-Datum des neuesten Eintrag, der nicht untergegangen ist
-			-- => Enddatum für vorherigen Satz
-			EXECUTE 'SELECT max(beginnt) FROM ' || NEW.typename
-				|| ' WHERE gml_id=''' || NEW.replacedBy || ''''
-				|| ' AND beginnt>''' || beginnt || ''''
-				|| ' AND endet IS NULL'
-				INTO endete;
-			IF endete IS NULL AND length(NEW.replacedBy)=32 THEN
-				EXECUTE 'SELECT max(beginnt) FROM ' || NEW.typename
-					|| ' WHERE gml_id=''' || substr(NEW.replacedBy, 1, 16) || ''''
-					|| ' AND beginnt>''' || beginnt || ''''
-					|| ' AND endet IS NULL'
-				INTO endete;
-				neu_id := substr(NEW.replacedBy, 1, 16);
+		IF NEW.endet IS NULL THEN -- "endet" für den Vorgänger konnte nicht ermittelt werden
+			IF NEW.safetoignore='false' THEN
+				RAISE EXCEPTION '%: Beginn des ersetzenden Objekts % nicht gefunden.', NEW.featureid, NEW.replacedby;
 			END IF;
-		END IF;
-
-		IF alt_id<>substr(neu_id, 1, 16) THEN
-			RAISE NOTICE 'Objekt % wird durch Objekt % ersetzt.', alt_id, neu_id;
-		END IF;
-
-		IF endete IS NULL THEN
-			RAISE NOTICE 'Kein Beginndatum für Objekt % gefunden.', NEW.replacedBy;
-		END IF;
-
-		IF endete IS NULL OR beginnt=endete THEN
-			RAISE EXCEPTION 'Objekt % wird durch Objekt % ersetzt (leere Lebensdauer?).', alt_id, neu_id;
-		END IF;
-	ELSIF NEW.context='update' THEN
-		endete := NEW.endet;
+			NEW.ignored=true;
+			RETURN NEW;
+		END IF; 
 	ELSE
 		RAISE EXCEPTION '%: Ungültiger Kontext % (''delete'', ''replace'' oder ''update'' erwartet).', NEW.featureid, NEW.context;
 	END IF;
 
-	s   := 'UPDATE ' || NEW.typename
-	    || ' SET endet=''' || endete || ''''
-	    || ',anlass=''' || coalesce(NEW.anlass,'000000') || ''''
-	    || ' WHERE gml_id=''' || NEW.featureid || ''''
-	    || ' AND beginnt=''' || beginnt || ''''
-	    || ' AND endet IS NULL';
+	-- Vorgaenger ALKIS-Objekt nun beenden
+	s := 'UPDATE ' || NEW.typename
+	  || ' SET endet=''' || NEW.endet || ''' ,anlass=''' || NEW.anlass || ''''
+	  || ' WHERE gml_id=''' || featgml || ''' AND beginnt=''' || vbeginnt || '''' ;
 	EXECUTE s;
 	GET DIAGNOSTICS n = ROW_COUNT;
-	IF n=0 AND alt_id<>NEW.featureid THEN
-		s   := 'UPDATE ' || NEW.typename
-		    || ' SET endet=''' || endete || ''''
-	            || ',anlass=''' || coalesce(NEW.anlass,'000000') || ''''
-	            || ' WHERE gml_id=''' || alt_id || ''''
-	            || ' AND beginnt=''' || beginnt || ''''
-	            || ' AND endet IS NULL';
-		EXECUTE s;
-		GET DIAGNOSTICS n = ROW_COUNT;
-	END IF;
-
+	-- RAISE NOTICE 'SQL[%]:%', n, s;
 	IF n<>1 THEN
-		RAISE NOTICE 'SQL[%<>1]: %', n, s;
-		IF NEW.context = 'delete' OR NEW.safetoignore = 'true' THEN
-			RAISE NOTICE '%: Untergangsdatum von % Objekten statt einem auf % gesetzt - ignoriert', NEW.featureid, n, endete;
-			NEW.ignored := true;
-			RETURN NEW;
-		ELSIF n=0 THEN
-			EXECUTE 'SELECT endet FROM ' || NEW.typename ||
-				' WHERE gml_id=''' || alt_id || '''' ||
-				' AND beginnt=''' || beginnt || ''''
-				INTO endete;
-
-			IF NOT endete IS NULL THEN
-				RAISE NOTICE '%: Objekt bereits % untergegangen - ignoriert', NEW.featureid, endete;
-			ELSE
-				RAISE NOTICE '%: Objekt nicht gefunden - ignoriert', NEW.featureid;
-			END IF;
-
-			NEW.ignored := true;
-			RETURN NEW;
-		ELSE
-			RAISE EXCEPTION '%: Untergangsdatum von % Objekten statt einem auf % gesetzt - Abbruch', NEW.featureid, n, endete;
-		END IF;
+		RAISE EXCEPTION '%: % schlug fehl [%]', NEW.featureid, NEW.context, n;
 	END IF;
 
 	NEW.ignored := false;
@@ -459,6 +503,12 @@ $$ LANGUAGE plpgsql;
 
 
 -- 2014-09-04: Version 0.8 ohne "alkis_beziehungen"-Tabelle
+-- Unterschied von "delete_feature_kill" zur Version "delete_feature_hist":
+--  Historisch gewordene Objekte werden nicht auf "endet" gesetzt sondern ganz aus der Datenbank gelöscht.
+-- Achtung: Wenn diese Funktion mit dem "delete_feature_trigger" der Tabelle "delete" verknüpft ist,
+-- dann dürfen nur NAS-NBA-Daten verarbeitet werden, die mit der Abgabeart 1000 erzeugt wurden.
+-- Wenn Daten der Abgabeart 3100 verarbeitet werden kommen update-Anweisungen in den Daten vor, 
+-- die dieser Trigger nicht verarbeiten kann.
 CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
 DECLARE
 	begsql TEXT;
@@ -491,17 +541,6 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
--- Beziehungssätze aufräumen
-/*
-CREATE OR REPLACE FUNCTION alkis_beziehung_inserted() RETURNS TRIGGER AS $$
-BEGIN
-	DELETE FROM alkis_beziehungen WHERE ogc_fid<NEW.ogc_fid AND beziehung_von=NEW.beziehung_von AND beziehungsart=NEW.beziehungsart AND beziehung_zu=NEW.beziehung_zu;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-*/
 
 
 -- Wenn die Datenbank MIT Historie angelegt wurde, kann nach dem Laden hiermit aufgeräumt werden.

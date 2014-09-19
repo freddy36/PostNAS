@@ -161,7 +161,8 @@ fi
        #export CPL_DEBUG=ON                     # Meldung, wenn Attribute ueberschrieben werden
  
       # PostNAS Konverter-Aufruf
-      ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures --config PG_USE_COPY YES \
+      #   --config PG_USE_COPY YES
+      ogr2ogr -f "PostgreSQL" -append  ${update} -skipfailures  \
          PG:"dbname=${DBNAME} host=localhost port=5432 ${OGRPGUSER}" -a_srs EPSG:$EPSG ${nasdatei} 2>> $errprot
       nasresult=$?
       echo "* Resultat: " $nasresult " fuer " ${nasdatei} | tee -a $errprot
@@ -184,28 +185,26 @@ fi
 
     echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
 
-    echo "** - Optimierte Nutzungsarten neu Laden:"
+    echo "** - Optimierte Nutzungsarten neu Laden (Script nutzungsart_laden.sql):"
     (cd $POSTNAS_HOME; psql $con -f nutzungsart_laden.sql)
  
     echo "-----------" 
  
-    echo "** - Fluren, Gemarkungen, Gemeinden und Straßen-Namen neu Laden:"
+    echo "** - Fluren, Gemarkungen, Gemeinden und Straßen-Namen neu Laden (Script pp_laden.sql):"
     (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
 
   fi
 
   # Durch Einfügen in Tabelle 'delete' werden Löschungen und Aktualisierungen anderer Tabellen getriggert
-  echo "** delete-Tabelle enthaelt:"
+  echo "** Die delete-Tabelle enthaelt:"
   psql $con -c 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";'
 
-  echo "   delete-Tabelle loeschen:"
-  psql $con -c 'TRUNCATE table "delete";'
+  #echo "   delete-Tabelle loeschen:"
+  #psql $con -c 'TRUNCATE table "delete";'
 
-  #if [ "$(readlink $POSTNAS_HOME/alkis-trigger.sql)" = "alkis-trigger-kill.sql" ]; then
-    # Aufräumen der historischen Objekte 
-  #  echo "** geendete Objekte entfernen:"
-  #  psql $con -c "SELECT alkis_delete_all_endet();"
-  #fi
+  # Aufräumen der historischen Objekte -- besser voirher als nachher. Analyse für Trigger-Entwicklung
+#  echo "** geendete Objekte entfernen:"
+#  psql $con -c "SELECT alkis_delete_all_endet();"
 
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
   echo "** ENDE PostNAS 0.8-Konvertierung  DB='$DBNAME'  Ordner='$ORDNER' "

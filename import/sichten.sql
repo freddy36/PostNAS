@@ -32,6 +32,8 @@
 --  2014-09-02 Tabelle "alkis_beziehungen" überflüssig machen. Relationen nun über Spalten in den Objekttabellen. 
 --  2014-09-11 Neu: View "fehlersuche_namensanteile_je_blatt", substring(gml_id) bei Relation-Join, mehr "endet IS NULL"
 --  2014-09-12 Korrektur "doppelverbindung" (nach Patch der Indices für Relation auf Substring(gml_id,1,16))
+--  2014-09-17 View "fehler_gebaeude_zu_mehrfach_hsnr"
+
 
 -- Bausteine für andere Views:
 -- ---------------------------
@@ -710,10 +712,10 @@ AS
 COMMENT ON VIEW rechte_eines_eigentuemers IS 'Muster für Export: Suchkriteriumnach Bedarf anpassen. Dies ergänzt "flurstuecke_eines_eigentuemers" um die Fälle mit besonderen Buchungen.';
 
 
--- Suche nach Fehler durch "Replace"
+-- Suche nach Fehlern:
 -- Eine Hausnummer darf nur einem Gebaeude zugeordnet werden.
--- Das verschieben der Relation 
---   ax_gebaeude   >von>zeigtAuf>zu>  ax_lagebezeichnungmithausnummer
+-- Das Verschieben der Relation 
+--   ax_gebaeude >zeigtAuf>z ax_lagebezeichnungmithausnummer
 -- fuehrt möglicherweise dazu, dass die alte Relation nicht gelöscht wird.
 -- Die angezeigten Fälle sind potentielle Fehler.
 
@@ -729,6 +731,24 @@ AS
 
 COMMENT ON VIEW fehler_hausnummer_mehrfach_verwendet
  IS 'Fehlersuche: Nach replace von ax_lagebezeichnungmithausnummer mit einem neuen ax_gebaeude bleibt die alte Verbindung?';
+
+
+-- unter Verwendung dieses View weitere Information
+CREATE OR REPLACE VIEW fehler_gebaeude_zu_mehrfach_hsnr 
+AS 
+  SELECT f.gemeinde, f.lage, k.bezeichnung, f.hausnummer,
+         g.gml_id, g.beginnt
+  FROM ax_gebaeude g
+  JOIN fehler_hausnummer_mehrfach_verwendet f
+    ON substring(f.gml_id::text, 1, 16) = ANY (g.zeigtauf)
+  JOIN ax_lagebezeichnungkatalogeintrag k
+    ON f.gemeinde=k.gemeinde AND f.lage=k.lage
+    WHERE g.endet IS NULL
+  ORDER BY f.gemeinde, f.lage, f.hausnummer, g.gml_id;
+
+COMMENT ON VIEW fehler_hausnummer_mehrfach_verwendet
+ IS 'Fehlersuche: Adressen und Gebäude-Objekte zu den Fehlern aus dem View "fehler_hausnummer_mehrfach_verwendet"';
+
 
 -- Ein Gebäude hat mehrere Nummern.
 CREATE OR REPLACE VIEW adressen_zu_gebauede_mit_mehreren_hausnummern
