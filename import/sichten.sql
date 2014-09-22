@@ -33,6 +33,7 @@
 --  2014-09-11 Neu: View "fehlersuche_namensanteile_je_blatt", substring(gml_id) bei Relation-Join, mehr "endet IS NULL"
 --  2014-09-12 Korrektur "doppelverbindung" (nach Patch der Indices für Relation auf Substring(gml_id,1,16))
 --  2014-09-17 View "fehler_gebaeude_zu_mehrfach_hsnr"
+--  2014-09-22 Views zur Suche von Fehlern aus einem fehlerhaften Historie-Trigger (beginnt-endet-Paarungen)
 
 
 -- Bausteine für andere Views:
@@ -1062,5 +1063,62 @@ AS
 COMMENT ON VIEW fehlersuche_namensanteile_je_blatt
  IS 'Suchen nach GB-Blättern bei denen die Summe der Anteile der Namensnummern nicht passt.
 Mit Ausnahme von Rechtsverhältnissen sollte sie Summe der Brüche immer 1/1 ergeben.';
+
+
+-- Prüfen einer Konvertierung mit historischen Objekten
+-- Abgabeart 3100, Trigger "delete_feature_hist()".
+-- NICHT anzuwenden bei Abgabeart 1000
+
+-- Erst mal die betroffenen Objekte identifizieren
+CREATE OR REPLACE VIEW fehlersuche_hist_mehrere_vorgaenger_fs
+AS 
+  SELECT substring(gml_id,1,16) AS gml, count(beginnt) AS anzahl -- 16stellige kurze ID, oder Substring
+  FROM ax_flurstueck
+  GROUP BY substring(gml_id,1,16)
+  HAVING count(beginnt) > 4 -- mindestens 3 Generationen zur Prüfung notwendig
+  ORDER BY count(beginnt) DESC -- die häufigsten zuerst
+  LIMIT 20;  -- reicht zum gucken
+-- bis zu 7 Versionen je FS gefunden
+
+COMMENT ON VIEW fehlersuche_hist_mehrere_vorgaenger_fs
+ IS 'ALKIS-Flurstücke suchen, zu denen es inzwischen mehrere Versionen gibt, 
+also mehrere inzwischen beendete (historische) Vorgänger-Versionen';
+
+-- Im zweiten Schritt dazu alle Versionen auflisten.
+-- Die Serial "ogc_fid" sollte die Einfüge-Reihenfolge repräsentieren.
+-- Je "gml_id" muss "beginnt" und "endet" aufsteigend sein.
+-- Das "endet" muss jeweils das "beginnt" der folgenden Version sein.
+CREATE OR REPLACE VIEW fehlersuche_hist_endet_sortierung_fs
+AS 
+  SELECT substring(gml_id,1,16) AS gml, ogc_fid, beginnt, endet
+  FROM ax_flurstueck f
+  JOIN fehlersuche_hist_mehrere_vorgaenger_fs v -- der vorhergehende View als Filter
+    ON substring(f.gml_id,1,16) = v.gml
+  ORDER BY substring(gml_id,1,16), ogc_fid;
+
+COMMENT ON VIEW fehlersuche_hist_endet_sortierung_fs
+ IS 'Zu den ALKIS-Flurstücken, zu denen es inzwischen mehrere Versionen gibt, 
+werden die beginnt- und  endet-Zeiten angezeigt. Diese sollten streng aufsteigend sein. 
+Der endet-Zeitstempel sollte jeweils dem beginnt-Zeitstempel der Folgeversion enstsprechen.
+(Nur) das endet der letzten Version sollte leer sein.';
+
+-- Speziell die Fälle suchen, bei denen die Kombination beginnt/endet-Datum nicht logisch ist
+CREATE OR REPLACE VIEW fehlersuche_hist_beginnt_endet_mischmasch
+AS 
+  SELECT substring(v1.gml_id,1,16) AS gml, 
+	v1.beginnt AS v1_beginnt, 
+	v2.beginnt AS v2_beginnt,
+     v1.endet   AS v1_endet, 
+     v2.endet   AS v2_endet
+  FROM ax_gebaeude v1 -- Version 1 -- oder eine andere Objekt-Tabelle
+  JOIN ax_gebaeude v2 -- Version 2
+    ON substring(v1.gml_id,1,16) = substring(v2.gml_id,1,16)  -- gleiches Objekt
+   AND v2.beginnt > v1.beginnt -- aufsteigendes Beginn-Datum
+   AND v2.endet   < v1.endet   -- aber absteigendes endet-Datum - Fehler!
+  ORDER BY substring(v1.gml_id,1,16), v1.beginnt, v1.endet
+  LIMIT 10; -- Beispiele als Beweis der Fehlerhaftigkeit
+
+COMMENT ON VIEW fehlersuche_hist_beginnt_endet_mischmasch
+ IS 'Suche nach verschiedenen historischen Versionen eines Objektes bei denen das beginn-Datum aufsteigend ist, aber das endet-Datum absteigend (Falsch!).';
 
 -- END --
