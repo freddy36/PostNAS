@@ -1068,9 +1068,10 @@ Mit Ausnahme von Rechtsverhältnissen sollte sie Summe der Brüche immer 1/1 erg
 -- Prüfen einer Konvertierung mit historischen Objekten
 -- Abgabeart 3100, Trigger "delete_feature_hist()".
 -- NICHT anzuwenden bei Abgabeart 1000
+-- Siehe auch: FUNCTION "alkis_hist_check()" in Datei "alkis-functions.sql"
 
 -- Erst mal die betroffenen Objekte identifizieren
-CREATE OR REPLACE VIEW fehlersuche_hist_mehrere_vorgaenger_fs
+CREATE OR REPLACE VIEW hist_mehrere_vorgaenger_fs
 AS 
   SELECT substring(gml_id,1,16) AS gml, count(beginnt) AS anzahl -- 16stellige kurze ID, oder Substring
   FROM ax_flurstueck
@@ -1080,7 +1081,7 @@ AS
   LIMIT 20;  -- reicht zum gucken
 -- bis zu 7 Versionen je FS gefunden
 
-COMMENT ON VIEW fehlersuche_hist_mehrere_vorgaenger_fs
+COMMENT ON VIEW hist_mehrere_vorgaenger_fs
  IS 'ALKIS-Flurstücke suchen, zu denen es inzwischen mehrere Versionen gibt, 
 also mehrere inzwischen beendete (historische) Vorgänger-Versionen';
 
@@ -1092,7 +1093,7 @@ CREATE OR REPLACE VIEW fehlersuche_hist_endet_sortierung_fs
 AS 
   SELECT substring(gml_id,1,16) AS gml, ogc_fid, beginnt, endet
   FROM ax_flurstueck f
-  JOIN fehlersuche_hist_mehrere_vorgaenger_fs v -- der vorhergehende View als Filter
+  JOIN hist_mehrere_vorgaenger_fs v -- der vorhergehende View als Filter
     ON substring(f.gml_id,1,16) = v.gml
   ORDER BY substring(gml_id,1,16), ogc_fid;
 

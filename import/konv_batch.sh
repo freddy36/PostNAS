@@ -39,6 +39,11 @@
 ##   2014-09-09 F.J. krz: Parameter "--config PG_USE_COPY YES" zur Beschleunigung. Ausgabe import-Tabelle.
 ##   2014-09-11 F.J. krz: Eintrag in import-Tabelle repariert.
 ##                   Keine Abfrage des Symlinks auf kill/hist. Enstscheidend ist die aktuelle DB, nicht der Symlink
+##   2014-09-23 F.J. krz: Zählung der Funktionen in delete, dies in import-Tabelle eintragen (Metadaten)
+
+## ToDo: 
+## - Unterscheidung e/a noch sinnvoll? Immer "a" = Aktualisierung = -update ?
+## - PostProcessing: Aufruf Script, sonst redundant zu pflegen
 
 POSTNAS_HOME=$(dirname $0)
 
@@ -130,8 +135,8 @@ fi
   echo "Leeren der delete-Tabelle"
   psql $con -c 'TRUNCATE table "delete";'
 
-  echo "Bisherige Konvertierungen (Import-Tabelle):"
-  psql $con -c "SELECT * FROM import;"
+  #echo "Bisherige Konvertierungen (Import-Tabelle):"
+  #psql $con -c "SELECT * FROM import ORDER by id;"
 
 # Import Eintrag erzeugen
 # Ursprünglich für Trigger-Steuerung benötigt. Nun als Metadaten nützlich.
@@ -172,6 +177,23 @@ fi
   echo " "
   echo "** Ende Konvertierung Ordner ${ORDNER}"
 
+  # Durch Einfügen in Tabelle 'delete' werden Löschungen und Aktualisierungen anderer Tabellen getriggert
+  echo "** Die delete-Tabelle enthaelt so viele Zeilen:"
+  psql $con -c 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";'
+
+  echo "** aufgeteilt auf diese Funktionen:"
+  psql $con -c 'SELECT context, COUNT(featureid) AS anzahl FROM "delete" GROUP BY context ORDER BY context;' 
+
+  # Kontext-Funktionen zählen und dei Anzahl als Metadaten zum aktuellen Konvertierungslauf speichern
+  psql $con -c "
+   UPDATE import SET anz_delete=(SELECT count(*) FROM \"delete\" WHERE context='delete') 
+   WHERE id=(SELECT max(id) FROM import) AND verzeichnis='${ORDNER}' AND anz_delete IS NULL;
+   UPDATE import SET anz_update=(SELECT count(*) FROM \"delete\" WHERE context='update') 
+   WHERE id=(SELECT max(id) FROM import) AND verzeichnis='${ORDNER}' AND anz_update IS NULL;
+   UPDATE import SET anz_replace=(SELECT count(*) FROM \"delete\" WHERE context='replace') 
+   WHERE id=(SELECT max(id) FROM import) AND verzeichnis='${ORDNER}' AND anz_replace IS NULL;" 
+   # ignored = true auswerten, ggf. warnen ?
+
 #
 # Post-Processing / Nacharbeiten
 #
@@ -182,29 +204,23 @@ fi
     # Der Aufwand für das Post-Processing ist dann nur bei der LETZTEN Aktualisierung notwendig.
 
   else
-
     echo "** Post-Processing (Nacharbeiten zur Konvertierung)"
 
     echo "** - Optimierte Nutzungsarten neu Laden (Script nutzungsart_laden.sql):"
     (cd $POSTNAS_HOME; psql $con -f nutzungsart_laden.sql)
- 
-    echo "-----------" 
  
     echo "** - Fluren, Gemarkungen, Gemeinden und Straßen-Namen neu Laden (Script pp_laden.sql):"
     (cd $POSTNAS_HOME; psql $con -f pp_laden.sql)
 
   fi
 
-  # Durch Einfügen in Tabelle 'delete' werden Löschungen und Aktualisierungen anderer Tabellen getriggert
-  echo "** Die delete-Tabelle enthaelt:"
-  psql $con -c 'SELECT COUNT(featureid) AS delete_zeilen FROM "delete";'
+  # Aufräumen der historischen Objekte -- besser vorher als nachher. Analyse für Trigger-Entwicklung
 
-  #echo "   delete-Tabelle loeschen:"
-  #psql $con -c 'TRUNCATE table "delete";'
+ #echo "   delete-Tabelle loeschen:"
+ #psql $con -c 'TRUNCATE table "delete";'
 
-  # Aufräumen der historischen Objekte -- besser voirher als nachher. Analyse für Trigger-Entwicklung
-#  echo "** geendete Objekte entfernen:"
-#  psql $con -c "SELECT alkis_delete_all_endet();"
+ #echo "** geendete Objekte entfernen:"
+ #psql $con -c "SELECT alkis_delete_all_endet();"
 
   echo "Das Fehler-Protokoll wurde ausgegeben in die Datei $errprot"
   echo "** ENDE PostNAS 0.8-Konvertierung  DB='$DBNAME'  Ordner='$ORDNER' "

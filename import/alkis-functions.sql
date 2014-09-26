@@ -29,6 +29,8 @@
 --             Wenn der Trigger ausgelöst wird (in einem zweiten Durchlauf von PostNAS) kann es jeweils
 --             mehrerer Vorgänger- und Nachfolger-Objekte mit und ohne "endet IS NULL" geben.
 
+-- 2014-09-23  FJ: Korrektur "delete_feature_kill()":
+--             Die neue Hist-Version vereinfachen (endet nicht benötigt) und zum Löschen umbauen.
 
 -- Table/View/Sequence löschen, wenn vorhanden
 CREATE OR REPLACE FUNCTION alkis_dropobject(t TEXT) RETURNS varchar AS $$
@@ -379,6 +381,7 @@ Die Arbeitsweise des Triggers muss daher regelmäßig überprüft werden.
 -- context='delete'        => "endet" auf aktuelle Zeit setzen
 -- context='replace'       => "endet" des ersetzten auf "beginnt" des neuen Objekts setzen
 -- context='update'        => "endet" auf übergebene Zeit setzen und "anlass" festhalten
+-- Die "gml_id" muss in der Datenbank das Format character(16) haben.
 CREATE OR REPLACE FUNCTION delete_feature_hist() RETURNS TRIGGER AS $$
 DECLARE
 	n INTEGER;
@@ -502,19 +505,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- 2014-09-04: Version 0.8 ohne "alkis_beziehungen"-Tabelle
+-- Version PostNAS 0.8 ohne "alkis_beziehungen"-Tabelle
 -- Unterschied von "delete_feature_kill" zur Version "delete_feature_hist":
---  Historisch gewordene Objekte werden nicht auf "endet" gesetzt sondern ganz aus der Datenbank gelöscht.
--- Achtung: Wenn diese Funktion mit dem "delete_feature_trigger" der Tabelle "delete" verknüpft ist,
--- dann dürfen nur NAS-NBA-Daten verarbeitet werden, die mit der Abgabeart 1000 erzeugt wurden.
--- Wenn Daten der Abgabeart 3100 verarbeitet werden kommen update-Anweisungen in den Daten vor, 
--- die dieser Trigger nicht verarbeiten kann.
-CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
+--  Historisch gewordene Objekte werden nicht auf "endet" gesetzt sondern sofort aus der Datenbank gelöscht.
+
+-- Version von 2014-09-04 bis 2014-09-23
+-- Ohne Tabelle "alkis_beziehungen".
+-- Die gml_id kann in der Datenbenk das Format "character varying" haben (angehängte Beginn-Zeit).
+-- Diese Version kennt den NAS-Kontext "update" nicht und kann daher nur die Abgabeart 1000 verarbeiten.
+CREATE OR REPLACE FUNCTION delete_feature_kill_abg1000() RETURNS TRIGGER AS $$
 DECLARE
 	begsql TEXT;
 	aktbeg TEXT;
 	gml_id TEXT;
 BEGIN
+	-- Alte Version, die nur die Abgabeart 1000 (ohne replace) verarbeiten kann.
 	NEW.typename := lower(NEW.typename); -- Objektart=Tabellen-Name
 	NEW.context := lower(NEW.context);   -- Operation 'delete'/'replace'/'update'
 	gml_id      := substr(NEW.featureid, 1, 16); -- ID-Teil der gml_id, ohne Timestamp
@@ -523,18 +528,87 @@ BEGIN
 		NEW.context := 'delete'; -- default
 	END IF;
 	IF NEW.context='delete' THEN -- Löschen des Objektes
-          -- In der Objekt-Tabelle
 		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%''';
 		--RAISE NOTICE 'Lösche gml_id % in %', gml_id, NEW.typename;
 	ELSE -- Ersetzen des Objektes (Replace). In der Objekt-Tabelle sind jetzt bereits 2 Objekte vorhanden (alt und neu).
 
 		-- beginnt-Wert des aktuellen Objektes ermitteln
+		-- besser ?   WHERE substring(gml_id,1,16) = ''' || gml_id || '''
 		begsql := 'SELECT max(beginnt) FROM ' || NEW.typename || ' WHERE gml_id like ''' || substr(NEW.replacedBy, 1, 16) || '%'' AND endet IS NULL';
 		EXECUTE begsql INTO aktbeg;
 
 		-- Alte Objekte entfernen
 		EXECUTE 'DELETE FROM ' || NEW.typename || ' WHERE gml_id like ''' || gml_id || '%'' AND beginnt < ''' || aktbeg || '''';
+	END IF;
 
+	NEW.ignored := false;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Version ab 2014-09-23 (PostNAS 0.8)
+-- Abwandlung der Hist-Version als Kill-Version.
+-- Die "gml_id" muss in der Datenbank das Format character(16) haben.
+-- Dies kann auch Abgabeart 3100 verarbeiten. Historische Objekte werden aber sofort entfernt.
+CREATE OR REPLACE FUNCTION delete_feature_kill() RETURNS TRIGGER AS $$
+DECLARE
+	n INTEGER;
+	vbeginnt TEXT;
+	replgml TEXT;
+	featgml TEXT;
+	s TEXT;
+BEGIN
+	-- Version 2014-09-23, replace führt auch zum Löschen des Vorgängerobjektes
+	NEW.context := coalesce(lower(NEW.context),'delete');
+
+	IF NEW.anlass IS NULL THEN
+		NEW.anlass := '';
+	END IF;
+	featgml := substr(NEW.featureid, 1, 16); -- gml_id ohne Timestamp
+
+	IF length(NEW.featureid)=32 THEN
+		-- beginnt-Zeit der zu löschenden Vorgaenger-Version des Objektes
+		vbeginnt := substr(NEW.featureid, 17, 4) || '-'
+			|| substr(NEW.featureid, 21, 2) || '-'
+			|| substr(NEW.featureid, 23, 2) || 'T'
+			|| substr(NEW.featureid, 26, 2) || ':'
+			|| substr(NEW.featureid, 28, 2) || ':'
+			|| substr(NEW.featureid, 30, 2) || 'Z' ;
+	ELSIF length(NEW.featureid)=16 THEN
+		-- Ältestes nicht gelöschtes Objekt
+		EXECUTE 'SELECT min(beginnt) FROM ' || NEW.typename
+			|| ' WHERE gml_id=''' || featgml || '''' || ' AND endet IS NULL'
+			INTO vbeginnt;
+
+		IF vbeginnt IS NULL THEN
+			RAISE EXCEPTION '%: Keinen Kandidaten zum Löschen gefunden.', NEW.featureid;
+		END IF;
+	ELSE
+		RAISE EXCEPTION '%: Identifikator gescheitert.', NEW.featureid;
+	END IF;
+
+	IF NEW.context='delete' THEN
+	ELSIF NEW.context='update' THEN
+	ELSIF NEW.context='replace' THEN
+		NEW.safetoignore := lower(NEW.safetoignore);
+		IF NEW.safetoignore IS NULL THEN
+			RAISE EXCEPTION '%: safeToIgnore nicht gesetzt.', NEW.featureid;
+		ELSIF NEW.safetoignore<>'true' AND NEW.safetoignore<>'false' THEN
+			RAISE EXCEPTION '%: safeToIgnore ''%'' ungültig (''true'' oder ''false'' erwartet).', NEW.featureid, NEW.safetoignore;
+		END IF;
+	ELSE
+		RAISE EXCEPTION '%: Ungültiger Kontext % (''delete'', ''replace'' oder ''update'' erwartet).', NEW.featureid, NEW.context;
+	END IF;
+
+	-- Vorgaenger ALKIS-Objekt Loeschen
+	s := 'DELETE FROM ' || NEW.typename || ' WHERE gml_id=''' || featgml || ''' AND beginnt=''' || vbeginnt || '''' ;
+	EXECUTE s;
+	GET DIAGNOSTICS n = ROW_COUNT;
+	-- RAISE NOTICE 'SQL[%]:%', n, s;
+	IF n<>1 THEN
+		RAISE EXCEPTION '%: % schlug fehl [%]', NEW.featureid, NEW.context, n;
+		-- dieser Satz kommt nicht in die delete-Tabelle?
 	END IF;
 
 	NEW.ignored := false;
@@ -590,3 +664,43 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- 2014-09-22 Kopie aus Norbit-Github
+-- Funktioniert nicht wenn Schlüsseltabellen mit "ax_" beginnen wie die Objekt-Tabellen.
+-- Darin wird dann z.B. die Splate "endet" gesucht.
+-- ToDo: besseres Namens-Schema für Tabellen.
+--   z.B. Umbenennen "ax_buchungsstelle_buchungsart" -> "v_bs_buchungsart"
+CREATE OR REPLACE FUNCTION alkis_hist_check() RETURNS varchar AS $$
+DECLARE
+	c RECORD;
+	n INTEGER;
+	r VARCHAR;
+BEGIN
+	FOR c IN SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND substr(table_name,1,3) IN ('ax_','ap_','ks_') AND table_type='BASE TABLE'
+	LOOP
+		EXECUTE 'SELECT count(*) FROM ' || c.table_name || ' WHERE endet IS NULL GROUP BY gml_id HAVING count(*)>1' INTO n;
+		IF n>1 THEN
+			r := coalesce(r||E'\n','') || c.table_name || ': ' || n || ' Objekte, die in mehreren Versionen nicht beendet sind.';
+		END IF;
+
+		EXECUTE 'SELECT count(*) FROM ' || c.table_name || ' WHERE beginnt>=endet' INTO n;
+		IF n>1 THEN
+			r := coalesce(r||E'\n','') || c.table_name || ': ' || n || ' Objekte mit ungültiger Lebensdauer.';
+		END IF;
+
+		EXECUTE 'SELECT count(*)'
+			|| ' FROM ' || c.table_name || ' a'
+			|| ' JOIN ' || c.table_name || ' b ON a.gml_id=b.gml_id AND a.ogc_fid<>b.ogc_fid AND a.beginnt<b.endet AND a.endet>b.beginnt'
+			INTO n;
+		IF n>0 THEN
+			r := coalesce(r||E'\n','') || c.table_name || ': ' || n || ' Lebensdauerüberschneidungen.';
+		END IF;
+	END LOOP;
+
+	RETURN r;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Aufruf: SELECT alkis_hist_check();
+

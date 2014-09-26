@@ -23,8 +23,11 @@
 --                   ax_klassifizierungnachstrassenrecht_artdf, ax_naturumweltoderbodenschutzrecht_artdf, 
 --                   ax_sonstigesrecht_artdf, ax_anderefestlegungnachwasserrecht_artdf
 --  2013-04-17  F.J. Kurzbezeichnungen der Bodenschättung für die Kartendarstellung
+--  2014-01-24	 F.J. "Eigentuemerart" entschchlüsseln
 
---	2014-01-24	F.J. "Eigentuemerart" entschchlüsseln
+-- ToDo: Der Prefix "ax_" sollte Objekt-Tabellen des ALKIS-Namenschemas vorbehalten sein.
+--   Diese Hilfstabellen für Verschlüsselungen sollten dagegen einen anderen Prefix bekommen.
+--   Dadurch können Functions die Objekttabellen am Namen erkennen.
 
   SET client_encoding = 'UTF8';
 

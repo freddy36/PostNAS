@@ -57,6 +57,8 @@
 --               Trigger-Function "delete_feature_hist()" arbeitet fehlerhaft, wenn die gml_id länger als 16 Zeichen sind.
 --               Aktuell: "gml_id character(16) NOT NULL"
 
+-- 2014-09-23 FJ Zählfelder für Kontext-Funktionen in der import-Tabelle
+
 --  Dies Schema kann NICHT mehr mit der gdal-Version 1.9 verwendet werden.
 
 -- ALKIS-Dokumentation (NRW):
@@ -91,13 +93,20 @@
 
 
 -- Importtabelle für Verarbeitungs-Zähler.
--- Wird benötigt für den Trigger zur Pflege der "alkis_beziehungen" (Version "Unna").
--- Kann mit "alkis_beziehungen" entfallen, wenn alle Views und Programm umgestellt sind auf interne Relationen.
+-- Wurde ursprünglich eingeführt für den Trigger zur Pflege der "alkis_beziehungen".
+-- Ist seit Version PostNAS 0.8 nur noch eine Metadaten-Tabelle zum Aktualisierungs-Verlauf einer Datenbank.
+-- Für die Funktion von Konverter oder Auskunft-Programmen ist diese Tabelle nicht notwendig.
+-- Das Script "konv_batch.sh" aktualisiert diese Tabelle.
+-- Wenn dies Script verwendet wird, ist die import-Tabelle nützlich um nachzuschauen,
+-- wann welcher Ordner mit Daten in diese Datenbank konvertiert wurde.
 CREATE TABLE import (
   id serial NOT NULL,
   datum timestamp without time zone,
   verzeichnis text,
   importart text,
+  anz_delete integer,
+  anz_update integer,
+  anz_replace integer,
   CONSTRAINT import_pk PRIMARY KEY (id)
 );
 
@@ -108,6 +117,11 @@ COMMENT ON COLUMN import.id          IS 'Laufende Nummer der Konverter-Datei-Ver
 COMMENT ON COLUMN import.datum       IS 'Zeitpunkt des Beginns des Konverter-Laufes für einen Stapel von NAS-Dateien.';
 COMMENT ON COLUMN import.verzeichnis IS 'Ort von dem die NAS-Dateien verarbeitet wurden.';
 COMMENT ON COLUMN import.importart   IS 'Modus des Konverter-Laufes: e="Erstladen" oder a="NBA-Aktualisierung"';
+
+COMMENT ON COLUMN import.anz_delete  IS 'Anzahl von delete-Funktionen in der delete-Tabelle nach Ende eines Konvertierungs-Laufes';
+COMMENT ON COLUMN import.anz_update  IS 'Anzahl von update-Funktionen in der delete-Tabelle nach Ende eines Konvertierungs-Laufes';
+COMMENT ON COLUMN import.anz_replace IS 'Anzahl von replace-Funktionen in der delete-Tabelle nach Ende eines Konvertierungs-Laufes';
+
 
 -- Tabelle "delete" für Lösch- und Fortführungsdatensätze.
 -- Über diese Tabelle werden Aktualisierungen des Bestandes gesteuert.
