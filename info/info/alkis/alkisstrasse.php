@@ -12,6 +12,7 @@
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
 	2014-09-16 Wechsel Gem./Flur durch <b> hervorheben
+	2014-09-30 Rückbau substring(gml_id)
 */
 session_start();
 $cntget = extract($_GET);
@@ -138,14 +139,14 @@ echo "\n<p>Zusammenfassung von 'Lage mit Hausnummer' und 'Lage ohne Hausnummer' 
 // ax_Flurstueck >zeigtAuf> ax_LagebezeichnungOhneHausnummer > = Strasse
 // Suchkriterium: gml_id aus Katalog
 $subquery = "SELECT f1.gml_id AS fsgml, lm.gml_id AS lgml, lm.land, lm.regierungsbezirk, lm.kreis, lm.gemeinde, lm.lage, lm.hausnummer 
- FROM ax_flurstueck f1 JOIN ax_lagebezeichnungmithausnummer lm ON substring(lm.gml_id,1,16)=ANY(f1.weistAuf) 
+ FROM ax_flurstueck f1 JOIN ax_lagebezeichnungmithausnummer lm ON lm.gml_id=ANY(f1.weistAuf) 
  WHERE f1.endet IS NULL AND lm.endet IS NULL
 UNION SELECT f2.gml_id AS fsgml, '' AS lgml, lo.land, lo.regierungsbezirk, lo.kreis, lo.gemeinde, lo.lage, '' AS hausnummer 
- FROM ax_flurstueck f2 JOIN ax_lagebezeichnungohnehausnummer lo ON substring(lo.gml_id,1,16)=ANY(f2.zeigtauf) 
+ FROM ax_flurstueck f2 JOIN ax_lagebezeichnungohnehausnummer lo ON lo.gml_id=ANY(f2.zeigtauf) 
  WHERE f2.endet IS NULL AND lo.endet IS NULL";
 
 $sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.amtlicheflaeche, duett.lgml, duett.hausnummer 
- FROM ax_flurstueck f JOIN ( ".$subquery." ) AS duett ON substring(f.gml_id,1,16)=duett.fsgml 
+ FROM ax_flurstueck f JOIN ( ".$subquery." ) AS duett ON f.gml_id=duett.fsgml 
  JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
  JOIN ax_lagebezeichnungkatalogeintrag s ON duett.land=s.land AND duett.regierungsbezirk=s.regierungsbezirk AND duett.kreis=s.kreis AND duett.gemeinde=s.gemeinde AND duett.lage=s.lage 
 WHERE s.gml_id = $1 AND f.endet IS NULL AND s.endet IS NULL 

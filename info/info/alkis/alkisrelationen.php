@@ -56,7 +56,7 @@ if (!$con) {
 	echo "<p>Kreis = '".substr($gmlid, 4, 2)."'</p>";
 	echo "<p>Konstante = '".substr($gmlid, 6, 6)."'</p>";
 	echo "<p>Objekt-Nr = '".substr($gmlid, 12, 4)."'</p>";
-	echo "<p>Zeitstempel = '".substr($gmlid, 16)."'</p>";
+//	echo "<p>Zeitstempel = '".substr($gmlid, 16)."'</p>";
 
 //	$sql="SELECT beziehungsart, beziehung_zu FROM alkis_beziehungen WHERE beziehung_von= $1;";
 //	$v = array($gmlid);

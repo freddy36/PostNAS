@@ -11,6 +11,7 @@
 			dafür hier die Schlüssel ganz raus und Flurstücks-Verschneidung raus.
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix)
 */
 session_start();
 $cntget = extract($_GET);
@@ -45,7 +46,7 @@ if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 // wie View "baurecht"
 $sql ="SELECT r.ogc_fid, r.name, r.stelle, r.bezeichnung AS rechtbez, a.bezeichner  AS adfbez, d.bezeichnung AS stellbez, round(st_area(r.wkb_geometry)::numeric,0) AS flae 
 FROM ax_bauraumoderbodenordnungsrecht r 
-LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON r.artderfestlegung=a.wert 
+LEFT JOIN v_baurecht_adf a ON r.artderfestlegung=a.wert 
 LEFT JOIN ax_dienststelle d ON r.land=d.land AND r.stelle=d.stelle WHERE r.gml_id= $1 ;";
 
 $v = array($gmlid);

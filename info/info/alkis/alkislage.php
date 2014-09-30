@@ -10,6 +10,7 @@
 	2014-01-23 gml des Katalogs, Link auf Modul "strasse"
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
 
 	ToDo:
 	- Das Balken-Kennzeichen noch kompatibel machen mit der Eingabe der Navigation für Adresse 
@@ -248,12 +249,12 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	WHERE $1 = ANY(f.".$bezart.") AND f.endet IS NULL AND g.endet IS NULL 
 	ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
-	$v = array(substr($gmlid,0,16)); // Relation nur mit 16 Stellen 
+	$v = array($gmlid);
 	$resf = pg_prepare("", $sql);
 	$resf = pg_execute("", $v);
 	if (!$resf) {
 		echo "<p class='err'>Fehler bei Flurst&uuml;ck.</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}	
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}	
 	}
 
 	echo "\n<table class='fs'>";
@@ -368,15 +369,15 @@ if ($ltyp <> "o") { // OhneHsNr linkt nur Flurst.
 		case "m": $bezart="ANY(g.zeigtauf)"; break; // array
 	}
 	$sql ="SELECT g.gml_id, g.gebaeudefunktion, g.name, g.bauweise, g.grundflaeche, g.zustand, round(area(g.wkb_geometry)::numeric,2) AS flaeche, h.bauweise_beschreibung, u.bezeichner 
-	FROM ax_gebaeude g LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id 
-	LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert WHERE $1 = ".$bezart." AND g.endet IS NULL;";
+	FROM ax_gebaeude g LEFT JOIN v_geb_bauweise h ON g.bauweise=h.bauweise_id 
+	LEFT JOIN v_geb_funktion u ON g.gebaeudefunktion=u.wert WHERE $1 = ".$bezart." AND g.endet IS NULL;";
 
-	$v = array(substr($gmlid,0,16)); // 16 St. in Rel.
+	$v = array($gmlid);
 	$res = pg_prepare("", $sql);
 	$res = pg_execute("", $v);
 	if (!$res) {
 		echo "<p class='err'>Fehler bei Geb&auml;ude.</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 	}
 	echo "\n<table class='geb'>";
 	echo "\n<tr>"; // T-Header

@@ -12,6 +12,7 @@
 	2014-02-06 Korrektur Eigentümerart
 	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
 */
 
 function footer($gmlid, $link, $append) {
@@ -95,7 +96,7 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 	// F L U R S T U E C K
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche 
 	FROM ax_flurstueck f 
-	JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
+	JOIN ax_buchungsstelle s ON f.istgebucht=s.gml_id 
 	LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
 	WHERE s.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND g.endet IS NULL ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
@@ -197,13 +198,13 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	$sqln="SELECT n.gml_id, n.laufendenummernachdin1421 AS lfd, n.zaehler, n.nenner, n.artderrechtsgemeinschaft AS adr, n.beschriebderrechtsgemeinschaft as beschr, n.eigentuemerart, n.anlass ";
 	$sqln.="FROM ax_namensnummer n WHERE n.istbestandteilvon= $1 AND n.endet IS NULL ORDER BY n.laufendenummernachdin1421;";
 
-	$v = array(substr($gmlid,0,16)); // 16 Stellen bei Relationen
+	$v = array($gmlid); // 16 Stellen bei Relationen
 	$resn = pg_prepare("", $sqln);
 	$resn = pg_execute("", $v);
 
 	if (!$resn) {
 		echo "<p class='err'>Fehler bei Eigent&uuml;mer</p>\n";
-		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".substr($gmlid,0,16)."'</p>";}
+		if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqln."<br>$1=gml= '".$gmlid."'</p>";}
 	}
 
 	echo "\n\n<table class='eig'>";
@@ -238,13 +239,11 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 			// Die Rechtsgemeinschaft selbst steht unter einer eigenen AX_Namensnummer, 
 			// die zu allen Namensnummern der Rechtsgemeinschaft eine Relation besitzt.
 
-			// Die Relation 'Namensnummer' hat Vorgänger 'Namensnummer' gibt Auskunft darüber, 
-			// aus welchen Namensnummern die aktuelle entstanden ist.
 
 		// Schleife 2: P e r s o n
 		// Beziehung: ax_person  <benennt<  ax_namensnummer
 		$sqlp ="SELECT p.gml_id, p.nachnameoderfirma, p.vorname, p.geburtsname, p.geburtsdatum, p.namensbestandteil, p.akademischergrad ";
-		$sqlp.="FROM ax_person p JOIN ax_namensnummer nn ON nn.benennt=substring(p.gml_id,1,16) WHERE nn.gml_id= $1 AND p.endet IS NULL AND nn.endet IS NULL;";
+		$sqlp.="FROM ax_person p JOIN ax_namensnummer nn ON nn.benennt=p.gml_id WHERE nn.gml_id= $1 AND p.endet IS NULL AND nn.endet IS NULL;";
 
 		$v = array($gmlnn);
 		$resp = pg_prepare("", $sqlp);
@@ -290,55 +289,60 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 
 			if ($mitadresse) {
 				// Schleife 3:  A d r e s s e  (OPTIONAL)
-				$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland ";
-				$sqla.="FROM ax_anschrift a JOIN ax_person p ON substring(a.gml_id,1,16)=ANY(p.hat) WHERE p.gml_id= $1 AND a.endet IS NULL AND p.endet IS NULL;"; // ORDER?
+				$sqla ="SELECT a.gml_id, a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer, a.bestimmungsland 
+				FROM ax_anschrift a JOIN ax_person p ON a.gml_id=ANY(p.hat) WHERE p.gml_id= $1 AND a.endet IS NULL AND p.endet IS NULL LIMIT 2;";
 				$gmlp=$rowp["gml_id"]; // Person
 				$v = array($gmlp);
 				$resa = pg_prepare("", $sqla);
 				$resa = pg_execute("", $v);
+
 				if (!$resa) {
 					echo "\n\t<p class='err'>Fehler bei Adressen</p>\n";
 					if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sqla."<br>$1=gml= '".$gmlp."'</p>";}
 				}
 				$j=0;
 				while($rowa = pg_fetch_array($resa)) {
-					$gmla=$rowa["gml_id"];
-					$plz=$rowa["plz"]; // integer
-					if($plz == 0) {
-						$plz="";
-					} else {
-						$plz=str_pad($plz, 5, "0", STR_PAD_LEFT);
-					}
-					$ort=htmlentities($rowa["ort_post"], ENT_QUOTES, "UTF-8");
-					$str=htmlentities($rowa["strasse"], ENT_QUOTES, "UTF-8");
-					$hsnr=$rowa["hausnummer"];
-					$land=htmlentities($rowa["bestimmungsland"], ENT_QUOTES, "UTF-8");
-
-					echo "\n<tr>\n\t<td>&nbsp;</td>"; // Spalte 1
-					echo "\n\t<td><p class='gadr'>"; //Spalte 2
-					if ($str.$hsnr != "") {
-						echo $str." ".$hsnr."<br>";
-					}
-					if ($plz.$ort != "") {
-						echo $plz." ".$ort;
-					}
-					if ($land != "" and $land != "DEUTSCHLAND") {
-						echo ", ".$land;
-					}
-					echo "</p></td>";
-					echo "\n\t<td>"; // Spalte 3
-					if ($idanzeige) {
-						echo "<p class='nwlink noprint'>";
-						linkgml($gkz, $gmla, "Adresse", "ax_adresse");
-						echo "</p>";
-					} else { 
-						echo "&nbsp;";
-					}
-					echo "</td>\n</tr>";
 					$j++;
+					if ($j == 1) { // erste Adresse anzeigen
+						$gmla=$rowa["gml_id"];
+						$plz=$rowa["plz"]; // integer
+						if($plz == 0) {
+							$plz="";
+						} else {
+							$plz=str_pad($plz, 5, "0", STR_PAD_LEFT);
+						}
+						$ort=htmlentities($rowa["ort_post"], ENT_QUOTES, "UTF-8");
+						$str=htmlentities($rowa["strasse"], ENT_QUOTES, "UTF-8");
+						$hsnr=$rowa["hausnummer"];
+						$land=htmlentities($rowa["bestimmungsland"], ENT_QUOTES, "UTF-8");
+
+						echo "\n<tr>\n\t<td>&nbsp;</td>"; //Sp. 1
+						echo "\n\t<td><p class='gadr'>"; //Sp. 2
+						if ($str.$hsnr != "") {
+							echo $str." ".$hsnr."<br>";
+						}
+						if ($plz.$ort != "") {
+							echo $plz." ".$ort;
+						}
+						if ($land != "" and $land != "DEUTSCHLAND") {
+							echo ", ".$land;
+						}
+						echo "</p></td>";
+						echo "\n\t<td>"; // Sp. 3
+						if ($idanzeige) {
+							echo "<p class='nwlink noprint'>";
+							linkgml($gkz, $gmla, "Adresse", "ax_adresse");
+							echo "</p>";
+						} else { 
+							echo "&nbsp;";
+						}
+						echo "</td>\n</tr>";
+					} else { // manchmal dopplete Angaben (_straße / _str.)
+						echo "\n<tr>\n\t<td>&nbsp;</td>\n\t<td><p class='dbg' title='Siehe Auskunft zur Person'>weitere Adresse</p></td>\n\t<td>&nbsp;</td>\n</tr>";
+					}
 				}
 				pg_free_result($resa);
-			} // End if
+			}
 			// 'keine Adresse' kann vorkommen, z.B. "Deutsche Telekom AG"
 
 			$i++; // cnt Person
@@ -369,7 +373,7 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	echo "\n</table>\n";
 	if ($n == 0) { // bei "Fiktives Blatt" KEIN Fehler 
 		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
-		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".substr($gmlid,0,16)."'</p>";}
+		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
 	}
 	pg_free_result($resn);
 	return $n; 
@@ -421,7 +425,7 @@ function eigentuemerart($key) {
 		case 5920: $wert = "Land"; break; // "Eigenes Bundesland"
 		case "":   $wert = "Person"; break; // falls (noch) nicht gefuellt
 		default: // Datenbank-Abfrage
-			$sql="SELECT bezeichner FROM ax_namensnummer_eigentuemerart WHERE wert= $1 ;";
+			$sql="SELECT bezeichner FROM v_namnum_eigart WHERE wert= $1 ;";
 			$v=array($key);
 			$res=pg_prepare("", $sql);
 			$res=pg_execute("", $v);

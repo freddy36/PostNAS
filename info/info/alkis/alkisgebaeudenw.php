@@ -9,6 +9,7 @@
     2014-01-30 pg_free_result
 	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
 */
 session_start();
 $cntget = extract($_GET);
@@ -120,9 +121,9 @@ $sqlg.="st_within(g.wkb_geometry,f.wkb_geometry) as drin ";
 $sqlg.="FROM ax_flurstueck f, ax_gebaeude g ";
 
 // Entschluesseln
-$sqlg.="LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id 
-LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert 
-LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert 
+$sqlg.="LEFT JOIN v_geb_bauweise h ON g.bauweise=h.bauweise_id 
+LEFT JOIN v_geb_funktion u ON g.gebaeudefunktion=u.wert 
+LEFT JOIN v_geb_zustand z ON g.zustand=z.wert 
 WHERE f.gml_id= $1 AND f.endet IS NULL and g.endet IS NULL "; // ID des akt. FS
 
 // "within" -> nur Geb., die komplett im FS liegen
@@ -197,13 +198,13 @@ echo "\n<hr>\n<table class='geb'>";
 
 			// HAUPTgebäude  Geb >zeigtAuf> lage (mehrere)
 			$sqll ="SELECT 'm' AS ltyp, l.gml_id AS lgml, s.lage, s.bezeichnung, l.hausnummer, '' AS laufendenummer ";
-			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(g.zeigtauf) ";
+			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmithausnummer l ON l.gml_id=ANY(g.zeigtauf) ";
 			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 			$sqll.="WHERE g.gml_id= $1 AND g.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL ";
 
 			// oder NEBENgebäude  Geb >hat> Pseudo
 			$sqll.="UNION SELECT 'p' AS ltyp, l.gml_id AS lgml, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
-			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmitpseudonummer l ON substring(l.gml_id,1,16)=g.hat ";
+			$sqll.="FROM ax_gebaeude g JOIN ax_lagebezeichnungmitpseudonummer l ON l.gml_id=g.hat ";
 			$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 			$sqll.="WHERE g.gml_id= $1 AND g.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL "; // ID des Hauses"
 		

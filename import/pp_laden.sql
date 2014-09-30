@@ -21,8 +21,8 @@
 --             Beseitigung eines Fehlers beim Laden der Straßennamen-Label.
 --             Dabei Trennung in pp_strassenname_p und -_l (Punkt- und Liniengeometrie).
 --  2014-09-19 Substring auf gml_id, Korrektur "endet IS NULL"
+--  2014-09-30 Rückbau substring(gml_id)
 
--- ToDo: substring(gml_id,1,16) wieder zurück bauen
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -45,8 +45,6 @@ SET client_encoding = 'UTF-8';
 -- Flurstuecksnummern-Label-Position
 -- =================================
 
---SELECT '** Flurstücks-Nummern-Positionen';
---DELETE FROM pp_flurstueck_nr;
 TRUNCATE pp_flurstueck_nr;  -- effektiver als DELETE
 
 /* 
@@ -88,7 +86,7 @@ UPDATE pp_flurstueck_nr n
   SET the_geom = (
       SELECT p.wkb_geometry 
         FROM ap_pto p
-       WHERE substring(n.fsgml,1,16)=ANY(p.dientzurdarstellungvon) 
+       WHERE n.fsgml=ANY(p.dientzurdarstellungvon) 
          AND p.endet IS NULL
        LIMIT 1 -- wegen vereinzelt FEHLER: als Ausdruck verwendete Unteranfrage ergab mehr als eine Zeile
     );
@@ -117,7 +115,6 @@ UPDATE pp_flurstueck_nr n
 --  Variante "_p" = Punktgeometrie, Spalte gml_id ergänzt.
 --  Es werden nun auch Sätze mit leerem "schriftinhalt" angelegt. Das wird dann nachträglich gefüllt.
 
---SELECT '** Straßen-Namen-Label Punkt';
 -- Alles auf Anfang
 TRUNCATE pp_strassenname_p;
 
@@ -147,7 +144,6 @@ DELETE FROM pp_strassenname_p WHERE schriftinhalt IS NULL;
 
 -- Nun das Gleiche noch einmal für Linien-Geometrie
 
---SELECT '** Straßen-Namen-Label Linie';
 -- Auf Anfang
 TRUNCATE pp_strassenname_l;
 
@@ -190,10 +186,7 @@ DELETE FROM pp_strassenname_l WHERE schriftinhalt IS NULL;
 
 -- G E M A R K U N G
 
---SELECT '** Gemarkung';
---DELETE FROM pp_gemarkung;
-  TRUNCATE pp_gemarkung;
-
+TRUNCATE pp_gemarkung;
 -- Vorkommende Paarungen Gemarkung <-> Gemeinde in ax_Flurstueck
 INSERT INTO pp_gemarkung
   (               land, regierungsbezirk, kreis, gemeinde, gemarkung       )
@@ -215,10 +208,8 @@ UPDATE pp_gemarkung a
 
 -- G E M E I N D E
 
---SELECT '** Gemeinde';
---DELETE FROM pp_gemeinde;
 TRUNCATE pp_gemeinde;
--- Vorkommende Gemeinden aus den gemarkungen
+-- Vorkommende Gemeinden aus den Gemarkungen
 INSERT INTO pp_gemeinde
   (               land, regierungsbezirk, kreis, gemeinde)
   SELECT DISTINCT land, regierungsbezirk, kreis, gemeinde
@@ -247,29 +238,23 @@ UPDATE pp_gemeinde a
 
 -- Ausführungszeit: 1 mittlere Stadt mit ca. 14.000 Flurstücken > 100 Sek
 
---SELECT '** Flur';
---DELETE FROM pp_flur;
 TRUNCATE pp_flur;
 INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
    SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
            count(gml_id) as anz_fs,
-           st_multi(st_union(st_buffer(f.wkb_geometry,0.05))) AS the_geom -- Zugabe um Zwischenräume zu vermeiden
+           st_multi(st_union(st_buffer(f.wkb_geometry,0.06))) AS the_geom -- Zugabe um Zwischenräume zu vermeiden
      FROM  ax_flurstueck f
-     WHERE f.endet IS NULL
+     WHERE f.endet IS NULL AND NOT f.wkb_geometry IS NULL
   GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer, f.flurnummer;
+
 
 -- Fluren zu Gemarkungen zusammen fassen
 -- -------------------------------------
 
--- FEHLER: 290 Absturz PG! Bei Verwendung der ungebufferten präzisen Geometrie.  
--- bufferOriginalPrecision failed (TopologyException: unable to assign hole to a shell), trying with reduced precision
--- UPDATE: ../../source/headers/geos/noding/SegmentString.h:175: void geos::noding::SegmentString::testInvariant() const: Zusicherung »pts->size() > 1« nicht erfüllt.
-
---SELECT '** Flächen Gemarkung';
 -- Flächen vereinigen
 UPDATE pp_gemarkung a
   SET the_geom = 
-   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.1))) AS the_geom -- Puffer/Zugabe um Löcher zu vermeiden
+   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.12))) AS the_geom -- Puffer/Zugabe um Löcher zu vermeiden
        FROM pp_flur b
       WHERE a.land      = b.land 
         AND a.gemarkung = b.gemarkung
@@ -289,7 +274,6 @@ UPDATE pp_gemarkung a
 -- ----------------------------------------
 
 -- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
---SELECT '** Flächen Gemeinde';
 UPDATE pp_gemeinde a
   SET the_geom = 
    ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.1))) AS the_geom -- noch mal Zugabe
@@ -308,15 +292,13 @@ UPDATE pp_gemeinde a
    );
 
 
--- Geometrie glätten / vereinfachen
+-- Geometrie glätten und vereinfachen.
 -- Diese "simplen" Geometrien sollen nur für die Darstellung einer Übersicht verwendet werden.
 -- Ablage der simplen Geometrie in einem alternativen Geometriefeld im gleichen Datensatz.
 
---SELECT '** Flächen vereinfachen';
+UPDATE pp_flur      SET simple_geom = st_simplify(the_geom, 0.5); -- Flur 
 
-UPDATE pp_flur      SET simple_geom = st_simplify(the_geom, 0.4); -- Flur 
-
-UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 2.0); -- Gemarkung  (Wirkung siehe pp_gemarkung_analyse)
+UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 2.2); -- Gemarkung (Wirkung siehe pp_gemarkung_analyse)
 
 UPDATE pp_gemeinde  SET simple_geom = st_simplify(the_geom, 5.0); -- Gemeinde (Wirkung siehe pp_gemeinde_analyse)
 
@@ -324,7 +306,6 @@ UPDATE pp_gemeinde  SET simple_geom = st_simplify(the_geom, 5.0); -- Gemeinde (W
 -- Tabelle fuer die Zuordnung vom Eigentümern zu Gemeinden
 -- =======================================================
 
---SELECT '** Gemeinde - Person';
 -- erst mal sauber machen
 DELETE FROM gemeinde_person;
 

@@ -34,6 +34,8 @@
 --  2014-09-12 Korrektur "doppelverbindung" (nach Patch der Indices für Relation auf Substring(gml_id,1,16))
 --  2014-09-17 View "fehler_gebaeude_zu_mehrfach_hsnr"
 --  2014-09-22 Views zur Suche von Fehlern aus einem fehlerhaften Historie-Trigger (beginnt-endet-Paarungen)
+--  2014-09-29 substring(gml_id,1,16) wieder entfernen, gml_id ist im Schema nun wieder fixe 16 Zeichen lang.
+--  2014-09-30 Umbenennung Schlüsseltabellen (Prefix)
 
 
 -- Bausteine für andere Views:
@@ -59,15 +61,18 @@ AS
          b1.gml_id              AS bsgml,    -- gml_id Buchungs
          0                      AS ba_dien
     FROM ax_flurstueck f1
-    JOIN ax_buchungsstelle b1   ON f1.istgebucht = substring(b1.gml_id,1,16)
+  --JOIN ax_buchungsstelle b1   ON f1.istgebucht = substring(b1.gml_id,1,16)
+    JOIN ax_buchungsstelle b1   ON f1.istgebucht = b1.gml_id
  UNION
   -- FS >istGebucht> Buchungstelle  <an<  Buchungstelle
   SELECT f2.gml_id              AS fsgml,    -- gml_id Flurstück
          b2.gml_id              AS bsgml,    -- gml_id Buchung - (herrschendes GB)
          dien.buchungsart       AS ba_dien   -- Ein Feld aus der Zwischen-Buchung zur Fall-Unterscheidung
     FROM ax_flurstueck f2
-    JOIN ax_buchungsstelle dien ON f2.istgebucht = substring(dien.gml_id,1,16)
-    JOIN ax_buchungsstelle b2   ON substring(dien.gml_id,1,16) = ANY (b2.an)  -- auch "zu" ?
+  --JOIN ax_buchungsstelle dien ON f2.istgebucht = substring(dien.gml_id,1,16)
+    JOIN ax_buchungsstelle dien ON f2.istgebucht = dien.gml_id
+  --JOIN ax_buchungsstelle b2   ON substring(dien.gml_id,1,16) = ANY (b2.an)
+    JOIN ax_buchungsstelle b2   ON dien.gml_id = ANY (b2.an)  -- auch "zu" ?
    WHERE dien.endet IS NULL;   -- Für das zusätzliche Verbindungselement die Historie HIER ausschließen, 
                                -- Für andere Tabellen muss dies in dem View erfolgen, der dies verwendet.
 
@@ -93,7 +98,8 @@ AS
          'm' AS fall                         -- Sätze unterschieden: Mit HsNr
     FROM ax_flurstueck fm                    -- Flurstück Mit
     JOIN ax_lagebezeichnungmithausnummer lm  -- Lage MIT
-      ON substring(lm.gml_id,1,16) = ANY (fm.weistauf)  
+    --ON substring(lm.gml_id,1,16) = ANY (fm.weistauf)
+      ON lm.gml_id = ANY (fm.weistauf)
     JOIN ax_lagebezeichnungkatalogeintrag sm
       ON lm.land=sm.land AND lm.regierungsbezirk=sm.regierungsbezirk AND lm.kreis=sm.kreis AND lm.gemeinde=sm.gemeinde AND lm.lage=sm.lage 
    WHERE lm.endet IS NULL AND fm.endet IS NULL -- nichts Historisches
@@ -104,7 +110,8 @@ AS
          'o' AS fall                         -- Sätze unterschieden: Ohne HsNr
     FROM ax_flurstueck fo                    -- Flurstück OHNE
     JOIN ax_lagebezeichnungohnehausnummer lo -- Lage OHNE
-      ON substring(lo.gml_id,1,16) = ANY (fo.zeigtauf)  
+    --ON substring(lo.gml_id,1,16) = ANY (fo.zeigtauf)
+      ON lo.gml_id = ANY (fo.zeigtauf)
     JOIN ax_lagebezeichnungkatalogeintrag so -- Straße OHNE
       ON lo.land=so.land AND lo.regierungsbezirk=so.regierungsbezirk AND lo.kreis=so.kreis AND lo.gemeinde=so.gemeinde AND lo.lage=so.lage
    WHERE lo.endet IS NULL AND fo.endet IS NULL; -- nichts Historisches
@@ -192,18 +199,22 @@ AS
     ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
   JOIN ax_buchungsstelle s              -- Buchungs-Stelle
     ON d.bsgml = s.gml_id
-  JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
+  JOIN v_bs_buchungsart b  -- Enstschlüsselung der Buchungsart
     ON s.buchungsart = b.wert 
   JOIN ax_buchungsblatt  gb             -- Buchung >istBestandteilVon> Grundbuchblatt
-    ON substring(gb.gml_id,1,16) = s.istbestandteilvon
+  --ON substring(gb.gml_id,1,16) = s.istbestandteilvon
+    ON gb.gml_id = s.istbestandteilvon
   JOIN ax_buchungsblattbezirk z 
     ON gb.land=z.land AND gb.bezirk=z.bezirk 
   JOIN ax_namensnummer nn               -- Blatt <istBestandteilVon< NamNum
-    ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
+  --ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
+    ON  gb.gml_id = nn.istbestandteilvon
   JOIN ax_person p                      -- NamNum >benennt> Person 
-    ON substring(p.gml_id,1,16) = nn.benennt
+  --ON substring(p.gml_id,1,16) = nn.benennt
+    ON p.gml_id = nn.benennt
   LEFT JOIN ax_anschrift a 
-    ON substring(a.gml_id,1,16) = ANY (p.hat)
+  --ON substring(a.gml_id,1,16) = ANY (p.hat)
+    ON a.gml_id = ANY (p.hat)
 
   -- 2mal "LEFT JOIN" verdoppelt die Zeile in der Ausgabe. Darum als Subquery in Spalten packen:
   -- Noch mal "GB -> NamNum", aber dieses Mal für "Rechtsgemeinschaft".
@@ -212,7 +223,8 @@ AS
    ( SELECT gr.gml_id, r.artderrechtsgemeinschaft, r.beschriebderrechtsgemeinschaft 
        FROM ax_namensnummer r 
        JOIN ax_buchungsblatt gr
-         ON r.istbestandteilvon = substring(gr.gml_id,1,16) -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
+       --ON r.istbestandteilvon = substring(gr.gml_id,1,16)
+         ON r.istbestandteilvon = gr.gml_id -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
       WHERE NOT r.artderrechtsgemeinschaft IS NULL ) AS rg -- Rechtsgemeinschaft
    ON rg.gml_id = gb.gml_id  -- zum GB
 
@@ -292,18 +304,22 @@ AS
     ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
   JOIN ax_buchungsstelle s              -- Buchungs-Stelle
     ON d.bsgml = s.gml_id 
-  JOIN ax_buchungsstelle_buchungsart b  -- Enstschlüsselung der Buchungsart
+  JOIN v_bs_buchungsart b  -- Enstschlüsselung der Buchungsart
     ON s.buchungsart = b.wert 
   JOIN ax_buchungsblatt  gb             -- Buchung >istBestandteilVon> Grundbuchblatt
-    ON substring(gb.gml_id,1,16) = s.istbestandteilvon
+  --ON substring(gb.gml_id,1,16) = s.istbestandteilvon
+    ON gb.gml_id = s.istbestandteilvon
   JOIN ax_buchungsblattbezirk z 
     ON gb.land=z.land AND gb.bezirk=z.bezirk 
   JOIN ax_namensnummer nn               -- Blatt <istBestandteilVon< NamNum
-    ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
+  --ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
+    ON gb.gml_id = nn.istbestandteilvon
   JOIN ax_person p                      -- NamNum >benennt> Person 
-    ON substring(p.gml_id,1,16) = nn.benennt
+  --ON substring(p.gml_id,1,16) = nn.benennt
+    ON p.gml_id = nn.benennt
   LEFT JOIN ax_anschrift a 
-    ON substring(a.gml_id,1,16) = ANY (p.hat)
+  --ON substring(a.gml_id,1,16) = ANY (p.hat)
+    ON a.gml_id = ANY (p.hat)
 
   -- 2mal "LEFT JOIN" verdoppelt die Zeile in der Ausgabe. Darum als Subquery in Spalten packen:
   -- Noch mal "GB -> NamNum", aber dieses Mal für "Rechtsgemeinschaft".
@@ -312,7 +328,8 @@ AS
    ( SELECT gr.gml_id, r.artderrechtsgemeinschaft, r.beschriebderrechtsgemeinschaft 
        FROM ax_namensnummer r 
        JOIN ax_buchungsblatt gr
-         ON r.istbestandteilvon = substring(gr.gml_id,1,16) -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
+       --ON r.istbestandteilvon = substring(gr.gml_id,1,16)
+         ON r.istbestandteilvon = gr.gml_id -- Blatt <istBestandteilVon< NamNum (Rechtsgemeinschaft) 
       WHERE NOT r.artderrechtsgemeinschaft IS NULL ) AS rg  -- Rechtsgemeinschaft
    ON rg.gml_id = gb.gml_id  -- zum GB
 
@@ -348,7 +365,9 @@ AS
      nn.artderrechtsgemeinschaft AS adr,
      nn.beschriebderrechtsgemeinschaft
   FROM ax_buchungsblatt gb 
-  JOIN ax_namensnummer  nn  ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
+  JOIN ax_namensnummer  nn  
+  --ON substring(gb.gml_id,1,16) = nn.istbestandteilvon
+    ON gb.gml_id = nn.istbestandteilvon
   WHERE NOT nn.artderrechtsgemeinschaft IS NULL
     AND gb.endet IS NULL AND nn.endet IS NULL -- Historie weglassen
   ORDER BY gb.bezirk, gb.buchungsblattnummermitbuchstabenerweiterung, nn.laufendenummernachdin1421;
@@ -438,7 +457,9 @@ AS
  SELECT f.gml_id, 
         f.gemarkungsnummer || '-' || f.flurnummer || '-' || f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS such -- Suchstring für ALKIS-Navigation nach FS-Kennzeichen
    FROM ax_flurstueck f 
-   JOIN ap_pto p ON substring(f.gml_id,1,16) = ANY(p.dientzurdarstellungvon) 
+   JOIN ap_pto p 
+   --ON substring(f.gml_id,1,16) = ANY(p.dientzurdarstellungvon)
+     ON f.gml_id = ANY(p.dientzurdarstellungvon) 
   WHERE f.endet IS NULL AND p.endet IS NULL;
 -- TIPP: mit zusätzlichem LIMIT auftrufen!
 
@@ -450,7 +471,9 @@ AS
  SELECT f.gml_id, 
         f.gemarkungsnummer || '-' || f.flurnummer || '-' || f.zaehler::text || COALESCE ('/' || f.nenner::text, '') AS such -- Suchstring für ALKIS-Navigation nach FS-Kennzeichen
  FROM   ax_flurstueck f 
- LEFT JOIN ap_pto p ON substring(f.gml_id,1,16) = ANY(p.dientzurdarstellungvon) 
+ LEFT JOIN ap_pto p 
+ --ON substring(f.gml_id,1,16) = ANY(p.dientzurdarstellungvon)
+   ON f.gml_id = ANY(p.dientzurdarstellungvon)
  WHERE p.gml_id IS NULL
    AND f.endet IS NULL;
 -- TIPP: mit zusätzlichem LIMIT aufrufen!
@@ -496,7 +519,7 @@ AS
          d.bezeichnung AS stellbez     -- Stelle Bezeichnung
       -- , d.stellenart                -- weiter entschluesseln?
     FROM ax_bauraumoderbodenordnungsrecht r
-    LEFT JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a
+    LEFT JOIN v_baurecht_adf a
       ON r.artderfestlegung = a.wert
     LEFT JOIN ax_dienststelle d
       ON r.land=d.land AND r.stelle=d.stelle 
@@ -564,7 +587,8 @@ AS
            l.lage        AS strassenschluessel, 
            l.hausnummer 
       FROM   ax_flurstueck f 
-      JOIN   ax_lagebezeichnungmithausnummer l   ON  substring(l.gml_id,1,16) = ANY (f.weistauf)
+    --JOIN   ax_lagebezeichnungmithausnummer l   ON  substring(l.gml_id,1,16) = ANY (f.weistauf)
+      JOIN   ax_lagebezeichnungmithausnummer l   ON  l.gml_id = ANY(f.weistauf)
       JOIN   ax_gemeinde g   ON l.kreis=g.kreis  AND l.gemeinde=g.gemeinde 
       JOIN   ax_lagebezeichnungkatalogeintrag s  ON  l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage = s.lage
  --  WHERE l.gemeinde = '40'  -- ggf. Anpassen
@@ -626,16 +650,20 @@ AS
    -- p.vorname 
    FROM   ax_person              p
      JOIN ax_namensnummer        n   -- Namennummer >benennt> Person
-       ON substring(p.gml_id,1,16) = n.benennt
+     --ON substring(p.gml_id,1,16) = n.benennt
+       ON p.gml_id = n.benennt
      JOIN ax_buchungsblatt       g   -- Namensnummer >istBestandteilVon> Grundbuch
-       ON n.istbestandteilvon = substring(g.gml_id,1,16)
+     --ON n.istbestandteilvon = substring(g.gml_id,1,16)
+       ON n.istbestandteilvon = g.gml_id
      JOIN ax_buchungsblattbezirk b    ON g.land = b.land AND g.bezirk = b.bezirk 
      JOIN ax_buchungsstelle      s   -- Buchungs-Stelle >istBestandteilVon> Grundbuch
-       ON s.istbestandteilvon = substring(g.gml_id,1,16)
-     JOIN ax_buchungsstelle_buchungsart art 
+     --ON s.istbestandteilvon = substring(g.gml_id,1,16)
+       ON s.istbestandteilvon = g.gml_id
+     JOIN v_bs_buchungsart art 
        ON s.buchungsart = art.wert 
      JOIN ax_flurstueck          f  -- Flurstueck >istGebucht> Buchungs-Stelle
-       ON f.istgebucht = substring(s.gml_id,1,16)
+     --ON f.istgebucht = substring(s.gml_id,1,16)
+       ON f.istgebucht = s.gml_id
      JOIN ax_gemarkung           k    
        ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
    WHERE p.nachnameoderfirma LIKE 'Stadt %'   -- ** Bei Bedarf anpassen!
@@ -688,21 +716,26 @@ AS
    -- p.vorname 
    FROM   ax_person              p
      JOIN ax_namensnummer        n    -- Namennummer >benennt> Person
-       ON substring(p.gml_id,1,16) = n.benennt
+     --ON substring(p.gml_id,1,16) = n.benennt
+       ON p.gml_id = n.benennt
      JOIN ax_buchungsblatt       g    -- Namensnummer >istBestandteilVon> Grundbuch
-       ON n.istBestandteilVon = substring(g.gml_id,1,16)
+     --ON n.istBestandteilVon = substring(g.gml_id,1,16)
+       ON n.istBestandteilVon = g.gml_id
      JOIN ax_buchungsblattbezirk b    
        ON g.land = b.land AND g.bezirk = b.bezirk 
      JOIN ax_buchungsstelle      sh  -- B-Stelle herr >istBestandteilVon> Grundbuch
-       ON sh.istbestandteilvon = substring(g.gml_id,1,16) -- herrschende Buchung
-     JOIN ax_buchungsstelle_buchungsart arth 
+     --ON sh.istbestandteilvon = substring(g.gml_id,1,16)
+       ON sh.istbestandteilvon = g.gml_id -- herrschende Buchung
+     JOIN v_bs_buchungsart arth 
        ON sh.buchungsart = arth.wert 
      JOIN ax_buchungsstelle      sd   -- B-Stelle herr.  >an/zu> B-Stelle dien.
-       ON (substring(sd.gml_id,1,16) = ANY(sh.an) OR substring(sd.gml_id,1,16) = ANY(sh.zu))
-     JOIN ax_buchungsstelle_buchungsart artd 
+     --ON (substring(sd.gml_id,1,16) = ANY(sh.an) OR substring(sd.gml_id,1,16) = ANY(sh.zu))
+       ON (sd.gml_id = ANY(sh.an) OR sd.gml_id = ANY(sh.zu))
+     JOIN v_bs_buchungsart artd 
        ON sd.buchungsart = artd.wert
      JOIN ax_flurstueck          f    -- Flurstueck  >istGebucht> B-Stelle dien     
-       ON f.istgebucht = substring(sd.gml_id,1,16)
+     --ON f.istgebucht = substring(sd.gml_id,1,16)
+       ON f.istgebucht = sd.gml_id
      JOIN ax_gemarkung           k    
        ON f.land = k.land AND f.gemarkungsnummer = k.gemarkungsnummer 
    WHERE p.nachnameoderfirma LIKE 'Stadt %'   -- ** Bei Bedarf anpassen!    
@@ -725,7 +758,8 @@ AS
  SELECT l.gml_id, l.gemeinde, l.lage, l.hausnummer 
    FROM ax_gebaeude g
    JOIN ax_lagebezeichnungmithausnummer l  
-     ON substring(l.gml_id,1,16) = ANY(g.zeigtauf)
+   --ON substring(l.gml_id,1,16) = ANY(g.zeigtauf)
+     ON l.gml_id = ANY(g.zeigtauf)
   WHERE g.endet IS NULL AND l.endet IS NULL
   GROUP BY l.gml_id, l.gemeinde, l.lage, l.hausnummer
   HAVING count(g.gml_id) > 1;
@@ -741,7 +775,8 @@ AS
          g.gml_id, g.beginnt
   FROM ax_gebaeude g
   JOIN fehler_hausnummer_mehrfach_verwendet f
-    ON substring(f.gml_id::text, 1, 16) = ANY (g.zeigtauf)
+  --ON substring(f.gml_id::text, 1, 16) = ANY(g.zeigtauf)
+    ON f.gml_id = ANY(g.zeigtauf)
   JOIN ax_lagebezeichnungkatalogeintrag k
     ON f.gemeinde=k.gemeinde AND f.lage=k.lage
     WHERE g.endet IS NULL
@@ -761,7 +796,8 @@ AS
     AND g1.gml_id IN -- Subquery sucht Gebäude mit meherern Hausnummen
    (SELECT g2.gml_id 
       FROM ax_gebaeude g2
-      JOIN ax_lagebezeichnungmithausnummer l2 ON substring(l2.gml_id,1,16) = ANY(g2.zeigtauf)
+    --JOIN ax_lagebezeichnungmithausnummer l2 ON substring(l2.gml_id,1,16) = ANY(g2.zeigtauf)
+      JOIN ax_lagebezeichnungmithausnummer l2 ON l2.gml_id = ANY(g2.zeigtauf)
      WHERE g2.endet IS NULL AND l2.endet IS NULL
      GROUP BY g2.gml_id 
    HAVING count(l2.gml_id) > 1)
@@ -776,7 +812,7 @@ CREATE OR REPLACE VIEW buchungsarten_vorkommend
 AS
   SELECT a.wert, a.bezeichner, 
          count(b.gml_id) AS anzahl_buchungen
-    FROM ax_buchungsstelle_buchungsart a
+    FROM v_bs_buchungsart a
     JOIN ax_buchungsstelle b  ON a.wert = b.buchungsart
    WHERE b.endet IS NULL
 GROUP BY a.wert, a.bezeichner
@@ -844,7 +880,8 @@ AS
   JOIN ax_lagebezeichnungohnehausnummer o   -- Gewanne
     ON k.bezeichnung = o.unverschluesselt   -- Gleiche Namen 
    JOIN ax_flurstueck fo                    --  Flurst. >zeigtAuf>  Lage
-    ON substring(o.gml_id,1,16) = ANY(fo.zeigtauf)  
+   --ON substring(o.gml_id,1,16) = ANY(fo.zeigtauf)
+     ON o.gml_id = ANY(fo.zeigtauf)  
  WHERE fo.gemeinde = k.gemeinde  -- Gewanne wird für ein Flst. in gleicher Gemeinde verwendet, wie der Straßenschlüssel
    AND k.endet IS NULL AND o.endet IS NULL AND fo.endet IS NULL 
   ORDER BY fo.gemarkungsnummer, fo.flurnummer, fo.zaehler, k.gemeinde, k.bezeichnung;
@@ -861,10 +898,12 @@ AS
   SELECT DISTINCT p.gml_id, p.nachnameoderfirma, p.vorname, 
          a1.ort_post, a1.strasse AS strasse1, a2.strasse AS strasse2, a1.hausnummer
     FROM ax_person    p
-    JOIN ax_anschrift a1 ON substring(a1.gml_id,1,16) = ANY(p.hat)
-    JOIN ax_anschrift a2 ON substring(a2.gml_id,1,16) = ANY(p.hat)
+  --JOIN ax_anschrift a1 ON substring(a1.gml_id,1,16) = ANY(p.hat)
+    JOIN ax_anschrift a1 ON a1.gml_id = ANY(p.hat)
+  --JOIN ax_anschrift a2 ON substring(a2.gml_id,1,16) = ANY(p.hat)
+    JOIN ax_anschrift a2 ON a2.gml_id = ANY(p.hat)
    WHERE a1.gml_id <> a2.gml_id
-      AND a1.ort_post =  a2.ort_post
+      AND a1.ort_post = a2.ort_post
       AND a1.strasse like trim(a2.strasse, '.') || '%'
       AND a1.hausnummer = a2.hausnummer
       AND p.endet IS NULL AND a1.endet IS NULL and a2.endet IS NULL
@@ -1046,14 +1085,17 @@ AS
   SELECT g.gml_id, g.bezirk || '-' || g.buchungsblattnummermitbuchstabenerweiterung AS kennzeichen, 
          sum(coalesce(n.zaehler/n.nenner, 1.0))::double precision AS summe_der_anteile
   FROM ax_buchungsblatt g
-  JOIN ax_namensnummer n ON substring(g.gml_id,1,16) = n.istbestandteilvon
+  JOIN ax_namensnummer n 
+  --ON substring(g.gml_id,1,16) = n.istbestandteilvon
+    ON g.gml_id = n.istbestandteilvon
   WHERE g.endet IS NULL AND n.endet IS NULL
   GROUP BY g.gml_id, g.bezirk || '-' || g.buchungsblattnummermitbuchstabenerweiterung
   HAVING sum(coalesce(n.zaehler/n.nenner, 1)) <> 1.0::double precision
      AND (  -- die Fälle mit einer Rechtsgemeinschaft nicht verwenden
         SELECT gml_id 
         FROM ax_namensnummer nr 
-        WHERE substring(g.gml_id,1,16) = nr.istbestandteilvon
+        --ERE substring(g.gml_id,1,16) = nr.istbestandteilvon
+        WHERE g.gml_id = nr.istbestandteilvon
           AND NOT nr.artderrechtsgemeinschaft IS NULL
           AND nr.endet IS NULL
         LIMIT 1
@@ -1070,12 +1112,17 @@ Mit Ausnahme von Rechtsverhältnissen sollte sie Summe der Brüche immer 1/1 erg
 -- NICHT anzuwenden bei Abgabeart 1000
 -- Siehe auch: FUNCTION "alkis_hist_check()" in Datei "alkis-functions.sql"
 
+-- Spaltenformat kann nicht geändert werden, löschen und neu anlegen.
+DROP VIEW fehlersuche_hist_beginnt_endet_mischmasch;
+DROP VIEW fehlersuche_hist_endet_sortierung_fs;
+DROP VIEW hist_mehrere_vorgaenger_fs;
+
 -- Erst mal die betroffenen Objekte identifizieren
 CREATE OR REPLACE VIEW hist_mehrere_vorgaenger_fs
 AS 
-  SELECT substring(gml_id,1,16) AS gml, count(beginnt) AS anzahl -- 16stellige kurze ID, oder Substring
+  SELECT gml_id AS gml, count(beginnt) AS anzahl -- 16stellige ID
   FROM ax_flurstueck
-  GROUP BY substring(gml_id,1,16)
+  GROUP BY gml_id
   HAVING count(beginnt) > 4 -- mindestens 3 Generationen zur Prüfung notwendig
   ORDER BY count(beginnt) DESC -- die häufigsten zuerst
   LIMIT 20;  -- reicht zum gucken
@@ -1091,11 +1138,11 @@ also mehrere inzwischen beendete (historische) Vorgänger-Versionen';
 -- Das "endet" muss jeweils das "beginnt" der folgenden Version sein.
 CREATE OR REPLACE VIEW fehlersuche_hist_endet_sortierung_fs
 AS 
-  SELECT substring(gml_id,1,16) AS gml, ogc_fid, beginnt, endet
+  SELECT gml_id AS gml, ogc_fid, beginnt, endet
   FROM ax_flurstueck f
   JOIN hist_mehrere_vorgaenger_fs v -- der vorhergehende View als Filter
-    ON substring(f.gml_id,1,16) = v.gml
-  ORDER BY substring(gml_id,1,16), ogc_fid;
+    ON f.gml_id = v.gml
+  ORDER BY gml_id, ogc_fid;
 
 COMMENT ON VIEW fehlersuche_hist_endet_sortierung_fs
  IS 'Zu den ALKIS-Flurstücken, zu denen es inzwischen mehrere Versionen gibt, 
@@ -1106,17 +1153,17 @@ Der endet-Zeitstempel sollte jeweils dem beginnt-Zeitstempel der Folgeversion en
 -- Speziell die Fälle suchen, bei denen die Kombination beginnt/endet-Datum nicht logisch ist
 CREATE OR REPLACE VIEW fehlersuche_hist_beginnt_endet_mischmasch
 AS 
-  SELECT substring(v1.gml_id,1,16) AS gml, 
+  SELECT v1.gml_id AS gml, 
 	v1.beginnt AS v1_beginnt, 
 	v2.beginnt AS v2_beginnt,
      v1.endet   AS v1_endet, 
      v2.endet   AS v2_endet
   FROM ax_gebaeude v1 -- Version 1 -- oder eine andere Objekt-Tabelle
   JOIN ax_gebaeude v2 -- Version 2
-    ON substring(v1.gml_id,1,16) = substring(v2.gml_id,1,16)  -- gleiches Objekt
+    ON v1.gml_id = v2.gml_id   -- gleiches Objekt
    AND v2.beginnt > v1.beginnt -- aufsteigendes Beginn-Datum
    AND v2.endet   < v1.endet   -- aber absteigendes endet-Datum - Fehler!
-  ORDER BY substring(v1.gml_id,1,16), v1.beginnt, v1.endet
+  ORDER BY v1.gml_id, v1.beginnt, v1.endet
   LIMIT 10; -- Beispiele als Beweis der Fehlerhaftigkeit
 
 COMMENT ON VIEW fehlersuche_hist_beginnt_endet_mischmasch

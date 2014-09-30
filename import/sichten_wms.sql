@@ -26,6 +26,7 @@
 --  2014-08-28 Die Tabelle "alkis_beziehungen" überflüssig machen.
 --             Relationen nun direkt über neue Spalten in den Objekttabellen. 
 --  2014-08-29 P- und L-Straßennamen gegenseitig ausschließen in ap_pto_stra und ap_lto_stra
+--  2014-09-30 Umbenennung Schlüsseltabellen (Prefix)
 
 -- Layer "ag_t_gebaeude"
 -- ---------------------
@@ -93,7 +94,7 @@ AS
         g.name,                    -- selten gefüllt 
         f.bezeichner AS funktion   -- umn: LABELITEM
    FROM ax_gebaeude g
-   JOIN ax_gebaeude_funktion f 
+   JOIN v_geb_funktion f 
      ON g.gebaeudefunktion = f.wert
   WHERE g.endet IS NULL 
     AND g.gebaeudefunktion < 9998; -- "Nach Quellenlage nicht zu spezifizieren" braucht man nicht anzeigen
@@ -525,15 +526,15 @@ AS
      -- so2.bezeichner                     AS sonst2, -- immer leer?
         bs.jahreszahl                                 -- integer
    FROM      ax_bodenschaetzung bs
-   LEFT JOIN ax_bodenschaetzung_kulturart      ka ON bs.kulturart = ka.wert
-   LEFT JOIN ax_bodenschaetzung_bodenart       ba ON bs.bodenart  = ba.wert
-   LEFT JOIN ax_bodenschaetzung_zustandsstufe  zs ON bs.zustandsstufeoderbodenstufe = zs.wert
-   LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea1 
+   LEFT JOIN v_bschaetz_kulturart      ka ON bs.kulturart = ka.wert
+   LEFT JOIN v_bschaetz_bodenart       ba ON bs.bodenart  = ba.wert
+   LEFT JOIN v_bschaetz_zustandsstufe  zs ON bs.zustandsstufeoderbodenstufe = zs.wert
+   LEFT JOIN v_bschaetz_entsteh_klima ea1 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[1] = ea1.wert   -- [1] fast immer gefüllt
-   LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea2 
+   LEFT JOIN v_bschaetz_entsteh_klima ea2 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[2] = ea2.wert   -- [2] manchmal gefüllt
-   LEFT JOIN ax_bodenschaetzung_sonstigeangaben so1 ON bs.sonstigeangaben[1] = so1.wert -- [1] selten gefüllt
- --LEFT JOIN ax_bodenschaetzung_sonstigeangaben so2 ON bs.sonstigeangaben[2] = so2.wert -- [2] fast nie
+   LEFT JOIN v_bschaetz_sonst so1 ON bs.sonstigeangaben[1] = so1.wert -- [1] selten gefüllt
+ --LEFT JOIN v_bschaetz_sonst so2 ON bs.sonstigeangaben[2] = so2.wert -- [2] fast nie
    WHERE bs.endet IS NULL;
 
 COMMENT ON VIEW s_bodensch_ent IS 'Sicht für Feature-Info: Bodenschätzung, mit Langtexten entschlüsselt';
@@ -559,12 +560,12 @@ AS
           bs.ackerzahlodergruenlandzahl 
         AS derlabel               -- LABELITEM Umbruch am Blank
    FROM      ax_bodenschaetzung bs
-   LEFT JOIN ax_bodenschaetzung_kulturart      ka ON bs.kulturart = ka.wert
-   LEFT JOIN ax_bodenschaetzung_bodenart       ba ON bs.bodenart  = ba.wert
-   LEFT JOIN ax_bodenschaetzung_zustandsstufe  zs ON bs.zustandsstufeoderbodenstufe = zs.wert
-   LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea1 
+   LEFT JOIN v_bschaetz_kulturart      ka ON bs.kulturart = ka.wert
+   LEFT JOIN v_bschaetz_bodenart       ba ON bs.bodenart  = ba.wert
+   LEFT JOIN v_bschaetz_zustandsstufe  zs ON bs.zustandsstufeoderbodenstufe = zs.wert
+   LEFT JOIN v_bschaetz_entsteh_klima ea1 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[1] = ea1.wert   -- [1] fast immer gefüllt
-   LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea2 
+   LEFT JOIN v_bschaetz_entsteh_klima ea2 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[2] = ea2.wert   -- [2] manchmal gefüllt
    WHERE bs.endet IS NULL;
 
@@ -608,12 +609,12 @@ AS
         AS derlabel                -- LABELITEM, Umbruch am Leerzeichen
    FROM ap_pto                                 p
    JOIN ax_bodenschaetzung                     bs ON bs.gml_id = ANY(p.dientzurdarstellungvon)
-   LEFT JOIN ax_bodenschaetzung_kulturart      ka ON bs.kulturart = ka.wert
-   LEFT JOIN ax_bodenschaetzung_bodenart       ba ON bs.bodenart  = ba.wert
-   LEFT JOIN ax_bodenschaetzung_zustandsstufe  zs ON bs.zustandsstufeoderbodenstufe = zs.wert
-   LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea1 
+   LEFT JOIN v_bschaetz_kulturart      ka ON bs.kulturart = ka.wert
+   LEFT JOIN v_bschaetz_bodenart       ba ON bs.bodenart  = ba.wert
+   LEFT JOIN v_bschaetz_zustandsstufe  zs ON bs.zustandsstufeoderbodenstufe = zs.wert
+   LEFT JOIN v_bschaetz_entsteh_klima ea1 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[1] = ea1.wert 
-   LEFT JOIN ax_bodenschaetzung_entstehungsartoderklimastufe ea2 
+   LEFT JOIN v_bschaetz_entsteh_klima ea2 
           ON bs.entstehungsartoderklimastufewasserverhaeltnisse[2] = ea2.wert 
   WHERE  p.endet  IS NULL
      AND bs.endet IS NULL;

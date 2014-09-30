@@ -15,7 +15,7 @@
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-01-28 Link zu alkisstrasse.php
 	2014-09-15 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-
+	2014-09-30 Rückbau substring(gml_id)
 */
 session_start();
 $cntget = extract($_GET);
@@ -135,7 +135,7 @@ echo "\n\t</p>\n</td>";
 
 // Lagebezeichnung MIT Hausnummer (Adresse)
 $sql ="SELECT DISTINCT l.gml_id, s.gml_id AS kgml, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung 
-FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
+FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON l.gml_id=ANY(f.weistauf)
 LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL ORDER BY l.gemeinde, l.lage, l.hausnummer;";
 
@@ -174,7 +174,7 @@ s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezei
 FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=s.gml_id 
 JOIN ax_buchungsblatt b ON s.istbestandteilvon=b.gml_id 
 LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
-LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart = a.wert 
+LEFT JOIN v_bs_buchungsart a ON s.buchungsart = a.wert 
 WHERE f.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND b.endet IS NULL 
 ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 

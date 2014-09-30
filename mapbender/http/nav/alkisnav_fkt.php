@@ -6,6 +6,7 @@
 	2014-02-06  Korrektur zeile_person
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
+	2014-09-30 Rückbau substring(gml_id)
 */
 
 function is_ne_zahl($wert) {
@@ -248,11 +249,11 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 	$sql1.="g.gemarkung, g.gemarkungsname FROM ax_buchungsstelle s1 "; 
 
 	// zwischen, Variante 1.
-    $sqlz1="JOIN ax_flurstueck f ON f.istgebucht=substring(s1.gml_id,1,16) ";
+    $sqlz1="JOIN ax_flurstueck f ON f.istgebucht=s1.gml_id ";
 
 	// zwischen, Variante 2. Nur an oder "an" und "zu"?
-	$sqlz2 ="JOIN ax_buchungsstelle s2 ON substring(s2.gml_id,1,16)=ANY(s1.an) 
-	JOIN ax_flurstueck f ON f.istgebucht=substring(s2.gml_id,1,16) ";
+	$sqlz2 ="JOIN ax_buchungsstelle s2 ON s2.gml_id=ANY(s1.an) 
+	JOIN ax_flurstueck f ON f.istgebucht=s2.gml_id ";
 
 	// hinten gleich
 	$sql2.="JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung 
@@ -271,12 +272,12 @@ function GB_Buchung_FS ($linelimit, $blattgbkenn) {
 
 	// d i r e k t e  B u c h u n g e n
 	// Blatt <istBestandteilVon<  Buchungsstelle <istGebucht< Flurstück
-	$v=array(substr($blattgml,0,16), $linelimit); // Rel. istBestandteilVon nur 16 Stellen
+	$v=array($blattgml, $linelimit); // Rel. istBestandteilVon
 	$res=pg_prepare("", $sql1.$sqlz1.$sql2.$sqlord);
 	$res=pg_execute("", $v);
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei Buchung und Flurst&uuml;ck.</p>";
-		if ($debug >= 3) {echo "\n<p class='err'>SQL='".$sql1.$sqlz1.$sql2.$sqlord."'<br>$1 = '".substr($blattgml,0,16)."'</p>";}
+		if ($debug >= 3) {echo "\n<p class='err'>SQL='".$sql1.$sqlz1.$sql2.$sqlord."'<br>$1 = '".$blattgml."'</p>";}
 		return;
 	}
 	$zfs1=0;

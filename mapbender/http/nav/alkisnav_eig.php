@@ -7,12 +7,13 @@
 				Function extern gemeinsam genutzt in _eig und _grd.
 				Dazu Var-Namen harmonisieren: $gb wird $blattgml.
 				Zurück-Link, Titel der Transaktion anzeigen.
-	2013-04-29	Darstellung mit IE
-	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
-	2013-05-14  Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
-				Title auch auf Icon, IE zeigt sonst alt= als Title dar.
-	2014-09-09  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
+	2013-04-29 Darstellung mit IE
+	2013-05-07 Strukturierung des Programms, redundanten Code in Functions zusammen fassen
+	2013-05-14 Hervorhebung aktuelles Objekt, Parameter "gbkennz" auswerten,
+               Title auch auf Icon, IE zeigt sonst alt= als Title dar.
+	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-15 Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
+	2014-09-30 Rückbau substring(gml_id)
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -64,7 +65,7 @@ function personendaten() { // Adresse und Geburtsdatum der aktuellen Person ausg
 
 	$sql ="SELECT p.nachnameoderfirma, p.vorname, p.geburtsdatum, p.namensbestandteil, 
 	a.ort_post, a.postleitzahlpostzustellung AS plz, a.strasse, a.hausnummer 
-	FROM ax_person p LEFT JOIN ax_anschrift a ON substring(a.gml_id,1,16)=ANY(p.hat) 
+	FROM ax_person p LEFT JOIN ax_anschrift a ON a.gml_id=ANY(p.hat) 
 	WHERE p.gml_id= $1 AND p.endet IS NULL AND a.endet IS NULL LIMIT 1;";	
 	// Es wird nur eine Zeile ausgewertet
 
@@ -193,7 +194,7 @@ function getGBbyPerson() {
 	// Body
 	// Suche nach Grundbüchern der Person
 	$sql ="SELECT gb.gml_id AS gml_g, gb.buchungsblattnummermitbuchstabenerweiterung as blatt, b.bezirk, b.bezeichnung AS beznam 
-	FROM ax_namensnummer n JOIN ax_buchungsblatt gb ON n.istbestandteilvon=substring(gb.gml_id,1,16) 
+	FROM ax_namensnummer n JOIN ax_buchungsblatt gb ON n.istbestandteilvon=gb.gml_id 
 	JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk 
 	WHERE n.bennennt = $1 AND n.endet IS NULL AND gb.endet IS NULL AND b.endet IS NULL;";
 
@@ -218,7 +219,7 @@ function getGBbyPerson() {
 	} else { // Folgeseite
 		echo "\n<p class='ein'>Teil ".$bltseite;
 	}
-	$v=array(substr($person,0,16), $linelimit); // nur 16 Stellen in Relation "benennt"
+	$v=array($person, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) {
@@ -241,7 +242,7 @@ function getGBbyPerson() {
 	}
 /*	if ($cnt == 0) { // Nur Entwicklg.
 		if ($debug > 1) {echo "\n<p class='err'>keine Buchung</p>";}
-		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."',<br>$1 = '".substr($person,0,16)."'<p>";}
+		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."',<br>$1 = '".$person."'<p>";}
 	} */
 
 	// Foot
@@ -344,17 +345,17 @@ function getGBuFSbyPerson() {
 
 	// NamenNummer >istbestandteilvon> buchungsblatt <istbestandteilvon< buchungsstelle-1
 	$sql1.="FROM ax_namensnummer nn 
-	JOIN ax_buchungsblatt gb ON substring(gb.gml_id,1,16)=nn.istbestandteilvon 
+	JOIN ax_buchungsblatt gb ON gb.gml_id=nn.istbestandteilvon 
 	JOIN ax_buchungsblattbezirk b ON gb.land=b.land AND gb.bezirk=b.bezirk
-	JOIN ax_buchungsstelle s1 ON substring(gb.gml_id,1,16)=s1.istbestandteilvon ";
+	JOIN ax_buchungsstelle s1 ON gb.gml_id=s1.istbestandteilvon ";
 
 	// Baustein A: Auswahl 1 oder 2
 	// buchungsstelle-1 <istGebucht< FS
-	$sqla1 ="JOIN ax_flurstueck f ON substring(s1.gml_id,1,16)=f.istgebucht ";
+	$sqla1 ="JOIN ax_flurstueck f ON s1.gml_id=f.istgebucht ";
 
 	// buchungsStelle1 (herr.) >an> buchungsStelle2 (dien.) <istGebucht< FS
-	$sqla2 ="JOIN ax_buchungsstelle s2 ON substring(s2.gml_id,1,16)=ANY(s1.an) ";
-	$sqla2.="JOIN ax_flurstueck f ON substring(s2.gml_id,1,16)=f.istgebucht ";
+	$sqla2 ="JOIN ax_buchungsstelle s2 ON s2.gml_id=ANY(s1.an) ";
+	$sqla2.="JOIN ax_flurstueck f ON s2.gml_id=f.istgebucht ";
 
 	// Baustein 2: SQL-Ende fuer beide Varianten
 	$sql2 ="JOIN pp_gemarkung ot ON f.land=ot.land AND f.gemarkungsnummer=ot.gemarkung "; // Ortsteil
@@ -408,12 +409,12 @@ function getGBuFSbyPerson() {
 		// Blatt <istBestandteilVon<  Buchungsstelle <istGebucht< Flurstck.
 		$sql=$sql1.$sqla1.$sql2.$bltwhere.$sql3; // Direkte Buchungen
 
-		$v=array(substr($person,0,16), $linelimit); // Rel. "benennt" nur 16 Zeichen
+		$v=array($person, $linelimit);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
 		if (!$res) {
 			echo "\n<p class='err'>Fehler bei Buchung und Flurst&uuml;ck.</p>";
-			if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."', $1 = '".substr($person,0,16)."'<p>";}
+			if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."', $1 = '".$person."'<p>";}
 			return;
 		}
 
@@ -493,7 +494,7 @@ function getGBuFSbyPerson() {
 		// Zweite Abfrage (Variante) aus den Bausteinen zusammen bauen
 		// buchungsStelle2 <an< buchungsStelle1
 		$sql=$sql1.$sqla2.$sql2.$bltwhere.$sqlw2.$sql3; // Rechte an
-		$v=array(substr($person,0,16), $linelimit);
+		$v=array($person, $linelimit);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
 		if (!$res) {

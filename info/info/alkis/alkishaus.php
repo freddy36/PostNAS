@@ -8,6 +8,7 @@
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
 
 	ToDo:
 	- sinnvolle Sortierung und Gruppierung der Felder
@@ -54,10 +55,10 @@ $sqlg ="SELECT g.gml_id, g.name, g.bauweise, g.gebaeudefunktion, g.anzahlderober
 g.lagezurerdoberflaeche, g.dachgeschossausbau, g.zustand, g.weiteregebaeudefunktion, g.dachform, g.hochhaus, g.objekthoehe, g.geschossflaeche, g.grundflaeche, g.umbauterraum, g.baujahr, g.dachart, g.qualitaetsangaben, 
 h.bauweise_beschreibung, u.bezeichner AS bfunk, z.bezeichner AS bzustand, "; // w.bezeichner AS bweitfunk,
 $sqlg.="d.bezeichner AS bdach, round(area(g.wkb_geometry)::numeric,2) AS gebflae FROM ax_gebaeude g 
-LEFT JOIN ax_gebaeude_bauweise h ON g.bauweise=h.bauweise_id 
-LEFT JOIN ax_gebaeude_funktion u ON g.gebaeudefunktion=u.wert 
-LEFT JOIN ax_gebaeude_zustand z ON g.zustand=z.wert 
-LEFT JOIN ax_gebaeude_dachform d ON g.dachform=d.wert
+LEFT JOIN v_geb_bauweise h ON g.bauweise=h.bauweise_id 
+LEFT JOIN v_geb_funktion u ON g.gebaeudefunktion=u.wert 
+LEFT JOIN v_geb_zustand z ON g.zustand=z.wert 
+LEFT JOIN v_geb_dachform d ON g.dachform=d.wert
 WHERE g.gml_id= $1 AND g.endet IS NULL ;";
 
 $v = array($gmlid);
@@ -128,14 +129,14 @@ while($rowg = pg_fetch_array($resg)) { // Schleife, kann aber nur EIN Haus sein.
 	// HAUPTgebäude
 	$sqll ="SELECT 'm' AS ltyp, l.gml_id AS gmllag, s.lage, s.bezeichnung, l.hausnummer, '' AS laufendenummer ";
 	$sqll.="FROM ax_gebaeude g ";
-	$sqll.="JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(g.zeigtauf) ";
+	$sqll.="JOIN ax_lagebezeichnungmithausnummer l ON l.gml_id=ANY(g.zeigtauf) ";
 	$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 	$sqll.="WHERE g.gml_id= $1 AND g.endet IS NULL AND l.endet IS NULL ";
 	$sqll.="UNION ";
 	// oder NEBENgebäude
 	$sqll.="SELECT 'p' AS ltyp, l.gml_id AS gmllag, s.lage, s.bezeichnung, l.pseudonummer AS hausnummer, l.laufendenummer ";
 	$sqll.="FROM ax_gebaeude g "; 
-	$sqll.="JOIN ax_lagebezeichnungmitpseudonummer l ON substring(l.gml_id,1,16)=g.hat ";
+	$sqll.="JOIN ax_lagebezeichnungmitpseudonummer l ON l.gml_id=g.hat ";
 	$sqll.="JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage ";
 	$sqll.="WHERE g.gml_id= $1 AND g.endet IS NULL AND l.endet IS NULL ";
 
@@ -268,7 +269,7 @@ while($rowg = pg_fetch_array($resg)) { // Schleife, kann aber nur EIN Haus sein.
 				$wgflist=trim($wgf, "{}"); // kommagetrennte(?) Liste der Schluesselwerte
 				//$wgfarr=explode(",", $wgflist);
 				//for each ...
-				$sqlw="SELECT wert, bezeichner FROM ax_gebaeude_weiterefunktion WHERE wert in ( $1 ) ORDER BY wert;";
+				$sqlw="SELECT wert, bezeichner FROM v_geb_weiterefkt WHERE wert in ( $1 ) ORDER BY wert;";
 				$v = array($wgflist);
 				$resw = pg_prepare("", $sqlw);
 				$resw = pg_execute("", $v);

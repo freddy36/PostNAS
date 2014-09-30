@@ -9,7 +9,8 @@
 -- Stand:
 --  2013-11-26 Version für die ALKIS-Musterdaten RLP Mustermonzel
 --  2014-08-29 Umstellung auf Datenstruktur PostNAS 0.8 (ohne Tabelle "alkis_beziehungen")
---  2014-09-16 Substring fuer variabal lange gml_id
+--  2014-09-16 Substring fuer variabel lange gml_id
+--  2014-09-30 Rückbau subsrting(gml_id), Umbenennung Schlüsseltabellen "ax_*" nach "v_*"
 
 -- Voraussetzung = View "doppelverbindung" aus ALKIS PostNAS-Projekt Datei "sichten.sql"
 
@@ -25,21 +26,12 @@ AS
      f.land, f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner,
      f.amtlicheflaeche,
      f.wkb_geometry
-  FROM ax_flurstueck    f                                        -- Flurstück
-  JOIN doppelverbindung d    ON d.fsgml = f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
-  JOIN ax_buchungsstelle s   ON d.bsgml = s.gml_id               -- Buchungs-Stelle
---JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert -- Enstschlüsselung Buchungsart
- 
--- Bei gml_id character(16):
---JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
---JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
---JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
-
--- Bei gml_id character varying:
-  JOIN ax_buchungsblatt  gb  ON substring(gb.gml_id,1,16)=s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
-  JOIN ax_namensnummer nn    ON substring(gb.gml_id,1,16)=nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
-  JOIN ax_person p           ON substring(p.gml_id,1,16) =nn.benennt           -- NamNum  >benennt> Person
- 
+  FROM ax_flurstueck f                                       -- Flurstück
+  JOIN doppelverbindung d  ON d.fsgml=f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+  JOIN ax_buchungsstelle s ON d.bsgml=s.gml_id               -- Buchungs-Stelle
+  JOIN ax_buchungsblatt gb ON gb.gml_id=s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+  JOIN ax_namensnummer nn  ON gb.gml_id=nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+  JOIN ax_person p         ON p.gml_id=nn.benennt            -- NamNum  >benennt> Person
  WHERE f.endet  IS NULL
    AND s.endet  IS NULL
    AND gb.endet IS NULL
@@ -63,21 +55,13 @@ AS
      f.gml_id,
      d.ba_dien, -- Buchungsart der dienenden Buchung --> CLASSITEM im WMS
      f.wkb_geometry
-  FROM ax_flurstueck    f                                        -- Flurstück
-  JOIN doppelverbindung d    ON d.fsgml = f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
-  JOIN ax_buchungsstelle s   ON d.bsgml = s.gml_id               -- Buchungs-Stelle
-  JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart = b.wert -- Enstschlüsselung Buchungsart
- 
--- Bei gml_id character(16):
---JOIN ax_buchungsblatt  gb  ON gb.gml_id = s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
---JOIN ax_namensnummer nn    ON gb.gml_id = nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
---JOIN ax_person p           ON p.gml_id  = nn.benennt           -- NamNum  >benennt> Person
-
--- Bei gml_id character varying:
-  JOIN ax_buchungsblatt  gb  ON substring(gb.gml_id,1,16)=s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
-  JOIN ax_namensnummer nn    ON substring(gb.gml_id,1,16)=nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
-  JOIN ax_person p           ON substring(p.gml_id,1,16) =nn.benennt           -- NamNum  >benennt> Person
- 
+  FROM ax_flurstueck f                                       -- Flurstück
+  JOIN doppelverbindung d  ON d.fsgml=f.gml_id               -- beide Fälle über Union-View: direkt und über Recht von BS an BS
+  JOIN ax_buchungsstelle s ON d.bsgml=s.gml_id               -- Buchungs-Stelle
+  JOIN v_bs_buchungsart b  ON s.buchungsart=b.wert           -- Enstschlüsselung Buchungsart
+  JOIN ax_buchungsblatt gb ON gb.gml_id=s.istbestandteilvon  -- Buchung >istBestandteilVon> Blatt
+  JOIN ax_namensnummer nn  ON gb.gml_id=nn.istbestandteilvon -- Blatt <istBestandteilVon< NamNum
+  JOIN ax_person p         ON p.gml_id=nn.benennt            -- NamNum  >benennt> Person
  WHERE f.endet  IS NULL
    AND s.endet  IS NULL
    AND gb.endet IS NULL

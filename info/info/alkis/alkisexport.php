@@ -14,6 +14,7 @@
 	2014-01-27 Erweiterung auf Filter "strasse" ("gml_id" aus "ax_lagebezeichnungkatalogeintrag")
 	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-10 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Rückbau substring(gml_id)
 */
 
 function lage_zum_fs($gmlid) {
@@ -21,7 +22,7 @@ function lage_zum_fs($gmlid) {
 	// dass ggf. mehrere Lagebezeichnungen in eine Zelle der Tabelle passen.
 	// FS >westAuf> Lage >> Katalog
 	$sql ="SELECT DISTINCT s.bezeichnung, l.hausnummer 
-	FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
+	FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON l.gml_id=ANY(f.weistauf)
 	JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 	WHERE f.gml_id= $1 ORDER BY s.bezeichnung, l.hausnummer;";
 

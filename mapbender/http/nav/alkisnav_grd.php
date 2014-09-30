@@ -5,12 +5,13 @@
 				Code aus _eig nach_fkt ausgelegert, hier mit nutzen. 
 				Dazu Var-Namen harmonisieren: $gblatt wird $blattgml
 				Zurück-Link, Titel der Transaktion anzeigen.
-	2013-04-29	Test mit IE
-	2013-05-07  Strukturierung des Programms, redundanten Code in Functions zusammen fassen
-	2013-05-14  Hervorhebung aktuelles Objekt. Title "Nachweis" auch auf Icon.
-	2013-12-12	Limit in EinBlatt von 200 weit hoch gesetzt (bis Blättern möglich wird)
-	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
-	2014-09-15  Bei Relationen den Timestamp abschneiden
+	2013-04-29 Test mit IE
+	2013-05-07 Strukturierung des Programms, redundanten Code in Functions zusammen fassen
+	2013-05-14 Hervorhebung aktuelles Objekt. Title "Nachweis" auch auf Icon.
+	2013-12-12 Limit in EinBlatt von 200 weit hoch gesetzt (bis Blättern möglich wird)
+	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
+	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Rückbau substring(gml_id)
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php"); // Konfigurations-Einstellungen
@@ -306,7 +307,7 @@ function gml_buchungsstelle() {
 
 	// Blatt ->  B u c h u n g s s t e l l e
 	$sql ="SELECT s.gml_id FROM ax_buchungsstelle s 
-	JOIN ax_buchungsblatt b ON s.istbestandteilvon=substring(b.gml_id,1,16)
+	JOIN ax_buchungsblatt b ON s.istbestandteilvon=b.gml_id
 	WHERE b.bezirk= $1 AND s.endet IS NULL AND b.endet IS NULL AND b.buchungsblattnummermitbuchstabenerweiterung ";
 
 	if ($zblattz == "") { // Ohne Buchstabenerweiterung
@@ -423,10 +424,10 @@ $sql =$sqlanf.", sd.gml_id AS diengml, sd.laufendenummer AS dienlfd,
 bd.gml_id AS dienbltgml, bd.buchungsblattnummermitbuchstabenerweiterung AS dienblatt, 
 gd.stelle, gd.gml_id AS dienbezgml, gd.bezirk, gd.bezeichnung AS diengbbez 
 FROM ax_buchungsstelle sh 
-JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) 
-JOIN ax_flurstueck f ON f.istgebucht=substring(sd.gml_id,1,16) 
+JOIN ax_buchungsstelle sd ON sd.gml_id=ANY(sh.an) 
+JOIN ax_flurstueck f ON f.istgebucht=sd.gml_id 
 JOIN pp_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkung 
-JOIN ax_buchungsblatt bd ON sd.istbestandteilvon=substring(bd.gml_id,1,16) 
+JOIN ax_buchungsblatt bd ON sd.istbestandteilvon=bd.gml_id 
 JOIN ax_buchungsblattbezirk gd ON bd.land=gd.land AND bd.bezirk=gd.bezirk 
 WHERE sh.gml_id = $1 AND sh.endet IS NULL AND sd.endet IS NULL AND f.endet IS NULL AND bd.endet IS NULL AND gd.endet IS NULL "
 .$sqlfilter."ORDER BY gd.bezeichnung, bd.buchungsblattnummermitbuchstabenerweiterung, cast(sd.laufendenummer AS integer), f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
@@ -453,12 +454,12 @@ WHERE sh.gml_id = $1 AND sh.endet IS NULL AND sd.endet IS NULL AND f.endet IS NU
 		$dienlfd=$row["dienlfd"];	// BVNR (laufendNr) des dien. GS
 		if ($gwblatt != $dienblatt) { // Gruppierung Blatt - dienend
 			$gwblatt = $dienblatt; // Steuerg GW Blatt
-			zeile_blatt($dienbezirk, $diengbbez, $dienbltgml, $dienblatt, true, "");
+			zeile_blatt($dienbezirk, $diengbbez, $dienbltgml, $dienblatt, true, "", false);
 			$gwbvnr="";
 		}
 		if ($gwbvnr != $dienlfd) { // Gruppierung Buchung (BVNR) - dienend
 			$gwbvnr = $dienlfd; // Steuerg GW BVNR
-			zeile_buchung($diengml, $dienlfd, $dienbezirk."-".$dienblatt, true);
+			zeile_buchung($diengml, $dienlfd, $dienbezirk."-".$dienblatt, true, false);
 		} // ++ Buchungsart? Welches Recht?
 		$fs_gml=$row["gml_id"];
 		$gemei=$row["gemeinde"];

@@ -21,6 +21,8 @@
 	2014-02-06 Korrektur
 	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-23 Korrektur "IS NULL"
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -264,7 +266,7 @@ pg_free_result($res);
 // Lagebezeichnung MIT Hausnummer
 // ax_flurstueck  >weistAuf>  AX_LagebezeichnungMitHausnummer
 $sql="SELECT DISTINCT l.gml_id, l.gemeinde, l.lage, l.hausnummer, s.bezeichnung 
-FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16) = ANY(f.weistauf)  
+FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON l.gml_id=ANY(f.weistauf)  
 JOIN ax_lagebezeichnungkatalogeintrag s ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL    
 ORDER BY l.gemeinde, l.lage, l.hausnummer;";
@@ -314,7 +316,7 @@ if (!$res) {
 // Lagebezeichnung OHNE Hausnummer  (Gewanne oder nur Strasse)
 // ax_flurstueck  >zeigtAuf>  AX_LagebezeichnungOhneHausnummer
 $sql ="SELECT l.gml_id, l.unverschluesselt, l.gemeinde, l.lage, s.bezeichnung 
-FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON substring(l.gml_id,1,16)=ANY(f.zeigtauf) 
+FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=ANY(f.zeigtauf) 
 LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 WHERE f.gml_id = $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL;";
 
@@ -501,7 +503,7 @@ echo "\n</tr>";
 
 $sql_boden ="SELECT a.wert, a.bezeichner AS art_verf, b.gml_id AS verf_gml, b.bezeichnung AS verf_bez, 
 b.name AS verf_name, d.bezeichnung AS stelle_bez, d.stelle AS stelle_key 
-FROM ax_bauraumoderbodenordnungsrecht b JOIN ax_bauraumoderbodenordnungsrecht_artderfestlegung a ON a.wert=b.artderfestlegung 
+FROM ax_bauraumoderbodenordnungsrecht b JOIN v_baurecht_adf a ON a.wert=b.artderfestlegung 
 LEFT JOIN ax_dienststelle d ON b.stelle=d.stelle 
 WHERE b.endet IS NULL AND d.endet IS NULL  
 AND (ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 AND endet IS NULL ), wkb_geometry) 
@@ -510,7 +512,10 @@ AND (ST_Within((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 AND end
 pg_prepare($con, "bodeneuordnung", $sql_boden);
 $res_bodeneuordnung = pg_execute($con, "bodeneuordnung", array($gmlid));
 
-$sql_str = "SELECT gml_id FROM ax_besondereflurstuecksgrenze WHERE endet IS NULL AND 1000 = ANY(artderflurstuecksgrenze) AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1),wkb_geometry);";
+$sql_str="SELECT gml_id 
+FROM ax_besondereflurstuecksgrenze WHERE endet IS NULL AND 1000 = ANY(artderflurstuecksgrenze) 
+AND ST_touches((SELECT wkb_geometry FROM ax_flurstueck WHERE gml_id = $1 AND endet IS NULL),wkb_geometry);";
+
 pg_prepare($con, "strittigeGrenze", $sql_str);
 $res_strittigeGrenze = pg_execute($con, "strittigeGrenze", array($gmlid));
 
@@ -613,8 +618,8 @@ echo "\n</table>\n";
 
 // B U C H U N G S S T E L L E N  zum FS (istGebucht)
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer as lfd, s.zaehler, s.nenner, s.nummerimaufteilungsplan as nrpl, s.beschreibungdessondereigentums as sond, b.bezeichner AS bart 
-FROM ax_flurstueck f JOIN ax_buchungsstelle s ON substring(s.gml_id,1,16)=f.istgebucht 
-LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart=b.wert 
+FROM ax_flurstueck f JOIN ax_buchungsstelle s ON s.gml_id=f.istgebucht 
+LEFT JOIN v_bs_buchungsart b ON s.buchungsart=b.wert 
 WHERE f.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL ORDER BY s.laufendenummer;";
 
 $v = array($gmlid);
@@ -632,7 +637,7 @@ while($rows = pg_fetch_array($ress)) {
 
 	// B U C H U N G S B L A T T  zur Buchungsstelle (istBestandteilVon)
 	$sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung 
-	FROM ax_buchungsstelle s JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=s.istbestandteilvon 
+	FROM ax_buchungsstelle s JOIN ax_buchungsblatt b ON b.gml_id=s.istbestandteilvon 
 	LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
 	WHERE s.gml_id = $1 AND s.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL
 	ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung ;";
@@ -746,10 +751,10 @@ while($rows = pg_fetch_array($ress)) {
 	// Buchungstelle >an> Buchungstelle >istBestandteilVon> BLATT -> Bezirk
 	$sql ="SELECT sd.gml_id AS s_gml, sd.buchungsart, sd.laufendenummer as lfd, sd.zaehler, sd.nenner, sd.nummerimaufteilungsplan as nrpl, sd.beschreibungdessondereigentums as sond, 
 	b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung, a.bezeichner AS bart 
-	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON substring(sd.gml_id,1,16)=ANY(sh.an) 
-	JOIN ax_buchungsblatt b ON substring(b.gml_id,1,16)=sd.istbestandteilvon  
+	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON sd.gml_id=ANY(sh.an) 
+	JOIN ax_buchungsblatt b ON b.gml_id=sd.istbestandteilvon  
 	LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
-	LEFT JOIN ax_buchungsstelle_buchungsart a ON sd.buchungsart=a.wert 
+	LEFT JOIN v_bs_buchungsart a ON sd.buchungsart=a.wert 
 	WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL
 	ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 

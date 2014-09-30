@@ -12,6 +12,7 @@
 	2013-04-08 deprecated "import_request_variables" ersetzt
 	2014-09-10 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Rückbau substring(gml_id)
 
 	ToDo: Zähler fuer Anzahl FS in der Liste
 */
@@ -115,7 +116,7 @@ if ($blattkey == 5000) { // fikt. Blatt
 // Vorab pruefen, ob Sonderfall "Rechte an .." vorliegt.
 if ($blattkey == 1000) { // GB-Blatt  <istBestandteilVon<  sh=herrschend  >an>  sd=dienend
 	$sql="SELECT count(sd.laufendenummer) AS anzahl
-	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (substring(sd.gml_id,1,16)=ANY(sh.an) OR substring(sd.gml_id,1,16)=ANY(sh.zu)) 
+	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (sd.gml_id=ANY(sh.an) OR sd.gml_id=ANY(sh.zu)) 
 	WHERE sh.istbestandteilvon= $1 AND sd.endet IS NULL AND sh.endet IS NULL;";
 
 	$v=array(substr($gmlid,0,16)); // GB-Blatt, in Relation immer nur 16 Zeichen
@@ -160,7 +161,7 @@ echo "\n</tr>";
 // Blatt ->  B u c h u n g s s t e l l e
 // aktuelles ax_buchungsblatt <istBestandteilVon< ax_buchungsstelle 
 $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungdesumfangsderbuchung AS udb, s.zaehler, s.nenner, s.nummerimaufteilungsplan AS nrap, s.beschreibungdessondereigentums AS sond, b.bezeichner as bart 
-FROM ax_buchungsstelle s LEFT JOIN ax_buchungsstelle_buchungsart b ON s.buchungsart=b.wert 
+FROM ax_buchungsstelle s LEFT JOIN v_bs_buchungsart b ON s.buchungsart=b.wert 
 WHERE s.istbestandteilvon= $1 AND s.endet IS NULL ORDER BY cast(s.laufendenummer AS integer);";
 
 $v=array(substr($gmlid,0,16)); //  Rel. istbestandteilvon nur 16 Zeichen
@@ -169,7 +170,7 @@ $res=pg_execute("", $v);
 
 if (!$res) {
 	echo "<p class='err'>Fehler bei Buchung.</p>\n";
-	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '". $gmlid."'</p>";}
 }
 $i=0;
 $fscnt=0;
@@ -197,8 +198,8 @@ while($row = pg_fetch_array($res)) {
 		//  ax_buchungsstelle >an> ax_buchungsstelle (anderes Blatt, z.B Erbbaurecht an)
 		//  sh=herrschend          sd=dienend
 		$sql ="SELECT sd.gml_id, sd.buchungsart, sd.laufendenummer AS lfd, sd.beschreibungdesumfangsderbuchung AS udb, sd.nummerimaufteilungsplan AS nrap, sd.beschreibungdessondereigentums AS sond, b.bezeichner AS bart ";
-		$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (substring(sd.gml_id,1,16)=ANY(sh.an) OR substring(sd.gml_id,1,16)=ANY(sh.zu)) "; 
-		$sql.="LEFT JOIN ax_buchungsstelle_buchungsart b ON sd.buchungsart=b.wert ";
+		$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (sd.gml_id=ANY(sh.an) OR sd.gml_id=ANY(sh.zu)) "; 
+		$sql.="LEFT JOIN v_bs_buchungsart b ON sd.buchungsart=b.wert ";
 		$sql.="WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL ORDER BY sd.laufendenummer;";
 
 		$v=array($gml_bs);
@@ -218,7 +219,7 @@ while($row = pg_fetch_array($res)) {
 			// a n d e r e s   B l a t t  (an dem das aktuelle Blatt Rechte hat)
 			// dienendes Grundbuch
 			$sql ="SELECT b.gml_id, b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung AS blatt, b.blattart, z.bezeichnung AS beznam ";
-			$sql.="FROM ax_buchungsblatt b JOIN ax_buchungsstelle s ON substring(b.gml_id,1,16)=s.istbestandteilvon ";
+			$sql.="FROM ax_buchungsblatt b JOIN ax_buchungsstelle s ON b.gml_id=s.istbestandteilvon ";
 			$sql.="LEFT JOIN ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk ";
 			$sql.="WHERE s.gml_id= $1 AND b.endet IS NULL ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 			$v=array($gml_bsan);
@@ -358,11 +359,11 @@ if ($i == 0) {
 // Fiktiv                      Fiktiv  <zu<  Berechtigt                       Berechtigt
 $sql ="SELECT bb.gml_id, bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung AS blatt, bb.blattart, 
 sb.gml_id AS gml_s, sb.laufendenummer AS lfdnr, sb.buchungsart, ba.bezeichner AS bart, bz.bezeichnung AS beznam, ag.bezeichnung, ag.stelle, ag.stellenart 
-FROM ax_buchungsstelle sf JOIN ax_buchungsstelle sb ON (substring(sf.gml_id,1,16)=ANY(sb.an) OR substring(sf.gml_id,1,16)=ANY(sb.zu)) 
-JOIN ax_buchungsblatt bb ON substring(bb.gml_id,1,16)=sb.istbestandteilvon 
+FROM ax_buchungsstelle sf JOIN ax_buchungsstelle sb ON (sf.gml_id=ANY(sb.an) OR sf.gml_id=ANY(sb.zu)) 
+JOIN ax_buchungsblatt bb ON bb.gml_id=sb.istbestandteilvon 
 LEFT JOIN ax_buchungsblattbezirk bz ON bb.land=bz.land AND bb.bezirk=bz.bezirk 
 LEFT JOIN ax_dienststelle ag ON bz.land=ag.land AND bz.stelle=ag.stelle 
-LEFT JOIN ax_buchungsstelle_buchungsart ba ON sb.buchungsart=ba.wert 
+LEFT JOIN v_bs_buchungsart ba ON sb.buchungsart=ba.wert 
 WHERE sf.istbestandteilvon = $1 AND sf.endet IS NULL AND sb.endet IS NULL AND bb.endet IS NULL ORDER BY bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung;";
 
 $v = array(substr($gmlid,0,16)); // nur 16 Zeichen in Relation
@@ -370,7 +371,7 @@ $resb = pg_prepare("", $sql);
 $resb = pg_execute("", $v);
 if (!$resb) {
 	echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter.</p>\n";
-	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".substr($gmlid,0,16)."'</p>";}
+	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 $b=0; // count: Blaetter
 while($rowb = pg_fetch_array($resb)) {

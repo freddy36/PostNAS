@@ -19,6 +19,7 @@
 	2014-02-06 pg_free_result
 	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
+	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
 */
 session_start();
 $cntget = extract($_GET);
@@ -74,6 +75,7 @@ if ($row = pg_fetch_array($res)) {
 	$flae=number_format($flae,0,",",".") . " m&#178;";
 } else {
 	echo "<p class='err'>Kein Treffer fuer gml_id=".$gmlid."</p>";
+	//if ($debug > 2) {echo "<p class='err'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
 
 echo "\n<h2><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Flurst&uuml;ck - &Uuml;bersicht</h2>";
@@ -111,7 +113,7 @@ pg_free_result($res);
 
 // Lage MIT HausNr (Adresse)
 $sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.hausnummer 
-FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON substring(l.gml_id,1,16)=ANY(f.weistauf)
+FROM ax_flurstueck f JOIN ax_lagebezeichnungmithausnummer l ON l.gml_id=ANY(f.weistauf)
 JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL 
 ORDER BY s.bezeichnung, l.hausnummer;";
@@ -146,7 +148,7 @@ pg_free_result($res);
 if ($j == 0) { // keine HsNr gefunden
 	// Lage OHNE HausNr
 	$sql ="SELECT DISTINCT s.gml_id AS kgml, l.gml_id, s.bezeichnung, l.unverschluesselt 
-	FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON substring(l.gml_id,1,16)=ANY(f.zeigtauf)
+	FROM ax_flurstueck f JOIN ax_lagebezeichnungohnehausnummer l ON l.gml_id=ANY(f.zeigtauf)
 	LEFT JOIN ax_lagebezeichnungkatalogeintrag s ON l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 	WHERE f.gml_id= $1 AND f.endet IS NULL AND l.endet IS NULL AND s.endet IS NULL  
 	ORDER BY s.bezeichnung;";
@@ -194,10 +196,10 @@ echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grund
 // FS >istgebucht> GS >istbestandteilvon> GB.
 $sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, 
 s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart 
-FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=substring(s.gml_id,1,16) 
-JOIN ax_buchungsblatt b ON s.istbestandteilvon=substring(b.gml_id,1,16)
+FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=s.gml_id 
+JOIN ax_buchungsblatt b ON s.istbestandteilvon=b.gml_id
 LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
-LEFT JOIN ax_buchungsstelle_buchungsart a ON s.buchungsart=a.wert 
+LEFT JOIN v_bs_buchungsart a ON s.buchungsart=a.wert 
 WHERE f.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL 
 ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung, s.laufendenummer;";
 
