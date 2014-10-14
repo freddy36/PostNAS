@@ -59,6 +59,8 @@
 
 -- 2014-09-23 FJ Zählfelder für Kontext-Funktionen in der import-Tabelle
 
+-- 2014-10-14 FJ "ax_wirtschaftlicheeinheit.anlass" von integer zu character. Sonst Trigger-Fehler bei "delete".
+
 --  Dies Schema kann NICHT mehr mit der gdal-Version 1.9 verwendet werden.
 
 -- ALKIS-Dokumentation (NRW):
@@ -4910,7 +4912,7 @@ CREATE TABLE ax_wirtschaftlicheeinheit (
   endet character(20),
   advstandardmodell character varying[],
   sonstigesmodell character varying[],
-  anlass integer,
+  anlass character varying,
   CONSTRAINT ax_wirtschaftlicheeinheit_pk PRIMARY KEY (ogc_fid)
 );
 
