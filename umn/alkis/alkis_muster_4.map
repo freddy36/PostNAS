@@ -2,6 +2,8 @@
 # Änderungen: siehe Bildschirm-Version, letzte:
 # 2014-08-29 F.J. krz: Umstellung auf Version 0.8 - Datenbankname, Titel
 # 2014-09-15 F.J. krz: Filter für Historische Objekte "WHERE endet IS NULL" in DATA für Tabellen ax_*
+# 2014-10-28 F.J. krz: Textgröße "freierText" in _4
+# 2014-10-28 F.J. krz: "ANGLE follow" bei ap_lto_stra
 MAP
 	NAME "alkis"
 	STATUS ON
@@ -3269,6 +3271,7 @@ LAYER
 			SIZE 40 MINSIZE 24 MAXSIZE 80 # 10 6 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION ur # linksbündig/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -3282,6 +3285,7 @@ LAYER
 			SIZE 40 MINSIZE 24 MAXSIZE 80 # 10 6 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION cc # zentrisch/Mitte
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -3296,6 +3300,7 @@ LAYER
 			SIZE 40 MINSIZE 24 MAXSIZE 80 # 10 6 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION uc # zentrisch/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -3311,6 +3316,7 @@ LAYER
 			SIZE 32 MINSIZE 20 MAXSIZE 64 # 8 5 16
 			TYPE TRUETYPE FONT "arial"
 			POSITION ur # linksbündig/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -3324,6 +3330,7 @@ LAYER
 	#		SIZE 32 MINSIZE 20 MAXSIZE 64 # 8 5 16
 	#		TYPE TRUETYPE FONT "arial"
 	#		POSITION cc # zentrisch/Mitte
+	#		ANGLE follow
 	#		COLOR 0 0 0
 	#		FORCE true
 	#	END
@@ -3338,6 +3345,7 @@ LAYER
 			SIZE 32 MINSIZE 20 MAXSIZE 64 # 8 5 16
 			TYPE TRUETYPE FONT "arial"
 			POSITION uc # zentrisch/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -3353,6 +3361,7 @@ LAYER
 #			SIZE 40 MINSIZE 28 MAXSIZE 88 # 10 7 22
 #			TYPE TRUETYPE FONT "arialbold"
 #			POSITION cc # zentrisch/Mitte
+#			ANGLE follow
 #			COLOR 0 0 90
 #			FORCE true
 #		END
@@ -3367,6 +3376,7 @@ LAYER
 #			SIZE 40 MINSIZE 28 MAXSIZE 88 # 10 7 22
 #			TYPE TRUETYPE FONT "arialbold"
 #			POSITION uc # zentrisch/Basis
+#			ANGLE follow
 #			COLOR 0 0 90
 #			FORCE true
 #		END
@@ -3382,6 +3392,7 @@ LAYER
 			SIZE 44 MINSIZE 32 MAXSIZE 88 # 11 8 22
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION ur # linksbündig/Basis
+			ANGLE follow
 			COLOR 0 90 0
 			FORCE true
 		END
@@ -3396,6 +3407,7 @@ LAYER
 			SIZE 44 MINSIZE 32 MAXSIZE 88 # 11 8 22
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION uc # zentrisch/Basis
+			ANGLE follow
 			COLOR 0 90 0
 			FORCE true
 		END
@@ -3440,7 +3452,7 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 10 MINSIZE 8 MAXSIZE 16
+			SIZE 40 MINSIZE 32 MAXSIZE 64 # 10 8 16
 			TYPE TRUETYPE FONT "arial"
 			ANGLE [winkel]
 			POSITION cc

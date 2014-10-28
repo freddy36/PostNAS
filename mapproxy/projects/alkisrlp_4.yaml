@@ -1,0 +1,53 @@
+base: ../base.yaml
+
+# 2014-10-28 HQ-Print-Version ohne Cache
+# Die alte Mapbender-Print-Version, gesteuert über die printPDF.conf, konnte nur *.map gegen *_4.map austauschen.
+# Zu gecachten WMS konnte somit keine hochauflösende Print-Version verwendet werden.
+# Die neue Mapbender-Print Version kann auch MapProxy-WMS für HQ-Print ersetzen.
+# Konfigurieren: GUI-Element "printPDF", Element-Var "highqualitymapfiles", Zeilen:
+#  {"pattern": "alkis08/alkis08rlp.map", "replacement": {"288": "alkis08/alkis08rlp_4.map"}},
+#  {"pattern": "mapproxy/alkisrlp", "replacement": {"288": "mapproxy/alkisrlp_4"}},
+
+# http://mapserver.krz.de/mapproxy/alkisrlp_4/service?REQUEST=GetCapabilities&SERVICE=WMS&VERSION=1.1.1
+services:
+  wms:
+    srs: ['EPSG:4326', 'EPSG:25832', 'EPSG:31467', 'EPSG:54004']
+    md:
+      title: "c: ALKIS"
+      abstract: Liegenschaftskataster ALKIS Demokarte RLP Mustermonzel. HQ-Print
+      online_resource: http://mapproxy.org/
+      access_constraints: 'Nur für den Dienstgebrauch'
+      fees: 'None'
+
+layers:
+  - name: alkis_nutzung
+    title: Nutzungsarten
+    sources: ["alkis:nutzung_alle"]
+    min_scale: 12
+    max_scale: 8750
+  - name: alkis_lieka
+    title: ALKIS
+    sources: ["alkis:ax_gebaeude_umr,ax_bauteil,ax_besonderegebaeudelinie,ag_t_gebaeude,ax_sonstigesbauwerkodersonstigeeinrichtung,ax_sonstigesbauwerkodersonstigeeinrichtung_l,ax_flurstueck,ax_besondereflurstuecksgrenze,ag_l_flurstueck,sk2004_zuordnungspfeil_spitze,ag_t_flurstueck,ag_p_flurstueck,ax_punktortta,ap_pto_stra,ap_pto"]
+    min_scale: 12
+    max_scale: 8750
+  - name: alkis_bezirke
+    title: Bezirke
+    sources: ["alkis:pp_flur,pp_gemarkung,pp_gemeinde"]
+    min_scale: 1250
+    max_scale: 52500
+
+sources:
+  alkis:
+    type: wms
+    wms_opts:
+      legendgraphic: true
+    coverage:
+      bbox: "349550,5529460,355140,5532210"
+      bbox_srs: "EPSG:25832"
+    req:
+      url: http://ows.krz.de/cgi-bin/mapserv6?
+      map: /opt/gdi/alkis08/alkis08rlp_4.map
+      transparent: true
+      format: image/png
+  debug:
+    type: debug

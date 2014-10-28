@@ -11,7 +11,7 @@
 --  2012-02-17 Optimierung
 --  2012-02-28 gkz aus View nehmen
 --  2012-04-17 Flurstuecksnummern auf Standardposition
---  2012-04-23 ax_flurstueck hat keinen Unique Index mahr auf gml_id,
+--  2012-04-23 ax_flurstueck hat keinen Unique Index mehr auf gml_id,
 --             ForeignKey vorübergehend ausgeschaltet.
 --  2012-04-25 simple_geom fuer pp_flur
 --  2013-04-18 Kommentare.
@@ -20,8 +20,8 @@
 --             Erweiterte gml_id wie bei den primären Tabellen, bisher (16).
 --  2014-09-02 Entfernen der JOINs über "alkis_beziehungen". 
 --             Wie im Schema: Schlüssel von integer nach varchar für land, regierungsbezirk usw.
+--  2014-10-28 letzte Fälle von "substring(gml_id,1,16)" wieder raus
 
-  --  IN ARBEIT +++++    substring(_.gml_id,1,16) 
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -259,10 +259,10 @@ CREATE OR REPLACE VIEW gemeinde_person_typ1
 AS
   SELECT DISTINCT p.gml_id AS person, g.land, g.regierungsbezirk, g.kreis, g.gemeinde
   FROM ax_person          p
-  JOIN ax_namensnummer    n  ON n.benennt=substring(p.gml_id,1,16)            -- Person <benennt< Namensnummer
-  JOIN ax_buchungsblatt   b  ON n.istbestandteilvon=substring(b.gml_id,1,16)  -- Namensnummer >istBestandteilVon> Blatt
-  JOIN ax_buchungsstelle  s  ON s.istbestandteilvon=substring(b.gml_id,1,16)  -- Blatt <istBestandteilVon< buchungsStelle
-  JOIN ax_flurstueck      f  ON f.istgebucht=substring(s.gml_id,1,16)         -- buchungsStelle <istGebucht< flurstück
+  JOIN ax_namensnummer    n  ON n.benennt=p.gml_id              -- Person <benennt< Namensnummer
+  JOIN ax_buchungsblatt   b  ON n.istbestandteilvon=b.gml_id    -- Namensnummer >istBestandteilVon> Blatt
+  JOIN ax_buchungsstelle  s  ON s.istbestandteilvon= b.gml_id   -- Blatt <istBestandteilVon< buchungsStelle
+  JOIN ax_flurstueck      f  ON f.istgebucht=s.gml_id           -- buchungsStelle <istGebucht< flurstück
   JOIN ax_gemarkung       k  ON f.land=k.land AND f.gemarkungsnummer=k.gemarkungsnummer 
   JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer=g.gemarkung;
 
@@ -276,11 +276,11 @@ CREATE OR REPLACE VIEW gemeinde_person_typ2
 AS
   SELECT DISTINCT p.gml_id AS person, g.land, g.regierungsbezirk, g.kreis, g.gemeinde
   FROM ax_person          p
-  JOIN ax_namensnummer    n  ON n.benennt=substring(p.gml_id,1,16)             -- Person <benennt< Namensnummer
-  JOIN ax_buchungsblatt   b  ON n.istBestandteilVon=substring(b.gml_id,1,16)   -- Namensnummer >istBestandteilVon> Blatt
-  JOIN ax_buchungsstelle  s1 ON s1.istbestandteilvon=substring(b.gml_id,1,16)  -- Blatt <istBestandteilVon< buchungsStelle1
-  JOIN ax_buchungsstelle  s2 ON substring(s2.gml_id,1,16)=ANY(s1.an)           -- buchungsStelle2 <(recht)an< buchungsStelle1
-  JOIN ax_flurstueck      f  ON f.istgebucht=substring(s2.gml_id,1,16)         -- buchungsStelle2 < istGebucht < flurstück
+  JOIN ax_namensnummer    n  ON n.benennt=p.gml_id             -- Person <benennt< Namensnummer
+  JOIN ax_buchungsblatt   b  ON n.istBestandteilVon=b.gml_id   -- Namensnummer >istBestandteilVon> Blatt
+  JOIN ax_buchungsstelle  s1 ON s1.istbestandteilvon=b.gml_id  -- Blatt <istBestandteilVon< buchungsStelle1
+  JOIN ax_buchungsstelle  s2 ON s2.gml_id=ANY(s1.an)           -- buchungsStelle2 <(recht)an< buchungsStelle1
+  JOIN ax_flurstueck      f  ON f.istgebucht=s2.gml_id         -- buchungsStelle2 < istGebucht < flurstück
   JOIN ax_gemarkung       k  ON f.land=k.land AND f.gemarkungsnummer=k.gemarkungsnummer 
   JOIN gemeinde_gemarkung g  ON k.gemarkungsnummer=g.gemarkung;
 

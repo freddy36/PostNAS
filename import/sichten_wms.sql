@@ -27,6 +27,7 @@
 --             Relationen nun direkt über neue Spalten in den Objekttabellen. 
 --  2014-08-29 P- und L-Straßennamen gegenseitig ausschließen in ap_pto_stra und ap_lto_stra
 --  2014-09-30 Umbenennung Schlüsseltabellen (Prefix)
+--  2014-10-28 In "ap_pto_rest" keine Anzeige für Texte ohne " advstandardmodell='DKKM1000' "
 
 -- Layer "ag_t_gebaeude"
 -- ---------------------
@@ -275,7 +276,7 @@ AS
        --  OR 'DLKM'     = ANY (p.advstandardmodell) -- oder auch Kataster allgemein?
            -- Ersatzweise auch "keine Angabe", aber nur wenn es keinen besseren Text zur Lage gibt
            OR (p.advstandardmodell IS NULL
-               -- Alternativen zur Legebezeichnung suchen in P- und L-Version
+               -- Alternativen zur Lagebezeichnung suchen in P- und L-Version
                AND (SELECT s.ogc_fid FROM ap_lto s -- irgend ein Feld eines anderen Textes (suchen)
                       JOIN ax_lagebezeichnungohnehausnummer ls ON ls.gml_id = ANY(s.dientzurdarstellungvon)
                      WHERE ls.gml_id = l.gml_id AND NOT s.advstandardmodell IS NULL 
@@ -349,7 +350,6 @@ COMMENT ON VIEW ap_pto_nam
 -- Layer NAME "ap_pto" GROUP "praesentation"
 -- ----------------------------------------
 -- REST: Texte, die nicht schon in einem anderen Layer ausgegeben werden
--- Ersetzt den View "s_beschriftung"
 -- Doppelte Darstellung aufgrund verschiedener "advstandardmodell" zum Objekt unterdrücken analog ap_pto_stra und ap_pto_nam
 
 -- DROP VIEW IF EXISTS ap_pto_rest;
@@ -369,6 +369,10 @@ AS
      -- Diese 'IN'-Liste fortschreiben bei Erweiterungen des Mapfiles
      -- 'PNR' = Pseudonummer (lfd.-Nr.-Nebengebäude), Inhalte wie "(1)" oder "P50" - kommt nicht mehr vor, oder?
     AND ('DKKM1000' = ANY (p.advstandardmodell)     -- "Lika 1000" bevorzugen
+
+/*	-- Änderung 2014-10-28: nicht einbeziehen wenn advstandardmodell leer ist.
+	-- Sonst doppelte Darstellung von freierText mit Straßennamen auf Nutzungsarten für ABK.
+
            -- Ersatzweise auch "keine Angabe" (null) akzeptieren, aber nur wenn ...
            OR (p.advstandardmodell IS NULL
                AND ( SELECT s.ogc_fid               -- irgend ein Feld
@@ -378,6 +382,7 @@ AS
                      LIMIT 1  -- einer reicht als Ausschlußkriterium
                     ) IS NULL 
               ) -- "Subquery IS NULL" liefert true wenn kein weiterer Text gefunden wird
+*/
          );
 
 COMMENT ON VIEW ap_pto_rest 

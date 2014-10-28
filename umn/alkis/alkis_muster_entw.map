@@ -24,6 +24,7 @@
 # 2014-08-25 F.J. krz  Straßennamen als P- und L-Variante, hinter "ap_pto_stra" neuer Layer "ap_lto_stra"
 # 2014-08-29 F.J. krz: Umstellung auf Version 0.8 - Datenbankname, Titel
 # 2014-09-15 F.J. krz: Filter für Historische Objekte "WHERE endet IS NULL" in DATA für Tabellen ax_*
+# 2014-10-28 F.J. krz: "ANGLE follow" bei ap_lto_stra
 
 ###
 # Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
@@ -2963,8 +2964,7 @@ LAYER
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 25000
 	SYMBOLSCALEDENOM 1000
-	TOLERANCEUNITS pixels
-	TOLERANCE 1
+	TOLERANCEUNITS pixels TOLERANCE 1
 	# klassische Variante mit Schaltflaeche fuer Weiterleitung zur Auskunft
 #	HEADER   "/opt/gdi/templates/alkis*gkz*fsh.html" # gkz = mandant
 #	TEMPLATE "/opt/gdi/templates/alkis_fs.html"
@@ -4034,6 +4034,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 10 MINSIZE 6 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION ur # linksbündig/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -4047,6 +4048,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 10 MINSIZE 6 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION cc # zentrisch/Mitte
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -4061,6 +4063,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 10 MINSIZE 6 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION uc # zentrisch/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -4076,6 +4079,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 8 MINSIZE 5 MAXSIZE 16
 			TYPE TRUETYPE FONT "arial"
 			POSITION ur # linksbündig/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -4089,6 +4093,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	#		SIZE 8 MINSIZE 5 MAXSIZE 16
 	#		TYPE TRUETYPE FONT "arial"
 	#		POSITION cc # zentrisch/Mitte
+	#		ANGLE follow
 	#		COLOR 0 0 0
 	#		FORCE true
 	#	END
@@ -4103,6 +4108,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 8 MINSIZE 5 MAXSIZE 16
 			TYPE TRUETYPE FONT "arial"
 			POSITION uc # zentrisch/Basis
+			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
 		END
@@ -4118,6 +4124,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 #			SIZE 10 MINSIZE 7 MAXSIZE 22
 #			TYPE TRUETYPE FONT "arialbold"
 #			POSITION cc # zentrisch/Mitte
+#			ANGLE follow
 #			COLOR 0 0 90
 #			FORCE true
 #		END
@@ -4132,6 +4139,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 #			SIZE 10 MINSIZE 7 MAXSIZE 22
 #			TYPE TRUETYPE FONT "arialbold"
 #			POSITION uc # zentrisch/Basis
+#			ANGLE follow
 #			COLOR 0 0 90
 #			FORCE true
 #		END
@@ -4147,6 +4155,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 11 MINSIZE 8 MAXSIZE 22
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION ur # linksbündig/Basis
+			ANGLE follow
 			COLOR 0 90 0
 			FORCE true
 		END
@@ -4161,6 +4170,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			SIZE 11 MINSIZE 8 MAXSIZE 22
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION uc # zentrisch/Basis
+			ANGLE follow
 			COLOR 0 90 0
 			FORCE true
 		END
