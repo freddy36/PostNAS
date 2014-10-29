@@ -24,7 +24,9 @@
 # 2014-08-25 F.J. krz  Straßennamen als P- und L-Variante, hinter "ap_pto_stra" neuer Layer "ap_lto_stra"
 # 2014-08-29 F.J. krz: Umstellung auf Version 0.8 - Datenbankname, Titel
 # 2014-09-15 F.J. krz: Filter für Historische Objekte "WHERE endet IS NULL" in DATA für Tabellen ax_*
-# 2014-10-28 F.J. krz: "ANGLE follow" bei ap_lto_stra
+# 2014-10-28 F.J. krz: "ANGLE follow" bei ap_lto_stra, Textgrößen verkleinert in Präsentation
+# 2014-10-28 F.J. krz: Versuch "OPACITY 80" auf "nutzung_alle"
+# 2014-10-29 F.J. krz: Straßennamen auf Liniengeometrie besser positionieren
 
 ###
 # Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
@@ -32,24 +34,8 @@
 
 # ToDo:
 # - Gebaeude: Layer nach "Name" und "Funktion" auftrennen.
-
 # - neuen Layer "Namen" auf View ap_pto_nam (NAM, ZNM)
-
-# - Bei Präsentation/Beschriftung die doppelten Texte unterdrücken (-> View?)
-#   Für appto_stra und appto_rest bereits erfolgt.
-
 # - Mit Status on/off die gängigen Layer vorkonfigurieren?
-
-# - ZuordnungspfeilE FS:
-#   Linie im Druck zu dünn
-#   Ist doppelt: in "Flurstück" ("ag_l_flurstueck") und in "Präsentation/Zuordnungspfeile" ("ap_lpo")
-
-# - Zuordnungspfeile Nebengebäude:
-#   entfällt? Oder auch für Hausnummern verwendet?
-#   Was wird da eigentlich zugeordnet?  Beispiel: 140 am Quellenweg
-
-# - Straßennamen im Cache abgeschnitten, PARTIALS TRUE?  Beispiel: 250 Brüderweg
-# - Hausnummern doppelt oder mehrfach (z.B. 070: Bürgermeister-Brinkmann-Weg 3)
 # - Template auf Gebäude-Objekt, Auskunft aufrufen?
 
 ###
@@ -168,6 +154,7 @@ LAYER
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 50
 	MAXSCALEDENOM 20000 # die Einzel-Layer bis 10T
+	OPACITY 80
 	CLASSITEM nutz_id
 	# ** Siedlung **
 	CLASS
@@ -3820,8 +3807,8 @@ Sonstiger Vermessungspunkt, Besonderer topographischer Punkt, Lagefestpunkt, Hö
 		END
 	END
 END
+
 # ALKIS  AAA-Präsentationsobjekte
-# ToDo: Welche Texte sollen zu anderen Layern angezeigt werden?
 LAYER
 	NAME "ap_pto_stra"
 	GROUP "praesentation"
@@ -3841,33 +3828,33 @@ LAYER
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	#MINSCALEDENOM 50
-	MAXSCALEDENOM 4000
+	MAXSCALEDENOM 2500 # 4000
 	SYMBOLSCALEDENOM 1000
 	LABELITEM schriftinhalt
-	
-	# Strasse
+
+	# Strasse 
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
 		#NAME 'Straße'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 6 MAXSIZE 20
+			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION ur # linksbündig/Basis
 			COLOR 0 0 0
-			FORCE true
+			FORCE true PARTIALS true
 		END
 	END
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
 		#NAME 'Straße'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 6 MAXSIZE 20
+			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION cc # zentrisch/Mitte
 			COLOR 0 0 0
@@ -3877,11 +3864,11 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse') 
 		NAME 'Straße'
-		STYLE
-			SYMBOL "point" SIZE 1 MINSIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1 MINSIZE 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 6 MAXSIZE 20
+			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION uc # zentrisch/Basis
 			COLOR 0 0 0
@@ -3893,11 +3880,11 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
 		#NAME 'Weg'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 8 MINSIZE 5 MAXSIZE 16
+			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
 			ANGLE [winkel] 
 			POSITION ur # linksbündig/Basis
@@ -3908,11 +3895,11 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
 		#NAME 'Weg'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 8 MINSIZE 5 MAXSIZE 16
+			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
 			ANGLE [winkel] POSITION cc # zentrisch/Mitte
 			COLOR 0 0 0
@@ -3922,11 +3909,11 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg')
 		NAME 'Weg'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 8 MINSIZE 5 MAXSIZE 16
+			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
 			ANGLE [winkel] POSITION uc # zentrisch/Basis
 			COLOR 0 0 0
@@ -3939,11 +3926,11 @@ LAYER
 		#EXPRESSION 'Platz'
 		EXPRESSION ('[art]' eq 'Platz' AND '[ver]' eq 'Mitte')
 		#NAME 'Platz'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 7 MAXSIZE 22
+			SIZE 9 MINSIZE 7 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION cc # zentrisch/Mitte
 			COLOR 0 0 90
@@ -3954,11 +3941,11 @@ LAYER
 		#EXPRESSION 'Platz'
 		EXPRESSION ('[art]' eq 'Platz')
 		NAME 'Platz'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 7 MAXSIZE 22
+			SIZE 9 MINSIZE 7 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION uc # zentrisch/Basis
 			COLOR 0 0 90
@@ -3971,11 +3958,11 @@ LAYER
 		#EXPRESSION 'BezKlassifizierungStrasse'
 		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse' AND '[hor]' eq 'linksbündig')
 		#NAME 'Klassifizierung'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1
+	#	END
 		LABEL
-			SIZE 11 MINSIZE 8 MAXSIZE 22
+			SIZE 10 MINSIZE 8 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION ur # linksbündig/Basis
 			COLOR 0 90 0
@@ -3986,11 +3973,11 @@ LAYER
 		#EXPRESSION 'BezKlassifizierungStrasse'
 		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse')
 		NAME 'Klassifizierung'
-		STYLE
-			SYMBOL "point" SIZE 1 MINSIZE 1
-		END
+	#	STYLE
+	#		SYMBOL "point" SIZE 1 MINSIZE 1
+	#	END
 		LABEL
-			SIZE 11 MINSIZE 8 MAXSIZE 22
+			SIZE 10 MINSIZE 8 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			ANGLE [winkel] POSITION uc # zentrisch/Basis
 			COLOR 0 90 0
@@ -3998,6 +3985,8 @@ LAYER
 		END
 	END
 END
+
+#### +++++++++++++++++++  ToDo: SCALE und Position in _4 übertragen +++++++
 
 LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	NAME "ap_lto_stra"
@@ -4014,7 +4003,7 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 		wms_title "Straßen _"
 		wms_abstract "Beschriftung mit Art = Straße, Weg, Platz, Klassifizierung (Linie)"
 	END
-	MAXSCALEDENOM 4000
+	MAXSCALEDENOM 2500 # 4000
 	SYMBOLSCALEDENOM 1000
 	LABELITEM schriftinhalt
 
@@ -4027,27 +4016,40 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	# Strasse
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+		#STYLE
+		#	SYMBOL "point" SIZE 1
+		#END
+	#	STYLE # TEST: Positionierungs-Linie sichtbar machen
+	#		COLOR 250 40 40 PATTERN 4 8 END # rot
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 6 MAXSIZE 20
+			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
-			POSITION ur # linksbündig/Basis
 			ANGLE follow
+
+			OFFSET 3 99 # Basis: Text über der Linie, theoretisch 1/2 SIZE, aber scaliert nicht, bleibt fix!
+		#	POSITION ur # linksbündig/Basis 
+			POSITION uc # linksbündig/Basis 
+			# Dok: With lines, it only uses lc or uc, ...
+			# immer c=center auf Linie, "linksbündig" kann also mit Mapserver nicht umgesetzt werden!
+			TEXT '[schriftinhalt]      ' # Ersatz: 6 Zeichen nach links verschieben
+
+		#	MINDISTANCE 5 # Wirkt nicht bei Kollision mit Klassifizierung
 			COLOR 0 0 0
 			FORCE true
 		END
 	END
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE
+	#		COLOR 40 250 40 PATTERN 4 8 END # grün
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 6 MAXSIZE 20
+			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
-			POSITION cc # zentrisch/Mitte
+			#POSITION cc # zentrisch/Mitte
 			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
@@ -4056,11 +4058,12 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse') 
 		NAME 'Straße'
-		STYLE
-			SYMBOL "point" SIZE 1 MINSIZE 1
-		END
+	#	STYLE
+	#		COLOR 40 40 250 PATTERN 4 8 END # blau
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
-			SIZE 10 MINSIZE 6 MAXSIZE 20
+			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION uc # zentrisch/Basis
 			ANGLE follow
@@ -4072,13 +4075,13 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	# Weg
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
 		LABEL
-			SIZE 8 MINSIZE 5 MAXSIZE 16
+			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
-			POSITION ur # linksbündig/Basis
+		#	POSITION ur # linksbündig/Basis
+			POSITION uc # linksbündig/Basis 
+			OFFSET 3 99 # siehe Straße
+			TEXT '[schriftinhalt]    '
 			ANGLE follow
 			COLOR 0 0 0
 			FORCE true
@@ -4086,9 +4089,6 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	END
 	#CLASS
 	#	EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 	#	LABEL
 	#		SIZE 8 MINSIZE 5 MAXSIZE 16
 	#		TYPE TRUETYPE FONT "arial"
@@ -4101,11 +4101,12 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg')
 		NAME 'Weg'
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE # TEST
+	#		COLOR 250 250 40 PATTERN 8 4 END
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
-			SIZE 8 MINSIZE 5 MAXSIZE 16
+			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
 			POSITION uc # zentrisch/Basis
 			ANGLE follow
@@ -4117,11 +4118,8 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	# Platz 
 #	CLASS
 #		EXPRESSION ('[art]' eq 'Platz' AND '[ver]' eq 'Mitte')
-#		STYLE
-#			SYMBOL "point" SIZE 1
-#		END
 #		LABEL
-#			SIZE 10 MINSIZE 7 MAXSIZE 22
+#			SIZE 9 MINSIZE 7 MAXSIZE 20
 #			TYPE TRUETYPE FONT "arialbold"
 #			POSITION cc # zentrisch/Mitte
 #			ANGLE follow
@@ -4132,11 +4130,11 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 #	CLASS
 #		EXPRESSION ('[art]' eq 'Platz')
 #		NAME 'Platz'
-#		STYLE
-#			SYMBOL "point" SIZE 1
-#		END
+#		#STYLE
+#		#	SYMBOL "point" SIZE 1
+#		#END
 #		LABEL
-#			SIZE 10 MINSIZE 7 MAXSIZE 22
+#			SIZE 9 MINSIZE 7 MAXSIZE 20
 #			TYPE TRUETYPE FONT "arialbold"
 #			POSITION uc # zentrisch/Basis
 #			ANGLE follow
@@ -4148,11 +4146,12 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	# Klassifikation
 	CLASS
 		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse' AND '[hor]' eq 'linksbündig')
-		STYLE
-			SYMBOL "point" SIZE 1
-		END
+	#	STYLE # TEST
+	#		COLOR 40 40 40 PATTERN 8 4 END
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
-			SIZE 11 MINSIZE 8 MAXSIZE 22
+			SIZE 10 MINSIZE 8 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION ur # linksbündig/Basis
 			ANGLE follow
@@ -4163,11 +4162,12 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	CLASS
 		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse')
 		NAME 'Klassifizierung'
-		STYLE
-			SYMBOL "point" SIZE 1 MINSIZE 1
-		END
+	#	STYLE # TEST
+	#		COLOR 40 40 40 PATTERN 8 4 END
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
-			SIZE 11 MINSIZE 8 MAXSIZE 22
+			SIZE 10 MINSIZE 8 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
 			POSITION uc # zentrisch/Basis
 			ANGLE follow
@@ -4220,7 +4220,8 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 10 MINSIZE 8 MAXSIZE 16
+		#	SIZE 10 MINSIZE 8 MAXSIZE 16
+			SIZE 9 MINSIZE 7 MAXSIZE 16
 			TYPE TRUETYPE FONT "arial"
 			ANGLE [winkel]
 			POSITION cc
@@ -4235,7 +4236,8 @@ LAYER
 			SYMBOL "point" SIZE 1
 		END
 		LABEL
-			SIZE 10 MINSIZE 8 MAXSIZE 16
+		#	SIZE 10 MINSIZE 8 MAXSIZE 16
+			SIZE 9 MINSIZE 7 MAXSIZE 16
 			TYPE TRUETYPE FONT "arial"
 			ANGLE [winkel]
 			POSITION cc
