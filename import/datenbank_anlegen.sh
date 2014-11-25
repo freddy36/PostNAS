@@ -126,7 +126,7 @@ psql $con -U ${DBUSER} -f alkis_PostNAS_keytables.sql >$MANDANT_HOME/log/keytabl
 
 echo " 
 ** Anlegen Optimierung Nutzungsarten (nutzungsart_definition.sql)"
-psql $con -U ${DBUSER} -f nutzungsart_definition.sql
+psql $con -v alkis_epsg=$EPSG -U ${DBUSER} -f nutzungsart_definition.sql
 
 echo " 
 ** Laden NUA-Metadaten (nutzungsart_metadaten.sql) Protokoll siehe log"

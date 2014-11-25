@@ -1,5 +1,5 @@
 
--- ALKIS PostNAS 0.7
+-- ALKIS PostNAS 0.8
 
 -- ======================================================
 -- Zusammenfassung der Tabellen der tatsächlichen Nutzung
@@ -11,6 +11,7 @@
 -- Felder dieser Tabellen zusammen gefasst.
 
 -- Teil 1: Anlegen der Tabellen
+-- Variable für das Koordinatensystem übergeben mit "psql .. -v alkis_epsg="25832"
 
 -- Stand 
 
@@ -18,6 +19,7 @@
 --  2013-11-15 In nutzung_class.class können NULL-Werte auftreten.
 --  2013-11-26 NULL wird durch Zahl "0" ersetzt, "NOT NULL" wieder aktivieren
 --  2014-08-26 erweiterte gml_id (wie in den primären Tabellen)
+--  2014-11-25 Version geaendert auf 0.8, EPSG Übergabe in Tabelle Nutzung
 
 SET client_encoding = 'UTF-8';
 
@@ -71,7 +73,7 @@ CREATE TABLE nutzung (
 WITH (OIDS=FALSE);
 
 
-SELECT AddGeometryColumn('nutzung','wkb_geometry','25832','POLYGON',2);
+SELECT AddGeometryColumn('nutzung','wkb_geometry',:alkis_epsg,'POLYGON',2);
 -- Vereinzelt auch vorkommende MULTIPOLYGON
 
 -- 'class' ist nur innerhalb einer Gruppe ein sinvoller Index
