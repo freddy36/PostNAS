@@ -17,7 +17,7 @@ MAP
 	STATUS ON
 	EXTENT 349000 5529000 356000 5533000
 	PROJECTION "init=epsg:25832" END
-	MAXSIZE 2100
+	MAXSIZE 8400
 	SYMBOLSET "symbols/symbols_alkis.sym"
 	FONTSET "fonts/fonts_alkis.fnt"
 	UNITS METERS
@@ -422,7 +422,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Industrie- und Gewerbefläche"
-		wms_abstract "'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient."
+		wms_abstract "'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -501,7 +502,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Tagebau, Grube, Steinbruch"
-		wms_abstract "Tagebau, Grube, Steinbruch"
+		wms_abstract "Tagebau, Grube, Steinbruch"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -529,7 +531,8 @@ LAYER
 		wms_title "Fläche gemischter Nutzung"
 		wms_abstract "'Fläche gemischter Nutzung' ist eine bebaute Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche (Hofraumfläche, Hausgarten), auf der keine Art
 der baulichen Nutzung vorherrscht. Solche Flächen sind insbesondere ländlich-dörflich geprägte Flächen mit land- und forstwirtschaftlichen Betrieben, Wohngebäuden u.a.
-sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung."
+sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -555,7 +558,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Fläche besonderer funktionaler Prägung"
-		wms_abstract "'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind."
+		wms_abstract "'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -581,7 +585,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sport-, Freizeit- und Erholungsfläche"
-		wms_abstract "'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient."
+		wms_abstract "'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -608,7 +613,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Friedhof"
-		wms_abstract "Friedhof"
+		wms_abstract "Friedhof"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -636,7 +642,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Straßenverkehr"
-		wms_abstract "'Straßenverkehr' umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen."
+		wms_abstract "'Straßenverkehr' umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -695,7 +702,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Weg"
-		wms_abstract "Weg"
+		wms_abstract "Weg"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -721,7 +729,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Platz"
-		wms_abstract " 'Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen)."
+		wms_abstract " 'Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen)."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -755,7 +764,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bahnverkehr"
-		wms_abstract "Bahnverkehr"
+		wms_abstract "Bahnverkehr"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -782,7 +792,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Flugverkehr"
-		wms_abstract "Flugverkehr"
+		wms_abstract "Flugverkehr"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -809,7 +820,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Schiffsverkehr"
-		wms_abstract "'Schiffsverkehr' umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient."
+		wms_abstract "'Schiffsverkehr' umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -838,7 +850,8 @@ LAYER
 		wms_title "Landwirtschaft"
 		wms_abstract "'Landwirtschaft' ist eine Fläche für den Anbau von Feldfrüchten sowie eine Fläche,
 die beweidet und gemäht werden kann, einschließlich der mit besonderen Pflanzen angebauten Fläche. 
-Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als 'Landwirtschaft' bzw. 'Ackerland' zu erfassen."
+Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als 'Landwirtschaft' bzw. 'Ackerland' zu erfassen."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2415,7 +2428,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sonstiges Bauwerk/Einrichtung"
-		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
+		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2464,7 +2478,8 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sonstiges Bauwerk/Einrichtung (Linien)"
-		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
+		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -4186,7 +4201,8 @@ LAYER
 	METADATA
 		wms_title "Gemarkungsrenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		wms_abstract "Grenze der Gemarkung (Ortsteil)"
+		wms_abstract "Grenze der Gemarkung (Ortsteil)"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -4219,7 +4235,8 @@ LAYER
 	METADATA
 		wms_title "Flurgrenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		wms_abstract "Grenze der Flur (Katasterbezirk)"
+		wms_abstract "Grenze der Flur (Katasterbezirk)"
+
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000

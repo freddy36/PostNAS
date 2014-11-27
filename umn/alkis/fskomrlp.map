@@ -3,7 +3,7 @@ MAP # 2013-11-26 Flurstücke im Kommunalen Eigentum - Ortsgemeinde Osann-Monzel
 	STATUS ON
 	EXTENT 349000 5529000 356000 5533000
 	PROJECTION "init=epsg:25832" END
-	MAXSIZE 2100
+	MAXSIZE 8200
 	FONTSET "/opt/gdi/fonts/arial.fnt"
 	UNITS METERS
 	WEB
