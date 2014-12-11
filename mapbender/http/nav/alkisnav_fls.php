@@ -10,6 +10,7 @@
 	2013-10-15  missing Parameter
 	2014-09-03  PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15  Bei Relationen den Timestamp abschneiden, mehr "endet IS NULL"
+	2014-12-11  Fehlerbehandlung bei Eingabe ungültiger Gemarkungsnummer. Tabellen pp_gemarkung und pp_flur verwenden.
 */
 $cntget = extract($_GET);
 include("../../conf/alkisnav_conf.php");
@@ -67,7 +68,7 @@ function ZerlegungFsKennz($fskennz) {
 	// Das eingegebene Flurstücks-Kennzeichen auseinander nehmen. Erwartet wird gggg-fff-zzzz/nnn
 	// Teile der Zerlegung in global-Vars "$z..."
 	global $debug, $zgemkg, $zflur, $zzaehler, $znenner;	
-	$arr = explode("-", $fskennz, 4);
+	$arr = explode("-", $fskennz, 4); // an den Trenn-Strichen aufteilen
 	$zgemkg=trim($arr[0]);
 	$zflur=h_hinten($arr[1]);
 	$zfsnr=trim($arr[2]);
@@ -128,8 +129,9 @@ function flurstueckskoordinaten($gml) {
 function zeile_gemarkung($gkgnr, $gkgname, $aktuell) {
 // Eine Zeile zu Gemarkung ausgeben
 	global $con, $gkz, $gemeinde, $epsg, $gfilter;
+
 	if ($gkgname == "") { // Falls Gem.-Name fehlt, in DB nachschlagen
-		$sql ="SELECT g.gemarkungsname FROM pp_gemarkung g WHERE g.gemarkung = $1 AND endet IS NULL LIMIT 1;";
+		$sql ="SELECT g.gemarkungsname FROM pp_gemarkung g WHERE g.gemarkung = $1 LIMIT 1;";
 		$v=array($gnr);
 		$res=pg_prepare("", $sql);
 		$res=pg_execute("", $v);
@@ -137,9 +139,11 @@ function zeile_gemarkung($gkgnr, $gkgname, $aktuell) {
 		$row = pg_fetch_array($res);
 		$gkgname=$row["gemarkungsname"];
 	}
+
 	if ($gkgname == "") {$gkgname = "(unbekannt)";}
 	$gnam=htmlentities($gkgname, ENT_QUOTES, "UTF-8");
 	if ($aktuell) {$cls=" aktuell";}
+
 	echo "\n<div class='gk".$cls."' title='Gemarkung'>";
 	echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='GKG' title='Gemarkung'>";
 	echo " OT <a href='".$_SERVER['SCRIPT_NAME']."?gkz=".$gkz."&amp;gemeinde=".$gemeinde."&amp;epsg=".$epsg."&amp;fskennz=".$gkgnr."'>";		
@@ -352,37 +356,54 @@ function SuchGmkgName() {
 }
 
 function gg_head($gkgnr, $gkgaktuell) {
-	// Übergeordnete Zeilen (Head) für Gemeinde und Gemarkung ausgeben
-	// Parameter = Gemarkungsnummer
+	// Kopf-Zeilen Gemeinde und Gemarkung ausgeben
+	// Parameter: Gemarkungsnummer, aktuell hervorzuhebende Zeile
+	// Return: true/false ob gefunden 
+
 	$sqlh ="SELECT g.gemarkungsname, s.gemeinde, s.gemeindename FROM pp_gemarkung g 
 	JOIN pp_gemeinde s ON g.gemeinde=s.gemeinde AND g.land=s.land WHERE g.gemarkung = $1 ;";
+
 	$v=array($gkgnr);
 	$resh=pg_prepare("", $sqlh);
 	$resh=pg_execute("", $v);
+
 	if (!$resh) {echo "\n<p class='err'>Fehler bei Gemeinde und Gemarkung.</p>";}
-	$rowh = pg_fetch_array($resh);
-	$gmkg=$rowh["gemarkungsname"];
-	$skey=$rowh["gemeinde"];
-	$snam=$rowh["gemeindename"];
-	zeile_gemeinde($skey, $snam, false);
-	zeile_gemarkung($gkgnr, $gmkg, $gkgaktuell);
-	return;
+
+	if ($rowh = pg_fetch_array($resh)) {
+		$gmkg=$rowh["gemarkungsname"];
+		$skey=$rowh["gemeinde"];
+		$snam=$rowh["gemeindename"];
+		zeile_gemeinde($skey, $snam, false);
+		zeile_gemarkung($gkgnr, $gmkg, $gkgaktuell);
+		return true;
+    } else {
+		echo "\n<div class='gk' title='Gemarkung'>";
+		echo "\n\t\t<img class='nwlink' src='ico/Gemarkung.ico' width='16' height='16' alt='GKG' title='Gemarkung'>";
+		echo " Gemarkung ".$gkgnr." nicht gefunden!\n</div>";
+		return false;
+	}
 }
 
 function EineGemarkung($AuchGemkZeile) {
 	// Kennzeichen bestehend nur aus Gemarkung-Schlüssel wurde eingegeben
-	// Parameter = $zgemkg
 	global $con, $gkz, $gemeinde, $epsg, $debug, $zgemkg;
 	$linelimit=120; // max.Fluren/Gemkg
 
 	// Head
-	if ($AuchGemkZeile) {gg_head($zgemkg, true);}
+	if ($AuchGemkZeile) { // Kopf davor ausgeben
+		if (! gg_head($zgemkg, true)) {
+			if ($debug >= 1) {echo "\n<p class='dbg'>Gem.-Gemkg.-Kopf abgebrochen</p>";}	
+			return false;
+		} 
+	}
+
 	// Body
-	$sql ="SELECT gemarkungsteilflur AS flur FROM ax_gemarkungsteilflur f 
-	WHERE gemarkung= $1 AND endet IS NULL ORDER BY gemarkungsteilflur LIMIT $2 ;";
+	// Tabelle pp_flur verwenden um nur Fluren aufzulisten, die tatsächlich Flurstücke enthalten
+	$sql ="SELECT flurnummer AS flur FROM pp_flur f WHERE gemarkung= $1 ORDER BY flurnummer LIMIT $2 ;";
 	$v=array($zgemkg, $linelimit);
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
+
 	if (!$res) {echo "\n<p class='err'>Fehler bei Flur.</p>";}
 	$zfl=0;
 	while($row = pg_fetch_array($res)) {	
@@ -390,6 +411,7 @@ function EineGemarkung($AuchGemkZeile) {
 		zeile_flur($zgemkg, $zflur, false, false);
 		$zfl++;
 	}
+
 	// Foot
 	if($zfl == 0) { 
 		echo "\n<p class='anz'>Keine Flur.</p>";
@@ -398,7 +420,7 @@ function EineGemarkung($AuchGemkZeile) {
 	} elseif($zfl > 1) {
 		echo "\n<p class='anz'>".$zfl." Fluren</p>";
 	}
-	return;
+	return true;
 }
 
 function EineFlur() {
@@ -407,8 +429,11 @@ function EineFlur() {
 	$linelimit=600; // Wie groß kann eine Flur sein?
 
 	// Head
-	gg_head($zgemkg, false);
-	zeile_flur($zgemkg, $zflur, true, true);
+	if (gg_head($zgemkg, false)) {
+		zeile_flur($zgemkg, $zflur, true, true);
+	} else {
+		return false;
+	}
 
 	// Body
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.gemeinde, ";
@@ -443,7 +468,7 @@ function EineFlur() {
 	} elseif($zfs > 1) {
 		echo "\n<p class='anz'>".$zfs." Flurst&uuml;cke</p>";
 	}
-	return;
+	return true;
 }
 
 function HistFlur() {
@@ -453,8 +478,11 @@ function HistFlur() {
 	$linelimit=500;
 
 	// Head	
-	gg_head($zgemkg, false);
-	zeile_flur($zgemkg, $zflur, true, true);
+	if (gg_head($zgemkg, false)) {
+		zeile_flur($zgemkg, $zflur, true, true);
+	} else {
+		return false;
+	}
 
 	// Body
 	$whcl.="WHERE flurstueckskennzeichen like $1 AND endet IS NULL ";
@@ -485,7 +513,7 @@ function HistFlur() {
 	} elseif($zfs > 1) {
 		echo "\n<p class='anz'>".$zfs." historische Flurst&uuml;cke</p>";
 	}
-	return;
+	return true;
 }
 
 function EinFlurstueck() {
@@ -494,8 +522,11 @@ function EinFlurstueck() {
 	global $con, $gkz, $debug, $epsg, $gemeinde, $fskennz, $zgemkg, $zflur, $zzaehler, $znenner;
 
 	// Head
-	gg_head($zgemkg, false);
-	zeile_flur($zgemkg, $zflur, true, false);
+	if (gg_head($zgemkg, false)) {
+		zeile_flur($zgemkg, $zflur, true, false);
+	} else {
+		return false;
+	}
 
 	// Body
 	$sql ="SELECT f.gml_id, f.flurnummer, f.zaehler, f.nenner, ";
@@ -506,8 +537,7 @@ function EinFlurstueck() {
 		$sql.="x(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS x, ";
 		$sql.="y(st_transform(st_Centroid(f.wkb_geometry), ".$epsg.")) AS y ";			
 	}
-	$sql.="FROM ax_flurstueck f ";
-	$sql.="WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND f.zaehler= $3 ";
+	$sql.="FROM ax_flurstueck f WHERE f.gemarkungsnummer= $1 AND f.flurnummer= $2 AND f.zaehler= $3 ";
 	If ($znenner != "") {$sql.="AND f.nenner=".$znenner." ";} // wie prepared?
 	$sql.="AND endet IS NULL ORDER BY f.zaehler, f.nenner;";
 	$v=array($zgemkg, $zflur, $zzaehler);
@@ -534,7 +564,7 @@ function EinFlurstueck() {
 			echo " h - suchen</a>";
 		echo "\n</div>";		
 	}
-	return;
+	return true;
 }
 
 function HistFlurstueck() {
@@ -542,8 +572,11 @@ function HistFlurstueck() {
 	global $debug, $land, $zgemkg, $zflur, $zzaehler, $znenner;
 
 	// Head
-	gg_head($zgemkg, false);
-	zeile_flur($zgemkg, $zflur, true, false);
+	if (gg_head($zgemkg, false)) {
+		zeile_flur($zgemkg, $zflur, true, false);
+	} else {
+		return false;
+	}
 	echo "\n<hr>";
 
 	// Body
@@ -576,7 +609,7 @@ function HistFlurstueck() {
 	if (!$res) {
 		echo "\n<p class='err'>Fehler bei historischem Flurst&uuml;ck.</p>";
 		if ($debug > 2) {echo "<p class='dbg'>SQL = '".$sql."'<br>Parameter: ".$fskzwhere."<p>";}
-		return;
+		return true;
 	}
 
 	$zfs=0;
@@ -674,7 +707,8 @@ if($gm != "") { // Self-Link aus Gemeinde-Liste
 	}
 } else { // Die Formular-Eingabe interpretieren (kann auch ein Link sein)
 	$retzer=ZerlegungFsKennz($fskennz);
-	switch ($retzer) {
+	if ($debug >= 1) {echo "\n<p class='dbg'>Return Zerlegung: ".$retzer."</p>";}	
+	switch ($retzer) { // Return der Zerlegung
 	case 0: // leere Eingabe
 		if ($gfilter == 1) { // Die GUI ist bereits auf EINE Gemeinde gefiltert
 			$trans="Liste der Gemarkungen";
