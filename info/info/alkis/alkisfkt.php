@@ -358,13 +358,13 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 				echo "\n\t<td>&nbsp;</td>\n</tr>"; // Sp. 3
 			}
 		} // End Loop Person
-		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, ist dann kein Fehler
-			if ($debug > 0) {
+		if ($i == 0) { // kommt vor hinter Zeile Erbengemeinschaft, ist dann KEIN Fehler
+			if ($debug > 1) { // nur bei Entwicklung
 				echo "\n<p class='dbg'>Rechtsgemeinschaft = '".$rechtsg."'</p>";
 				if ($rechtsg != 9999) {
 					echo "\n<p class='dbg'>Fehler: Keine Person zur Namensnummer ".$namnum."</p>";
+				//	if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1 = gml(NamNum) = '".$gmlnn."'</p>";}
 				}
-				if ($debug > 2) {echo "\n<p class='dbg'>SQL=<br>".$sqlp."<br>$1 = gml(NamNum) = '".$gmlnn."'</p>";}
 			}
 			echo "</td>\n\t<td>&nbsp;</td>\n<tr>";
 		}
@@ -372,8 +372,8 @@ function eigentuemer($con, $gmlid, $mitadresse, $lnkclass) {
 	} // End Loop NamNum
 	echo "\n</table>\n";
 	if ($n == 0) { // bei "Fiktives Blatt" KEIN Fehler 
-		if ($debug > 0) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
-		if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
+		if ($debug > 1) {echo "<p class='dbg'>keine Namensnummern zum Blatt</p>";}
+	//	if ($debug > 2) {echo "<p class='dbg'>Namensnummern: SQL=<br>".$sqln."<br>$1=gml(Blatt)= '".$gmlid."'</p>";}
 	}
 	pg_free_result($resn);
 	return $n; 

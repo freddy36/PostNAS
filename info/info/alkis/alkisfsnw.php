@@ -23,6 +23,7 @@
 	2014-09-15 Bei Relationen den Timestamp abschneiden
 	2014-09-23 Korrektur "IS NULL"
 	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
+	2014-12-16 Zum Grundbuch einen Hinweis anzeigen, wenn es dazu berechtigte Buchungen gibt.
 
 	ToDo:
 	- Bodenschätzung anzeigen
@@ -62,6 +63,45 @@ if ($keys == "j") {$showkey=true;} else {$showkey=false;}
 <body>
 
 <?php
+
+function ber_bs_hinw($gmls) {
+	// Unter einem Grundbuch-Link den Hinweis auf "berechtigte Buchungssstellen" anzeigen
+	// In FS-Nachweis wird nur der Eigentümer des direkt gebuchten Grundstücks angezeigt.
+	// Den Erbbauberechtigten sieht man erst in der Grundbuch-Auskunft.
+	global $debug, $showkey;
+
+	// Buchungstelle dien. >an> Buchungstelle herr.
+	$sql ="SELECT count(sh.gml_id) AS anz, sh.buchungsart, a.bezeichner
+	FROM ax_buchungsstelle sd JOIN ax_buchungsstelle sh ON sd.gml_id=ANY(sh.an) 
+	LEFT JOIN v_bs_buchungsart a ON sh.buchungsart=a.wert 
+	WHERE sd.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL GROUP BY sh.buchungsart, a.bezeichner;";
+
+	$v = array($gmls); // id dienende BS
+	$resan = pg_prepare("", $sql);
+	$resan = pg_execute("", $v);
+	if (!$resan) {
+		echo "\n<p class='err'>Fehler bei 'berechtigte Buchungsstellen'.</p>\n";
+		//if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmls."'</p>";}
+	}
+	$an=0;
+	while($rowan = pg_fetch_array($resan)) {
+		$an++;
+		if ($an == 1) {echo "\n\t<br>\n\t<p class='nwlink' title='Andere Grundst&uuml;cke mit Rechten an diesem.'>Berechtigte Buchungen:<br><b>";}
+		if ($an > 1) {echo",<br>";} // kann es gemischste Buchungsarten geben?
+		echo $rowan["anz"]." ".htmlentities($rowan["bezeichner"], ENT_QUOTES, "UTF-8");
+		if ($showkey) {
+			echo " <span class='key'>(".$rowan["buchungsart"].")</span>";
+		}
+	}
+	if ($an == 0) {
+		echo "<br><p class='nwlink' title='Kein anderes Grundst&uuml;ck hat ein Recht an diesem.'>Keine berechtigte Buchung</p>";
+	} else {
+		echo "</b></p>";
+	}
+	pg_free_result($resan);
+}
+
+// S t a r t
 $con = pg_connect("host=".$dbhost." port=" .$dbport." dbname=".$dbname." user=".$dbuser." password=".$dbpass);
 if (!$con) echo "<p class='err'>Fehler beim Verbinden der DB</p>\n";
 
@@ -715,6 +755,9 @@ while($rows = pg_fetch_array($ress)) {
 						echo $blattartg." <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
 					echo "</a>";
 				echo "\n\t</p>";
+
+				ber_bs_hinw($gmls); // berechtigte Buchungstellen Hinweis
+
 			echo "\n</td>";
 		echo "\n</tr>";
 		echo "\n</table>";
@@ -730,6 +773,7 @@ while($rows = pg_fetch_array($ress)) {
 		// E I G E N T U E M E R, zum GB
 		// Person <-benennt< AX_Namensnummer  >istBestandteilVon-> AX_Buchungsblatt
 		if ($eig=="j") { // Wahlweise mit/ohne Eigentümer
+			echo "\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 			$n = eigentuemer($con, $gmlg, false, ""); // ohne Adresse
  			if ($n == 0) {
 				if ($blattkeyg == 1000) {
@@ -747,99 +791,6 @@ while($rows = pg_fetch_array($ress)) {
 		echo "\n<p class='err'>Parameter: gml_id= ".$gmls.", Beziehung='istBestandteilVon'</p>";
 		linkgml($gkz, $gmls, "Buchungstelle", "ax_buchungsstelle");
 	}
-
-	// Buchungstelle >an> Buchungstelle >istBestandteilVon> BLATT -> Bezirk
-	$sql ="SELECT sd.gml_id AS s_gml, sd.buchungsart, sd.laufendenummer as lfd, sd.zaehler, sd.nenner, sd.nummerimaufteilungsplan as nrpl, sd.beschreibungdessondereigentums as sond, 
-	b.gml_id AS g_gml, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, z.bezeichnung, a.bezeichner AS bart 
-	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON sd.gml_id=ANY(sh.an) 
-	JOIN ax_buchungsblatt b ON b.gml_id=sd.istbestandteilvon  
-	LEFT JOIN ax_buchungsblattbezirk z ON z.land=b.land AND z.bezirk=b.bezirk 
-	LEFT JOIN v_bs_buchungsart a ON sd.buchungsart=a.wert 
-	WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL AND b.endet IS NULL AND z.endet IS NULL
-	ORDER BY b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
-
-	$v = array($gmls); // id herrschende Buchungsstelle
-	$resan = pg_prepare("", $sql);
-	$resan = pg_execute("", $v);
-	if (!$resan) {
-		echo "\n<p class='err'>Fehler bei 'weitere Buchungsstellen'.</p>\n";
-		if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmls."'</p>";}
-	}
-	$an=0; // Stelle an Stelle
-	while($rowan = pg_fetch_array($resan)) {
-		$beznam=$rowan["bezeichnung"];
-		$blattkeyan=$rowan["blattart"]; // Schluessel von Blattart
-		$blattartan=blattart($blattkeyan);
-		echo "\n<hr>\n<table class='outer'>";
-		echo "\n<tr>"; // 1 row only
-			echo "\n<td>"; // outer linke Spalte
-				// Rahmen mit Kennzeichen GB
-				if ($blattkeyan == 1000) {
-					echo "\n\t<table class='kennzgb' title='Bestandskennzeichen'>";
-				} else {
-					echo "\n\t<table class='kennzgbf' title='Bestandskennzeichen'>"; // dotted
-				}
-					echo "\n\t<tr>";
-						echo "\n\t\t<td class='head'>Bezirk</td>";
-						echo "\n\t\t<td class='head'>".$blattartan."</td>";
-						echo "\n\t\t<td class='head'>Lfd-Nr,</td>";
-						echo "\n\t\t<td class='head'>Buchungsart</td>";
-					echo "\n\t</tr>";
-					echo "\n\t<tr>";
-						echo "\n\t\t<td title='Grundbuchbezirk'>";
-						if ($showkey) {echo "<span class='key'>".$rowan["bezirk"]."</span><br>";}
-						echo $beznam."</td>";
-
-						echo "\n\t\t<td title='Grundbuch-Blatt'><span class='wichtig'>".$rowan["blatt"]."</span></td>";
-
-						echo "\n\t\t<td title='Bestandsverzeichnis-Nummer (BVNR, Grundst&uuml;ck)'>".$rowan["lfd"]."</td>";
-
-						echo "\n\t\t<td title='Buchungsart'>";
-							if ($showkey) {echo "<span class='key'>".$rowan["buchungsart"]."</span><br>";}
-							echo $rowan["bart"];
-						echo "</td>";
-					echo "\n\t</tr>";
-				echo "\n\t</table>";
-				if ($rowan["zaehler"] <> "") {
-					echo "\n<p class='ant'>".$rowan["zaehler"]."/".$rowan["nenner"]."&nbsp;Anteil am Flurst&uuml;ck</p>";
-				}
-			echo "\n</td>";
-			echo "\n<td>"; // outer rechte Spalte
-				if ($idanzeige) {
-					linkgml($gkz, $rowan["s_gml"], "Buchungsstelle", "ax_buchungsstelle");
-					echo "<br>";
-					linkgml($gkz, $rowan["g_gml"], "Buchungsblatt", "");
-				}
-				echo "\n<br>";
-				echo "\n\t<p class='nwlink'>";
-					echo "\n\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$rowan["g_gml"];
-						if ($idanzeige) {echo "&amp;id=j";}
-						if ($showkey)   {echo "&amp;showkey=j";}
-						echo "' title='Grundbuchnachweis mit kompletter Eigent&uuml;merangabe'>";
-						echo $blattartan;
-						echo " <img src='ico/GBBlatt_link.ico' width='16' height='16' alt=''>";
-					echo "</a>";
-				echo "\n\t</p>";
-			echo "\n\t</td>";
-		echo "\n</tr>";
-		echo "\n</table>";
-
-		if ($blattkeyan != 1000) {
-			echo "\n<p>Blattart: ".$blattartan." (".$blattkeyan.").<br>\n"; 
-		}
-		//++ BeschreibungDesUmfangsDerBuchung?
-		if ($rowan["nrpl"] != "") {
-			echo "<p class='nrap' title='Nummer im Aufteilungsplan'>Nummer <span class='wichtig'>".$rowan["nrpl"]."</span> im Aufteilungsplan.</p>";
-		}
-		if ($rowan["sond"] != "") {
-			echo "<p class='sond' title='Sondereigentum'>Verbunden mit dem Sondereigentum<br>".$rowan["sond"]."</p>";
-		}
-		if ($eig == "j") {
-			$n = eigentuemer($con, $rowan["g_gml"], false, ""); // ohne Adresse
-		}
-		$an++;	
-	}
-	pg_free_result($resan);
 	$bs++;
 }
 pg_free_result($resg);

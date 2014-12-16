@@ -27,6 +27,7 @@
 # 2014-10-28 F.J. krz: "ANGLE follow" bei ap_lto_stra, Textgrößen verkleinert in Präsentation
 # 2014-10-28 F.J. krz: Versuch "OPACITY 80" auf "nutzung_alle"
 # 2014-10-29 F.J. krz: Straßennamen auf Liniengeometrie besser positionieren
+# 2014-12-16 F.J. krz: 3 Layer in Gebiete auf Views umgestellt
 
 ###
 # Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
@@ -58,7 +59,7 @@ MAP
 	STATUS ON
 	EXTENT 349000 5529000 356000 5533000
 	PROJECTION "init=epsg:25832" END
-	MAXSIZE 8400
+	MAXSIZE 4200
 	SYMBOLSET "symbols/symbols_alkis.sym"
 	FONTSET "fonts/fonts_alkis.fnt"
 	UNITS METERS
@@ -466,8 +467,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Industrie- und Gewerbefläche"
-		wms_abstract "'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient."
-
+		wms_abstract "'Industrie- und Gewerbefläche' ist eine Fläche, die vorwiegend industriellen oder gewerblichen Zwecken dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -546,8 +546,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Tagebau, Grube, Steinbruch"
-		wms_abstract "Tagebau, Grube, Steinbruch"
-
+		wms_abstract "Tagebau, Grube, Steinbruch"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -575,8 +574,7 @@ LAYER
 		wms_title "Fläche gemischter Nutzung"
 		wms_abstract "'Fläche gemischter Nutzung' ist eine bebaute Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche (Hofraumfläche, Hausgarten), auf der keine Art
 der baulichen Nutzung vorherrscht. Solche Flächen sind insbesondere ländlich-dörflich geprägte Flächen mit land- und forstwirtschaftlichen Betrieben, Wohngebäuden u.a.
-sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung."
-
+sowie städtisch geprägte Kerngebiete mit Handelsbetrieben und zentralen Einrichtungen für die Wirtschaft und die Verwaltung."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -602,8 +600,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Fläche besonderer funktionaler Prägung"
-		wms_abstract "'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind."
-
+		wms_abstract "'Fläche besonderer funktionaler Prägung' ist eine baulich geprägte Fläche einschließlich der mit ihr im Zusammenhang stehenden Freifläche, auf denen vorwiegend Gebäude und/oder Anlagen zur Erfüllung öffentlicher Zwecke oder historische Anlagen vorhanden sind."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -629,8 +626,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sport-, Freizeit- und Erholungsfläche"
-		wms_abstract "'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient."
-
+		wms_abstract "'Sport-, Freizeit- und Erholungsfläche' ist eine bebaute oder unbebaute Fläche, die dem Sport, der Freizeitgestaltung oder der Erholung dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -657,8 +653,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Friedhof"
-		wms_abstract "Friedhof"
-
+		wms_abstract "Friedhof"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -686,8 +681,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Straßenverkehr"
-		wms_abstract "'Straßenverkehr' umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen."
-
+		wms_abstract "'Straßenverkehr' umfasst alle für die bauliche Anlage Straße erforderlichen sowie dem Straßenverkehr dienenden bebauten und unbebauten Flächen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -746,8 +740,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Weg"
-		wms_abstract "Weg"
-
+		wms_abstract "Weg"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -773,8 +766,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Platz"
-		wms_abstract " 'Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen)."
-
+		wms_abstract " 'Platz' ist eine Verkehrsfläche in Ortschaften oder eine ebene, befestigte oder unbefestigte Fläche, die bestimmten Zwecken dient (z. B. für Verkehr, Märkte, Festveranstaltungen)."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -808,8 +800,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Bahnverkehr"
-		wms_abstract "Bahnverkehr"
-
+		wms_abstract "Bahnverkehr"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -836,8 +827,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Flugverkehr"
-		wms_abstract "Flugverkehr"
-
+		wms_abstract "Flugverkehr"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -864,8 +854,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Schiffsverkehr"
-		wms_abstract "'Schiffsverkehr' umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient."
-
+		wms_abstract "'Schiffsverkehr' umfasst die baulich geprägte Fläche und die mit ihr in Zusammenhang stehende Freifläche, die ausschließlich oder vorwiegend dem Schiffsverkehr dient."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -894,8 +883,7 @@ LAYER
 		wms_title "Landwirtschaft"
 		wms_abstract "'Landwirtschaft' ist eine Fläche für den Anbau von Feldfrüchten sowie eine Fläche,
 die beweidet und gemäht werden kann, einschließlich der mit besonderen Pflanzen angebauten Fläche. 
-Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als 'Landwirtschaft' bzw. 'Ackerland' zu erfassen."
-
+Die Brache, die für einen bestimmten Zeitraum (z. B. ein halbes oder ganzes Jahr) landwirtschaftlich unbebaut bleibt, ist als 'Landwirtschaft' bzw. 'Ackerland' zu erfassen."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1316,7 +1304,10 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
+
+#	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
+	DATA "the_geom FROM gebiet_flur as foo using unique gid using SRID=25832"
+
 	METADATA
 		wms_title "Flur"
 		wms_abstract "Katasterbezirk Flur, Fläche durch Zusammenfassen der Flurstücke."
@@ -1328,7 +1319,7 @@ LAYER
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM  1600
-	MAXSCALEDENOM 20000
+	MAXSCALEDENOM 26000
 	CLASS
 		NAME "Flur"
 		TEXT "Flur [flurnummer]"
@@ -1337,15 +1328,14 @@ LAYER
 			WIDTH 3
 		END
 		LABEL
-			TYPE TRUETYPE
+			TYPE TRUETYPE FONT "arial"
 			COLOR 100 150 10
-			FONT "arial"
-			SIZE 14
+			SIZE 13
 			POSITION cc # Für Kachelung im Mapproxy sollte es an fixem Punkt stehen, wie?
-			PARTIALS FALSE FORCE FALSE
+			PARTIALS false FORCE false
 			STYLE
 				GEOMTRANSFORM 'labelpoly'
-				COLOR 250 250 250
+				COLOR 250 250 250 OPACITY 60
 			END
 		END
 	END
@@ -1358,7 +1348,8 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "simple_geom from (SELECT gid, gemarkungsname, simple_geom FROM pp_gemarkung) as foo using unique gid using SRID=25832"
+#	DATA "simple_geom from (SELECT gid, gemarkungsname, simple_geom FROM pp_gemarkung) as foo using unique gid using SRID=25832"
+	DATA "simple_geom FROM gebiet_gemarkung as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gemarkung"
@@ -1368,25 +1359,23 @@ LAYER
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM  4000
-	MAXSCALEDENOM 40000
+	MAXSCALEDENOM 48000
 	LABELITEM gemarkungsname
 	CLASS
 		NAME "Gemarkung"
 		STYLE
 			OUTLINECOLOR 140 80 0
-			WIDTH 5
+			WIDTH 4
 		END
 		LABEL
-			TYPE TRUETYPE
+			TYPE TRUETYPE FONT "arial"
 			COLOR 140 80 0
-			FONT "arial"
 			SIZE 16
-			POSITION cc
-			OFFSET 0 10
-			PARTIALS FALSE FORCE FALSE
+			POSITION cc OFFSET 0 10
+			PARTIALS false FORCE false
 			STYLE
 				GEOMTRANSFORM 'labelpoly'
-				COLOR 250 250 250
+				COLOR 250 250 250 OPACITY 60
 			END
 		END
 	END
@@ -1399,12 +1388,13 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
+#	DATA "simple_geom from (SELECT gid, gemeindename, simple_geom FROM pp_gemeinde) as foo using unique gid using SRID=25832"
+	DATA "simple_geom FROM gebiet_gemeinde as foo using unique gid using SRID=25832"
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Gemeinde"
 		wms_abstract "Gemeindefläche (vereinfachte Geometrie). Fläche durch Zusammenfassen der Gemarkungen."
-		gml_include_items "all"
+		#gml_include_items "all"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -1414,21 +1404,18 @@ LAYER
 	CLASS
 		NAME "Gemeinde"
 		STYLE
-			OUTLINECOLOR 10 10 200
-			WIDTH 7
+			OUTLINECOLOR 10 10 200 # blau
+			WIDTH 5
 		END
 		LABEL
-			TYPE TRUETYPE
+			TYPE TRUETYPE FONT "arial"
 			COLOR 10 10 200
-			FONT "arial"
 			SIZE 20
-			POSITION cc
-			OFFSET 0 -20
-			PARTIALS FALSE
-			FORCE FALSE
+			POSITION cc OFFSET 0 -20
+			PARTIALS false FORCE false
 			STYLE
 				GEOMTRANSFORM 'labelpoly'
-				COLOR 250 250 250
+				COLOR 250 250 250 OPACITY 60
 			END
 		END
 	END
@@ -2472,8 +2459,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sonstiges Bauwerk/Einrichtung"
-		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
-
+		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -2522,8 +2508,7 @@ LAYER
 	METADATA
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 		wms_title "Sonstiges Bauwerk/Einrichtung (Linien)"
-		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
-
+		wms_abstract "'Sonstiges Bauwerk oder sonstige Einrichtung' ist ein Bauwerk oder eine Einrichtung, das/die nicht zu den anderen Objektarten der Objektartengruppe Bauwerke und Einrichtungen gehört."
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -3842,7 +3827,6 @@ LAYER
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
-	#MINSCALEDENOM 50
 	MAXSCALEDENOM 2500 # 4000
 	SYMBOLSCALEDENOM 1000
 	LABELITEM schriftinhalt
@@ -3865,9 +3849,6 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
 		#NAME 'Straße'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -3879,9 +3860,6 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse') 
 		NAME 'Straße'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1 MINSIZE 1
-	#	END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -3895,9 +3873,6 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'linksbündig' AND '[ver]' eq 'Basis')
 		#NAME 'Weg'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
@@ -3910,9 +3885,6 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
 		#NAME 'Weg'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
@@ -3924,9 +3896,6 @@ LAYER
 	CLASS
 		EXPRESSION ('[art]' eq 'Weg')
 		NAME 'Weg'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 7 MINSIZE 5 MAXSIZE 14
 			TYPE TRUETYPE FONT "arial"
@@ -3938,12 +3907,8 @@ LAYER
 
 	# Platz 
 	CLASS
-		#EXPRESSION 'Platz'
 		EXPRESSION ('[art]' eq 'Platz' AND '[ver]' eq 'Mitte')
 		#NAME 'Platz'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 9 MINSIZE 7 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
@@ -3953,12 +3918,8 @@ LAYER
 		END
 	END
 	CLASS
-		#EXPRESSION 'Platz'
 		EXPRESSION ('[art]' eq 'Platz')
 		NAME 'Platz'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 9 MINSIZE 7 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
@@ -3973,9 +3934,6 @@ LAYER
 		#EXPRESSION 'BezKlassifizierungStrasse'
 		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse' AND '[hor]' eq 'linksbündig')
 		#NAME 'Klassifizierung'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1
-	#	END
 		LABEL
 			SIZE 10 MINSIZE 8 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
@@ -3988,9 +3946,6 @@ LAYER
 		#EXPRESSION 'BezKlassifizierungStrasse'
 		EXPRESSION ('[art]' eq 'BezKlassifizierungStrasse')
 		NAME 'Klassifizierung'
-	#	STYLE
-	#		SYMBOL "point" SIZE 1 MINSIZE 1
-	#	END
 		LABEL
 			SIZE 10 MINSIZE 8 MAXSIZE 20
 			TYPE TRUETYPE FONT "arialbold"
@@ -4001,9 +3956,7 @@ LAYER
 	END
 END
 
-#### +++++++++++++++++++  ToDo: SCALE und Position in _4 übertragen +++++++
-
-LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
+LAYER # wie zuvor, aber positioniert über Linie
 	NAME "ap_lto_stra"
 	GROUP "praesentation"
 	TYPE LINE
@@ -4034,10 +3987,10 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 		#STYLE
 		#	SYMBOL "point" SIZE 1
 		#END
-	#	STYLE # TEST: Positionierungs-Linie sichtbar machen
-	#		COLOR 250 40 40 PATTERN 4 8 END # rot
-	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
-	#	END
+		STYLE # TEST: Positionierungs-Linie sichtbar machen
+			COLOR 250 40 40 PATTERN 4 8 END # rot
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+		END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -4057,10 +4010,10 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	END
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
-	#	STYLE
-	#		COLOR 40 250 40 PATTERN 4 8 END # grün
-	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
-	#	END
+		STYLE
+			COLOR 40 250 40 PATTERN 4 8 END # grün
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+		END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -4073,10 +4026,10 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse') 
 		NAME 'Straße'
-	#	STYLE
-	#		COLOR 40 40 250 PATTERN 4 8 END # blau
-	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
-	#	END
+		STYLE
+			COLOR 40 40 250 PATTERN 4 8 END # blau
+			WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+		END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -4086,6 +4039,10 @@ LAYER # 2014-08-25 Neu: wie zuvor, aber positioniert über Linie
 			FORCE true
 		END
 	END
+
+# SELECT schriftinhalt FROM ap_lto 
+# WHERE art='Strasse' AND 'DKKM1000'=ANY(advstandardmodell) AND horizontaleausrichtung='linksbündig' 
+# AND NOT schriftinhalt IS NULL ORDER BY schriftinhalt;
 
 	# Weg
 	CLASS
@@ -4369,8 +4326,7 @@ LAYER
 	METADATA
 		wms_title "Gemarkungsrenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		wms_abstract "Grenze der Gemarkung (Ortsteil)"
-
+		wms_abstract "Grenze der Gemarkung (Ortsteil)"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
@@ -4403,8 +4359,7 @@ LAYER
 	METADATA
 		wms_title "Flurgrenze"
 		wms_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
-		wms_abstract "Grenze der Flur (Katasterbezirk)"
-
+		wms_abstract "Grenze der Flur (Katasterbezirk)"
 	END
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000

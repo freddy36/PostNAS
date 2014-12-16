@@ -20,6 +20,8 @@
 	2014-09-04 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
 	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
+	2014-12-16 hr-Tag vor Eigentum entfernt
+
 */
 session_start();
 $cntget = extract($_GET);
@@ -193,6 +195,7 @@ echo "\n<p class='fsd'>Flurst&uuml;cksfl&auml;che: <b>".$flae."</b></p>\n";
 
 // *** G R U N D B U C H ***
 echo "\n<h2><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Grundbuch</h2>";
+
 // FS >istgebucht> GS >istbestandteilvon> GB.
 $sql ="SELECT b.gml_id, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung as blatt, b.blattart, 
 s.gml_id AS s_gml, s.buchungsart, s.laufendenummer, s.zaehler, s.nenner, z.bezeichnung, a.bezeichner AS bart 
@@ -253,7 +256,7 @@ while($rowg = pg_fetch_array($resg)) {
 		echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt</p>\n";
 		echo "\n<p>Siehe weitere Grundbuchbl&auml;tter mit Rechten an dem fiktiven Blatt.</p>\n";
 	} else {// kein Eigent. bei fiktiv. Blatt
-		echo "\n<hr>\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
+		echo "\n\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 
 		// Ausgabe Name in Function
 		$n = eigentuemer($con, $rowg["gml_id"], false, "imFenster"); // ohne Adressen
