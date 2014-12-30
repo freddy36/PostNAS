@@ -11,6 +11,7 @@
 	2014-09-03 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
 	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
+	2014-12-30 Fs-Nr. rechtbuendig (class)
 
 	ToDo:
 	- Das Balken-Kennzeichen noch kompatibel machen mit der Eingabe der Navigation für Adresse 
@@ -75,8 +76,7 @@ $sql.="FROM ".$tnam." l
 LEFT JOIN ax_gemeinde g ON l.land=g.land AND l.regierungsbezirk=g.regierungsbezirk AND l.kreis=g.kreis AND l.gemeinde=g.gemeinde 
 LEFT JOIN ax_kreisregion k ON l.land=k.land AND l.regierungsbezirk=k.regierungsbezirk AND l.kreis=k.kreis 
 LEFT JOIN ax_regierungsbezirk r ON l.land=r.land AND l.regierungsbezirk=r.regierungsbezirk 
-LEFT JOIN ax_bundesland b ON l.land=b.land 
-LEFT JOIN ax_lagebezeichnungkatalogeintrag s 
+LEFT JOIN ax_bundesland b ON l.land=b.land LEFT JOIN ax_lagebezeichnungkatalogeintrag s 
 ON l.land=s.land AND l.regierungsbezirk=s.regierungsbezirk AND l.kreis=s.kreis AND l.gemeinde=s.gemeinde AND l.lage=s.lage 
 WHERE l.gml_id= $1 AND l.endet IS NULL AND s.endet IS NULL AND g.endet IS NULL;";
 
@@ -261,7 +261,7 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 	echo "\n<tr>"; // Kopfzeile der Tabelle
 		echo "\n\t<td class='head'>Gemarkung</td>";
 		echo "\n\t<td class='head'>Flur</td>";
-		echo "\n\t<td class='head' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'>Flurst.</td>";
+		echo "\n\t<td class='head fsnr' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'>Flurst.</td>";
 		echo "\n\t<td class='head fla'>Fl&auml;che</td>";
 		echo "\n\t<td class='head nwlink noprint' title='Link: weitere Auskunft'>weit. Auskunft</td>";
 	echo "\n</tr>";
@@ -276,7 +276,7 @@ if ($ltyp <> "p") { // Pseudonummer linkt nur Gebäude
 			if ($showkey) {echo "<span class='key'>".$rowf["gemarkungsnummer"]."</span> ";}
 			echo $rowf["bezeichnung"]."</td>";
 			echo "\n\t<td>".$flur."</td>";
-			echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
+			echo "\n\t<td class='fsnr'><span class='wichtig'>".$fskenn."</span>";
 				if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck", "ax_flurstueck");}
 			echo "</td>";
 			echo "\n\t<td class='fla'>".$flae."</td>";

@@ -13,8 +13,7 @@
 	2014-09-10 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
 	2014-09-30 Rückbau substring(gml_id)
-
-	ToDo: Zähler fuer Anzahl FS in der Liste
+	2014-12-30 Berechtigte GB nach "an BVNR" dieses Bestandes sortieren
 */
 session_start();
 $cntget = extract($_GET);
@@ -103,7 +102,8 @@ if ($row = pg_fetch_array($res)) {
 
 if ($blattkey == 5000) { // fikt. Blatt
 	echo "\n<p>Keine Angaben zum Eigentum bei fiktivem Blatt.</p>\n";
-} else { // E I G E N T U E M E R
+} else {
+	// E I G E N T U E M E R
 	echo "\n<h3><img src='ico/Eigentuemer_2.ico' width='16' height='16' alt=''> Angaben zum Eigentum</h3>\n";
 	$n = eigentuemer($con, $gmlid, true, ""); // MIT Adressen.
 	if ($n == 0) { // keine NamensNr, kein Eigentuemer
@@ -113,13 +113,13 @@ if ($blattkey == 5000) { // fikt. Blatt
 	}
 }
 
-// Vorab pruefen, ob Sonderfall "Rechte an .." vorliegt.
+// Vorab pruefen, ob der Fall "Rechte an .." vorliegt.
 if ($blattkey == 1000) { // GB-Blatt  <istBestandteilVon<  sh=herrschend  >an>  sd=dienend
 	$sql="SELECT count(sd.laufendenummer) AS anzahl
 	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (sd.gml_id=ANY(sh.an) OR sd.gml_id=ANY(sh.zu)) 
 	WHERE sh.istbestandteilvon= $1 AND sd.endet IS NULL AND sh.endet IS NULL;";
 
-	$v=array(substr($gmlid,0,16)); // GB-Blatt, in Relation immer nur 16 Zeichen
+	$v=array($gmlid); // GB-Blatt
 	$res=pg_prepare("", $sql);
 	$res=pg_execute("", $v);
 	if (!$res) echo "<p class='err'>Fehler bei Suche nach Buchungen.</p>\n";
@@ -132,7 +132,7 @@ if ($blattkey == 1000) { // GB-Blatt  <istBestandteilVon<  sh=herrschend  >an>  
 if ($anz > 0) {
 	echo "\n<hr>\n\n<h3><img src='ico/Flurstueck.ico' width='16' height='16' alt=''> Rechte und Flurst&uuml;cke</h3>";
 	echo "\n<table class='fs'>";
-	echo "\n<tr>"; // 2 Kopfzeilen
+	echo "\n<tr>"; // zusätzliche Kopfzeile
 		echo "\n\t<td>&nbsp;</td>";
 		echo "\n\t<td class='dien' title='herrschendes Grundst&uuml;ck'>herrschende Buchungsart</td>";
 		echo "\n\t<td>&nbsp;</td>";
@@ -147,13 +147,13 @@ if ($anz > 0) {
 	echo "\n<table class='fs'>";
 }
 
-echo "\n<tr>";
+echo "\n<tr>"; // gemeinsame Kopfzeile
 	echo "\n\t<td class='head' title='laufende Nummer Bestandsverzeichnis (BVNR) = Grundst&uuml;ck'><span class='wichtig'>BVNR</span></td>";
 	echo "\n\t<td class='head'>Buchungsart</td>";
 	echo "\n\t<td class='head'>Anteil</td>";
 	echo "\n\t<td class='head'>Gemarkung</td>";
 	echo "\n\t<td class='head'>Flur</td>";
-	echo "\n\t<td class='head' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>Flurst.</span></td>";
+	echo "\n\t<td class='head fsnr' title='Flurst&uuml;cksnummer (Z&auml;hler / Nenner)'><span class='wichtig'>Flurst.</span></td>";
 	echo "\n\t<td class='head fla'>Fl&auml;che</td>"; // 7
 	echo "\n\t<td class='head nwlink noprint' title='Link: weitere Auskunft'>weit. Auskunft</td>";
 echo "\n</tr>";
@@ -164,7 +164,7 @@ $sql ="SELECT s.gml_id, s.buchungsart, s.laufendenummer AS lfd, s.beschreibungde
 FROM ax_buchungsstelle s LEFT JOIN v_bs_buchungsart b ON s.buchungsart=b.wert 
 WHERE s.istbestandteilvon= $1 AND s.endet IS NULL ORDER BY cast(s.laufendenummer AS integer);";
 
-$v=array(substr($gmlid,0,16)); //  Rel. istbestandteilvon nur 16 Zeichen
+$v=array($gmlid); // Rel. istBestandteilVon
 $res=pg_prepare("", $sql);
 $res=pg_execute("", $v);
 
@@ -174,7 +174,7 @@ if (!$res) {
 }
 $i=0;
 $fscnt=0;
-while($row = pg_fetch_array($res)) {
+while($row = pg_fetch_array($res)) { // Loop Buchungsstelle (Grundstück)
 	$lfdnr=$row["lfd"];
 	$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
 	$gml_bs= $row["gml_id"]; // id der buchungsstelle
@@ -197,10 +197,10 @@ while($row = pg_fetch_array($res)) {
 		//  ax_buchungsstelle >zu> ax_buchungsstelle (des gleichen Blattes)
 		//  ax_buchungsstelle >an> ax_buchungsstelle (anderes Blatt, z.B Erbbaurecht an)
 		//  sh=herrschend          sd=dienend
-		$sql ="SELECT sd.gml_id, sd.buchungsart, sd.laufendenummer AS lfd, sd.beschreibungdesumfangsderbuchung AS udb, sd.nummerimaufteilungsplan AS nrap, sd.beschreibungdessondereigentums AS sond, b.bezeichner AS bart ";
-		$sql.="FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (sd.gml_id=ANY(sh.an) OR sd.gml_id=ANY(sh.zu)) "; 
-		$sql.="LEFT JOIN v_bs_buchungsart b ON sd.buchungsart=b.wert ";
-		$sql.="WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL ORDER BY sd.laufendenummer;";
+		$sql ="SELECT sd.gml_id, sd.buchungsart, sd.laufendenummer AS lfd, sd.beschreibungdesumfangsderbuchung AS udb, sd.nummerimaufteilungsplan AS nrap, sd.beschreibungdessondereigentums AS sond, b.bezeichner AS bart 
+	FROM ax_buchungsstelle sh JOIN ax_buchungsstelle sd ON (sd.gml_id=ANY(sh.an) OR sd.gml_id=ANY(sh.zu))  
+	LEFT JOIN v_bs_buchungsart b ON sd.buchungsart=b.wert 
+	WHERE sh.gml_id= $1 AND sh.endet IS NULL AND sd.endet IS NULL ORDER BY sd.laufendenummer;";
 
 		$v=array($gml_bs);
 		$resan=pg_prepare("", $sql);
@@ -218,10 +218,10 @@ while($row = pg_fetch_array($res)) {
 
 			// a n d e r e s   B l a t t  (an dem das aktuelle Blatt Rechte hat)
 			// dienendes Grundbuch
-			$sql ="SELECT b.gml_id, b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung AS blatt, b.blattart, z.bezeichnung AS beznam ";
-			$sql.="FROM ax_buchungsblatt b JOIN ax_buchungsstelle s ON b.gml_id=s.istbestandteilvon ";
-			$sql.="LEFT JOIN ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk ";
-			$sql.="WHERE s.gml_id= $1 AND b.endet IS NULL ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
+			$sql ="SELECT b.gml_id, b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung AS blatt, b.blattart, z.bezeichnung AS beznam 
+	FROM ax_buchungsblatt b JOIN ax_buchungsstelle s ON b.gml_id=s.istbestandteilvon 
+	LEFT JOIN ax_buchungsblattbezirk z ON b.land=z.land AND b.bezirk=z.bezirk 
+	WHERE s.gml_id= $1 AND b.endet IS NULL ORDER BY b.land, b.bezirk, b.buchungsblattnummermitbuchstabenerweiterung;";
 			$v=array($gml_bsan);
 			$fbres=pg_prepare("", $sql);
 			$fbres=pg_execute("", $v);
@@ -287,7 +287,7 @@ while($row = pg_fetch_array($res)) {
 					echo $baan." ";
 				echo "</td>";
 				echo "\n\t<td>";  // Sp.8 Link ("an" oder "zu" ?)
-					echo "<p class='nwlink'>an/zu"; //.$rowan["beziehungsart"] Feld gibt es nicht mehr
+					echo "<p class='nwlink noprint'>an/zu"; //.$rowan["beziehungsart"] Feld gibt es nicht mehr
 					echo " <a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$fbgml;
 						if ($idanzeige) {echo "&amp;id=j";}
 						if ($showkey)   {echo "&amp;showkey=j";}
@@ -351,52 +351,69 @@ if ($i == 0) {
 	}
 }
 
-// b e r e c h t i g t e  Grundbuecher (Buchungsblatt) 
-// mit Recht "an"/"zu" dem aktuellen fiktiven GB
+// B e r e c h t i g t e  Buchungsblaetter  mit Recht an/zu dem aktuellen (fiktiven?) Blatt
 
-// bf              vf          sf       vs   sb                 vb            bb
+// bf                          sf            sb                               bb
 // Blatt   <istBestandteilVon< Stelle  <an<  Stelle      >istBestandteilVon>  Blatt
 // Fiktiv                      Fiktiv  <zu<  Berechtigt                       Berechtigt
-$sql ="SELECT bb.gml_id, bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung AS blatt, bb.blattart, 
+$sql="SELECT sf.laufendenummer AS anlfdnr, bb.gml_id, bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung AS blatt, bb.blattart, 
 sb.gml_id AS gml_s, sb.laufendenummer AS lfdnr, sb.buchungsart, ba.bezeichner AS bart, bz.bezeichnung AS beznam, ag.bezeichnung, ag.stelle, ag.stellenart 
 FROM ax_buchungsstelle sf JOIN ax_buchungsstelle sb ON (sf.gml_id=ANY(sb.an) OR sf.gml_id=ANY(sb.zu)) 
 JOIN ax_buchungsblatt bb ON bb.gml_id=sb.istbestandteilvon 
 LEFT JOIN ax_buchungsblattbezirk bz ON bb.land=bz.land AND bb.bezirk=bz.bezirk 
 LEFT JOIN ax_dienststelle ag ON bz.land=ag.land AND bz.stelle=ag.stelle 
 LEFT JOIN v_bs_buchungsart ba ON sb.buchungsart=ba.wert 
-WHERE sf.istbestandteilvon = $1 AND sf.endet IS NULL AND sb.endet IS NULL AND bb.endet IS NULL ORDER BY bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung;";
+WHERE sf.istbestandteilvon = $1 AND sf.endet IS NULL AND sb.endet IS NULL AND bb.endet IS NULL 
+ORDER BY cast(sf.laufendenummer AS integer), bb.land, bb.bezirk, bb.buchungsblattnummermitbuchstabenerweiterung, cast(sb.laufendenummer AS integer);";
+// Änd. 2014-12-30: Sort. wie im ersten Teil
 
-$v = array(substr($gmlid,0,16)); // nur 16 Zeichen in Relation
+$v = array($gmlid);
 $resb = pg_prepare("", $sql);
 $resb = pg_execute("", $v);
 if (!$resb) {
-	echo "<p class='err'>Fehler bei 'andere Berechtigte Bl&auml;tter.</p>\n";
+	echo "<p class='err'>Fehler bei 'Berechtigte Bl&auml;tter.</p>\n";
 	if ($debug > 2) {echo "<p class='dbg'>SQL=<br>".$sql."<br>$1 = gml_id = '".$gmlid."'</p>";}
 }
-$b=0; // count: Blaetter
+$b=0; // count: Buchungen / Blätter
 while($rowb = pg_fetch_array($resb)) {
 	if ($b == 0) { // Ueberschrift und Tabelle nur ausgeben, wenn etwas gefunden wurde
 		echo "\n<h3><img src='ico/Grundbuch_zu.ico' width='16' height='16' alt=''> Berechtigte Grundb&uuml;cher</h3>\n";
 		echo "\n<table class='outer'>";
-		echo "\n<tr>"; // Tabelle Kopf
+		echo "\n<tr>"; // Tab Kopf
+			echo "\n\t<td class='head' title='lfd. Nr. auf diesem Blatt, wie im Teil Flurst&uuml;cke'>an <span class='wichtig'>BVNR</span></td>"; // wie oben
 			echo "\n\t<td class='head'>Land</td>";
 			echo "\n\t<td class='head'>Dienststelle</td>";
 			echo "\n\t<td class='head'>Bezirk</td>";
-			echo "\n\t<td class='head'>Blatt</td>";
-			echo "\n\t<td class='head'>BVNR</td>"; // Neu
-			echo "\n\t<td class='head'>Buchungsart</td>"; // Neu
+			echo "\n\t<td class='head'><span class='wichtig'>Blatt</span></td>";
+			echo "\n\t<td class='head'>BVNR</td>";
+			echo "\n\t<td class='head'>Buchungsart</td>";
 			echo "\n\t<td class='head nwlink noprint'>Weitere Auskunft</td>";
 		echo "\n</tr>";
 	}
-	$gml_b=$rowb["gml_id"]; // id des berechtigten Blattes
-	$gml_s=$rowb["gml_s"]; // id der berechtigten Buchungsstelle
+
+	$anlfdnr=$rowb["anlfdnr"]; // an BVNR
+	$anlfdnr0=str_pad($anlfdnr, 4, "0", STR_PAD_LEFT); // mit führ.0
+	$gml_b=$rowb["gml_id"]; // id des ber. Blattes
+	$gml_s=$rowb["gml_s"]; // id der ber. B-Stelle
 	$blart=$rowb["blattart"];
 	$buch=$rowb["buchungsart"]; // Buchungsart Stelle berechtigt
-	$bart=$rowb["bart"]; // Buchungsart entschluesselt
-	$lfdnr=$rowb["lfdnr"];
+	$bart=$rowb["bart"]; // BA entschl.
+	$lfdnr=$rowb["lfdnr"]; // BVNR ber.
 	$bvnr=str_pad($lfdnr, 4, "0", STR_PAD_LEFT);
 
 	echo "\n<tr>";
+		// Teil berechtigte Grundbücher ist sortiert wie oberer Teil "Flurstücke"
+		echo "\n\t<td><span class='wichtig'>".$anlfdnr0."</span>";
+		// Link "nach oben" - bringt das Nutzen? Nur bei ganz langen Beständen.
+/*			echo "\n\t\t<p class='noprint'>&nbsp;";
+			echo "\n\t\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gmlid."#bvnr".$anlfdnr;
+				if ($idanzeige) {echo "&amp;id=j";}
+				if ($showkey)   {echo "&amp;showkey=j";}
+				echo "' title='Sprung nach oben zum Grundst&uuml;ck'>hoch</a>";
+			echo "\n\t\t</p>";
+	++ <p> auflösen, sonst 2 Zeilen im <td> ++
+*/
+		echo "</td>";
 		echo "\n\t<td>".$rowb["land"]."</td>";
 		echo "\n\t<td>"; // Amtsgericht
 			echo dienststellenart($rowb["stellenart"])." ";
@@ -424,7 +441,7 @@ while($rowb = pg_fetch_array($resb)) {
 			echo $bart;
 		echo "</td>";
 		echo "\n\t<td>";
-			echo "\n\t\t<p class='nwlink'>";
+			echo "\n\t\t<p class='nwlink noprint'>";
 			echo "\n\t\t\t<a href='alkisbestnw.php?gkz=".$gkz."&amp;gmlid=".$gml_b."#bvnr".$lfdnr;
 				if ($idanzeige) {echo "&amp;id=j";}
 				if ($showkey)   {echo "&amp;showkey=j";}
@@ -442,6 +459,9 @@ if ($b == 0) {
 	}
 } else {
 	echo "\n</table>";
+	if ($i > 1) {
+		echo "\n<p class='cnt'>Rechte anderer Buchungsstellen an ".$b." der ".$i." Buchungen</p>\n";
+	}
 }
 ?>
 

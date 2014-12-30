@@ -11,6 +11,7 @@
 	2013-06-27	p.recht
 	2014-01-27	strasse, hsnr, Print-Balken
 	2014-09-15  PostNAS 0.8: p.cnt
+	2014-12-30	Neu: td.fsnr
 */
 body	{background-color: #FDFFFD;}
 p, body	{font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -88,8 +89,8 @@ td.ll	{width: 130px;}	/* Liste Links */
 td.lr	{color: black;}	/* Liste Rechts */
 td.ph	{color: gray;}	/* Platzhalter, vorlaeufig, spaeter loschen */
 
-/* Flaechen rechtsbuendig (stellengerecht) */
-td.fla	{width: 110px; padding-right: 4px; text-align: right;}
+td.fla	{width: 110px; padding-right: 4px; text-align: right;} /* Flaechen rechtsbuendig (stellengerecht) */
+td.fsnr	{padding-right: 4px; text-align: right;} /* Flst.-Nr. rechtsbuendig */
 td.key	{width:  35px; padding-right: 4px; padding-left: 4px;}
 /* Ertragsmesszahl der Bodenschaetzung
 td.emz	{width: 45px; padding-right: 4px; padding-left: 4px; text-align: right;} */
@@ -135,7 +136,7 @@ iframe.inlay {border:0px; width: 100%;} /* height: 400px; */
 @media print {
 	body {width: 98%; background-color:white;}
 
-	/* Balken */
+	/* Balken im Druck */
 	p.fskennz,p.fsei,p.fshis,p.gbkennz,p.nakennz,p.geb,p.lage,p.strasse,p.recht{text-align: right; color: black;}
 	p.fskennz,p.fsei{border-bottom: 2px solid navy; border-top: 2px solid navy;}
 	p.fshis		{border-bottom: 2px solid gray; border-top: 2px solid gray;}

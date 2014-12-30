@@ -13,6 +13,7 @@
 	2014-09-09 PostNAS 0.8: ohne Tab. "alkis_beziehungen", mehr "endet IS NULL", Spalten varchar statt integer
 	2014-09-15 Bei Relationen den Timestamp abschneiden
 	2014-09-30 Umbenennung Schlüsseltabellen (Prefix), Rückbau substring(gml_id)
+	2014-12-30 class='fsnr'
 */
 
 function footer($gmlid, $link, $append) {
@@ -95,15 +96,13 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 
 	// F L U R S T U E C K
 	$sql="SELECT g.gemarkungsnummer, g.bezeichnung, f.gml_id, f.flurnummer, f.zaehler, f.nenner, f.regierungsbezirk, f.kreis, f.gemeinde, f.amtlicheflaeche 
-	FROM ax_flurstueck f 
-	JOIN ax_buchungsstelle s ON f.istgebucht=s.gml_id 
+	FROM ax_flurstueck f JOIN ax_buchungsstelle s ON f.istgebucht=s.gml_id 
 	LEFT JOIN ax_gemarkung g ON f.land=g.land AND f.gemarkungsnummer=g.gemarkungsnummer 
 	WHERE s.gml_id= $1 AND f.endet IS NULL AND s.endet IS NULL AND g.endet IS NULL ORDER BY f.gemarkungsnummer, f.flurnummer, f.zaehler, f.nenner;";
 
 	$v = array($gml_bs);
 	$resf = pg_prepare("", $sql);
 	$resf = pg_execute("", $v);
-
 	if (!$resf) {echo "<p class='err'>Fehler bei Flurst&uuml;ck</p>\n";}
 
 	if($bvnraus) { // nur bei direkten Buchungen die lfdNr ausgeben
@@ -147,7 +146,7 @@ function bnw_fsdaten($con, $lfdnr, $gml_bs, $ba, $anteil, $bvnraus) {
 			}
 			echo $rowf["bezeichnung"]."</td>";
 			echo "\n\t<td>".$flur."</td>";
-			echo "\n\t<td><span class='wichtig'>".$fskenn."</span>";
+			echo "\n\t<td class='fsnr'><span class='wichtig'>".$fskenn."</span>";
 				if ($idanzeige) {linkgml($gkz, $rowf["gml_id"], "Flurst&uuml;ck", "ax_flurstueck");}
 			echo "</td>";
 			echo "\n\t<td class='fla'>".$flae."</td>";
