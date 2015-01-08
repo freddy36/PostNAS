@@ -6,13 +6,14 @@
 # 2014-10-28 F.J. krz: Versuch "OPACITY 80" auf "nutzung_alle"
 # 2014-10-29 F.J. krz: Straßennamen auf Liniengeometrie besser positionieren
 # 2014-12-16 F.J. krz: 3 Layer in Gebiete auf Views umgestellt
+# 2015-01-08 F.J. krz: Gemarkungsname über Flur-Nummer anzeigen
 
 MAP
 	NAME "alkis"
 	STATUS ON
 	EXTENT 349000 5529000 356000 5533000
 	PROJECTION "init=epsg:25832" END
-	MAXSIZE 8400 # _4-Druck
+	MAXSIZE 8400 # _4-Druck 288 dpi DIN-A2
 	SYMBOLSET "symbols/symbols_alkis.sym"
 	FONTSET "fonts/fonts_alkis.fnt"	
 	UNITS METERS
@@ -1149,7 +1150,6 @@ LAYER
 	CONNECTIONTYPE POSTGIS
 	CONNECTION "host=10.0.100.73 dbname=alkis08*gkz* user=ms6 port=5432"
 	PROCESSING "CLOSE_CONNECTION=DEFER"
-#	DATA "the_geom from (SELECT gid, gemarkung, flurnummer, the_geom FROM pp_flur) as foo using unique gid using SRID=25832"
 	DATA "the_geom FROM gebiet_flur as foo using unique gid using SRID=25832"
 	METADATA
 		wms_title "Flur"
@@ -1180,6 +1180,16 @@ LAYER
 				COLOR 250 250 250 OPACITY 60
 			END
 		END
+		LABEL
+			MAXSCALEDENOM 2500 # 10000
+			TEXT "[gemarkungsname]"
+			TYPE TRUETYPE FONT "arial"
+			COLOR 100 150 10
+			SIZE 30 # 9
+			POSITION cc OFFSET 0 -50 # -15
+			PARTIALS false FORCE false
+		END
+
 	END
 END
 LAYER
@@ -1198,7 +1208,7 @@ LAYER
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM 1000 #4000
-	MAXSCALEDENOM 12000 #48000
+	MAXSCALEDENOM 15000 #60000
 	LABELITEM gemarkungsname
 	CLASS
 		NAME "Gemarkung"

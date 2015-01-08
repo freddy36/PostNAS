@@ -22,6 +22,8 @@
 --             Dabei Trennung in pp_strassenname_p und -_l (Punkt- und Liniengeometrie).
 --  2014-09-19 Substring auf gml_id, Korrektur "endet IS NULL"
 --  2014-09-30 Rückbau substring(gml_id)
+--  2014-12-17 Neue Spalte "gemeinde" in Tabelle "pp_flur", dient der Filterung im WMS-Layer "Gebiete"
+--  2015-01-08 Mehrfach-Versuche der Geometrie-Zusammenfassung mit wachsender Puffergröße.
 
 
 -- ============================
@@ -31,6 +33,10 @@
 -- Einige Informationen liegen nach der NAS-Konvertierung in der Datenbank "verstreut" vor.
 -- Die dynamische Aufbereitung über Views und Functions würde zu lange dauern und somit lange 
 -- Antwortzeiten in WMS, WFS, Buchauskunft oder Navigation (Suche) verursachen.
+
+-- Geometrie glätten und vereinfachen für Flur, Gemarkung und Gemeinde:
+-- Die "simplen" Geometrien sollen nur für die Darstellung einer Übersicht verwendet werden.
+-- Ablage der simplen Geometrie in einem alternativen Geometriefeld im gleichen Datensatz.
 
 -- Im Rahmen eines "Post-Processing" werden diese Daten nach jeder Konvertierung (NBA-Aktualisierung) 
 -- einmal komplett aufbereitet. Die benötigten Informationen stehen somit den Anwendungen mundgerecht zur Verfügung.
@@ -231,21 +237,27 @@ UPDATE pp_gemeinde a
 
 -- Geometrien der Flurstücke schrittweise zu groesseren Einheiten zusammen fassen
 -- ==============================================================================
+-- http://postgis.net/docs/manual-1.5/ST_Union.html (Aggregate version)
+-- http://postgis.net/docs/manual-1.5/ST_Collect.html
 
--- Dies macht nur Sinn, wenn der Inhalt der Datenbank einen ganzen Katasterbezirk enthält.
--- Wenn ein Gebiet durch geometrische Filter im NBA ausgegeben wurde, dann gibt es Randstreifen, 
--- die zu Pseudo-Fluren zusammen gefasst werden. Fachlich falsch!
+-- Wenn ein Gebiet durch geometrische Filter im NBA-Verfahren ausgegeben wurde, dann gibt es 
+-- Randstreifen, die zu Pseudo-Fluren zusammen gefasst werden. 
+-- Diese werden für den WMS durch einen View ausgefiltert, der nur eine Gemeinde darstellt.
 
 -- Ausführungszeit: 1 mittlere Stadt mit ca. 14.000 Flurstücken > 100 Sek
 
 TRUNCATE pp_flur;
-INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_fs, the_geom )
-   SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer as gemarkung, f.flurnummer, 
+
+INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemeinde, gemarkung, flurnummer, anz_fs, the_geom )
+   SELECT  f.land, f.regierungsbezirk, f.kreis, f.gemeinde, f.gemarkungsnummer as gemarkung, f.flurnummer, 
            count(gml_id) as anz_fs,
-           st_multi(st_union(st_buffer(f.wkb_geometry,0.06))) AS the_geom -- Zugabe um Zwischenräume zu vermeiden
+           ST_Multi(st_union(st_buffer(f.wkb_geometry,0.06))) AS the_geom -- Zugabe um Zwischenräume zu vermeiden
      FROM  ax_flurstueck f
      WHERE f.endet IS NULL AND NOT f.wkb_geometry IS NULL
-  GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemarkungsnummer, f.flurnummer;
+  GROUP BY f.land, f.regierungsbezirk, f.kreis, f.gemeinde, f.gemarkungsnummer, f.flurnummer;
+
+-- Vereinfachte Geometrie der Flur für die Darstelung im WMS in einem kleinen Maßstab
+UPDATE pp_flur      SET simple_geom = st_simplify(the_geom, 0.5);
 
 
 -- Fluren zu Gemarkungen zusammen fassen
@@ -254,13 +266,42 @@ INSERT INTO pp_flur (land, regierungsbezirk, kreis, gemarkung, flurnummer, anz_f
 -- Flächen vereinigen
 UPDATE pp_gemarkung a
   SET the_geom = 
-   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.12))) AS the_geom -- Puffer/Zugabe um Löcher zu vermeiden
+   ( SELECT ST_Multi(ST_Union(ST_Buffer(b.the_geom,0.15))) AS the_geom -- Puffer/Zugabe um Löcher zu vermeiden
        FROM pp_flur b
       WHERE a.land      = b.land 
         AND a.gemarkung = b.gemarkung
    );
+-- Hierbei können Exceptions auftreten wobei das Geometriefeld einzelner Gemarkungen leer bleibt.
+-- Die Ursache ist unklar.
+--  TopologyException: found non-noded intersection between LINESTRING
 
--- Fluren zaehlen
+-- Praktische Lösung:
+-- Bei den Gemarkungen, die nichts abbekommen haben, mit schrittweise groesserem Buffer noch mal versuchen.
+UPDATE pp_gemarkung a
+  SET the_geom = 
+   ( SELECT ST_Multi(ST_Union(ST_Buffer(b.the_geom,0.20))) AS the_geom -- Puffer vergroessert
+       FROM pp_flur b
+      WHERE a.land      = b.land 
+        AND a.gemarkung = b.gemarkung
+   ) WHERE the_geom IS NULL;
+
+UPDATE pp_gemarkung a
+  SET the_geom = 
+   ( SELECT ST_Multi(ST_Union(ST_Buffer(b.the_geom,0.30))) AS the_geom -- Puffer vergroessert
+       FROM pp_flur b
+      WHERE a.land      = b.land 
+        AND a.gemarkung = b.gemarkung
+   ) WHERE the_geom IS NULL;
+
+/* Guggst du (auf leeren Geometry-Typ achten:
+
+   SELECT gemarkungsname, geometrytype(the_geom) AS typ, 
+     st_isvalid(the_geom) AS vali, st_asewkt(the_geom) AS ewkt
+   FROM pp_gemarkung;
+
+*/
+
+-- Die Fluren in der Gemarkung zaehlen
 UPDATE pp_gemarkung a
   SET anz_flur = 
    ( SELECT count(flurnummer) AS anz_flur 
@@ -270,19 +311,49 @@ UPDATE pp_gemarkung a
    ); -- Gemarkungsnummer ist je BundesLand eindeutig
 
 
+-- Vereinfachte Geometrie der Gemarkung für die Darstellung im WMS in einem kleinen Maßstab
+-- Gemarkung (Wirkung siehe pp_gemarkung_analyse)
+UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 2.2); 
+
+
 -- Gemarkungen zu Gemeinden zusammen fassen
 -- ----------------------------------------
 
--- Flächen vereinigen (aus der bereits vereinfachten Geometrie)
+-- Flächen vereinigen
 UPDATE pp_gemeinde a
   SET the_geom = 
-   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.1))) AS the_geom -- noch mal Zugabe
+   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.2))) AS the_geom -- noch mal Zugabe
      FROM    pp_gemarkung b
      WHERE a.land     = b.land 
        AND a.gemeinde = b.gemeinde
    );
+-- Hierbei können Exceptions auftreten wobei das Geometriefeld einzelner Gemarkungen leer bleibt.
+-- Die Ursache ist unklar.
 
--- Gemarkungen zählen
+-- Praktische Lösung:
+-- weitere Versuche mit mehr Puffer, wenn Exception auftrat
+UPDATE pp_gemeinde a
+  SET the_geom = 
+   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.3))) AS the_geom -- MEHR Zugabe
+     FROM    pp_gemarkung b
+     WHERE a.land     = b.land 
+       AND a.gemeinde = b.gemeinde
+   ) WHERE the_geom IS NULL;
+
+UPDATE pp_gemeinde a
+  SET the_geom = 
+   ( SELECT st_multi(st_union(st_buffer(b.the_geom,0.4))) AS the_geom -- noch MEHR Zugabe
+     FROM    pp_gemarkung b
+     WHERE a.land     = b.land 
+       AND a.gemeinde = b.gemeinde
+   ) WHERE the_geom IS NULL;
+
+
+-- Vereinfachte Geometrie der Gemeinde für die Darstellung im WMS in einem kleinen Maßstab
+-- Gemeinde (Wirkung siehe pp_gemeinde_analyse)
+UPDATE pp_gemeinde  SET simple_geom = st_simplify(the_geom, 5.0); 
+
+-- Gemarkungen in der Gemeinde zählen
 UPDATE pp_gemeinde a
   SET anz_gemarkg = 
    ( SELECT count(gemarkung) AS anz_gemarkg 
@@ -290,17 +361,6 @@ UPDATE pp_gemeinde a
      WHERE a.land     = b.land 
        AND a.gemeinde = b.gemeinde
    );
-
-
--- Geometrie glätten und vereinfachen.
--- Diese "simplen" Geometrien sollen nur für die Darstellung einer Übersicht verwendet werden.
--- Ablage der simplen Geometrie in einem alternativen Geometriefeld im gleichen Datensatz.
-
-UPDATE pp_flur      SET simple_geom = st_simplify(the_geom, 0.5); -- Flur 
-
-UPDATE pp_gemarkung SET simple_geom = st_simplify(the_geom, 2.2); -- Gemarkung (Wirkung siehe pp_gemarkung_analyse)
-
-UPDATE pp_gemeinde  SET simple_geom = st_simplify(the_geom, 5.0); -- Gemeinde (Wirkung siehe pp_gemeinde_analyse)
 
 
 -- Tabelle fuer die Zuordnung vom Eigentümern zu Gemeinden

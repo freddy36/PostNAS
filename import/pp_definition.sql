@@ -21,7 +21,12 @@
 --  2014-09-02 Entfernen der JOINs über "alkis_beziehungen". 
 --             Wie im Schema: Schlüssel von integer nach varchar für land, regierungsbezirk usw.
 --  2014-10-28 letzte Fälle von "substring(gml_id,1,16)" wieder raus
+--  2014-12-17 Spalte gemeinde in Tabelle pp_flur, dient der Filterung im WMS-Layer "Gebiete"
 
+/* Patch 2014-12-17:
+ ALTER TABLE pp_flur ADD COLUMN gemeinde character varying;
+ COMMENT ON COLUMN pp_flur.gemeinde IS 'Gemeindenummer';
+*/
 
 -- ============================
 -- Tabellen des Post-Processing
@@ -142,6 +147,7 @@ COMMENT ON COLUMN pp_gemarkung.simple_geom   IS 'vereinfachte Geometrie für die
     land               character varying NOT NULL,
     regierungsbezirk   character varying,
     kreis              character varying,
+    gemeinde           character varying NOT NULL,
     gemarkung          character varying NOT NULL,
     flurnummer         integer NOT NULL,
     anz_fs             integer,              -- Anzahl Flurstücke
@@ -161,6 +167,7 @@ CREATE INDEX pp_flur_sgidx ON pp_flur USING gist(simple_geom);
 
 
 COMMENT ON TABLE  pp_flur                IS 'Post-Processing: Flur';
+COMMENT ON COLUMN pp_flur.gemeinde       IS 'Gemeindenummer';
 COMMENT ON COLUMN pp_flur.gemarkung      IS 'Gemarkungsnummer';
 COMMENT ON COLUMN pp_flur.the_geom       IS 'Geometrie aus Summe aller Flurstücke';
 COMMENT ON COLUMN pp_flur.simple_geom    IS 'vereinfachte Geometrie für die Suche und die Anzeige von Übersichten in kleinen Maßstäben.';

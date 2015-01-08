@@ -28,6 +28,7 @@
 # 2014-10-28 F.J. krz: Versuch "OPACITY 80" auf "nutzung_alle"
 # 2014-10-29 F.J. krz: Straßennamen auf Liniengeometrie besser positionieren
 # 2014-12-16 F.J. krz: 3 Layer in Gebiete auf Views umgestellt
+# 2015-01-08 F.J. krz: Gemarkungsname über Flur-Nummer anzeigen
 
 ###
 # Tipp: Verwenden sie "Map-Trimmer" http://map.krz.de/?Software:Maptrimmer um auskommentierte Bereiche zu entfernen.
@@ -59,7 +60,7 @@ MAP
 	STATUS ON
 	EXTENT 349000 5529000 356000 5533000
 	PROJECTION "init=epsg:25832" END
-	MAXSIZE 4200
+	MAXSIZE 4200 # 144 dpi DIN-A2
 	SYMBOLSET "symbols/symbols_alkis.sym"
 	FONTSET "fonts/fonts_alkis.fnt"
 	UNITS METERS
@@ -68,7 +69,7 @@ MAP
 	WEB
 		METADATA
 			wms_title "ALKIS_" # TEST-Kennung im Title
-			ows_abstract "ALKIS - Konverter PostNAS Version 0.8, Mapfile Entwicklungs-Version vom September 2014"
+			ows_abstract "ALKIS - Konverter PostNAS Version 0.8, Mapfile Entwicklungs-Version vom Dezember 2014"
 			ows_srs "EPSG:25832 EPSG:31467 EPSG:4326 EPSG:54004"
 			ows_encoding "UTF-8"
 			ows_onlineresource "http://ows.krz.de/cgi-bin/mapserv6?map=/opt/gdi/alkis08/alkis08*gkz*a.map"
@@ -1293,9 +1294,8 @@ LAYER
 END
 
 # ** aus Post-Processing: Katasterbezirke
-# Die Layer dieser Gruppe nur anzeigen lassen, wenn der Inhalt der Datenbank einen ganzen Katasterbezirk enthält.
-# Wenn ein Gebiet durch geometrische Filter im NBA ausgegeben wurde, dann gibt es Randstreifen, 
-# die zu Pseudo-Fluren zusammen gefasst werden. Fachlich falsch!
+# Durch Filter im View werden umgebende Randstreifen entfernt, die durch ungenaue geometrische 
+# Filterung des abgebenden NBA-Verfahrens enstehen.
 LAYER
 	NAME "pp_flur"
 	GROUP "pp_gebiete"
@@ -1322,24 +1322,34 @@ LAYER
 	MAXSCALEDENOM 26000
 	CLASS
 		NAME "Flur"
-		TEXT "Flur [flurnummer]"
 		STYLE
 			OUTLINECOLOR 100 150 10
 			WIDTH 3
 		END
 		LABEL
+			TEXT "Flur [flurnummer]"
 			TYPE TRUETYPE FONT "arial"
 			COLOR 100 150 10
 			SIZE 13
-			POSITION cc # Für Kachelung im Mapproxy sollte es an fixem Punkt stehen, wie?
+			POSITION cc # Für Kachelung im Mapproxy sollte es an fixem Punkt stehen.
 			PARTIALS false FORCE false
 			STYLE
 				GEOMTRANSFORM 'labelpoly'
 				COLOR 250 250 250 OPACITY 60
 			END
 		END
+		LABEL # zugehörige Gemarkung über Flurnummer 
+			MAXSCALEDENOM 10000
+			TEXT "[gemarkungsname]"
+			TYPE TRUETYPE FONT "arial"
+			COLOR 100 150 10
+			SIZE 9
+			POSITION cc OFFSET 0 -15 # über Flurnummer
+			PARTIALS false FORCE false
+		END
 	END
 END
+
 LAYER
 	NAME "pp_gemarkung"
 	GROUP "pp_gebiete"
@@ -1359,7 +1369,7 @@ LAYER
 	#PROJECTION "init=epsg:25832" END
 	#EXTENT 349000 5529000 356000 5533000
 	MINSCALEDENOM  4000
-	MAXSCALEDENOM 48000
+	MAXSCALEDENOM 60000
 	LABELITEM gemarkungsname
 	CLASS
 		NAME "Gemarkung"
@@ -3987,10 +3997,10 @@ LAYER # wie zuvor, aber positioniert über Linie
 		#STYLE
 		#	SYMBOL "point" SIZE 1
 		#END
-		STYLE # TEST: Positionierungs-Linie sichtbar machen
-			COLOR 250 40 40 PATTERN 4 8 END # rot
-			WIDTH 1 MINWIDTH 1 MAXWIDTH 1
-		END
+	#	STYLE # TEST: Positionierungs-Linie sichtbar machen
+	#		COLOR 250 40 40 PATTERN 4 8 END # rot
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -4010,10 +4020,10 @@ LAYER # wie zuvor, aber positioniert über Linie
 	END
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse' AND '[hor]' eq 'zentrisch' AND '[ver]' eq 'Mitte')
-		STYLE
-			COLOR 40 250 40 PATTERN 4 8 END # grün
-			WIDTH 1 MINWIDTH 1 MAXWIDTH 1
-		END
+	#	STYLE
+	#		COLOR 40 250 40 PATTERN 4 8 END # grün
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"
@@ -4026,10 +4036,10 @@ LAYER # wie zuvor, aber positioniert über Linie
 	CLASS
 		EXPRESSION ('[art]' eq 'Strasse') 
 		NAME 'Straße'
-		STYLE
-			COLOR 40 40 250 PATTERN 4 8 END # blau
-			WIDTH 1 MINWIDTH 1 MAXWIDTH 1
-		END
+	#	STYLE
+	#		COLOR 40 40 250 PATTERN 4 8 END # blau
+	#		WIDTH 1 MINWIDTH 1 MAXWIDTH 1
+	#	END
 		LABEL
 			SIZE 8 MINSIZE 6 MAXSIZE 16
 			TYPE TRUETYPE FONT "arialbold"

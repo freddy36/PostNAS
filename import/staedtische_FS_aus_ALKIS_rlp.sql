@@ -12,8 +12,11 @@
 --  2014-09-16 Substring fuer variabel lange gml_id
 --  2014-09-30 Rückbau subsrting(gml_id), Umbenennung Schlüsseltabellen "ax_*" nach "v_*"
 --  2014-12-16 Views für Gebiete im WMS, gefiltert nach individueller Gemeinde
+--  2014-12-17 Spalte "gemeinde" in "pp_flur" nutzen
 
 -- Voraussetzung = View "doppelverbindung" aus ALKIS PostNAS-Projekt Datei "sichten.sql"
+
+-- ToDo: Umbenennen der Datei von "staedtische_FS" nach "staedtische_views" oder so ähnlich.
 
 
 -- View für Shape-Export
@@ -96,13 +99,11 @@ GRANT SELECT ON TABLE st_flurst TO ms6;
 -- Der Gemeinde-Schlüssel für die Filterung kann am besten aus der Tabelle pp_gemeinde ermittelt werden
 
 -- Flur gefiltert
---  +++ Im PostProcessing auch Gemeinde in Tabelle "pp_flur" einfügen und füllen.
 CREATE OR REPLACE VIEW gebiet_flur
 AS
-  SELECT f.gid, f.gemarkung, f.flurnummer, f.the_geom 
-    FROM pp_flur f
-    JOIN pp_gemarkung g ON f.gemarkung = g.gemarkung -- JOIN = Work-Arround weil gemeinde in "pp_flur" fehlt
-    WHERE g.gemeinde = '103'; -- Osann-Monzel
+  SELECT gid, gemarkung, flurnummer, the_geom 
+    FROM pp_flur 
+   WHERE gemeinde = '103'; -- Osann-Monzel
 COMMENT ON VIEW gebiet_flur  IS 'Flurflächen (vereinfachte Geometrie), gefiltert nach Gemeinde.';
 GRANT SELECT ON TABLE gebiet_flur TO ms6;
 
